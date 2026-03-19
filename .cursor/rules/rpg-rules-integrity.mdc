@@ -1,0 +1,12 @@
+---
+description: Use knowledge/ for rules; no invented mechanics
+globs: knowledge/**/*
+alwaysApply: false
+---
+
+# RPG rules integrity (Terres d’Arran / CO)
+
+- When answering **Terres d’Arran** or **Chroniques Oubliées** rules, ground answers in **`knowledge/topics/`** and **`knowledge/reference/`**. Cite the relevant filename when useful.
+- **Never invent** modifiers, spell effects, caps, or table values. If `knowledge/` does not contain the detail, state that the corpus is incomplete and the user should check the official PDF.
+- **Homebrew** must be clearly labeled as non-official.
+- Prefer concise, LLM-friendly structure: headings, bullets, Markdown tables; keep `knowledge/reference/*.json` for data an app can load programmatically.

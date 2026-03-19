@@ -1,0 +1,14 @@
+{
+  "_comment": "EXAMPLE SHAPE ONLY — replace with verified TdA/CO tables from the official PDF. Do not trust these numbers for play.",
+  "abilityModifierTable": [
+    { "scoreRange": "1-2", "modifier": -4 },
+    { "scoreRange": "3-4", "modifier": -3 },
+    { "scoreRange": "5-6", "modifier": -2 },
+    { "scoreRange": "7-8", "modifier": -1 },
+    { "scoreRange": "9-12", "modifier": 0 },
+    { "scoreRange": "13-14", "modifier": 1 },
+    { "scoreRange": "15-16", "modifier": 2 },
+    { "scoreRange": "17-18", "modifier": 3 },
+    { "scoreRange": "19-20", "modifier": 4 }
+  ]
+}

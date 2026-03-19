@@ -1,0 +1,34 @@
+---
+description: How to author curated knowledge Markdown for Terres d'Arran
+globs: knowledge/**/*
+alwaysApply: false
+---
+
+# Knowledge authoring
+
+## Workflow
+
+1. Keep the official PDF **local** (not required in the repo). In Cursor, **@** the PDF when asking an LLM to draft a section.
+2. Ask for: clear `##` / `###` headings, bullet mechanics, Markdown tables, and explicit `*(à vérifier dans le PDF)*` gaps.
+3. **You** verify numbers and edge cases against the book, then save to `knowledge/topics/*.md` or `knowledge/reference/*`.
+4. Update `knowledge/README.md` index when adding a topic.
+
+## File template (topics)
+
+Optional YAML frontmatter:
+
+```yaml
+---
+source: tda-livre-joueur
+version: "0.1"
+last_reviewed: YYYY-MM-DD
+---
+```
+
+- One **H1** title per file matching the topic.
+- Stable heading anchors for deep links from the app later.
+- **Paraphrase**; avoid pasting multi-page copyrighted text.
+
+## Canonical location
+
+Runtime Q&A reads from **`knowledge/`** only. Optional `.cursor/skills/` are for *editing* help; they must not be the sole copy of rules.

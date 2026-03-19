@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+dist/
+*.tsbuildinfo
+
+# Logs and caches
+*.log
+.npm
+.cache
+
+# Editor / OS
+.DS_Store
+*.swp
+
+# Local scratch (draft extracts, notes — do not commit full copyrighted book text)
+.scratch/
+
+# Vite
+client/dist/

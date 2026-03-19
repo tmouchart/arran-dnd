@@ -1,0 +1,11 @@
+---
+description: Terres d'Arran project stack, layout, and phases
+alwaysApply: true
+---
+
+# Terres d’Arran — project
+
+- **Stack**: Vue 3 + Vite + TypeScript (`client/`), Node HTTP API (`server/`), Anthropic Claude for Q&A. Knowledge injected as **static Markdown** from `knowledge/topics/` (no PDF parsing in-repo, no RAG v1).
+- **UX language**: French for user-visible strings; English for code and comments.
+- **Phases**: (1) curated `knowledge/`, (2) chat API + UI, (3) character sheet / resources in `client/`. Check `AGENTS.md` for current phase.
+- **Do not** add `pdf-parse`, `pdftotext`, or scripts that bulk-extract the rulebook. Authors use an LLM + PDF in the IDE, then commit reviewed Markdown under `knowledge/`.
