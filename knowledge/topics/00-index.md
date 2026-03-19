@@ -6,11 +6,11 @@ last_reviewed: 2026-03-19
 
 # Index des sujets — Terres d’Arran (CO)
 
-Résumé pour contexte court. Le détail est dans les autres fichiers de `knowledge/topics/`.
+Faits vérifiés à partir du PDF (chapitres 2–6, pages 42–166).
 
-- **Création** — `creation-personnage.md` : profil, peuple, caractéristiques, voies, équipement de départ.
-- **Combat** — `combat.md` : initiative, tours, attaques, défense, dégâts, états courants.
-- **Magie** — `magie.md` : PM, sorts, coûts *(compléter depuis le PDF)*.
-- **Monde** — `monde-arran.md` : cadre des Terres d’Arran (BD), peuples jouables, ton médiéval-fantastique.
+- **Création** — `creation-personnage.md` : Carac., peuple/culture, familles de profils, voies de départ, initiative, PV/DEF/attaques, PC/PM, progression, équipement/consommables clés.
+- **Combat** — `combat.md` : résolution des tests, difficultés, critiques, opposition/séries/cooperation, déroulé du combat, états préjudiciables, mort, PR, poursuite.
+- **Magie** — `magie.md` : PM, Brûlure de magie, talents magiques (mystiques), aperçu du compendium des voies et règles d’avancement.
+- **Monde** — `monde-arran.md` : peuples jouables (modificateurs, traits) et voies de peuple/voies culturelles (aperçu).
 
 Si une règle précise manque ici, indiquer de consulter le livre officiel.
