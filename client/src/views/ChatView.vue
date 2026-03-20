@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { sendChat, fetchHealth, type ChatMessage } from '../api/chat'
+import { streamChat, fetchHealth, type ChatMessage } from '../api/chat'
 
 const bundles = ref<string[]>(['core'])
 const topic = ref('core')
@@ -24,6 +24,7 @@ const bundleLabels: Record<string, string> = {
   combat: 'Combat',
   magic: 'Magie',
   monde: 'Monde',
+  voies: 'Voies',
 }
 
 function labelFor(id: string): string {
@@ -35,14 +36,29 @@ async function submit() {
   if (!text || loading.value) return
   error.value = null
   const next: ChatMessage[] = [...messages.value, { role: 'user', content: text }]
-  messages.value = next
+  const withAssistant: ChatMessage[] = [...next, { role: 'assistant', content: '' }]
+  messages.value = withAssistant
   input.value = ''
   loading.value = true
   try {
-    const res = await sendChat(next, topic.value)
-    messages.value = [...next, { role: 'assistant', content: res.text }]
+    await streamChat(next, topic.value, {
+      onDelta: (delta) => {
+        const lastIndex = messages.value.length - 1
+        if (lastIndex < 0) return
+        const last = messages.value[lastIndex]
+        if (!last || last.role !== 'assistant') return
+        const updated = [...messages.value]
+        updated[lastIndex] = { ...last, content: `${last.content}${delta}` }
+        messages.value = updated
+      },
+      onError: (msg) => {
+        error.value = msg
+      },
+    })
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Erreur inconnue'
+    if (!error.value) {
+      error.value = e instanceof Error ? e.message : 'Erreur inconnue'
+    }
     messages.value = next.slice(0, -1)
     input.value = text
   } finally {
