@@ -1,35 +1,10 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { streamChat, fetchHealth, type ChatMessage } from '../api/chat'
-
-const bundles = ref<string[]>(['core'])
-const topic = ref('core')
+import { ref } from 'vue'
+import { streamChat, type ChatMessage } from '../api/chat'
 const input = ref('')
 const messages = ref<ChatMessage[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
-
-onMounted(async () => {
-  try {
-    const h = await fetchHealth()
-    if (h.bundles?.length) bundles.value = h.bundles
-  } catch {
-    /* API may be down during dev */
-  }
-})
-
-const bundleLabels: Record<string, string> = {
-  core: 'Vue d’ensemble',
-  creation: 'Création',
-  combat: 'Combat',
-  magic: 'Magie',
-  monde: 'Monde',
-  voies: 'Voies',
-}
-
-function labelFor(id: string): string {
-  return bundleLabels[id] ?? id
-}
 
 async function submit() {
   const text = input.value.trim()
@@ -41,7 +16,7 @@ async function submit() {
   input.value = ''
   loading.value = true
   try {
-    await streamChat(next, topic.value, {
+    await streamChat(next, {
       onDelta: (delta) => {
         const lastIndex = messages.value.length - 1
         if (lastIndex < 0) return
@@ -75,22 +50,14 @@ function clearChat() {
 <template>
   <div class="page chat-page">
     <header class="page-head">
-      <h1>Assistant règles</h1>
+      <h1>Isilwen, miroir astral</h1>
       <p class="lede">
-        Pose une question sur les Terres d’Arran / Chroniques Oubliées. Les réponses
+        Pose une question à Isilwen sur les Terres d’Arran / Chroniques Oubliées. Les réponses
         s’appuient sur la base <code>knowledge/</code> du projet (incomplète par design).
       </p>
     </header>
 
     <div class="toolbar">
-      <label class="field">
-        <span>Sujet</span>
-        <select v-model="topic" class="select">
-          <option v-for="b in bundles" :key="b" :value="b">
-            {{ labelFor(b) }}
-          </option>
-        </select>
-      </label>
       <button type="button" class="btn ghost" @click="clearChat">
         Nouvelle conversation
       </button>
@@ -106,7 +73,7 @@ function clearChat() {
         class="bubble"
         :data-role="m.role"
       >
-        <span class="who">{{ m.role === 'user' ? 'Vous' : 'Assistant' }}</span>
+        <span class="who">{{ m.role === 'user' ? 'Vous' : 'Isilwen' }}</span>
         <div class="content">{{ m.content }}</div>
       </article>
     </div>
@@ -118,7 +85,7 @@ function clearChat() {
         v-model="input"
         class="textarea"
         rows="3"
-        placeholder="Votre question…"
+        placeholder="Pose une question à Isilwen…"
         :disabled="loading"
         @keydown.enter.exact.prevent="submit"
       />
@@ -131,89 +98,93 @@ function clearChat() {
 
 <style scoped>
 .chat-page {
-  max-width: 44rem;
+  max-width: 46rem;
   margin: 0 auto;
+  height: calc(100dvh - 7.5rem);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.page-head {
+  margin-bottom: 0.95rem;
+  flex: 0 0 auto;
 }
 
 .page-head h1 {
-  font-size: 1.5rem;
-  margin: 0 0 0.5rem;
+  margin: 0 0 0.4rem;
+  font-size: clamp(1.35rem, 4.5vw, 1.95rem);
+  font-family: var(--title-font);
+  letter-spacing: 0.01em;
+  color: var(--brand-strong);
 }
 
 .lede {
   margin: 0;
   color: var(--muted);
-  font-size: 0.95rem;
+  font-size: 0.97rem;
 }
 
 .toolbar {
   display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: flex-end;
-  margin: 1.25rem 0 1rem;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  font-size: 0.85rem;
-  color: var(--muted);
-}
-
-.select {
-  min-width: 12rem;
-  padding: 0.45rem 0.6rem;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text);
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin: 1rem 0 0.85rem;
+  flex: 0 0 auto;
 }
 
 .thread {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  min-height: 12rem;
-  margin-bottom: 1rem;
+  gap: 0.65rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-bottom: 0.85rem;
+  padding: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  overflow-y: auto;
 }
 
 .empty {
   color: var(--muted);
   font-style: italic;
   margin: 0;
+  padding: 0.35rem 0.2rem;
 }
 
 .bubble {
-  padding: 0.75rem 1rem;
-  border-radius: 12px;
+  padding: 0.76rem 0.9rem;
+  border-radius: 13px;
   border: 1px solid var(--border);
-  background: var(--surface);
+  background: var(--surface-2);
 }
 
 .bubble[data-role='user'] {
-  border-color: var(--accent-dim);
-  background: rgba(180, 120, 60, 0.08);
+  border-color: color-mix(in srgb, var(--brand) 45%, var(--border));
+  background: color-mix(in srgb, var(--brand) 16%, var(--surface-2));
 }
 
 .who {
   display: block;
-  font-size: 0.75rem;
+  font-size: 0.73rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--muted);
   margin-bottom: 0.35rem;
+  font-weight: 700;
 }
 
 .content {
   white-space: pre-wrap;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 .error {
   color: var(--danger);
-  font-size: 0.9rem;
+  font-size: 0.92rem;
   margin: 0 0 0.75rem;
 }
 
@@ -221,17 +192,30 @@ function clearChat() {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  flex: 0 0 auto;
 }
 
 .textarea {
   width: 100%;
   resize: vertical;
-  padding: 0.65rem 0.85rem;
+  min-height: 7.3rem;
+  padding: 0.7rem 0.8rem;
   border-radius: 10px;
   border: 1px solid var(--border);
   background: var(--surface-2);
   color: var(--text);
   font-family: inherit;
   font-size: 1rem;
+}
+
+@media (min-width: 700px) {
+  .toolbar {
+    gap: 0.75rem;
+  }
 }
 </style>

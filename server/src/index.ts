@@ -18,10 +18,18 @@ const MAX_KNOWLEDGE_TOKENS = Number(process.env.MAX_KNOWLEDGE_TOKENS ?? 3000);
 const MAX_HISTORY_MESSAGES = Number(process.env.MAX_HISTORY_MESSAGES ?? 8);
 const client = new Anthropic();
 
-const SYSTEM_PREAMBLE = `Tu es un assistant pour le jeu de rôle « Les Terres d'Arran », qui utilise le moteur Chroniques Oubliées.
-Tu t'adresses aux joueurs et au meneur en français.
-Les extraits ci-dessous proviennent d'une base interne (knowledge/) : ce n'est PAS une copie complète du livre. Si une règle précise manque ou est incertaine, dis-le clairement et invite à vérifier le livre du joueur officiel.
-Ne invente pas de chiffres (bonus, coûts, DD) : si l'information n'est pas dans les extraits, ne la fabrique pas.`;
+const SYSTEM_PREAMBLE = `Tu incarnes Isilwen du Miroir Astral, une Elfe Bleue divinatrice et mystique du monde des Terres d'Arran, utilisant le moteur Chroniques Oubliées.
+Tu t'adresses aux joueurs et au meneur en français, toujours en restant en personnage.
+
+Style de roleplay (mode hybride) :
+- Donne d'abord une réponse utile, claire et exploitable.
+- Ajoute ensuite une touche roleplay brève: mystérieuse, joueuse, avec de petites piques taquines.
+- Taquinerie autorisée mais toujours bienveillante: jamais agressive, jamais humiliante.
+
+Rigueur règles :
+- Les extraits ci-dessous proviennent d'une base interne (knowledge/) : ce n'est PAS une copie complète du livre.
+- Si une règle précise manque ou est incertaine, dis-le clairement en une phrase, propose de vérifier le livre du joueur officiel, puis donne une alternative prudente.
+- N'invente pas de chiffres (bonus, coûts, DD) : si l'information n'est pas dans les extraits, ne la fabrique pas.`;
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 type SseEvent = "delta" | "done" | "error";
@@ -70,6 +78,100 @@ function trimMessagesToBudget(
   return kept.length > 0 ? kept : sliced.slice(-1);
 }
 
+function inferBundleId(messages: ChatMessage[]): string {
+  const available = new Set(listBundles());
+  const lastUserMessage = [...messages]
+    .reverse()
+    .find((m) => m.role === "user")?.content;
+  const text = (lastUserMessage ?? "").toLowerCase();
+
+  if (!text) return DEFAULT_BUNDLE;
+
+  const matchesAny = (keywords: string[]): boolean =>
+    keywords.some((keyword) => text.includes(keyword));
+
+  if (
+    matchesAny([
+      "combat",
+      "initiative",
+      "attaque",
+      "armure",
+      "defense",
+      "défense",
+      "degat",
+      "dégât",
+      "pv",
+      "tour",
+      "manoeuvre",
+      "manoeuvre",
+    ])
+  ) {
+    return available.has("combat") ? "combat" : DEFAULT_BUNDLE;
+  }
+
+  if (
+    matchesAny([
+      "magie",
+      "sort",
+      "sorts",
+      "pm",
+      "incantation",
+      "rituel",
+      "arcan",
+      "mana",
+    ])
+  ) {
+    return available.has("magic") ? "magic" : DEFAULT_BUNDLE;
+  }
+
+  if (
+    matchesAny([
+      "voie",
+      "voies",
+      "profil",
+      "prestige",
+      "rang",
+      "capacite",
+      "capacité",
+    ])
+  ) {
+    return available.has("voies") ? "voies" : DEFAULT_BUNDLE;
+  }
+
+  if (
+    matchesAny([
+      "personnage",
+      "creation",
+      "création",
+      "caracteristique",
+      "caractéristique",
+      "competence",
+      "compétence",
+      "origine",
+      "race",
+      "classe",
+    ])
+  ) {
+    return available.has("creation") ? "creation" : DEFAULT_BUNDLE;
+  }
+
+  if (
+    matchesAny([
+      "arran",
+      "monde",
+      "royaume",
+      "peuple",
+      "culture",
+      "histoire",
+      "lore",
+    ])
+  ) {
+    return available.has("monde") ? "monde" : DEFAULT_BUNDLE;
+  }
+
+  return DEFAULT_BUNDLE;
+}
+
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true, bundles: listBundles(), defaultBundle: DEFAULT_BUNDLE });
 });
@@ -78,17 +180,13 @@ app.post("/api/chat", async (req, res) => {
   try {
     const body = req.body as {
       messages?: ChatMessage[];
-      topic?: string;
     };
     const messages = body.messages;
     if (!Array.isArray(messages) || messages.length === 0) {
       res.status(400).json({ error: "messages[] required" });
       return;
     }
-    const bundleId =
-      typeof body.topic === "string" && body.topic.length > 0
-        ? body.topic
-        : DEFAULT_BUNDLE;
+    const bundleId = inferBundleId(messages);
 
     let knowledge: string;
     try {

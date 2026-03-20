@@ -337,36 +337,47 @@ const mpPct = computed(() => {
   margin: 0 auto;
 }
 
+.page-head {
+  margin-bottom: 0.9rem;
+}
+
 .page-head h1 {
-  font-size: 1.5rem;
-  margin: 0 0 0.5rem;
+  margin: 0 0 0.4rem;
+  font-size: clamp(1.35rem, 4.5vw, 1.95rem);
+  font-family: var(--title-font);
+  color: var(--brand-strong);
 }
 
 .lede {
   margin: 0;
   color: var(--muted);
-  font-size: 0.95rem;
+  font-size: 0.97rem;
 }
 
 .card {
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 1.1rem 1.25rem;
-  margin-bottom: 1rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 16px;
+  padding: 0.95rem 0.95rem;
+  margin-bottom: 0.85rem;
+  box-shadow: var(--shadow-card);
 }
 
 .card h2 {
-  font-size: 1rem;
-  margin: 0 0 0.85rem;
+  font-size: 1.02rem;
+  margin: 0 0 0.8rem;
   font-weight: 600;
+  font-family: var(--title-font);
+  color: var(--accent-strong);
+  letter-spacing: 0.01em;
 }
 
 .card-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.85rem;
+  margin-bottom: 0.8rem;
+  gap: 0.6rem;
 }
 
 .card-head h2 {
@@ -375,31 +386,33 @@ const mpPct = computed(() => {
 
 .grid-2 {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem 1rem;
+  grid-template-columns: 1fr;
+  gap: 0.65rem;
 }
 
-@media (max-width: 520px) {
+@media (min-width: 520px) {
   .grid-2 {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem 0.95rem;
   }
 }
 
 .grid-2.tight {
-  margin-top: 0.75rem;
+  margin-top: 0.7rem;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
-  font-size: 0.8rem;
+  gap: 0.32rem;
+  font-size: 0.83rem;
   color: var(--muted);
 }
 
 .input {
-  padding: 0.45rem 0.6rem;
-  border-radius: 8px;
+  min-height: 42px;
+  padding: 0.5rem 0.64rem;
+  border-radius: 10px;
   border: 1px solid var(--border);
   background: var(--surface-2);
   color: var(--text);
@@ -423,14 +436,15 @@ const mpPct = computed(() => {
 .bars {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.9rem;
 }
 
 .bar-label {
   display: flex;
   justify-content: space-between;
-  font-size: 0.85rem;
+  font-size: 0.87rem;
   margin-bottom: 0.35rem;
+  gap: 0.45rem;
 }
 
 .nums {
@@ -439,7 +453,7 @@ const mpPct = computed(() => {
 }
 
 .bar-track {
-  height: 10px;
+  height: 12px;
   border-radius: 999px;
   background: var(--surface-2);
   overflow: hidden;
@@ -453,16 +467,16 @@ const mpPct = computed(() => {
 }
 
 .bar-fill.hp {
-  background: linear-gradient(90deg, #7a2d2d, #c45c40);
+  background: linear-gradient(90deg, #8d3c3c, #c95f56);
 }
 
 .bar-fill.mp {
-  background: linear-gradient(90deg, #2d4a7a, #5a8bc4);
+  background: linear-gradient(90deg, #425f8f, #678fc2);
 }
 
 .inline-edit {
   display: flex;
-  gap: 1rem;
+  gap: 0.65rem;
   margin-top: 0.5rem;
   flex-wrap: wrap;
 }
@@ -477,8 +491,8 @@ const mpPct = computed(() => {
 
 .abilities {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
-  gap: 0.6rem;
+  grid-template-columns: repeat(auto-fill, minmax(6.35rem, 1fr));
+  gap: 0.52rem;
 }
 
 .ability {
@@ -486,14 +500,14 @@ const mpPct = computed(() => {
   flex-direction: column;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.5rem;
+  padding: 0.52rem;
   border-radius: 10px;
   background: var(--surface-2);
   border: 1px solid var(--border);
 }
 
 .abil-label {
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--muted);
@@ -507,7 +521,7 @@ const mpPct = computed(() => {
 
 .mod {
   font-size: 0.9rem;
-  color: var(--accent);
+  color: var(--accent-strong);
   font-weight: 600;
 }
 
@@ -522,8 +536,9 @@ const mpPct = computed(() => {
 
 .row {
   display: flex;
-  gap: 0.4rem;
+  gap: 0.46rem;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .path-row {
@@ -540,12 +555,13 @@ const mpPct = computed(() => {
 }
 
 .attack-card {
-  padding: 0.65rem;
+  padding: 0.68rem;
   border-radius: 10px;
-  border: 1px dashed var(--border);
+  border: 1px dashed var(--border-strong);
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
+  background: var(--surface-2);
 }
 
 .muted {
@@ -555,11 +571,19 @@ const mpPct = computed(() => {
 }
 
 .footer-actions {
-  margin: 1.5rem 0 2rem;
+  margin: 1.15rem 0 1.6rem;
 }
 
 .btn.small {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.8rem;
+  min-height: 38px;
+  padding: 0.3rem 0.58rem;
+  font-size: 0.82rem;
+}
+
+@media (min-width: 760px) {
+  .card {
+    padding: 1.1rem 1.2rem;
+    margin-bottom: 1rem;
+  }
 }
 </style>

@@ -22,13 +22,12 @@ export interface StreamChatOptions {
 
 export async function streamChat(
   messages: ChatMessage[],
-  topic: string,
   options: StreamChatOptions,
 ): Promise<void> {
   const res = await fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages, topic }),
+    body: JSON.stringify({ messages }),
   })
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
