@@ -19,6 +19,8 @@ Curated rules and references for the **in-app Q&A** (Claude) and for agents work
 | [topics/combat.md](topics/combat.md) | Combat flow, attacks, damage (CO-style) |
 | [topics/magie.md](topics/magie.md) | Magic / resources overview *(expand from PDF)* |
 | [topics/monde-arran.md](topics/monde-arran.md) | Setting hooks for Arran *(flavor, no spoilers dump)* |
+| [topics/voies-de-profil.md](topics/voies-de-profil.md) | Detailed profile paths, ranks, effects and prerequisites |
+| [topics/voies-de-prestige.md](topics/voies-de-prestige.md) | Prestige paths and progression details |
 
 ## Reference data
 
