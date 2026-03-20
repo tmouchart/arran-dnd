@@ -1,16 +1,17 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { KNOWLEDGE_DIR } from "../paths.js";
-import { BUNDLES, DEFAULT_BUNDLE } from "./bundles.js";
+import { TOPIC_NAMES, type TopicName } from "./tools.js";
 
-export async function loadBundle(bundleId: string): Promise<string> {
-  const id = BUNDLES[bundleId] ? bundleId : DEFAULT_BUNDLE;
-  const files = BUNDLES[id];
-  const parts: string[] = [];
-  for (const rel of files) {
-    const full = join(KNOWLEDGE_DIR, rel);
-    const text = await readFile(full, "utf8");
-    parts.push(`### File: ${rel}\n\n${text}`);
+export async function loadCoreIndex(): Promise<string> {
+  const full = join(KNOWLEDGE_DIR, "topics/00-index.md");
+  return readFile(full, "utf8");
+}
+
+export async function loadTopic(name: TopicName): Promise<string> {
+  if (!(TOPIC_NAMES as readonly string[]).includes(name)) {
+    throw new Error(`Unknown topic: ${name}`);
   }
-  return parts.join("\n\n---\n\n");
+  const full = join(KNOWLEDGE_DIR, `topics/${name}.md`);
+  return readFile(full, "utf8");
 }

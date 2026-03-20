@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, nextTick } from 'vue'
 import MarkdownIt from 'markdown-it'
 import DOMPurify from 'dompurify'
 import { streamChat, type ChatMessage } from '../api/chat'
@@ -7,6 +7,18 @@ const input = ref('')
 const messages = ref<ChatMessage[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
+const threadEl = ref<HTMLElement | null>(null)
+const textareaEl = ref<HTMLTextAreaElement | null>(null)
+
+let scrollPending = false
+function scrollToBottom() {
+  if (scrollPending) return
+  scrollPending = true
+  nextTick(() => {
+    scrollPending = false
+    if (threadEl.value) threadEl.value.scrollTop = threadEl.value.scrollHeight
+  })
+}
 
 const markdown = new MarkdownIt({
   html: false,
@@ -27,16 +39,14 @@ async function submit() {
   messages.value = withAssistant
   input.value = ''
   loading.value = true
+  scrollToBottom()
   try {
     await streamChat(next, {
       onDelta: (delta) => {
-        const lastIndex = messages.value.length - 1
-        if (lastIndex < 0) return
-        const last = messages.value[lastIndex]
+        const last = messages.value[messages.value.length - 1]
         if (!last || last.role !== 'assistant') return
-        const updated = [...messages.value]
-        updated[lastIndex] = { ...last, content: `${last.content}${delta}` }
-        messages.value = updated
+        last.content += delta
+        scrollToBottom()
       },
       onError: (msg) => {
         error.value = msg
@@ -50,6 +60,7 @@ async function submit() {
     input.value = text
   } finally {
     loading.value = false
+    nextTick(() => textareaEl.value?.focus())
   }
 }
 
@@ -62,10 +73,9 @@ function clearChat() {
 <template>
   <div class="page chat-page">
     <header class="page-head">
-      <h1>Isilwen, miroir astral</h1>
+      <h1>🔮 Isilwen, miroir astral</h1>
       <p class="lede">
-        Pose une question à Isilwen sur les Terres d’Arran / Chroniques Oubliées. Les réponses
-        s’appuient sur la base <code>knowledge/</code> du projet (incomplète par design).
+        Pose une question à Isilwen sur les Terres d’Arran
       </p>
     </header>
 
@@ -75,7 +85,7 @@ function clearChat() {
       </button>
     </div>
 
-    <div class="thread" role="log">
+    <div ref="threadEl" class="thread" role="log">
       <p v-if="messages.length === 0" class="empty">
         Commence par une question, par exemple : « Comment fonctionne l’initiative ? »
       </p>
@@ -99,6 +109,7 @@ function clearChat() {
 
     <form class="composer" @submit.prevent="submit">
       <textarea
+        ref="textareaEl"
         v-model="input"
         class="textarea"
         rows="3"
