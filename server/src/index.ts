@@ -1,5 +1,6 @@
 import "dotenv/config";
 import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenAI } from "@google/genai";
 import cors from "cors";
 import express from "express";
 import { listBundles, DEFAULT_BUNDLE } from "./knowledge/bundles.js";
@@ -9,22 +10,27 @@ const app = express();
 app.use(cors({ origin: true }));
 app.use(express.json({ limit: "1mb" }));
 
-const MODEL =
+const AI_PROVIDER = process.env.AI_PROVIDER ?? "gemini";
+const ANTHROPIC_MODEL =
   process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-20250514";
+const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
 const STREAM_CHUNK_SIZE = Number(process.env.STREAM_CHUNK_SIZE ?? 12);
 const MAX_OUTPUT_TOKENS = Number(process.env.MAX_OUTPUT_TOKENS ?? 1024);
-const MAX_INPUT_TOKENS = Number(process.env.MAX_INPUT_TOKENS ?? 6000);
-const MAX_KNOWLEDGE_TOKENS = Number(process.env.MAX_KNOWLEDGE_TOKENS ?? 3000);
-const MAX_HISTORY_MESSAGES = Number(process.env.MAX_HISTORY_MESSAGES ?? 8);
-const client = new Anthropic();
+const anthropicClient = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
+const geminiClient = process.env.GEMINI_API_KEY
+  ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
+  : null;
 
 const SYSTEM_PREAMBLE = `Tu incarnes Isilwen du Miroir Astral, une Elfe Bleue divinatrice et mystique du monde des Terres d'Arran, utilisant le moteur Chroniques Oubliées.
 Tu t'adresses aux joueurs et au meneur en français, toujours en restant en personnage.
 
-Style de roleplay (mode hybride) :
-- Donne d'abord une réponse utile, claire et exploitable.
-- Ajoute ensuite une touche roleplay brève: mystérieuse, joueuse, avec de petites piques taquines.
-- Taquinerie autorisée mais toujours bienveillante: jamais agressive, jamais humiliante.
+Style de roleplay (integre et constant) :
+- Reste en personnage du debut a la fin de chaque reponse, sans "mode d'emploi" ni rupture de ton.
+- Le roleplay doit se fondre naturellement avec les regles: explications precises, ton immersif, transitions fluides.
+- Priorise toujours l'utilite: reponse claire, exploitable, structuree, puis couleur narrative sans alourdir.
+- Taquinerie autorisee mais toujours bienveillante: jamais agressive, jamais humiliante.
 
 Rigueur règles :
 - Les extraits ci-dessous proviennent d'une base interne (knowledge/) : ce n'est PAS une copie complète du livre.
@@ -48,34 +54,11 @@ function splitForStream(text: string, size: number): string[] {
   return chunks;
 }
 
-function estimateTokens(text: string): number {
-  // Rough heuristic for French/English prose.
-  return Math.ceil(text.length / 4);
-}
-
-function trimTextToTokenBudget(text: string, maxTokens: number): string {
-  if (maxTokens <= 0) return "";
-  const maxChars = maxTokens * 4;
-  if (text.length <= maxChars) return text;
-  return `${text.slice(0, maxChars)}\n\n[Contenu tronque pour respecter la limite de tokens.]`;
-}
-
-function trimMessagesToBudget(
-  history: ChatMessage[],
-  maxMessages: number,
-  maxTokens: number,
-): ChatMessage[] {
-  const sliced = history.slice(-Math.max(1, maxMessages));
-  const kept: ChatMessage[] = [];
-  let used = 0;
-  for (let i = sliced.length - 1; i >= 0; i -= 1) {
-    const m = sliced[i];
-    const tokens = estimateTokens(m.content);
-    if (kept.length > 0 && used + tokens > maxTokens) break;
-    kept.unshift(m);
-    used += tokens;
-  }
-  return kept.length > 0 ? kept : sliced.slice(-1);
+function toGeminiPrompt(system: string, messages: ChatMessage[]): string {
+  const transcript = messages
+    .map((m) => `${m.role === "assistant" ? "Assistant" : "Utilisateur"}: ${m.content}`)
+    .join("\n\n");
+  return `${system}\n\n## Historique de conversation\n\n${transcript}\n\nAssistant:`;
 }
 
 function inferBundleId(messages: ChatMessage[]): string {
@@ -197,17 +180,9 @@ app.post("/api/chat", async (req, res) => {
       return;
     }
 
-    const trimmedKnowledge = trimTextToTokenBudget(knowledge, MAX_KNOWLEDGE_TOKENS);
-    const system = `${SYSTEM_PREAMBLE}\n\n## Base de regles (extraits)\n\n${trimmedKnowledge}`;
-    const systemTokens = estimateTokens(system);
-    const messageBudget = Math.max(500, MAX_INPUT_TOKENS - systemTokens);
-    const trimmedMessages = trimMessagesToBudget(
-      messages,
-      MAX_HISTORY_MESSAGES,
-      messageBudget,
-    );
+    const system = `${SYSTEM_PREAMBLE}\n\n## Base de regles (extraits)\n\n${knowledge}`;
 
-    const apiMessages = trimmedMessages.map((m) => ({
+    const apiMessages = messages.map((m) => ({
       role: m.role,
       content: m.content,
     }));
@@ -225,8 +200,55 @@ app.post("/api/chat", async (req, res) => {
       closed = true;
     });
 
-    const stream = client.messages.stream({
-      model: MODEL,
+    if (AI_PROVIDER === "gemini") {
+      if (!geminiClient) {
+        res.status(500).json({
+          error: "GEMINI_API_KEY manquante. Ajoute-la dans server/.env.",
+        });
+        return;
+      }
+
+      const prompt = toGeminiPrompt(system, messages);
+      const stream = await geminiClient.models.generateContentStream({
+        model: GEMINI_MODEL,
+        contents: prompt,
+        config: {
+          maxOutputTokens: MAX_OUTPUT_TOKENS,
+          thinkingConfig: {
+            thinkingBudget: 0,
+          },
+        },
+      });
+
+      for await (const chunk of stream) {
+        if (closed) break;
+        const text = typeof chunk.text === "string" ? chunk.text : "";
+        if (!text) continue;
+        const chunks = splitForStream(text, STREAM_CHUNK_SIZE);
+        for (const piece of chunks) {
+          writeSse(res, "delta", { text: piece });
+        }
+      }
+      if (!closed) {
+        writeSse(res, "done", {
+          model: GEMINI_MODEL,
+          usage: null,
+          bundle: resolvedBundle,
+        });
+        res.end();
+      }
+      return;
+    }
+
+    if (!process.env.ANTHROPIC_API_KEY) {
+      res.status(500).json({
+        error: "ANTHROPIC_API_KEY manquante. Ajoute-la dans server/.env.",
+      });
+      return;
+    }
+
+    const stream = anthropicClient.messages.stream({
+      model: ANTHROPIC_MODEL,
       max_tokens: MAX_OUTPUT_TOKENS,
       system,
       messages: apiMessages,

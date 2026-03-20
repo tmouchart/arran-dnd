@@ -1,10 +1,22 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import MarkdownIt from 'markdown-it'
+import DOMPurify from 'dompurify'
 import { streamChat, type ChatMessage } from '../api/chat'
 const input = ref('')
 const messages = ref<ChatMessage[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
+
+const markdown = new MarkdownIt({
+  html: false,
+  linkify: true,
+  breaks: true,
+})
+
+function renderAssistantContent(content: string): string {
+  return DOMPurify.sanitize(markdown.render(content))
+}
 
 async function submit() {
   const text = input.value.trim()
@@ -74,7 +86,12 @@ function clearChat() {
         :data-role="m.role"
       >
         <span class="who">{{ m.role === 'user' ? 'Vous' : 'Isilwen' }}</span>
-        <div class="content">{{ m.content }}</div>
+        <div
+          v-if="m.role === 'assistant'"
+          class="content assistant-content"
+          v-html="renderAssistantContent(m.content)"
+        />
+        <div v-else class="content user-content">{{ m.content }}</div>
       </article>
     </div>
 
@@ -178,8 +195,45 @@ function clearChat() {
 }
 
 .content {
-  white-space: pre-wrap;
   line-height: 1.6;
+}
+
+.user-content {
+  white-space: pre-wrap;
+}
+
+.content :deep(p) {
+  margin: 0 0 0.65rem;
+}
+
+.content :deep(p:last-child) {
+  margin-bottom: 0;
+}
+
+.content :deep(ul),
+.content :deep(ol) {
+  margin: 0 0 0.7rem;
+  padding-left: 1.2rem;
+}
+
+.content :deep(li + li) {
+  margin-top: 0.2rem;
+}
+
+.content :deep(h1),
+.content :deep(h2),
+.content :deep(h3),
+.content :deep(h4) {
+  margin: 0.15rem 0 0.5rem;
+  line-height: 1.3;
+}
+
+.content :deep(code) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
+  background: color-mix(in srgb, var(--surface) 70%, black 12%);
+  border-radius: 4px;
+  padding: 0.08rem 0.25rem;
 }
 
 .error {
