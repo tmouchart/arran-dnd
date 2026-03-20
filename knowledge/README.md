@@ -18,7 +18,8 @@ Curated rules and references for the **in-app Q&A** (Claude) and for agents work
 | [topics/creation-personnage.md](topics/creation-personnage.md) | Character creation pipeline (CO / TdA) |
 | [topics/combat.md](topics/combat.md) | Combat flow, attacks, damage (CO-style) |
 | [topics/magie.md](topics/magie.md) | Magic / resources overview *(expand from PDF)* |
-| [topics/monde-arran.md](topics/monde-arran.md) | Setting hooks for Arran *(flavor, no spoilers dump)* |
+| [topics/monde-arran.md](topics/monde-arran.md) | Peuples d’Arran — aperçu création *(voir aussi `races.md` pour le détail)* |
+| [topics/races.md](topics/races.md) | Peuples jouables : lore, roleplay, modificateurs, voie de peuple, voies culturelles |
 | [topics/voies-de-profil.md](topics/voies-de-profil.md) | Detailed profile paths, ranks, effects and prerequisites |
 | [topics/voies-de-prestige.md](topics/voies-de-prestige.md) | Prestige paths and progression details |
 

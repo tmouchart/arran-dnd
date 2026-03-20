@@ -8,6 +8,8 @@ last_reviewed: 2026-03-19
 
 Ce fichier reprend la partie “Les peuples d’Arran” du **Livre du joueur** sur la fenêtre demandée (pages 42 à 166).
 
+Pour les **fiches détaillées** (roleplay, ordres nains, cultures humaines complètes, Peaux vertes, etc.), voir **`races.md`**.
+
 ## 1) Règles de base : peuple et voies
 
 Au moment de créer un personnage :
