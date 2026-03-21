@@ -7,3 +7,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 export const REPO_ROOT = join(__dirname, "..", "..");
 
 export const KNOWLEDGE_DIR = join(REPO_ROOT, "knowledge");
+
+/** Vite production build (served by Express when present). */
+export const CLIENT_DIST = join(REPO_ROOT, "client", "dist");

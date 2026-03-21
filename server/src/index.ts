@@ -1,9 +1,12 @@
 import "dotenv/config";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 import { GoogleGenAI } from "@google/genai";
 import cors from "cors";
 import express from "express";
 import { loadCoreIndex, loadTopic } from "./knowledge/loadKnowledge.js";
+import { CLIENT_DIST } from "./paths.js";
 import {
   anthropicTool,
   geminiTool,
@@ -363,6 +366,20 @@ app.post("/api/chat", async (req, res) => {
     res.status(status).json({ error: message });
   }
 });
+
+// Production: Vite build + Vue Router (history) fallback — register after /api routes
+if (existsSync(CLIENT_DIST)) {
+  app.use(express.static(CLIENT_DIST));
+  app.use((req, res, next) => {
+    if (req.method !== "GET" || req.path.startsWith("/api")) {
+      next();
+      return;
+    }
+    res.sendFile(join(CLIENT_DIST, "index.html"), (err) => {
+      if (err) next(err);
+    });
+  });
+}
 
 const PORT = Number(process.env.PORT) || 3001;
 app.listen(PORT, () => {
