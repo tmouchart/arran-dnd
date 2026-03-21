@@ -47,4 +47,6 @@ export interface Character {
   skills: SkillRow[]
   attacks: AttackRow[]
   paths: PathRow[]
+  /** Id from `mysticTalents.ts` when the profile family is mystiques; empty string if none */
+  mysticTalent: string
 }

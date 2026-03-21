@@ -1,75 +1,111 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { fetchCharacters, activateCharacter, deleteCharacter, createCharacter, type ServerCharacter } from '../api/characters'
+import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import {
+  fetchCharacters,
+  activateCharacter,
+  deleteCharacter,
+  createCharacter,
+  type ServerCharacter,
+} from "../api/characters";
+import { MYSTIC_TALENTS_BY_ID, isMysticTalentId } from "../data/mysticTalents";
+import { inferProfileFamily } from "../utils/inferProfileFamily";
 
-const router = useRouter()
-const characters = ref<ServerCharacter[]>([])
-const loading = ref(false)
-const activating = ref<number | null>(null)
-const deleting = ref<number | null>(null)
-const creating = ref(false)
+const router = useRouter();
+const characters = ref<ServerCharacter[]>([]);
+const loading = ref(false);
+const listError = ref<string | null>(null);
+const activating = ref<number | null>(null);
+const deleting = ref<number | null>(null);
+const creating = ref(false);
 
 async function load() {
-  loading.value = true
+  loading.value = true;
+  listError.value = null;
   try {
-    characters.value = await fetchCharacters()
+    characters.value = await fetchCharacters();
+  } catch {
+    listError.value =
+      "Impossible de joindre l’API ou erreur serveur. Vérifie que npm run dev tourne, puis relance la migration si la base a changé (npm run db:migrate).";
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
 async function handleActivate(c: ServerCharacter) {
-  if (c.isActive) return
-  activating.value = c.id
+  if (c.isActive) return;
+  activating.value = c.id;
   try {
-    await activateCharacter(c.id)
+    await activateCharacter(c.id);
     characters.value = characters.value.map((ch) => ({
       ...ch,
       isActive: ch.id === c.id,
-    }))
+    }));
   } finally {
-    activating.value = null
+    activating.value = null;
   }
 }
 
 function openSheet(c: ServerCharacter) {
-  router.push({ path: '/personnage', query: { id: c.id } })
+  router.push({ path: "/personnage", query: { id: c.id } });
 }
 
 async function handleDelete(c: ServerCharacter) {
-  deleting.value = c.id
+  deleting.value = c.id;
   try {
-    await deleteCharacter(c.id)
-    characters.value = characters.value.filter((ch) => ch.id !== c.id)
+    await deleteCharacter(c.id);
+    characters.value = characters.value.filter((ch) => ch.id !== c.id);
   } finally {
-    deleting.value = null
+    deleting.value = null;
   }
 }
 
 async function handleCreate() {
-  creating.value = true
+  creating.value = true;
   try {
-    const created = await createCharacter({})
-    router.push({ path: '/personnage', query: { id: created.id } })
+    const created = await createCharacter({});
+    router.push({ path: "/personnage", query: { id: created.id } });
   } finally {
-    creating.value = false
+    creating.value = false;
   }
 }
 
-onMounted(load)
+onMounted(load);
+
+function mysticTalentLine(c: ServerCharacter): string | null {
+  const id = c.mysticTalent;
+  if (!id || !isMysticTalentId(id)) return null;
+  if (inferProfileFamily(c.paths ?? []) !== "mystiques") return null;
+  return MYSTIC_TALENTS_BY_ID[id].name;
+}
+
+function listMetaLine(c: ServerCharacter): string {
+  const base = `${c.profile || "Sans profil"} · Niv. ${c.level}`;
+  const talent = mysticTalentLine(c);
+  return talent ? `${base} · Talent : ${talent}` : base;
+}
 </script>
 
 <template>
   <div class="page list-page">
     <header class="page-head">
       <h1>Personnages</h1>
-      <button type="button" class="btn ghost small" :disabled="creating" @click="handleCreate">
-        {{ creating ? '…' : '+ Créer' }}
+      <button
+        type="button"
+        class="btn ghost small"
+        :disabled="creating"
+        @click="handleCreate"
+      >
+        {{ creating ? "…" : "+ Créer" }}
       </button>
     </header>
 
     <div v-if="loading" class="loading-msg">Chargement…</div>
+
+    <div v-else-if="listError" class="load-error">
+      <p>{{ listError }}</p>
+      <button type="button" class="btn ghost small" @click="load">Réessayer</button>
+    </div>
 
     <ul v-else class="char-list">
       <li
@@ -78,7 +114,10 @@ onMounted(load)
         class="char-row"
         :class="{ active: c.isActive }"
       >
-        <label class="active-check" :title="c.isActive ? 'Personnage actif' : 'Définir comme actif'">
+        <label
+          class="active-check"
+          :title="c.isActive ? 'Personnage actif' : 'Définir comme actif'"
+        >
           <input
             type="checkbox"
             :checked="c.isActive"
@@ -93,7 +132,7 @@ onMounted(load)
             <span class="name">{{ c.name }}</span>
             <span v-if="c.isActive" class="chip-active">Actif</span>
           </span>
-          <span class="meta">{{ c.profile || 'Sans profil' }} · Niv. {{ c.level }}</span>
+          <span class="meta">{{ listMetaLine(c) }}</span>
         </button>
 
         <button
@@ -102,11 +141,15 @@ onMounted(load)
           title="Supprimer"
           :disabled="deleting === c.id"
           @click="handleDelete(c)"
-        >🗑️</button>
+        >
+          🗑️
+        </button>
       </li>
     </ul>
 
-    <p v-if="!loading && characters.length === 0" class="muted">Aucun personnage.</p>
+    <p v-if="!loading && !listError && characters.length === 0" class="muted">
+      Aucun personnage.
+    </p>
   </div>
 </template>
 
@@ -136,6 +179,21 @@ onMounted(load)
   font-size: 0.95rem;
   padding: 2rem 0;
   text-align: center;
+}
+
+.load-error {
+  padding: 1.25rem 1rem;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--danger, #c0392b) 45%, var(--border));
+  background: color-mix(in srgb, var(--danger, #c0392b) 8%, var(--surface));
+  color: var(--text);
+  font-size: 0.92rem;
+  line-height: 1.45;
+  margin-bottom: 0.75rem;
+}
+
+.load-error p {
+  margin: 0 0 0.75rem;
 }
 
 .char-list {
@@ -243,7 +301,7 @@ onMounted(load)
   letter-spacing: 0.04em;
 }
 
-[data-theme='dark'] .chip-active {
+[data-theme="dark"] .chip-active {
   background: #1db95422;
   color: #4ade80;
   border-color: #4ade8055;
@@ -259,7 +317,9 @@ onMounted(load)
   border-radius: 8px;
   line-height: 1;
   opacity: 0.5;
-  transition: opacity 160ms ease, background 160ms ease;
+  transition:
+    opacity 160ms ease,
+    background 160ms ease;
 }
 
 .btn-delete:hover:not(:disabled) {

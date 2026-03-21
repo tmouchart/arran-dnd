@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import ChatView from '../views/ChatView.vue'
 import CharacterSheetView from '../views/CharacterSheetView.vue'
 import CharacterListView from '../views/CharacterListView.vue'
+import ActionsView from '../views/ActionsView.vue'
 import LoginView from '../views/LoginView.vue'
 import { authReady, user, initAuth } from '../composables/useAuth'
 
@@ -12,6 +13,7 @@ export const router = createRouter({
     { path: '/', name: 'chat', component: ChatView },
     { path: '/personnages', name: 'characters', component: CharacterListView },
     { path: '/personnage', name: 'character', component: CharacterSheetView },
+    { path: '/actions', name: 'actions', component: ActionsView },
   ],
 })
 

@@ -77,9 +77,9 @@ const cultureElfeBleu: PeupleVoie = {
   name: 'Culture elfique — Elfe bleu',
   capacites: [
     { name: 'Équilibre parfait', description: 'Se relever est une action gratuite ; +5 aux tests d\'équilibre.' },
+    { name: 'Natif d\'Elsémur', description: 'Choisir une caste : religieuse (capacité de rang 1 ou 2 de la divination ou du mysticisme) ou guerrière (capacité de rang 1 ou 2 de la guerre ou du combat à deux armes). Au rang 4 de cette voie culturelle, capacité supplémentaire de rang 1 ou 2 dans la même caste.' },
     { name: 'Imperturbable', description: '+5 aux tests pour résister aux effets mentaux (peur, intimidation, envoûtements) ; +3 à l\'Initiative.' },
-    { name: 'Les enseignements de l\'eau', description: 'Peut respirer sous l\'eau 15 minutes ; navigation en profondeur sans soleil ; tolère le froid et la pression.' },
-    { name: '(À compléter)', description: 'Capacité de rang 4 non encore retranscrite — se référer au Livre du joueur officiel.' },
+    { name: 'Les enseignements de l\'eau', description: 'Peut retenir sa respiration sous l\'eau 15 minutes ; au plus profond des océans, pas besoin de lumière pour se guider ; supporte les températures glaciales et la pression sans problème.' },
     { name: 'Parangon elfe bleu', description: '+2 CON et +2 SAG.' },
   ],
 }
@@ -88,11 +88,11 @@ const cultureElfeSylvain: PeupleVoie = {
   id: 'culture-elfe-sylvain',
   name: 'Culture elfique — Elfe sylvain',
   capacites: [
-    { name: '(À compléter)', description: 'Rang 1 — se référer au Livre du joueur officiel.' },
-    { name: '(À compléter)', description: 'Rang 2 — se référer au Livre du joueur officiel.' },
-    { name: '(À compléter)', description: 'Rang 3 — se référer au Livre du joueur officiel.' },
-    { name: '(À compléter)', description: 'Rang 4 — se référer au Livre du joueur officiel.' },
-    { name: '(À compléter)', description: 'Rang 5 — se référer au Livre du joueur officiel.' },
+    { name: 'Le chant de la Terre', description: '+5 aux tests de DEX et SAG lorsqu\'il est en forêt.' },
+    { name: 'Enfant de la forêt', description: 'Choisir une caste : religieuse (capacité de rang 1 ou 2 des arts druidiques ou des forêts) ou guerrière (capacité de rang 1 ou 2 de l\'archerie ou du compagnon animal). Au rang 4 de cette voie culturelle, capacité supplémentaire de rang 1 ou 2 dans la même caste.' },
+    { name: 'Archer émérite', description: 'Avec un arc, réussite critique sur 19–20 au d20 ; gagne la maîtrise des armes de trait.' },
+    { name: 'Compagnon animal supérieur', description: 'Gagne le rang 3 de la voie du Compagnon animal (p. 170). Si déjà possédée, le compagnon gagne +2 en initiative, DEF, attaque et DM.' },
+    { name: 'Parangon elfe vert', description: '+2 DEX et +2 SAG.' },
   ],
 }
 
@@ -100,11 +100,11 @@ const cultureElfeBlanc: PeupleVoie = {
   id: 'culture-elfe-blanc',
   name: 'Culture elfique — Elfe blanc',
   capacites: [
-    { name: '(À compléter)', description: 'Rang 1 — se référer au Livre du joueur officiel.' },
-    { name: '(À compléter)', description: 'Rang 2 — se référer au Livre du joueur officiel.' },
-    { name: '(À compléter)', description: 'Rang 3 — se référer au Livre du joueur officiel.' },
-    { name: '(À compléter)', description: 'Rang 4 — se référer au Livre du joueur officiel.' },
-    { name: '(À compléter)', description: 'Rang 5 — se référer au Livre du joueur officiel.' },
+    { name: 'Mémoire du monde', description: '+5 aux tests d\'INT relatifs aux connaissances et à l\'érudition.' },
+    { name: 'Prédispositions magiques', description: 'Capacité de rang 1 ou 2 de la voie de l\'envoûtement ou de la voie de la magie élémentaliste. Au rang 4 de cette voie, capacité supplémentaire de rang 1 ou 2 dans l\'une de ces deux voies.' },
+    { name: 'Lancier d\'élite', description: 'Ignore les malus liés aux armes d\'hast ; gagne la maîtrise des armes d\'hast ; +1 aux tests d\'attaque et aux DM avec une arme d\'hast.' },
+    { name: 'Blancheur immaculée', description: 'N\'a besoin que de la moitié du repos, de la nourriture et de la boisson d\'un Elfe normal ; immunisé aux effets des poisons et des maladies.' },
+    { name: 'Parangon elfe blanc', description: '+2 INT et +2 SAG.' },
   ],
 }
 
@@ -112,11 +112,11 @@ const cultureElfeNoir: PeupleVoie = {
   id: 'culture-elfe-noir',
   name: 'Culture elfique — Elfe noir',
   capacites: [
-    { name: '(À compléter)', description: 'Rang 1 — se référer au Livre du joueur officiel.' },
-    { name: '(À compléter)', description: 'Rang 2 — se référer au Livre du joueur officiel.' },
-    { name: '(À compléter)', description: 'Rang 3 — se référer au Livre du joueur officiel.' },
-    { name: '(À compléter)', description: 'Rang 4 — se référer au Livre du joueur officiel.' },
-    { name: '(À compléter)', description: 'Rang 5 — se référer au Livre du joueur officiel.' },
+    { name: 'Artiste de l\'ombre', description: 'Couverture d\'artiste (danse, théâtre, peinture, poésie) : +5 aux tests de CHA en rapport avec le domaine choisi, et aux tests pour trouver ou obtenir des informations secrètes ou sensibles.' },
+    { name: 'Apprenti de Slurce', description: 'Capacité de rang 1 ou 2 de la voie de l\'assassinat ou de la voie des sombres savoirs. Au rang 4 de cette voie culturelle, capacité supplémentaire de rang 1 ou 2 dans l\'une de ces deux voies.' },
+    { name: 'Armes secrètes', description: 'Peut dissimuler jusqu\'à deux armes légères (d6 max) ; test de DEX opposé à SAG de l\'adversaire : en cas de réussite, la première attaque de chaque arme surprend l\'adversaire et inflige les DM maximaux (y compris les dés bonus).' },
+    { name: 'Noir comme le sang', description: 'Une fois par combat, lorsqu\'il tombe à 0 PV, peut continuer à agir normalement ; une nouvelle attaque réussie infligeant au moins 1 DM l\'achève. Tant qu\'il est à 0 PV : +2 à tous ses tests.' },
+    { name: 'Parangon elfe noir', description: '+2 DEX et +2 CHA.' },
   ],
 }
 

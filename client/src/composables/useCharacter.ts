@@ -45,6 +45,7 @@ function toCharacter(s: ServerCharacter): Character {
     skills: s.skills,
     attacks: s.attacks,
     paths: s.paths,
+    mysticTalent: s.mysticTalent ?? '',
   }
 }
 
@@ -67,6 +68,7 @@ function toServerPayload(c: Character): Omit<ServerCharacter, 'id' | 'userId' | 
     skills: c.skills,
     attacks: c.attacks,
     paths: c.paths,
+    mysticTalent: c.mysticTalent || null,
   }
 }
 
@@ -87,12 +89,14 @@ export function createDefaultCharacter(): Character {
     skills: [],
     attacks: [],
     paths: [],
+    mysticTalent: '',
   }
 }
 
 const character = ref<Character>(createDefaultCharacter())
 const serverId = ref<number | null>(null)
 const loading = ref(false)
+const loadError = ref<string | null>(null)
 const saveStatus = ref<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
@@ -101,6 +105,7 @@ export async function loadCharacter(id?: number): Promise<void> {
   // Annule tout debounce en cours et remet les états propres
   if (debounceTimer) { clearTimeout(debounceTimer); debounceTimer = null }
   loading.value = true
+  loadError.value = null
   character.value = createDefaultCharacter()
   serverId.value = null
   try {
@@ -120,6 +125,9 @@ export async function loadCharacter(id?: number): Promise<void> {
         character.value = toCharacter(created)
       }
     }
+  } catch {
+    loadError.value =
+      "Impossible de charger le personnage (API arrêtée, erreur serveur ou base non à jour). Relance l’API et exécute npm run db:migrate si besoin."
   } finally {
     loading.value = false
   }
@@ -161,6 +169,7 @@ export function useCharacter() {
   return {
     character,
     loading,
+    loadError,
     saveStatus,
     abilityModifier,
   }

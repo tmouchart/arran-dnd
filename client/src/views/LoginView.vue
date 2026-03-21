@@ -1,31 +1,31 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { login } from '../composables/useAuth'
+import { ref, onMounted } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { login } from "../composables/useAuth";
 
-const router = useRouter()
-const route = useRoute()
+const router = useRouter();
+const route = useRoute();
 
-const username = ref('')
-const password = ref('')
-const error = ref('')
-const loading = ref(false)
+const username = ref("");
+const password = ref("");
+const error = ref("");
+const loading = ref(false);
 
 onMounted(() => {
-  const pre = route.query.username
-  if (typeof pre === 'string' && pre) username.value = pre
-})
+  const pre = route.query.username;
+  if (typeof pre === "string" && pre) username.value = pre;
+});
 
 async function submit() {
-  error.value = ''
-  loading.value = true
+  error.value = "";
+  loading.value = true;
   try {
-    await login(username.value.trim(), password.value)
-    router.push('/')
+    await login(username.value.trim(), password.value);
+    router.push("/");
   } catch (err) {
-    error.value = err instanceof Error ? err.message : 'Erreur de connexion'
+    error.value = err instanceof Error ? err.message : "Erreur de connexion";
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 </script>
@@ -60,7 +60,7 @@ async function submit() {
         <p v-if="error" class="login-error">{{ error }}</p>
 
         <button type="submit" class="btn primary login-btn" :disabled="loading">
-          {{ loading ? 'Connexion…' : 'Se connecter' }}
+          {{ loading ? "Connexion…" : "Se connecter" }}
         </button>
       </form>
     </div>

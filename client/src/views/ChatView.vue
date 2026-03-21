@@ -1,80 +1,92 @@
 <script setup lang="ts">
-import { ref, nextTick, onMounted } from 'vue'
-import MarkdownIt from 'markdown-it'
-import DOMPurify from 'dompurify'
-import { streamChat, type ChatMessage } from '../api/chat'
-import { SendHorizonal, SquarePen } from 'lucide-vue-next'
-import { useCharacter, loadCharacter } from '../composables/useCharacter'
-const input = ref('')
-const messages = ref<ChatMessage[]>([])
-const loading = ref(false)
-const error = ref<string | null>(null)
-const threadEl = ref<HTMLElement | null>(null)
-const textareaEl = ref<HTMLTextAreaElement | null>(null)
+import { ref, nextTick, onMounted } from "vue";
+import MarkdownIt from "markdown-it";
+import DOMPurify from "dompurify";
+import { streamChat, type ChatMessage } from "../api/chat";
+import { SendHorizonal, SquarePen } from "lucide-vue-next";
+import { useCharacter, loadCharacter } from "../composables/useCharacter";
+const input = ref("");
+const messages = ref<ChatMessage[]>([]);
+const loading = ref(false);
+const error = ref<string | null>(null);
+const threadEl = ref<HTMLElement | null>(null);
+const textareaEl = ref<HTMLTextAreaElement | null>(null);
 
-const { character } = useCharacter()
+const { character, loadError } = useCharacter();
 
 onMounted(() => {
-  if (!character.value.id) loadCharacter()
-})
+  if (!character.value.id) loadCharacter();
+});
 
-let scrollPending = false
+let scrollPending = false;
 function scrollToBottom() {
-  if (scrollPending) return
-  scrollPending = true
+  if (scrollPending) return;
+  scrollPending = true;
   nextTick(() => {
-    scrollPending = false
-    if (threadEl.value) threadEl.value.scrollTop = threadEl.value.scrollHeight
-  })
+    scrollPending = false;
+    if (threadEl.value) threadEl.value.scrollTop = threadEl.value.scrollHeight;
+  });
 }
 
 const markdown = new MarkdownIt({
   html: false,
   linkify: true,
   breaks: true,
-})
+});
 
 function renderAssistantContent(content: string): string {
-  return DOMPurify.sanitize(markdown.render(content))
+  return DOMPurify.sanitize(markdown.render(content));
 }
 
 async function submit() {
-  const text = input.value.trim()
-  if (!text || loading.value) return
-  error.value = null
-  const next: ChatMessage[] = [...messages.value, { role: 'user', content: text }]
-  const withAssistant: ChatMessage[] = [...next, { role: 'assistant', content: '' }]
-  messages.value = withAssistant
-  input.value = ''
-  loading.value = true
-  scrollToBottom()
+  const text = input.value.trim();
+  if (!text || loading.value) return;
+  error.value = null;
+  const next: ChatMessage[] = [
+    ...messages.value,
+    { role: "user", content: text },
+  ];
+  const withAssistant: ChatMessage[] = [
+    ...next,
+    { role: "assistant", content: "" },
+  ];
+  messages.value = withAssistant;
+  input.value = "";
+  loading.value = true;
+  scrollToBottom();
   try {
-    await streamChat(next, {
-      onDelta: (delta) => {
-        const last = messages.value[messages.value.length - 1]
-        if (!last || last.role !== 'assistant') return
-        last.content += delta
-        scrollToBottom()
+    await streamChat(
+      next,
+      {
+        onDelta: (delta) => {
+          const last = messages.value[messages.value.length - 1];
+          if (!last || last.role !== "assistant") return;
+          last.content += delta;
+          scrollToBottom();
+        },
+        onError: (msg) => {
+          error.value = msg;
+        },
       },
-      onError: (msg) => {
-        error.value = msg
-      },
-    }, character.value.id ? (character.value as unknown as Record<string, unknown>) : undefined)
+      character.value.id
+        ? (character.value as unknown as Record<string, unknown>)
+        : undefined,
+    );
   } catch (e) {
     if (!error.value) {
-      error.value = e instanceof Error ? e.message : 'Erreur inconnue'
+      error.value = e instanceof Error ? e.message : "Erreur inconnue";
     }
-    messages.value = next.slice(0, -1)
-    input.value = text
+    messages.value = next.slice(0, -1);
+    input.value = text;
   } finally {
-    loading.value = false
-    nextTick(() => textareaEl.value?.focus())
+    loading.value = false;
+    nextTick(() => textareaEl.value?.focus());
   }
 }
 
 function clearChat() {
-  messages.value = []
-  error.value = null
+  messages.value = [];
+  error.value = null;
 }
 </script>
 
@@ -83,18 +95,24 @@ function clearChat() {
     <header class="page-head">
       <div class="head-row">
         <h1>🔮 Isilwen, miroir astral</h1>
-        <button type="button" class="new-chat-btn" @click="clearChat" title="Nouvelle conversation">
+        <button
+          type="button"
+          class="new-chat-btn"
+          @click="clearChat"
+          title="Nouvelle conversation"
+        >
           <SquarePen :size="20" />
         </button>
       </div>
-      <p class="lede">
-        Pose une question à Isilwen sur les Terres d’Arran
-      </p>
+      <p class="lede">Pose une question à Isilwen sur les Terres d’Arran</p>
     </header>
+
+    <p v-if="loadError" class="error" role="alert">{{ loadError }}</p>
 
     <div ref="threadEl" class="thread" role="log">
       <p v-if="messages.length === 0" class="empty">
-        Commence par une question, par exemple : « Comment fonctionne l’initiative ? »
+        Commence par une question, par exemple : « Comment fonctionne
+        l’initiative ? »
       </p>
       <article
         v-for="(m, i) in messages"
@@ -102,7 +120,7 @@ function clearChat() {
         class="bubble"
         :data-role="m.role"
       >
-        <span class="who">{{ m.role === 'user' ? 'Vous' : 'Isilwen' }}</span>
+        <span class="who">{{ m.role === "user" ? "Vous" : "Isilwen" }}</span>
         <div
           v-if="m.role === 'assistant'"
           class="content assistant-content"
@@ -186,7 +204,10 @@ function clearChat() {
   background: var(--surface-2);
   color: var(--muted);
   cursor: pointer;
-  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  transition:
+    color 0.15s,
+    border-color 0.15s,
+    background 0.15s;
 }
 
 .new-chat-btn:hover {
@@ -230,7 +251,7 @@ function clearChat() {
   background: var(--surface-2);
 }
 
-.bubble[data-role='user'] {
+.bubble[data-role="user"] {
   border-color: color-mix(in srgb, var(--brand) 45%, var(--border));
   background: color-mix(in srgb, var(--brand) 16%, var(--surface-2));
 }
@@ -280,8 +301,9 @@ function clearChat() {
 }
 
 .content :deep(code) {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
-    monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
   background: color-mix(in srgb, var(--surface) 70%, black 12%);
   border-radius: 4px;
   padding: 0.08rem 0.25rem;

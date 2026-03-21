@@ -23,6 +23,7 @@ export interface ServerCharacter {
   skills: Character['skills']
   attacks: Character['attacks']
   paths: Character['paths']
+  mysticTalent: string | null | undefined
 }
 
 export async function fetchCharacter(id: number): Promise<ServerCharacter> {

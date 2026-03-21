@@ -1,163 +1,189 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { useRoute, RouterLink } from 'vue-router'
-import { useCharacter, loadCharacter } from '../composables/useCharacter'
-import { VOIES, VOIES_BY_ID, FAMILY_LABELS, FAMILY_ORDER, type Voie } from '../data/voies'
-import { PEUPLES, PEUPLES_BY_ID, PEUPLE_VOIES_BY_ID, type PeupleVoie } from '../data/peuples'
-import type { PathRow } from '../types/character'
+import { computed, ref, watch } from "vue";
+import { useRoute, RouterLink } from "vue-router";
+import { CirclePlus, CircleMinus } from "lucide-vue-next";
+import { useCharacter, loadCharacter } from "../composables/useCharacter";
+import {
+  VOIES,
+  VOIES_BY_ID,
+  FAMILY_LABELS,
+  FAMILY_ORDER,
+  type Voie,
+} from "../data/voies";
+import {
+  PEUPLES,
+  PEUPLES_BY_ID,
+  PEUPLE_VOIES_BY_ID,
+  type PeupleVoie,
+} from "../data/peuples";
+import type { PathRow } from "../types/character";
+import { MYSTIC_TALENTS } from "../data/mysticTalents";
+import { inferProfileFamily } from "../utils/inferProfileFamily";
 
-const { character, loading, saveStatus, abilityModifier } = useCharacter()
-const route = useRoute()
+const { character, loading, loadError, saveStatus, abilityModifier } = useCharacter();
+const route = useRoute();
 
-const id = route.query.id ? Number(route.query.id) : undefined
-loadCharacter(id)
+const id = route.query.id ? Number(route.query.id) : undefined;
+loadCharacter(id);
+
+function retryLoadSheet() {
+  loadCharacter(id);
+}
 
 // ── Ability list ──────────────────────────────────────────────────────────
 const abilityList = computed(() => [
-  { key: 'strength' as const, label: 'FOR' },
-  { key: 'dexterity' as const, label: 'DEX' },
-  { key: 'constitution' as const, label: 'CON' },
-  { key: 'intelligence' as const, label: 'INT' },
-  { key: 'wisdom' as const, label: 'SAG' },
-  { key: 'charisma' as const, label: 'CHA' },
-])
-
-// ── HP / MP bars ──────────────────────────────────────────────────────────
-const hpPct = computed(() => {
-  const max = character.value.hpMax || 1
-  return Math.min(100, Math.round((character.value.hpCurrent / max) * 100))
-})
-
-const mpPct = computed(() => {
-  const max = character.value.mpMax || 1
-  if (character.value.mpMax <= 0) return 0
-  return Math.min(100, Math.round((character.value.mpCurrent / max) * 100))
-})
+  { key: "strength" as const, label: "FOR" },
+  { key: "dexterity" as const, label: "DEX" },
+  { key: "constitution" as const, label: "CON" },
+  { key: "intelligence" as const, label: "INT" },
+  { key: "wisdom" as const, label: "SAG" },
+  { key: "charisma" as const, label: "CHA" },
+]);
 
 // ── Voies — points ────────────────────────────────────────────────────────
-const totalPoints = computed(() => character.value.level * 2)
+const totalPoints = computed(() => character.value.level * 2);
 
 function rankCost(rank: number): number {
   // cumulative cost to reach rank r: r≤2 costs 1pt each, r 3-5 cost 2pts each
-  return rank <= 2 ? rank : 2 + (rank - 2) * 2
+  return rank <= 2 ? rank : 2 + (rank - 2) * 2;
 }
 
 const spentPoints = computed(() =>
   character.value.paths.reduce((sum, p) => sum + rankCost(p.rank), 0),
-)
+);
 
-const remainingPoints = computed(() => totalPoints.value - spentPoints.value)
+const remainingPoints = computed(() => totalPoints.value - spentPoints.value);
 
 function incrementCost(currentRank: number): number {
-  return currentRank < 2 ? 1 : 2
+  return currentRank < 2 ? 1 : 2;
 }
 
 function canIncrease(p: PathRow): boolean {
-  return p.rank < 5 && remainingPoints.value >= incrementCost(p.rank)
+  return p.rank < 5 && remainingPoints.value >= incrementCost(p.rank);
 }
 
 function increaseRank(p: PathRow) {
-  if (canIncrease(p)) p.rank++
+  if (canIncrease(p)) p.rank++;
 }
 
 function decreaseRank(p: PathRow) {
-  if (p.rank > 0) p.rank--
+  if (p.rank > 0) p.rank--;
 }
 
 function removePath(i: number) {
-  character.value.paths.splice(i, 1)
+  character.value.paths.splice(i, 1);
 }
 
 // ── Voies — expand/collapse ───────────────────────────────────────────────
-const expandedSet = ref<Set<number>>(new Set())
+const expandedSet = ref<Set<number>>(new Set());
 
 function toggleExpand(i: number) {
-  const next = new Set(expandedSet.value)
-  if (next.has(i)) next.delete(i)
-  else next.add(i)
-  expandedSet.value = next
+  const next = new Set(expandedSet.value);
+  if (next.has(i)) next.delete(i);
+  else next.add(i);
+  expandedSet.value = next;
 }
 
 // ── Voie picker ───────────────────────────────────────────────────────────
-const showPicker = ref(false)
+const showPicker = ref(false);
+
+const inferredProfileFamily = computed(() =>
+  inferProfileFamily(character.value.paths),
+);
+
+watch(inferredProfileFamily, (fam) => {
+  if (fam !== "mystiques") character.value.mysticTalent = "";
+});
 
 const pickerByFamily = computed(() =>
-  FAMILY_ORDER.map(family => ({
+  FAMILY_ORDER.map((family) => ({
     family,
     label: FAMILY_LABELS[family],
     voies: VOIES.filter(
-      v =>
+      (v) =>
         v.family === family &&
-        !character.value.paths.find(p => p.id === v.id),
+        !character.value.paths.find((p) => p.id === v.id),
     ),
-  })).filter(g => g.voies.length > 0),
-)
+  })).filter((g) => g.voies.length > 0),
+);
 
 function addPath(voie: Voie) {
-  character.value.paths.push({ id: voie.id, name: voie.name, rank: 0 })
-  showPicker.value = false
+  character.value.paths.push({ id: voie.id, name: voie.name, rank: 0 });
+  showPicker.value = false;
 }
 
 // ── Attacks ───────────────────────────────────────────────────────────────
 function addAttack() {
-  character.value.attacks.push({ name: '', attackBonus: '', damage: '' })
+  character.value.attacks.push({ name: "", attackBonus: "", damage: "" });
 }
 
 function removeAttack(i: number) {
-  character.value.attacks.splice(i, 1)
+  character.value.attacks.splice(i, 1);
 }
 
 // ── Voie display helper ───────────────────────────────────────────────────
-const ALL_VOIES_BY_ID = { ...VOIES_BY_ID, ...PEUPLE_VOIES_BY_ID } as Record<string, Voie | PeupleVoie>
+const ALL_VOIES_BY_ID = { ...VOIES_BY_ID, ...PEUPLE_VOIES_BY_ID } as Record<
+  string,
+  Voie | PeupleVoie
+>;
 
 function voieData(p: PathRow): Voie | PeupleVoie | null {
-  return p.id ? (ALL_VOIES_BY_ID[p.id] ?? null) : null
+  return p.id ? (ALL_VOIES_BY_ID[p.id] ?? null) : null;
 }
 
 // ── Peuple & voie culturelle ──────────────────────────────────────────────
 const availableCultures = computed(() => {
-  const peuple = PEUPLES_BY_ID[character.value.people]
-  return peuple ? peuple.voiesCulturelles : []
-})
+  const peuple = PEUPLES_BY_ID[character.value.people];
+  return peuple ? peuple.voiesCulturelles : [];
+});
 
 /** Id de la voie culturelle actuellement choisie (dérivé des paths). */
 const selectedCultureId = computed(() => {
-  return character.value.paths.find(p => p.kind === 'culturelle')?.id ?? ''
-})
+  return character.value.paths.find((p) => p.kind === "culturelle")?.id ?? "";
+});
 
 /** Synchronise les voies de peuple dans paths quand le peuple change. */
 watch(
   () => character.value.people,
   (newPeople, oldPeople) => {
-    if (newPeople === oldPeople) return
+    if (newPeople === oldPeople) return;
     // Retire les anciennes voies de peuple et culturelle
     character.value.paths = character.value.paths.filter(
-      p => p.kind !== 'peuple' && p.kind !== 'culturelle',
-    )
+      (p) => p.kind !== "peuple" && p.kind !== "culturelle",
+    );
     // Ajoute les nouvelles voies de peuple (peut être 2 pour semi-elfes)
-    const peuple = PEUPLES_BY_ID[newPeople]
+    const peuple = PEUPLES_BY_ID[newPeople];
     if (peuple) {
-      const toAdd = peuple.voiesDePeuple.map(v => ({
-        id: v.id, name: v.name, rank: 0, kind: 'peuple' as const,
-      }))
-      character.value.paths.unshift(...toAdd)
+      const toAdd = peuple.voiesDePeuple.map((v) => ({
+        id: v.id,
+        name: v.name,
+        rank: 0,
+        kind: "peuple" as const,
+      }));
+      character.value.paths.unshift(...toAdd);
     }
   },
-)
+);
 
 function selectCulture(id: string) {
   // Retire l'ancienne voie culturelle
-  character.value.paths = character.value.paths.filter(p => p.kind !== 'culturelle')
-  if (!id) return
-  const voie = PEUPLE_VOIES_BY_ID[id]
-  if (!voie) return
+  character.value.paths = character.value.paths.filter(
+    (p) => p.kind !== "culturelle",
+  );
+  if (!id) return;
+  const voie = PEUPLE_VOIES_BY_ID[id];
+  if (!voie) return;
   // Insère après la/les voies de peuple
   const lastPeupleIdx = character.value.paths.reduce(
-    (last, p, i) => (p.kind === 'peuple' ? i : last), -1,
-  )
+    (last, p, i) => (p.kind === "peuple" ? i : last),
+    -1,
+  );
   character.value.paths.splice(lastPeupleIdx + 1, 0, {
-    id: voie.id, name: voie.name, rank: 0, kind: 'culturelle' as const,
-  })
+    id: voie.id,
+    name: voie.name,
+    rank: 0,
+    kind: "culturelle" as const,
+  });
 }
 </script>
 
@@ -166,16 +192,28 @@ function selectCulture(id: string) {
     <header class="page-head">
       <div class="page-head-row">
         <h1>Fiche personnage</h1>
-        <RouterLink to="/personnages" class="btn ghost small">← Liste</RouterLink>
+        <RouterLink to="/personnages" class="btn ghost small"
+          >← Liste</RouterLink
+        >
       </div>
-      <p v-if="saveStatus === 'saving'" class="save-status saving">Sauvegarde…</p>
-      <p v-else-if="saveStatus === 'error'" class="save-status error">Erreur de sauvegarde</p>
+      <p v-if="saveStatus === 'saving'" class="save-status saving">
+        Sauvegarde…
+      </p>
+      <p v-else-if="saveStatus === 'error'" class="save-status error">
+        Erreur de sauvegarde
+      </p>
     </header>
 
     <div v-if="loading" class="loading-msg">Chargement…</div>
 
-    <template v-else>
+    <div v-else-if="loadError" class="load-error sheet-load-error">
+      <p>{{ loadError }}</p>
+      <button type="button" class="btn ghost small" @click="retryLoadSheet">
+        Réessayer
+      </button>
+    </div>
 
+    <template v-else>
       <!-- Identité -->
       <section class="card identity">
         <h2>Identité</h2>
@@ -186,7 +224,12 @@ function selectCulture(id: string) {
           </label>
           <label class="field">
             <span>Niveau</span>
-            <input v-model.number="character.level" type="number" min="1" class="input narrow" />
+            <input
+              v-model.number="character.level"
+              type="number"
+              min="1"
+              class="input narrow"
+            />
           </label>
           <label class="field">
             <span>Profil</span>
@@ -196,7 +239,34 @@ function selectCulture(id: string) {
             <span>Peuple</span>
             <select v-model="character.people" class="input select">
               <option value="">— Choisir —</option>
-              <option v-for="p in PEUPLES" :key="p.id" :value="p.id">{{ p.name }}</option>
+              <option v-for="p in PEUPLES" :key="p.id" :value="p.id">
+                {{ p.name }}
+              </option>
+            </select>
+          </div>
+            <div class="field">
+            <span>Famille du profil</span>
+            <div
+              class="field-readonly input"
+              :class="'family-' + inferredProfileFamily"
+            >
+              {{ FAMILY_LABELS[inferredProfileFamily] }}
+            </div>
+          </div>
+          <div
+            v-if="inferredProfileFamily === 'mystiques'"
+            class="field span-2"
+          >
+            <span>Talent magique</span>
+            <select v-model="character.mysticTalent" class="input select">
+              <option value="">— Choisir —</option>
+              <option
+                v-for="t in MYSTIC_TALENTS"
+                :key="t.id"
+                :value="t.id"
+              >
+                {{ t.name }}
+              </option>
             </select>
           </div>
           <div v-if="availableCultures.length" class="field span-2">
@@ -204,10 +274,14 @@ function selectCulture(id: string) {
             <select
               :value="selectedCultureId"
               class="input select"
-              @change="selectCulture(($event.target as HTMLSelectElement).value)"
+              @change="
+                selectCulture(($event.target as HTMLSelectElement).value)
+              "
             >
               <option value="">— Choisir —</option>
-              <option v-for="c in availableCultures" :key="c.id" :value="c.id">{{ c.name }}</option>
+              <option v-for="c in availableCultures" :key="c.id" :value="c.id">
+                {{ c.name }}
+              </option>
             </select>
           </div>
         </div>
@@ -220,38 +294,54 @@ function selectCulture(id: string) {
           <div class="bar-block">
             <div class="bar-label">
               <span>Points de vie</span>
-              <span class="nums">{{ character.hpCurrent }} / {{ character.hpMax }}</span>
+              <div class="stat-stepper">
+                <button type="button" class="stepper-btn" @click="character.hpMax = Math.max(1, character.hpMax - 1)">
+                  <CircleMinus :size="18" />
+                </button>
+                <span class="nums">{{ character.hpMax }}</span>
+                <button type="button" class="stepper-btn" @click="character.hpMax++">
+                  <CirclePlus :size="18" />
+                </button>
+              </div>
             </div>
             <div class="bar-track">
-              <div class="bar-fill hp" :style="{ width: hpPct + '%' }" />
-            </div>
-            <div class="inline-edit">
-              <label>Courants <input v-model.number="character.hpCurrent" type="number" min="0" class="input narrow" /></label>
-              <label>Maximum <input v-model.number="character.hpMax" type="number" min="1" class="input narrow" /></label>
+              <div class="bar-fill hp" style="width: 100%" />
             </div>
           </div>
           <div class="bar-block">
             <div class="bar-label">
               <span>Points de mana</span>
-              <span class="nums">{{ character.mpCurrent }} / {{ character.mpMax }}</span>
+              <div class="stat-stepper">
+                <button type="button" class="stepper-btn" @click="character.mpMax = Math.max(0, character.mpMax - 1)">
+                  <CircleMinus :size="18" />
+                </button>
+                <span class="nums">{{ character.mpMax }}</span>
+                <button type="button" class="stepper-btn" @click="character.mpMax++">
+                  <CirclePlus :size="18" />
+                </button>
+              </div>
             </div>
             <div class="bar-track">
-              <div class="bar-fill mp" :style="{ width: character.mpMax > 0 ? mpPct + '%' : '0%' }" />
-            </div>
-            <div class="inline-edit">
-              <label>Courants <input v-model.number="character.mpCurrent" type="number" min="0" class="input narrow" /></label>
-              <label>Maximum <input v-model.number="character.mpMax" type="number" min="0" class="input narrow" /></label>
+              <div class="bar-fill mp" :style="{ width: character.mpMax > 0 ? '100%' : '0%' }" />
             </div>
           </div>
         </div>
         <div class="grid-2 tight">
           <label class="field">
             <span>Défense</span>
-            <input v-model.number="character.defense" type="number" class="input narrow" />
+            <input
+              v-model.number="character.defense"
+              type="number"
+              class="input narrow"
+            />
           </label>
           <label class="field">
             <span>Initiative (bonus)</span>
-            <input v-model.number="character.initiativeBonus" type="number" class="input narrow" />
+            <input
+              v-model.number="character.initiativeBonus"
+              type="number"
+              class="input narrow"
+            />
           </label>
         </div>
       </section>
@@ -262,9 +352,14 @@ function selectCulture(id: string) {
         <div class="abilities">
           <div v-for="a in abilityList" :key="a.key" class="ability">
             <span class="abil-label">{{ a.label }}</span>
-            <input v-model.number="character.abilities[a.key]" type="number" class="input score" />
+            <input
+              v-model.number="character.abilities[a.key]"
+              type="number"
+              class="input score"
+            />
             <span class="mod">
-              {{ abilityModifier(character.abilities[a.key]) >= 0 ? '+' : '' }}{{ abilityModifier(character.abilities[a.key]) }}
+              {{ abilityModifier(character.abilities[a.key]) >= 0 ? "+" : ""
+              }}{{ abilityModifier(character.abilities[a.key]) }}
             </span>
           </div>
         </div>
@@ -279,7 +374,13 @@ function selectCulture(id: string) {
               {{ spentPoints }} / {{ totalPoints }} pts
             </span>
           </div>
-          <button type="button" class="btn ghost small" @click="showPicker = true">+ Ajouter</button>
+          <button
+            type="button"
+            class="btn ghost small"
+            @click="showPicker = true"
+          >
+            + Ajouter
+          </button>
         </div>
 
         <ul v-if="character.paths.length" class="voie-list">
@@ -288,8 +389,14 @@ function selectCulture(id: string) {
             <div class="voie-header" @click="toggleExpand(i)">
               <div class="voie-name-block">
                 <span class="voie-name">{{ p.name }}</span>
-                <span v-if="p.kind === 'peuple'" class="voie-kind-badge peuple">Peuple</span>
-                <span v-else-if="p.kind === 'culturelle'" class="voie-kind-badge culturelle">Culture</span>
+                <span v-if="p.kind === 'peuple'" class="voie-kind-badge peuple"
+                  >Peuple</span
+                >
+                <span
+                  v-else-if="p.kind === 'culturelle'"
+                  class="voie-kind-badge culturelle"
+                  >Culture</span
+                >
                 <span class="voie-dots">
                   <span
                     v-for="dot in 5"
@@ -306,21 +413,27 @@ function selectCulture(id: string) {
                   :disabled="p.rank <= 0"
                   @click="decreaseRank(p)"
                   title="Réduire le rang"
-                >−</button>
+                >
+                  −
+                </button>
                 <button
                   type="button"
                   class="rank-btn"
                   :disabled="!canIncrease(p)"
                   @click="increaseRank(p)"
                   title="Augmenter le rang"
-                >+</button>
+                >
+                  +
+                </button>
                 <button
                   v-if="!p.kind"
                   type="button"
                   class="remove-btn"
                   @click="removePath(i)"
                   title="Retirer cette voie"
-                >×</button>
+                >
+                  ×
+                </button>
               </div>
             </div>
 
@@ -355,42 +468,89 @@ function selectCulture(id: string) {
       <section class="card">
         <div class="card-head">
           <h2>Attaques</h2>
-          <button type="button" class="btn ghost small" @click="addAttack">+ Ajouter</button>
+          <button type="button" class="btn ghost small" @click="addAttack">
+            + Ajouter
+          </button>
         </div>
         <ul v-if="character.attacks.length" class="attack-list">
-          <li v-for="(atk, i) in character.attacks" :key="i" class="attack-card">
-            <input v-model="atk.name" type="text" class="input" placeholder="Arme ou sort" />
+          <li
+            v-for="(atk, i) in character.attacks"
+            :key="i"
+            class="attack-card"
+          >
+            <input
+              v-model="atk.name"
+              type="text"
+              class="input"
+              placeholder="Arme ou sort"
+            />
             <div class="grid-2 tight">
               <label class="field">
                 <span>Attaque</span>
-                <input v-model="atk.attackBonus" type="text" class="input" placeholder="+5" />
+                <input
+                  v-model="atk.attackBonus"
+                  type="text"
+                  class="input"
+                  placeholder="+5"
+                />
               </label>
               <label class="field">
                 <span>Dégâts</span>
-                <input v-model="atk.damage" type="text" class="input" placeholder="1d8+3" />
+                <input
+                  v-model="atk.damage"
+                  type="text"
+                  class="input"
+                  placeholder="1d8+3"
+                />
               </label>
             </div>
-            <input v-model="atk.notes" type="text" class="input" placeholder="Notes (portée, spécial…)" />
-            <button type="button" class="btn ghost small" @click="removeAttack(i)">Retirer</button>
+            <input
+              v-model="atk.notes"
+              type="text"
+              class="input"
+              placeholder="Notes (portée, spécial…)"
+            />
+            <button
+              type="button"
+              class="btn ghost small"
+              @click="removeAttack(i)"
+            >
+              Retirer
+            </button>
           </li>
         </ul>
         <p v-else class="muted">Ajoute tes attaques ou sorts offensifs.</p>
       </section>
-
     </template>
   </div>
 
   <!-- Voie picker overlay -->
   <Teleport to="body">
-    <div v-if="showPicker" class="picker-overlay" @click.self="showPicker = false">
+    <div
+      v-if="showPicker"
+      class="picker-overlay"
+      @click.self="showPicker = false"
+    >
       <div class="picker-panel">
         <div class="picker-head">
           <h3>Choisir une voie</h3>
-          <button type="button" class="btn ghost small" @click="showPicker = false">✕</button>
+          <button
+            type="button"
+            class="btn ghost small"
+            @click="showPicker = false"
+          >
+            ✕
+          </button>
         </div>
         <div class="picker-body">
-          <div v-for="group in pickerByFamily" :key="group.family" class="picker-group">
-            <h4 class="picker-family" :class="'family-' + group.family">{{ group.label }}</h4>
+          <div
+            v-for="group in pickerByFamily"
+            :key="group.family"
+            class="picker-group"
+          >
+            <h4 class="picker-family" :class="'family-' + group.family">
+              {{ group.label }}
+            </h4>
             <ul class="picker-voies">
               <li
                 v-for="v in group.voies"
@@ -443,9 +603,32 @@ function selectCulture(id: string) {
   text-align: center;
 }
 
-.save-status { margin: 0; font-size: 0.82rem; font-weight: 600; }
-.save-status.saving { color: var(--muted); }
-.save-status.error  { color: var(--danger); }
+.sheet-load-error {
+  margin-bottom: 1rem;
+  padding: 1rem 1.1rem;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--border));
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface));
+  color: var(--text);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.sheet-load-error p {
+  margin: 0 0 0.75rem;
+}
+
+.save-status {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.save-status.saving {
+  color: var(--muted);
+}
+.save-status.error {
+  color: var(--danger);
+}
 
 /* ── Cards ── */
 .card {
@@ -474,7 +657,9 @@ function selectCulture(id: string) {
   gap: 0.6rem;
 }
 
-.card-head h2 { margin: 0; }
+.card-head h2 {
+  margin: 0;
+}
 
 /* ── Grid ── */
 .grid-2 {
@@ -484,11 +669,18 @@ function selectCulture(id: string) {
 }
 
 @media (min-width: 520px) {
-  .grid-2 { grid-template-columns: 1fr 1fr; gap: 0.75rem 0.95rem; }
-  .grid-2 .span-2 { grid-column: 1 / -1; }
+  .grid-2 {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem 0.95rem;
+  }
+  .grid-2 .span-2 {
+    grid-column: 1 / -1;
+  }
 }
 
-.grid-2.tight { margin-top: 0.7rem; }
+.grid-2.tight {
+  margin-top: 0.7rem;
+}
 
 .field {
   display: flex;
@@ -510,11 +702,28 @@ function selectCulture(id: string) {
   font-size: inherit;
 }
 
-.input.narrow { max-width: 6rem; }
-.input.score  { width: 3.25rem; text-align: center; font-size: 1.1rem; }
+.field-readonly.input {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  cursor: default;
+}
+
+.input.narrow {
+  max-width: 6rem;
+}
+.input.score {
+  width: 3.25rem;
+  text-align: center;
+  font-size: 1.1rem;
+}
 
 /* ── Bars ── */
-.bars { display: flex; flex-direction: column; gap: 0.9rem; }
+.bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
 
 .bar-label {
   display: flex;
@@ -524,7 +733,10 @@ function selectCulture(id: string) {
   gap: 0.45rem;
 }
 
-.nums { font-variant-numeric: tabular-nums; color: var(--muted); }
+.nums {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
 
 .bar-track {
   height: 12px;
@@ -540,29 +752,40 @@ function selectCulture(id: string) {
   transition: width 0.25s ease;
 }
 
-.bar-fill.hp { background: linear-gradient(90deg, #8d3c3c, #c95f56); }
-.bar-fill.mp { background: linear-gradient(90deg, #425f8f, #678fc2); }
-
-.inline-edit {
-  display: flex;
-  gap: 0.65rem;
-  margin-top: 0.5rem;
-  flex-wrap: wrap;
+.bar-fill.hp {
+  background: linear-gradient(90deg, #8d3c3c, #c95f56);
+}
+.bar-fill.mp {
+  background: linear-gradient(90deg, #425f8f, #678fc2);
 }
 
-.inline-edit label {
+.stat-stepper {
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.75rem;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.stepper-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
   color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s;
+}
+
+.stepper-btn:hover {
+  color: var(--accent-strong);
 }
 
 /* ── Abilities ── */
 .abilities {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(6.35rem, 1fr));
-  gap: 0.52rem;
+  grid-template-columns: repeat(auto-fill, minmax(5rem, 1fr));
+  gap: 0.75rem;
 }
 
 .ability {
@@ -570,10 +793,7 @@ function selectCulture(id: string) {
   flex-direction: column;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.52rem;
-  border-radius: 10px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+  padding: 0.25rem 0;
 }
 
 .abil-label {
@@ -675,7 +895,9 @@ function selectCulture(id: string) {
   border-radius: 50%;
   border: 1.5px solid var(--border-strong);
   background: transparent;
-  transition: background 150ms ease, border-color 150ms ease;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease;
 }
 
 .dot.filled {
@@ -704,7 +926,9 @@ function selectCulture(id: string) {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 120ms ease, border-color 120ms ease;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease;
   padding: 0;
   line-height: 1;
 }
@@ -731,7 +955,9 @@ function selectCulture(id: string) {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 120ms ease, color 120ms ease;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
   padding: 0;
   line-height: 1;
 }
@@ -863,10 +1089,16 @@ function selectCulture(id: string) {
   border: 1px solid color-mix(in srgb, #3a8a4a 30%, transparent);
 }
 
-:root[data-theme='dark'] .voie-kind-badge.culturelle { color: #7bcf8a; }
+:root[data-theme="dark"] .voie-kind-badge.culturelle {
+  color: #7bcf8a;
+}
 
 /* ── Misc ── */
-.muted { color: var(--muted); font-size: 0.9rem; margin: 0; }
+.muted {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
 
 .btn.small {
   min-height: 38px;
@@ -875,7 +1107,10 @@ function selectCulture(id: string) {
 }
 
 @media (min-width: 760px) {
-  .card { padding: 1.1rem 1.2rem; margin-bottom: 1rem; }
+  .card {
+    padding: 1.1rem 1.2rem;
+    margin-bottom: 1rem;
+  }
 }
 
 /* ── Voie Picker overlay ── */
@@ -959,13 +1194,29 @@ function selectCulture(id: string) {
   display: inline-block;
 }
 
-.family-combattants { background: color-mix(in srgb, var(--brand) 16%, transparent); color: var(--brand-strong); }
-.family-aventuriers { background: color-mix(in srgb, #3a8a4a 14%, transparent); color: #2a6a38; }
-.family-mystiques   { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent-strong); }
-.family-prestige    { background: color-mix(in srgb, #8a6a20 14%, transparent); color: #5c4510; }
+.family-combattants {
+  background: color-mix(in srgb, var(--brand) 16%, transparent);
+  color: var(--brand-strong);
+}
+.family-aventuriers {
+  background: color-mix(in srgb, #3a8a4a 14%, transparent);
+  color: #2a6a38;
+}
+.family-mystiques {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent-strong);
+}
+.family-prestige {
+  background: color-mix(in srgb, #8a6a20 14%, transparent);
+  color: #5c4510;
+}
 
-:root[data-theme='dark'] .family-aventuriers { color: #7bcf8a; }
-:root[data-theme='dark'] .family-prestige    { color: #d4a843; }
+:root[data-theme="dark"] .family-aventuriers {
+  color: #7bcf8a;
+}
+:root[data-theme="dark"] .family-prestige {
+  color: #d4a843;
+}
 
 .picker-voies {
   list-style: none;
@@ -989,5 +1240,8 @@ function selectCulture(id: string) {
   color: var(--accent-strong);
 }
 
-.picker-empty { text-align: center; padding: 1rem 0; }
+.picker-empty {
+  text-align: center;
+  padding: 1rem 0;
+}
 </style>
