@@ -18,7 +18,6 @@ COPY client/package.json client/package.json
 COPY server/package.json server/package.json
 RUN npm ci --omit=dev
 COPY --from=builder /app/server/dist ./server/dist
-COPY --from=builder /app/server/src/db/migrations ./server/dist/db/migrations
 COPY --from=builder /app/client/dist ./client/dist
 COPY --from=builder /app/knowledge ./knowledge
 CMD ["node", "server/dist/index.js"]

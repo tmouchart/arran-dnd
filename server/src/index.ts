@@ -1,4 +1,5 @@
 import "./loadEnv.js";
+import { runMigrations } from "./db/runMigrations.js";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
@@ -453,6 +454,18 @@ if (existsSync(CLIENT_DIST)) {
 }
 
 const PORT = Number(process.env.PORT) || 3001;
-app.listen(PORT, () => {
-  console.log(`arran-dnd API listening on http://localhost:${PORT}`);
+
+async function main(): Promise<void> {
+  const databaseUrl = process.env.DATABASE_URL;
+  if (databaseUrl) {
+    await runMigrations(databaseUrl);
+  }
+  app.listen(PORT, () => {
+    console.log(`arran-dnd API listening on http://localhost:${PORT}`);
+  });
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
 });
