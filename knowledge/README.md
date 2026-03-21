@@ -22,6 +22,7 @@ Curated rules and references for the **in-app Q&A** (Claude) and for agents work
 | [topics/races.md](topics/races.md) | Peuples jouables : lore, roleplay, modificateurs, voie de peuple, voies culturelles |
 | [topics/voies-de-profil.md](topics/voies-de-profil.md) | Detailed profile paths, ranks, effects and prerequisites |
 | [topics/voies-de-prestige.md](topics/voies-de-prestige.md) | Prestige paths and progression details |
+| [topics/equipement.md](topics/equipement.md) | Currency, weapons/armor tables, encumbrance, gear, mounts, lodging, poisons (summary) |
 
 ## Reference data
 

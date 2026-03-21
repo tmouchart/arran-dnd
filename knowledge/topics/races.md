@@ -55,19 +55,45 @@ Les Elfes sont présentés comme des esprits **immortels** : cette longévité n
 
 Le livre distingue **quatre cultures** : **Bleus**, **Sylvains**, **Blancs**, **Noirs**. Chacune propose une voie culturelle à la création.
 
-#### Elfes bleus — extraits documentés dans `knowledge/`
+#### Elfes bleus
 
-Les rangs ci-dessous reprennent les **effets** mentionnés dans `monde-arran.md` ; **l’ordre des rangs et les intitulés exacts des capacités** doivent être vérifiés dans le PDF.
+Liés à l’élément primordial de l’**eau**, la peau teintée d’azur. Vivent dans des **villes portuaires** au nord des Terres d’Arran (îles du Nodrënn, capitale **Elsémur**). Fiers, honnêtes, droits — jugés respectables ou hautains selon les autres peuples. Souffrent d’une **dépression** lorsqu’éloignés de l’eau trop longtemps. De nombreux Elfes bleus sont **marins** ou **pêcheurs** et vivent sur les mers.
 
-1. **Équilibre parfait** *(libellé à confirmer)* — se relever est une **action gratuite** ; +5 aux tests d’**équilibre**.
-2. **Imperturbable** *(libellé à confirmer)* — +5 aux tests pour résister aux effets mentaux (peur, intimidation, envoûtements) ; **+3** à l’Initiative.
-3. **Les enseignements de l’eau** *(libellé à confirmer)* — peut respirer sous l’eau **15 minutes** ; navigation en profondeur **sans soleil** ; tolère le froid et la pression.
-4. *(Capacité intermédiaire non reprise dans le corpus — à compléter depuis le livre.)*
-5. **Parangon elfe bleu** *(libellé à confirmer)* — +2 CON et +2 SAG.
+1. **Équilibre parfait** — habitué aux vagues, se relever est une **action gratuite** ; +5 aux tests d’**équilibre**.
+2. **Natif d’Elsémur** — choisir une caste : **religieuse** (capacité de rang 1 ou 2 de la **divination** ou du **mysticisme**) ou **guerrière** (capacité de rang 1 ou 2 de la **guerre** ou du **combat à deux armes**). Au rang 4 de cette voie, une capacité supplémentaire de rang 1 ou 2 dans la même caste.
+3. **Imperturbable** — +5 aux tests pour résister aux effets mentaux (peur, intimidation, envoûtements) ; **+3** à l’Initiative.
+4. **Les enseignements de l’eau** — peut retenir sa respiration sous l’eau **15 minutes** ; au plus profond des océans, n’a pas besoin de la lumière du soleil pour se guider ; supporte les températures glaciales et la pression sans problème.
+5. **Parangon elfe bleu** — +2 CON et +2 SAG.
 
-#### Elfes sylvains, blancs et noirs
+#### Elfes sylvains
 
-**Non détaillés dans `knowledge/` à ce jour.** À ajouter depuis le *Livre du joueur* (même gabarit : 5 rangs par voie culturelle).
+Vivent en osmose avec la nature dans les grandes forêts (Duhann, Daëdenn, Céliandes). Peau mate, regard perçant. Protègent les arbres centenaires et les vestiges de leurs anciennes cités contre l'avancée humaine et les incursions orques. Beaucoup tissent un lien avec un **animal compagnon** qui développe son intelligence à leur contact. Depuis la défaite des armées de Lah'saa, de plus en plus de Sylvains quittent la forêt pour parcourir les Terres d'Arran.
+
+1. **Le chant de la Terre** — +5 aux tests de **DEX** et **SAG** lorsqu'il est en forêt.
+2. **Enfant de la forêt** — choisir une caste : **religieuse** (capacité de rang 1 ou 2 des **arts druidiques** ou des **forêts**) ou **guerrière** (capacité de rang 1 ou 2 de l'**archerie** ou du **compagnon animal**). Au rang 4 de cette voie, une capacité supplémentaire de rang 1 ou 2 dans la même caste.
+3. **Archer émérite** — avec un arc, obtient une réussite critique sur un résultat de **19–20** au d20 ; gagne la **maîtrise des armes de trait**.
+4. **Compagnon animal supérieur** — gagne le rang 3 de la **voie du Compagnon animal** (p. 170). S'il possède déjà cette capacité, son compagnon gagne **+2 en initiative, DEF, attaque et DM**.
+5. **Parangon elfe vert** — +2 DEX et +2 SAG.
+
+#### Elfes blancs
+
+Originaires de lointaines îles de l'Ouest, peau très pâle. Longtemps considérés comme éteints avant leur implication contre les armées de Lah'saa. Cherchent à incarner la **perfection** en toute chose — intransigeants envers les autres, encore plus envers eux-mêmes. Rares en dehors de leurs îles en raison d'un grave **problème de fécondité** aux origines inconnues ; leur population décroît depuis des siècles. Voir un Elfe blanc est toujours un évènement.
+
+1. **Mémoire du monde** — +5 aux tests d'**INT** relatifs aux connaissances et à l'érudition.
+2. **Prédispositions magiques** — capacité de rang 1 ou 2 de la **voie de l'envoûtement** ou de la **voie de la magie élémentaliste**. Au rang 4 de cette voie, capacité supplémentaire de rang 1 ou 2 dans l'une de ces deux voies.
+3. **Lancier d'élite** — ignore les malus liés aux **armes d'hast** ; gagne la **maîtrise des armes d'hast** ; +1 aux tests d'attaque et aux DM avec une arme d'hast.
+4. **Blancheur immaculée** — n'a besoin que de la **moitié** du repos, de la nourriture et de la boisson d'un Elfe normal ; **immunisé** aux effets des poisons et des maladies.
+5. **Parangon elfe blanc** — +2 INT et +2 SAG.
+
+#### Elfes noirs
+
+Le plus grand **secret et honte** du peuple elfique. Au sein de toutes les communautés elfiques naissent des individus portant une part sombre qui se révèle à l'adolescence — une colère sourde pouvant exploser en violence incontrôlable. Des **rabatteurs** parcourent le monde pour les conduire à la citadelle de **Slurce**, où un entraînement impitoyable en fait des **assassins d'exception**. Leur peau s'assombrit progressivement durant la formation. Officiellement, ils se font passer pour des artistes, comédiens ou savants ; Slurce est présentée comme une prestigieuse académie. **Noms** : à leur entrée à Slurce, ils changent de nom — on garde la ou les deux premières syllabes et on ajoute le suffixe « yn » (ex. Vulm → Vul'yn, Laewen → Lae'yn).
+
+1. **Artiste de l'ombre** — couverture d'artiste (danse, théâtre, peinture, poésie) : +5 à tous les tests de **CHA** en rapport avec le domaine choisi, et aux tests pour trouver ou obtenir des **informations secrètes ou sensibles**.
+2. **Apprenti de Slurce** — capacité de rang 1 ou 2 de la **voie de l'assassinat** ou de la **voie des sombres savoirs**. Au rang 4 de cette voie, capacité supplémentaire de rang 1 ou 2 dans l'une de ces deux voies.
+3. **Armes secrètes** — peut dissimuler jusqu'à **deux armes légères** (d6 max) ; test de **DEX opposé à SAG** de l'adversaire : en cas de réussite, la première attaque portée par chaque arme surprend l'adversaire et inflige les **DM maximaux** (y compris les dés bonus).
+4. **Noir comme le sang** — une fois par combat, lorsqu'il tombe à **0 PV**, peut continuer à agir normalement ; une nouvelle attaque réussie infligeant au moins 1 DM l'achève. Tant qu'il est à 0 PV : **+2 à tous ses tests**.
+5. **Parangon elfe noir** — +2 DEX et +2 CHA.
 
 ---
 

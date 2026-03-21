@@ -15,5 +15,6 @@ Faits vérifiés à partir du PDF (chapitres 2–6, pages 42–166).
 - **Peuples / races** — `races.md` : fiches détaillées des peuples/races avec voies culturelles complètes.
 - **Voies de profil** — `voies-de-profil.md` : voies liées aux profils (guerrier, rôdeur, mage, etc.).
 - **Voies de prestige** — `voies-de-prestige.md` : voies de prestige avancées.
+- **Équipement** — `equipement.md` : devises, armes (tableaux), armures et encombrement, matériel, montures, hébergement, biens, soins, poisons.
 
 Si une règle précise manque ici, indiquer de consulter le livre officiel.
