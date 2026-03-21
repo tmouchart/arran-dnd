@@ -1,0 +1,336 @@
+import type { Capacite } from './voies'
+
+export interface PeupleVoie {
+  id: string
+  name: string
+  capacites: [Capacite, Capacite, Capacite, Capacite, Capacite]
+}
+
+export interface Peuple {
+  id: string
+  name: string
+  /** Habituellement 1 voie, mais 2 pour Semi-Elfe / Sang-mêlé (max rang 3 chacune). */
+  voiesDePeuple: PeupleVoie[]
+  voiesCulturelles: PeupleVoie[]
+}
+
+// ── ELFES ─────────────────────────────────────────────────────────────────────
+
+const voiePeupleElfe: PeupleVoie = {
+  id: 'peuple-elfe',
+  name: 'Voie du peuple elfe',
+  capacites: [
+    { name: 'Grâce elfique', description: '+5 à tous les tests de CHA et aux tests de déplacement silencieux.' },
+    { name: 'Essence magique', description: '+2 en DEF contre les attaques magiques et aux tests pour résister à la magie ; +4 à partir du rang 4 de cette voie.' },
+    { name: 'Maîtrise des armes elfiques', description: 'Peut porter et utiliser les armes et armures de la tradition elfique pour lesquelles il possède la formation martiale.' },
+    { name: 'Empathie elfique', description: 'Retrouve intuitivement les êtres chers ; ressent leur santé physique et psychologique ; perçoit un danger les menaçant.' },
+    { name: 'Immortalité', description: '+2 CON ; les blessures guérissent plus vite ; en dépensant 1 PR, regagne [2 × DV + niveau + Mod. CON] PV.' },
+  ],
+}
+
+const voiePeupleHumain: PeupleVoie = {
+  id: 'peuple-humain',
+  name: 'Voie du peuple humain',
+  capacites: [
+    { name: 'Adaptable', description: 'Après un échec à un test de Carac., +5 au prochain test pour retenter la même action au tour suivant.' },
+    { name: 'Loup parmi les loups', description: '+1 DM contre les humanoïdes (+2 à partir du rang 4 de cette voie).' },
+    { name: 'Enseignement exotique', description: 'Choisir une formation martiale et une tradition d\'un peuple des Terres d\'Arran ; ne peut porter/utiliser que les armes et armures maîtrisées et forgées dans cette tradition.' },
+    { name: 'Versatile', description: 'Choisir une capacité de rang 1 ou 2 de n\'importe quelle voie de profil.' },
+    { name: 'Dépassement', description: 'Augmenter une Carac. au choix de +2.' },
+  ],
+}
+
+// ── NAINS ─────────────────────────────────────────────────────────────────────
+
+const voiePeupleNain: PeupleVoie = {
+  id: 'peuple-nain',
+  name: 'Voie du peuple nain',
+  capacites: [
+    { name: 'Résistance', description: '+5 à tous les tests de CON.' },
+    { name: 'Solide comme un roc', description: 'Réduit tous les DM subis de 1 (minimum 1 DM par attaque reçue). Cumulable avec d\'autres réductions.' },
+    { name: 'Maîtrise des armes runiques', description: 'Peut porter et utiliser les armes et armures de la tradition naine pour lesquelles il a la formation martiale.' },
+    { name: 'Résistance à la magie', description: 'Cible d\'un sort (sauf zone) : lance 1d4 — si le résultat est supérieur au rang du sort, ignorer les effets du sort.' },
+    { name: 'Ténacité naine', description: 'Une fois par jour, quand le PJ tombe à 0 PV : peut dépenser 1 PR et en appliquer les effets immédiatement ; +2 SAG.' },
+  ],
+}
+
+// ── PEAUX VERTES ──────────────────────────────────────────────────────────────
+
+const voiePeuplePeauxVertes: PeupleVoie = {
+  id: 'peuple-peaux-vertes',
+  name: 'Voie du peuple peau verte',
+  capacites: [
+    { name: 'Pour l\'honneur', description: '+5 aux tests de Carac. pour toute interaction sociale avec d\'autres Peaux vertes.' },
+    { name: 'Frappe déloyale', description: 'Une fois par adversaire, après une attaque de contact ratée : annonce une feinte → test opposé (p.110) → aveugler, désarmer ou repousser.' },
+    { name: 'Maîtrise des armes sauvages', description: 'Armes et armures traditionnelles du peuple si formation martiale. Pour une Aberration, la tradition suit la voie culturelle choisie.' },
+    { name: 'Croyances païennes', description: 'Tatouage tribal au choix : taureau (+5 FOR), ours (+5 CON), panthère (+5 DEX), chouette (+5 SAG).' },
+    { name: 'Héros tribal', description: 'Dépenser 1 PC pour annuler un coup critique subi (devient coup normal) ; 1 fois/jour, 2 PC pour transformer une réussite adverse en échec (pas de réussite critique).' },
+  ],
+}
+
+// ── VOIES CULTURELLES ─────────────────────────────────────────────────────────
+
+// — Elfes —
+
+const cultureElfeBleu: PeupleVoie = {
+  id: 'culture-elfe-bleu',
+  name: 'Culture elfique — Elfe bleu',
+  capacites: [
+    { name: 'Équilibre parfait', description: 'Se relever est une action gratuite ; +5 aux tests d\'équilibre.' },
+    { name: 'Imperturbable', description: '+5 aux tests pour résister aux effets mentaux (peur, intimidation, envoûtements) ; +3 à l\'Initiative.' },
+    { name: 'Les enseignements de l\'eau', description: 'Peut respirer sous l\'eau 15 minutes ; navigation en profondeur sans soleil ; tolère le froid et la pression.' },
+    { name: '(À compléter)', description: 'Capacité de rang 4 non encore retranscrite — se référer au Livre du joueur officiel.' },
+    { name: 'Parangon elfe bleu', description: '+2 CON et +2 SAG.' },
+  ],
+}
+
+const cultureElfeSylvain: PeupleVoie = {
+  id: 'culture-elfe-sylvain',
+  name: 'Culture elfique — Elfe sylvain',
+  capacites: [
+    { name: '(À compléter)', description: 'Rang 1 — se référer au Livre du joueur officiel.' },
+    { name: '(À compléter)', description: 'Rang 2 — se référer au Livre du joueur officiel.' },
+    { name: '(À compléter)', description: 'Rang 3 — se référer au Livre du joueur officiel.' },
+    { name: '(À compléter)', description: 'Rang 4 — se référer au Livre du joueur officiel.' },
+    { name: '(À compléter)', description: 'Rang 5 — se référer au Livre du joueur officiel.' },
+  ],
+}
+
+const cultureElfeBlanc: PeupleVoie = {
+  id: 'culture-elfe-blanc',
+  name: 'Culture elfique — Elfe blanc',
+  capacites: [
+    { name: '(À compléter)', description: 'Rang 1 — se référer au Livre du joueur officiel.' },
+    { name: '(À compléter)', description: 'Rang 2 — se référer au Livre du joueur officiel.' },
+    { name: '(À compléter)', description: 'Rang 3 — se référer au Livre du joueur officiel.' },
+    { name: '(À compléter)', description: 'Rang 4 — se référer au Livre du joueur officiel.' },
+    { name: '(À compléter)', description: 'Rang 5 — se référer au Livre du joueur officiel.' },
+  ],
+}
+
+const cultureElfeNoir: PeupleVoie = {
+  id: 'culture-elfe-noir',
+  name: 'Culture elfique — Elfe noir',
+  capacites: [
+    { name: '(À compléter)', description: 'Rang 1 — se référer au Livre du joueur officiel.' },
+    { name: '(À compléter)', description: 'Rang 2 — se référer au Livre du joueur officiel.' },
+    { name: '(À compléter)', description: 'Rang 3 — se référer au Livre du joueur officiel.' },
+    { name: '(À compléter)', description: 'Rang 4 — se référer au Livre du joueur officiel.' },
+    { name: '(À compléter)', description: 'Rang 5 — se référer au Livre du joueur officiel.' },
+  ],
+}
+
+// — Nains —
+
+const cultureNainForge: PeupleVoie = {
+  id: 'culture-nain-forge',
+  name: 'Ordre de la Forge',
+  capacites: [
+    { name: 'Artisan de la forge', description: 'Choisir un métier de l\'ordre (alchimiste, armurier, médecin, orfèvre, mineur…) ; +5 à tous les tests liés à ce métier.' },
+    { name: 'Forgeron runique', description: 'Choisir une capacité de rang 1 ou 2 de la voie d\'alchimie ou de la magie runique ; au rang 4, une capacité supplémentaire de rang 1 ou 2.' },
+    { name: 'Marteler le métal', description: '+1 en attaque et aux DM avec un bâton ferré, une masse d\'armes ou un marteau à deux mains.' },
+    { name: 'Runes de défense', description: 'Runes sur l\'équipement (et parfois la peau) ; +2 DEF.' },
+    { name: 'Maître artisan', description: '+2 DEX et +2 INT.' },
+  ],
+}
+
+const cultureNainTalion: PeupleVoie = {
+  id: 'culture-nain-talion',
+  name: 'Ordre du Talion',
+  capacites: [
+    { name: 'Plein aux as', description: '25 pa par jour par rang dans cette voie pour les dépenses courantes ; l\'argent non dépensé ne s\'ajoute pas à la fortune.' },
+    { name: 'Le sens des affaires', description: 'Capacité de rang 1 ou 2 de la voie du bohème ou de la fourberie ; au rang 4, capacité supplémentaire de rang 1 ou 2.' },
+    { name: 'Pot-de-vin', description: 'Après un échec à un test de CHA, payer 10 pa par +1 (jusqu\'à 100 pa) pour transformer l\'échec en réussite.' },
+    { name: 'La Loge noire', description: 'Un garde loyal : +3 DEF au PJ au contact ; 1 fois/tour, le garde peut faire échouer une attaque contre le PJ (test d\'attaque ≥ DEF attaquant). Remplacement : 500 pa ou passage de niveau.' },
+    { name: 'Seigneur du Talion', description: '+2 INT et +2 CHA.' },
+  ],
+}
+
+const cultureNainTemple: PeupleVoie = {
+  id: 'culture-nain-temple',
+  name: 'Ordre du Temple',
+  capacites: [
+    { name: 'Grosse tête', description: 'Peut faire un test d\'INT à la place d\'un test de FOR pour la force "intelligente" (levier, etc.) ; +5 aux tests de bricolage et de science.' },
+    { name: 'Enseigne du Temple', description: 'Capacité de rang 1 ou 2 de la maîtrise des armes ou du mysticisme ; au rang 4, capacité supplémentaire de rang 1 ou 2.' },
+    { name: 'Invention étrange', description: 'Arbalète à répétition (offerte ou inventée) ; maîtrise des armes de tir.' },
+    { name: 'Rites funéraires (L)', description: 'Rituel (5 min) : communiquer avec les morts (réponses confuses) ; 1 fois/zone, action limitée + INT DD 15 → 2d6 DM aux esprits hostiles.' },
+    { name: 'Maître du temple', description: '+2 CON et +2 INT.' },
+  ],
+}
+
+const cultureNainBouclier: PeupleVoie = {
+  id: 'culture-nain-bouclier',
+  name: 'Ordre du Bouclier',
+  capacites: [
+    { name: 'Combat en phalange', description: 'Si le PJ combat la même créature qu\'un allié : +1 attaque et +1 DEF par allié au contact avec lui et la créature.' },
+    { name: 'Formation militaire', description: 'Capacité de rang 1 ou 2 du bastion ou du commandement ; au rang 4, capacité supplémentaire de rang 1 ou 2.' },
+    { name: 'Capitaine du Bouclier', description: 'Avec un bouclier : +1 DEF supplémentaire ; 1 fois/tour, peut ignorer une attaque à distance non critique en la déviant.' },
+    { name: 'Fuite interdite', description: 'Si un adversaire au contact s\'éloigne avec une action de mouvement : attaque de contact gratuite ; si elle touche, déplacement annulé (0 DM).' },
+    { name: 'Veilleur du roi', description: '+2 FOR et +2 CHA.' },
+  ],
+}
+
+const cultureNainErrants: PeupleVoie = {
+  id: 'culture-nain-errants',
+  name: 'Ordre des Errants',
+  capacites: [
+    { name: 'Moins que rien', description: '−5 aux tests sociaux avec la "bonne société" ; +5 avec les miséreux ; +5 en discrétion ; on l\'oublie facilement.' },
+    { name: 'Passé révolu', description: 'Capacité de rang 1 (puis rang 2 au rang 4) parmi : alchimie, magie runique, bohème, fourberie, maîtrise des armes, mysticisme, bastion, commandement.' },
+    { name: 'Paysan aguerri', description: '+1 attaque et DM avec une arme de paysan ; formation à la grande hache de bûcheron.' },
+    { name: 'Solidarité des Errants', description: 'Quand un miséreux peut aider : lance 1d6 — sur 1–4, aide totale ; sur 6 (MJ lance en secret), trahison pour profit.' },
+    { name: 'Volonté héroïque', description: '+2 CON et +2 SAG.' },
+  ],
+}
+
+// — Humains —
+
+const cultureHumainNordique: PeupleVoie = {
+  id: 'culture-humain-nordique',
+  name: 'Ruines nordiques',
+  capacites: [
+    { name: 'Pied marin', description: '+5 aux tests de navigation, natation et équilibre.' },
+    { name: 'Barbare', description: 'Capacité de rang 1 ou 2 de la bravoure ou de la chasse ; au rang 4, capacité supplémentaire de rang 1 ou 2.' },
+    { name: 'Expertise des haches', description: '+1 attaque et DM avec une hache ; formation à la grande hache de bûcheron.' },
+    { name: 'Homme des clans', description: 'Bras droit (allié de combat) : armes du PJ entretenues → critiques sur 19–20 ; remplacer au niveau suivant si mort. (DEF 16, PV = niv×6, etc.)' },
+    { name: 'Conquérant', description: '+2 DEX et +2 CON.' },
+  ],
+}
+
+const cultureHumainMitan: PeupleVoie = {
+  id: 'culture-humain-mitan',
+  name: 'Mitan',
+  capacites: [
+    { name: 'Homme des cités', description: '+5 aux tests de perception en foule et pour trouver personne / lieu en zone urbaine.' },
+    { name: 'Entre tradition et progrès', description: 'Capacité de rang 1 ou 2 du combat monté ou de l\'arbalétrie ; au rang 4, capacité supplémentaire de rang 1 ou 2.' },
+    { name: 'Modernisme', description: '+1 attaque et DM avec une arbalète ; maîtrise des armes de tir.' },
+    { name: 'Conspirateur', description: '1 fois par aventure, contact pour service / info / alliance : test de CHA DD 10/15/20 selon difficulté ; échec possible avec contrepartie pécuniaire.' },
+    { name: 'Maître marchand', description: '+2 INT et +2 CHA.' },
+  ],
+}
+
+const cultureHumainAustral: PeupleVoie = {
+  id: 'culture-humain-austral',
+  name: 'Empires austraux',
+  capacites: [
+    { name: 'Érudition', description: 'Sait lire et écrire ; +5 dans un domaine au choix parmi : histoire & géographie ; occultisme & magie ; sciences & techniques ; plantes & créatures ; langues anciennes.' },
+    { name: 'Études arcaniques', description: 'Capacité de rang 1 ou 2 de la magie élémentaliste ou des illusions ; au rang 4, capacité supplémentaire de rang 1 ou 2.' },
+    { name: 'Autorité culturelle', description: '+2 Initiative et +2 DEF ; ou (au choix) un second domaine d\'érudition comme au rang 1.' },
+    { name: 'Prédispositions arcaniques', description: 'Ajouter le Mod. de CHA au total de PM (non doublé pour les mystiques).' },
+    { name: 'Mage', description: '+2 INT et +2 SAG.' },
+  ],
+}
+
+const cultureHumainOriental: PeupleVoie = {
+  id: 'culture-humain-oriental',
+  name: 'Terres orientales',
+  capacites: [
+    { name: 'Connaissances cosmopolites', description: '+5 pour négocier, argumenter, mentir ou convaincre un non-humain.' },
+    { name: 'Rejeton de la cité des Sang-mêlés', description: 'Capacité de rang 1 ou 2 du charme ou de la fourberie ; au rang 4, capacité supplémentaire de rang 1 ou 2.' },
+    { name: 'Sentir la magie', description: 'Test de SAG DD 15 : savoir si un interlocuteur maîtrise au moins une voie mystique ; +5 pour résister aux effets magiques.' },
+    { name: 'Chevaucheur de dragons', description: 'Monture dragon d\'Akrähyng (Init 15, DEF 16, PV = 5×niveau, Att +8, DM 1d6+4 feu portée 20m). Synergies avec Monture fantastique et Ordre de chevalerie : +2 DEF, attaque et DM par capacité possédée.' },
+    { name: 'Expert en filouterie', description: '+2 DEX et +2 CHA.' },
+  ],
+}
+
+// — Peaux vertes —
+
+const cultureOrc: PeupleVoie = {
+  id: 'culture-orc',
+  name: 'Culture orc',
+  capacites: [
+    { name: 'Force de la nature', description: '+5 aux tests de FOR ; ajouter le Mod. FOR au total de PV.' },
+    { name: 'Talent pour la violence', description: 'Capacité de rang 1 ou 2 de la férocité ou de la puissance ; au rang 4, capacité supplémentaire de rang 1 ou 2.' },
+    { name: 'Critique brutal', description: 'Sur critique en contact, DM ×3 au lieu de ×2.' },
+    { name: 'Attaque sanglante (L)', description: 'Hémorragie : +1d6 DM par tour jusqu\'à réussite d\'un test de CON DD [12 + Mod. FOR] ou soins ; pas de cumul de saignements.' },
+    { name: 'Colosse', description: '+2 FOR et +2 CON.' },
+  ],
+}
+
+const cultureGobelin: PeupleVoie = {
+  id: 'culture-gobelin',
+  name: 'Culture gobeline',
+  capacites: [
+    { name: 'Insignifiant', description: '1 fois par combat, si ciblé : rediriger l\'assaillant vers une autre cible (tant que le gobelin ne le réattaque pas) ; +5 pour se fondre dans la masse.' },
+    { name: 'Agile et sournois', description: 'Capacité de rang 1 ou 2 de l\'acrobatie ou de l\'assassinat ; au rang 4, capacité supplémentaire de rang 1 ou 2.' },
+    { name: 'Ombre mouvante (L)', description: 'Test DEX DD 10 : déplacement jusqu\'à 20m vers zone d\'ombre / couvert, disparaît jusqu\'au tour suivant. Si initiative gagnée sur une cible au contact : +2d6 DM.' },
+    { name: 'Rochassier', description: 'Escalade comme sur le plat à quatre membres ; avec trois membres : immobile ou demi-vitesse.' },
+    { name: 'Teigneux', description: '+2 DEX et +2 INT.' },
+  ],
+}
+
+const cultureOgre: PeupleVoie = {
+  id: 'culture-ogre',
+  name: 'Culture ogre',
+  capacites: [
+    { name: 'Énorme', description: 'Manier d\'une seule main les grandes armes à deux mains ; −2 aux tests d\'attaque (−5 avec arme magique ≥ exceptionnelle).' },
+    { name: 'Brute', description: 'Capacité de rang 1 ou 2 de la férocité ou du pugilat ; au rang 4, capacité supplémentaire de rang 1 ou 2.' },
+    { name: 'Attaque massive (L)', description: 'Attaque de tout le poids : bonus aux DM = Mod. CON, malus à la DEF = Mod. CON pendant un tour.' },
+    { name: 'Intuable', description: 'Au moment de tomber à 0 PV, peut refuser l\'inconscience et continuer à combattre ; PV peuvent devenir négatifs jusqu\'à la valeur de CON (au-delà : mort).' },
+    { name: 'Monstre', description: '+2 FOR et +2 CON.' },
+  ],
+}
+
+// ── LISTE DES PEUPLES ─────────────────────────────────────────────────────────
+
+export const PEUPLES: Peuple[] = [
+  {
+    id: 'elfe',
+    name: 'Elfe',
+    voiesDePeuple: [voiePeupleElfe],
+    voiesCulturelles: [cultureElfeBleu, cultureElfeSylvain, cultureElfeBlanc, cultureElfeNoir],
+  },
+  {
+    id: 'semi-elfe',
+    name: 'Semi-Elfe',
+    voiesDePeuple: [voiePeupleElfe, voiePeupleHumain],
+    voiesCulturelles: [
+      cultureElfeBleu, cultureElfeSylvain, cultureElfeBlanc, cultureElfeNoir,
+      cultureHumainNordique, cultureHumainMitan, cultureHumainAustral, cultureHumainOriental,
+    ],
+  },
+  {
+    id: 'sang-mele',
+    name: 'Sang-mêlé',
+    voiesDePeuple: [],
+    voiesCulturelles: [
+      cultureElfeBleu, cultureElfeSylvain, cultureElfeBlanc, cultureElfeNoir,
+      cultureHumainNordique, cultureHumainMitan, cultureHumainAustral, cultureHumainOriental,
+      cultureNainForge, cultureNainTalion, cultureNainTemple, cultureNainBouclier, cultureNainErrants,
+      cultureOrc, cultureGobelin, cultureOgre,
+    ],
+  },
+  {
+    id: 'nain',
+    name: 'Nain',
+    voiesDePeuple: [voiePeupleNain],
+    voiesCulturelles: [
+      cultureNainForge, cultureNainTalion, cultureNainTemple, cultureNainBouclier, cultureNainErrants,
+    ],
+  },
+  {
+    id: 'humain',
+    name: 'Humain',
+    voiesDePeuple: [voiePeupleHumain],
+    voiesCulturelles: [
+      cultureHumainNordique, cultureHumainMitan, cultureHumainAustral, cultureHumainOriental,
+    ],
+  },
+  {
+    id: 'peau-verte',
+    name: 'Peau verte',
+    voiesDePeuple: [voiePeuplePeauxVertes],
+    voiesCulturelles: [cultureOrc, cultureGobelin, cultureOgre],
+  },
+]
+
+export const PEUPLES_BY_ID: Record<string, Peuple> = Object.fromEntries(PEUPLES.map(p => [p.id, p]))
+
+/** Lookup combiné : toutes les voies de peuple + culturelles, indexées par id. */
+export const PEUPLE_VOIES_BY_ID: Record<string, PeupleVoie> = (() => {
+  const map: Record<string, PeupleVoie> = {}
+  for (const p of PEUPLES) {
+    for (const v of p.voiesDePeuple) map[v.id] = v
+    for (const v of p.voiesCulturelles) map[v.id] = v
+  }
+  return map
+})()
