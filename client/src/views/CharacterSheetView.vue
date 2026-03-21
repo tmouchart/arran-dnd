@@ -1,8 +1,18 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useCharacter } from '../composables/useCharacter'
-const { character, reset, abilityModifier } = useCharacter()
+import { computed, ref, watch } from 'vue'
+import { useRoute, RouterLink } from 'vue-router'
+import { useCharacter, loadCharacter } from '../composables/useCharacter'
+import { VOIES, VOIES_BY_ID, FAMILY_LABELS, FAMILY_ORDER, type Voie } from '../data/voies'
+import { PEUPLES, PEUPLES_BY_ID, PEUPLE_VOIES_BY_ID, type PeupleVoie } from '../data/peuples'
+import type { PathRow } from '../types/character'
 
+const { character, loading, saveStatus, abilityModifier } = useCharacter()
+const route = useRoute()
+
+const id = route.query.id ? Number(route.query.id) : undefined
+loadCharacter(id)
+
+// ── Ability list ──────────────────────────────────────────────────────────
 const abilityList = computed(() => [
   { key: 'strength' as const, label: 'FOR' },
   { key: 'dexterity' as const, label: 'DEX' },
@@ -12,34 +22,7 @@ const abilityList = computed(() => [
   { key: 'charisma' as const, label: 'CHA' },
 ])
 
-function addSkill() {
-  character.value.skills.push({ name: '', rank: 0 })
-}
-
-function removeSkill(i: number) {
-  character.value.skills.splice(i, 1)
-}
-
-function addAttack() {
-  character.value.attacks.push({
-    name: '',
-    attackBonus: '',
-    damage: '',
-  })
-}
-
-function removeAttack(i: number) {
-  character.value.attacks.splice(i, 1)
-}
-
-function addPath() {
-  character.value.paths.push({ name: '', rank: 1 })
-}
-
-function removePath(i: number) {
-  character.value.paths.splice(i, 1)
-}
-
+// ── HP / MP bars ──────────────────────────────────────────────────────────
 const hpPct = computed(() => {
   const max = character.value.hpMax || 1
   return Math.min(100, Math.round((character.value.hpCurrent / max) * 100))
@@ -50,285 +33,382 @@ const mpPct = computed(() => {
   if (character.value.mpMax <= 0) return 0
   return Math.min(100, Math.round((character.value.mpCurrent / max) * 100))
 })
+
+// ── Voies — points ────────────────────────────────────────────────────────
+const totalPoints = computed(() => character.value.level * 2)
+
+function rankCost(rank: number): number {
+  // cumulative cost to reach rank r: r≤2 costs 1pt each, r 3-5 cost 2pts each
+  return rank <= 2 ? rank : 2 + (rank - 2) * 2
+}
+
+const spentPoints = computed(() =>
+  character.value.paths.reduce((sum, p) => sum + rankCost(p.rank), 0),
+)
+
+const remainingPoints = computed(() => totalPoints.value - spentPoints.value)
+
+function incrementCost(currentRank: number): number {
+  return currentRank < 2 ? 1 : 2
+}
+
+function canIncrease(p: PathRow): boolean {
+  return p.rank < 5 && remainingPoints.value >= incrementCost(p.rank)
+}
+
+function increaseRank(p: PathRow) {
+  if (canIncrease(p)) p.rank++
+}
+
+function decreaseRank(p: PathRow) {
+  if (p.rank > 0) p.rank--
+}
+
+function removePath(i: number) {
+  character.value.paths.splice(i, 1)
+}
+
+// ── Voies — expand/collapse ───────────────────────────────────────────────
+const expandedSet = ref<Set<number>>(new Set())
+
+function toggleExpand(i: number) {
+  const next = new Set(expandedSet.value)
+  if (next.has(i)) next.delete(i)
+  else next.add(i)
+  expandedSet.value = next
+}
+
+// ── Voie picker ───────────────────────────────────────────────────────────
+const showPicker = ref(false)
+
+const pickerByFamily = computed(() =>
+  FAMILY_ORDER.map(family => ({
+    family,
+    label: FAMILY_LABELS[family],
+    voies: VOIES.filter(
+      v =>
+        v.family === family &&
+        !character.value.paths.find(p => p.id === v.id),
+    ),
+  })).filter(g => g.voies.length > 0),
+)
+
+function addPath(voie: Voie) {
+  character.value.paths.push({ id: voie.id, name: voie.name, rank: 0 })
+  showPicker.value = false
+}
+
+// ── Attacks ───────────────────────────────────────────────────────────────
+function addAttack() {
+  character.value.attacks.push({ name: '', attackBonus: '', damage: '' })
+}
+
+function removeAttack(i: number) {
+  character.value.attacks.splice(i, 1)
+}
+
+// ── Voie display helper ───────────────────────────────────────────────────
+const ALL_VOIES_BY_ID = { ...VOIES_BY_ID, ...PEUPLE_VOIES_BY_ID } as Record<string, Voie | PeupleVoie>
+
+function voieData(p: PathRow): Voie | PeupleVoie | null {
+  return p.id ? (ALL_VOIES_BY_ID[p.id] ?? null) : null
+}
+
+// ── Peuple & voie culturelle ──────────────────────────────────────────────
+const availableCultures = computed(() => {
+  const peuple = PEUPLES_BY_ID[character.value.people]
+  return peuple ? peuple.voiesCulturelles : []
+})
+
+/** Id de la voie culturelle actuellement choisie (dérivé des paths). */
+const selectedCultureId = computed(() => {
+  return character.value.paths.find(p => p.kind === 'culturelle')?.id ?? ''
+})
+
+/** Synchronise les voies de peuple dans paths quand le peuple change. */
+watch(
+  () => character.value.people,
+  (newPeople, oldPeople) => {
+    if (newPeople === oldPeople) return
+    // Retire les anciennes voies de peuple et culturelle
+    character.value.paths = character.value.paths.filter(
+      p => p.kind !== 'peuple' && p.kind !== 'culturelle',
+    )
+    // Ajoute les nouvelles voies de peuple (peut être 2 pour semi-elfes)
+    const peuple = PEUPLES_BY_ID[newPeople]
+    if (peuple) {
+      const toAdd = peuple.voiesDePeuple.map(v => ({
+        id: v.id, name: v.name, rank: 0, kind: 'peuple' as const,
+      }))
+      character.value.paths.unshift(...toAdd)
+    }
+  },
+)
+
+function selectCulture(id: string) {
+  // Retire l'ancienne voie culturelle
+  character.value.paths = character.value.paths.filter(p => p.kind !== 'culturelle')
+  if (!id) return
+  const voie = PEUPLE_VOIES_BY_ID[id]
+  if (!voie) return
+  // Insère après la/les voies de peuple
+  const lastPeupleIdx = character.value.paths.reduce(
+    (last, p, i) => (p.kind === 'peuple' ? i : last), -1,
+  )
+  character.value.paths.splice(lastPeupleIdx + 1, 0, {
+    id: voie.id, name: voie.name, rank: 0, kind: 'culturelle' as const,
+  })
+}
 </script>
 
 <template>
   <div class="page sheet-page">
     <header class="page-head">
-      <h1>Fiche personnage</h1>
-      <p class="lede">
-        Données enregistrées localement dans ce navigateur. À adapter aux règles exactes
-        de ta table.
-      </p>
+      <div class="page-head-row">
+        <h1>Fiche personnage</h1>
+        <RouterLink to="/personnages" class="btn ghost small">← Liste</RouterLink>
+      </div>
+      <p v-if="saveStatus === 'saving'" class="save-status saving">Sauvegarde…</p>
+      <p v-else-if="saveStatus === 'error'" class="save-status error">Erreur de sauvegarde</p>
     </header>
 
-    <section class="card identity">
-      <h2>Identité</h2>
-      <div class="grid-2">
-        <label class="field">
-          <span>Nom</span>
-          <input v-model="character.name" type="text" class="input" />
-        </label>
-        <label class="field">
-          <span>Niveau</span>
-          <input
-            v-model.number="character.level"
-            type="number"
-            min="1"
-            class="input narrow"
-          />
-        </label>
-        <label class="field">
-          <span>Profil</span>
-          <input v-model="character.profile" type="text" class="input" />
-        </label>
-        <label class="field">
-          <span>Peuple</span>
-          <input v-model="character.people" type="text" class="input" />
-        </label>
-      </div>
-    </section>
+    <div v-if="loading" class="loading-msg">Chargement…</div>
 
-    <section class="card resources">
-      <h2>PV &amp; ressources</h2>
-      <div class="bars">
-        <div class="bar-block">
-          <div class="bar-label">
-            <span>Points de vie</span>
-            <span class="nums"
-              >{{ character.hpCurrent }} / {{ character.hpMax }}</span
+    <template v-else>
+
+      <!-- Identité -->
+      <section class="card identity">
+        <h2>Identité</h2>
+        <div class="grid-2">
+          <label class="field">
+            <span>Nom</span>
+            <input v-model="character.name" type="text" class="input" />
+          </label>
+          <label class="field">
+            <span>Niveau</span>
+            <input v-model.number="character.level" type="number" min="1" class="input narrow" />
+          </label>
+          <label class="field">
+            <span>Profil</span>
+            <input v-model="character.profile" type="text" class="input" />
+          </label>
+          <div class="field">
+            <span>Peuple</span>
+            <select v-model="character.people" class="input select">
+              <option value="">— Choisir —</option>
+              <option v-for="p in PEUPLES" :key="p.id" :value="p.id">{{ p.name }}</option>
+            </select>
+          </div>
+          <div v-if="availableCultures.length" class="field span-2">
+            <span>Voie culturelle</span>
+            <select
+              :value="selectedCultureId"
+              class="input select"
+              @change="selectCulture(($event.target as HTMLSelectElement).value)"
             >
-          </div>
-          <div class="bar-track">
-            <div class="bar-fill hp" :style="{ width: hpPct + '%' }" />
-          </div>
-          <div class="inline-edit">
-            <label>
-              Courants
-              <input
-                v-model.number="character.hpCurrent"
-                type="number"
-                min="0"
-                class="input narrow"
-              />
-            </label>
-            <label>
-              Maximum
-              <input
-                v-model.number="character.hpMax"
-                type="number"
-                min="1"
-                class="input narrow"
-              />
-            </label>
+              <option value="">— Choisir —</option>
+              <option v-for="c in availableCultures" :key="c.id" :value="c.id">{{ c.name }}</option>
+            </select>
           </div>
         </div>
-        <div class="bar-block">
-          <div class="bar-label">
-            <span>Points de mana</span>
-            <span class="nums"
-              >{{ character.mpCurrent }} / {{ character.mpMax }}</span
-            >
+      </section>
+
+      <!-- PV & Ressources -->
+      <section class="card resources">
+        <h2>PV &amp; ressources</h2>
+        <div class="bars">
+          <div class="bar-block">
+            <div class="bar-label">
+              <span>Points de vie</span>
+              <span class="nums">{{ character.hpCurrent }} / {{ character.hpMax }}</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill hp" :style="{ width: hpPct + '%' }" />
+            </div>
+            <div class="inline-edit">
+              <label>Courants <input v-model.number="character.hpCurrent" type="number" min="0" class="input narrow" /></label>
+              <label>Maximum <input v-model.number="character.hpMax" type="number" min="1" class="input narrow" /></label>
+            </div>
           </div>
-          <div class="bar-track">
-            <div
-              class="bar-fill mp"
-              :style="{ width: character.mpMax > 0 ? mpPct + '%' : '0%' }"
-            />
-          </div>
-          <div class="inline-edit">
-            <label>
-              Courants
-              <input
-                v-model.number="character.mpCurrent"
-                type="number"
-                min="0"
-                class="input narrow"
-              />
-            </label>
-            <label>
-              Maximum
-              <input
-                v-model.number="character.mpMax"
-                type="number"
-                min="0"
-                class="input narrow"
-              />
-            </label>
+          <div class="bar-block">
+            <div class="bar-label">
+              <span>Points de mana</span>
+              <span class="nums">{{ character.mpCurrent }} / {{ character.mpMax }}</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill mp" :style="{ width: character.mpMax > 0 ? mpPct + '%' : '0%' }" />
+            </div>
+            <div class="inline-edit">
+              <label>Courants <input v-model.number="character.mpCurrent" type="number" min="0" class="input narrow" /></label>
+              <label>Maximum <input v-model.number="character.mpMax" type="number" min="0" class="input narrow" /></label>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="grid-2 tight">
-        <label class="field">
-          <span>Défense</span>
-          <input
-            v-model.number="character.defense"
-            type="number"
-            class="input narrow"
-          />
-        </label>
-        <label class="field">
-          <span>Initiative (bonus)</span>
-          <input
-            v-model.number="character.initiativeBonus"
-            type="number"
-            class="input narrow"
-          />
-        </label>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>Caractéristiques</h2>
-      <div class="abilities">
-        <div v-for="a in abilityList" :key="a.key" class="ability">
-          <span class="abil-label">{{ a.label }}</span>
-          <input
-            v-model.number="character.abilities[a.key]"
-            type="number"
-            class="input score"
-          />
-          <span class="mod"
-            >{{ abilityModifier(character.abilities[a.key]) >= 0 ? '+' : ''
-            }}{{ abilityModifier(character.abilities[a.key]) }}</span
-          >
+        <div class="grid-2 tight">
+          <label class="field">
+            <span>Défense</span>
+            <input v-model.number="character.defense" type="number" class="input narrow" />
+          </label>
+          <label class="field">
+            <span>Initiative (bonus)</span>
+            <input v-model.number="character.initiativeBonus" type="number" class="input narrow" />
+          </label>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <section class="card">
-      <div class="card-head">
-        <h2>Compétences</h2>
-        <button type="button" class="btn ghost small" @click="addSkill">
-          + Ajouter
-        </button>
-      </div>
-      <ul v-if="character.skills.length" class="rows">
-        <li v-for="(s, i) in character.skills" :key="i" class="row">
-          <input
-            v-model="s.name"
-            type="text"
-            class="input grow"
-            placeholder="Nom"
-          />
-          <input
-            v-model.number="s.rank"
-            type="number"
-            min="0"
-            class="input rank"
-          />
-          <button
-            type="button"
-            class="btn ghost small"
-            title="Supprimer"
-            @click="removeSkill(i)"
-          >
-            ×
-          </button>
-        </li>
-      </ul>
-      <p v-else class="muted">Aucune compétence — ajoute les tiennes.</p>
-    </section>
-
-    <section class="card">
-      <div class="card-head">
-        <h2>Attaques</h2>
-        <button type="button" class="btn ghost small" @click="addAttack">
-          + Ajouter
-        </button>
-      </div>
-      <ul v-if="character.attacks.length" class="attack-list">
-        <li v-for="(atk, i) in character.attacks" :key="i" class="attack-card">
-          <input
-            v-model="atk.name"
-            type="text"
-            class="input"
-            placeholder="Arme ou sort"
-          />
-          <div class="grid-2 tight">
-            <label class="field">
-              <span>Attaque</span>
-              <input
-                v-model="atk.attackBonus"
-                type="text"
-                class="input"
-                placeholder="+5"
-              />
-            </label>
-            <label class="field">
-              <span>Dégâts</span>
-              <input
-                v-model="atk.damage"
-                type="text"
-                class="input"
-                placeholder="1d8+3"
-              />
-            </label>
+      <!-- Caractéristiques -->
+      <section class="card">
+        <h2>Caractéristiques</h2>
+        <div class="abilities">
+          <div v-for="a in abilityList" :key="a.key" class="ability">
+            <span class="abil-label">{{ a.label }}</span>
+            <input v-model.number="character.abilities[a.key]" type="number" class="input score" />
+            <span class="mod">
+              {{ abilityModifier(character.abilities[a.key]) >= 0 ? '+' : '' }}{{ abilityModifier(character.abilities[a.key]) }}
+            </span>
           </div>
-          <input
-            v-model="atk.notes"
-            type="text"
-            class="input"
-            placeholder="Notes (portée, spécial…)"
-          />
-          <button
-            type="button"
-            class="btn ghost small"
-            @click="removeAttack(i)"
-          >
-            Retirer
-          </button>
-        </li>
-      </ul>
-      <p v-else class="muted">Ajoute tes attaques ou sorts offensifs.</p>
-    </section>
+        </div>
+      </section>
 
-    <section class="card">
-      <div class="card-head">
-        <h2>Voies</h2>
-        <button type="button" class="btn ghost small" @click="addPath">
-          + Ajouter
-        </button>
-      </div>
-      <ul v-if="character.paths.length" class="rows">
-        <li v-for="(p, i) in character.paths" :key="i" class="row path-row">
-          <input
-            v-model="p.name"
-            type="text"
-            class="input grow"
-            placeholder="Nom de la voie"
-          />
-          <input
-            v-model.number="p.rank"
-            type="number"
-            min="1"
-            class="input rank"
-            title="Rang"
-          />
-          <input
-            v-model="p.notes"
-            type="text"
-            class="input grow"
-            placeholder="Capacités notables"
-          />
-          <button
-            type="button"
-            class="btn ghost small"
-            @click="removePath(i)"
-          >
-            ×
-          </button>
-        </li>
-      </ul>
-      <p v-else class="muted">Ajoute les voies et leur rang.</p>
-    </section>
+      <!-- Voies -->
+      <section class="card voies-section">
+        <div class="card-head">
+          <div class="voies-title-block">
+            <h2>Voies</h2>
+            <span class="pts-badge" :class="{ depleted: remainingPoints <= 0 }">
+              {{ spentPoints }} / {{ totalPoints }} pts
+            </span>
+          </div>
+          <button type="button" class="btn ghost small" @click="showPicker = true">+ Ajouter</button>
+        </div>
 
-    <div class="footer-actions">
-      <button type="button" class="btn danger ghost" @click="reset">
-        Réinitialiser la fiche
-      </button>
-    </div>
+        <ul v-if="character.paths.length" class="voie-list">
+          <li v-for="(p, i) in character.paths" :key="i" class="voie-card">
+            <!-- Header row -->
+            <div class="voie-header" @click="toggleExpand(i)">
+              <div class="voie-name-block">
+                <span class="voie-name">{{ p.name }}</span>
+                <span v-if="p.kind === 'peuple'" class="voie-kind-badge peuple">Peuple</span>
+                <span v-else-if="p.kind === 'culturelle'" class="voie-kind-badge culturelle">Culture</span>
+                <span class="voie-dots">
+                  <span
+                    v-for="dot in 5"
+                    :key="dot"
+                    class="dot"
+                    :class="{ filled: p.rank >= dot }"
+                  />
+                </span>
+              </div>
+              <div class="voie-controls" @click.stop>
+                <button
+                  type="button"
+                  class="rank-btn"
+                  :disabled="p.rank <= 0"
+                  @click="decreaseRank(p)"
+                  title="Réduire le rang"
+                >−</button>
+                <button
+                  type="button"
+                  class="rank-btn"
+                  :disabled="!canIncrease(p)"
+                  @click="increaseRank(p)"
+                  title="Augmenter le rang"
+                >+</button>
+                <button
+                  v-if="!p.kind"
+                  type="button"
+                  class="remove-btn"
+                  @click="removePath(i)"
+                  title="Retirer cette voie"
+                >×</button>
+              </div>
+            </div>
+
+            <!-- Expanded capacités -->
+            <ul v-if="expandedSet.has(i)" class="capacite-list">
+              <template v-if="voieData(p)">
+                <li
+                  v-for="(cap, ci) in voieData(p)!.capacites"
+                  :key="ci"
+                  class="capacite"
+                  :class="{ unlocked: p.rank > ci, locked: p.rank <= ci }"
+                >
+                  <span class="cap-rank">{{ ci + 1 }}</span>
+                  <span class="cap-body">
+                    <span class="cap-name">{{ cap.name }}</span>
+                    <span class="cap-desc">{{ cap.description }}</span>
+                  </span>
+                </li>
+              </template>
+              <template v-else>
+                <li class="capacite muted-cap">
+                  Capacités non disponibles pour cette voie.
+                </li>
+              </template>
+            </ul>
+          </li>
+        </ul>
+        <p v-else class="muted">Choisis tes voies en cliquant sur "Ajouter".</p>
+      </section>
+
+      <!-- Attaques -->
+      <section class="card">
+        <div class="card-head">
+          <h2>Attaques</h2>
+          <button type="button" class="btn ghost small" @click="addAttack">+ Ajouter</button>
+        </div>
+        <ul v-if="character.attacks.length" class="attack-list">
+          <li v-for="(atk, i) in character.attacks" :key="i" class="attack-card">
+            <input v-model="atk.name" type="text" class="input" placeholder="Arme ou sort" />
+            <div class="grid-2 tight">
+              <label class="field">
+                <span>Attaque</span>
+                <input v-model="atk.attackBonus" type="text" class="input" placeholder="+5" />
+              </label>
+              <label class="field">
+                <span>Dégâts</span>
+                <input v-model="atk.damage" type="text" class="input" placeholder="1d8+3" />
+              </label>
+            </div>
+            <input v-model="atk.notes" type="text" class="input" placeholder="Notes (portée, spécial…)" />
+            <button type="button" class="btn ghost small" @click="removeAttack(i)">Retirer</button>
+          </li>
+        </ul>
+        <p v-else class="muted">Ajoute tes attaques ou sorts offensifs.</p>
+      </section>
+
+    </template>
   </div>
+
+  <!-- Voie picker overlay -->
+  <Teleport to="body">
+    <div v-if="showPicker" class="picker-overlay" @click.self="showPicker = false">
+      <div class="picker-panel">
+        <div class="picker-head">
+          <h3>Choisir une voie</h3>
+          <button type="button" class="btn ghost small" @click="showPicker = false">✕</button>
+        </div>
+        <div class="picker-body">
+          <div v-for="group in pickerByFamily" :key="group.family" class="picker-group">
+            <h4 class="picker-family" :class="'family-' + group.family">{{ group.label }}</h4>
+            <ul class="picker-voies">
+              <li
+                v-for="v in group.voies"
+                :key="v.id"
+                class="picker-voie"
+                @click="addPath(v)"
+              >
+                {{ v.name }}
+              </li>
+            </ul>
+          </div>
+          <p v-if="pickerByFamily.length === 0" class="muted picker-empty">
+            Toutes les voies sont déjà ajoutées.
+          </p>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -341,24 +421,38 @@ const mpPct = computed(() => {
   margin-bottom: 0.9rem;
 }
 
+.page-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-bottom: 0.4rem;
+}
+
 .page-head h1 {
-  margin: 0 0 0.4rem;
+  margin: 0;
   font-size: clamp(1.35rem, 4.5vw, 1.95rem);
   font-family: var(--title-font);
   color: var(--brand-strong);
 }
 
-.lede {
-  margin: 0;
+.loading-msg {
   color: var(--muted);
-  font-size: 0.97rem;
+  font-size: 0.95rem;
+  padding: 2rem 0;
+  text-align: center;
 }
 
+.save-status { margin: 0; font-size: 0.82rem; font-weight: 600; }
+.save-status.saving { color: var(--muted); }
+.save-status.error  { color: var(--danger); }
+
+/* ── Cards ── */
 .card {
   background: var(--surface);
   border: 1px solid var(--border-strong);
   border-radius: 16px;
-  padding: 0.95rem 0.95rem;
+  padding: 0.95rem;
   margin-bottom: 0.85rem;
   box-shadow: var(--shadow-card);
 }
@@ -380,10 +474,9 @@ const mpPct = computed(() => {
   gap: 0.6rem;
 }
 
-.card-head h2 {
-  margin: 0;
-}
+.card-head h2 { margin: 0; }
 
+/* ── Grid ── */
 .grid-2 {
   display: grid;
   grid-template-columns: 1fr;
@@ -391,15 +484,11 @@ const mpPct = computed(() => {
 }
 
 @media (min-width: 520px) {
-  .grid-2 {
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem 0.95rem;
-  }
+  .grid-2 { grid-template-columns: 1fr 1fr; gap: 0.75rem 0.95rem; }
+  .grid-2 .span-2 { grid-column: 1 / -1; }
 }
 
-.grid-2.tight {
-  margin-top: 0.7rem;
-}
+.grid-2.tight { margin-top: 0.7rem; }
 
 .field {
   display: flex;
@@ -409,6 +498,7 @@ const mpPct = computed(() => {
   color: var(--muted);
 }
 
+/* ── Inputs ── */
 .input {
   min-height: 42px;
   padding: 0.5rem 0.64rem;
@@ -417,27 +507,14 @@ const mpPct = computed(() => {
   background: var(--surface-2);
   color: var(--text);
   font-family: inherit;
+  font-size: inherit;
 }
 
-.input.narrow {
-  max-width: 6rem;
-}
+.input.narrow { max-width: 6rem; }
+.input.score  { width: 3.25rem; text-align: center; font-size: 1.1rem; }
 
-.input.grow {
-  flex: 1;
-  min-width: 0;
-}
-
-.input.rank {
-  width: 3.5rem;
-  text-align: center;
-}
-
-.bars {
-  display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
-}
+/* ── Bars ── */
+.bars { display: flex; flex-direction: column; gap: 0.9rem; }
 
 .bar-label {
   display: flex;
@@ -447,10 +524,7 @@ const mpPct = computed(() => {
   gap: 0.45rem;
 }
 
-.nums {
-  font-variant-numeric: tabular-nums;
-  color: var(--muted);
-}
+.nums { font-variant-numeric: tabular-nums; color: var(--muted); }
 
 .bar-track {
   height: 12px;
@@ -466,13 +540,8 @@ const mpPct = computed(() => {
   transition: width 0.25s ease;
 }
 
-.bar-fill.hp {
-  background: linear-gradient(90deg, #8d3c3c, #c95f56);
-}
-
-.bar-fill.mp {
-  background: linear-gradient(90deg, #425f8f, #678fc2);
-}
+.bar-fill.hp { background: linear-gradient(90deg, #8d3c3c, #c95f56); }
+.bar-fill.mp { background: linear-gradient(90deg, #425f8f, #678fc2); }
 
 .inline-edit {
   display: flex;
@@ -489,6 +558,7 @@ const mpPct = computed(() => {
   color: var(--muted);
 }
 
+/* ── Abilities ── */
 .abilities {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(6.35rem, 1fr));
@@ -513,38 +583,234 @@ const mpPct = computed(() => {
   color: var(--muted);
 }
 
-.input.score {
-  width: 3.25rem;
-  text-align: center;
-  font-size: 1.1rem;
-}
-
 .mod {
   font-size: 0.9rem;
   color: var(--accent-strong);
   font-weight: 600;
 }
 
-.rows {
+/* ── Voies section ── */
+.voies-title-block {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.pts-badge {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  border: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+}
+
+.pts-badge.depleted {
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 40%, var(--border));
+}
+
+.voie-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
+  gap: 0.55rem;
 }
 
-.row {
+.voie-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+/* Header row */
+.voie-header {
   display: flex;
-  gap: 0.46rem;
   align-items: center;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.62rem 0.75rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background 120ms ease;
 }
 
-.path-row {
-  flex-wrap: wrap;
+.voie-header:hover {
+  background: color-mix(in srgb, var(--accent-soft) 60%, transparent);
 }
 
+.voie-name-block {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.voie-name {
+  font-family: var(--title-font);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--brand-strong);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.voie-dots {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-strong);
+  background: transparent;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+
+.dot.filled {
+  background: var(--brand);
+  border-color: var(--brand-strong);
+}
+
+/* Rank +/− controls */
+.voie-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.rank-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 120ms ease, border-color 120ms ease;
+  padding: 0;
+  line-height: 1;
+}
+
+.rank-btn:hover:not(:disabled) {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.rank-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.remove-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 120ms ease, color 120ms ease;
+  padding: 0;
+  line-height: 1;
+}
+
+.remove-btn:hover {
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--danger);
+}
+
+/* Capacités list */
+.capacite-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.35rem 0.75rem 0.62rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  border-top: 1px solid var(--border);
+}
+
+.capacite {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.28rem 0;
+  transition: opacity 150ms ease;
+}
+
+.capacite.locked {
+  opacity: 0.32;
+}
+
+.cap-rank {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  min-width: 1rem;
+  text-align: center;
+  flex-shrink: 0;
+  padding-top: 0.12rem;
+}
+
+.cap-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.cap-name {
+  font-size: 0.9rem;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.cap-desc {
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.capacite.unlocked .cap-rank {
+  color: var(--brand);
+}
+
+.capacite.unlocked .cap-name {
+  font-weight: 600;
+}
+
+.capacite.unlocked .cap-desc {
+  color: var(--text);
+}
+
+.muted-cap {
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* ── Attacks ── */
 .attack-list {
   list-style: none;
   margin: 0;
@@ -564,15 +830,43 @@ const mpPct = computed(() => {
   background: var(--surface-2);
 }
 
-.muted {
-  color: var(--muted);
-  font-size: 0.9rem;
-  margin: 0;
+/* ── Select ── */
+.input.select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  padding-right: 2rem;
+  cursor: pointer;
 }
 
-.footer-actions {
-  margin: 1.15rem 0 1.6rem;
+/* ── Voie kind badges ── */
+.voie-kind-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  flex-shrink: 0;
 }
+
+.voie-kind-badge.peuple {
+  background: color-mix(in srgb, var(--brand) 18%, transparent);
+  color: var(--brand-strong);
+  border: 1px solid color-mix(in srgb, var(--brand) 35%, transparent);
+}
+
+.voie-kind-badge.culturelle {
+  background: color-mix(in srgb, #3a8a4a 14%, transparent);
+  color: #2a6a38;
+  border: 1px solid color-mix(in srgb, #3a8a4a 30%, transparent);
+}
+
+:root[data-theme='dark'] .voie-kind-badge.culturelle { color: #7bcf8a; }
+
+/* ── Misc ── */
+.muted { color: var(--muted); font-size: 0.9rem; margin: 0; }
 
 .btn.small {
   min-height: 38px;
@@ -581,9 +875,119 @@ const mpPct = computed(() => {
 }
 
 @media (min-width: 760px) {
-  .card {
-    padding: 1.1rem 1.2rem;
-    margin-bottom: 1rem;
+  .card { padding: 1.1rem 1.2rem; margin-bottom: 1rem; }
+}
+
+/* ── Voie Picker overlay ── */
+.picker-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+}
+
+@media (min-width: 540px) {
+  .picker-overlay {
+    align-items: center;
+    padding: 1.5rem;
   }
 }
+
+.picker-panel {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  max-width: 480px;
+  max-height: 82svh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+}
+
+@media (min-width: 540px) {
+  .picker-panel {
+    border-radius: 20px;
+    max-height: 80vh;
+    box-shadow: var(--shadow-card);
+  }
+}
+
+.picker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.1rem 0.7rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.picker-head h3 {
+  margin: 0;
+  font-family: var(--title-font);
+  font-size: 1.1rem;
+  color: var(--brand-strong);
+}
+
+.picker-body {
+  overflow-y: auto;
+  padding: 0.7rem 1.1rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.picker-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.picker-family {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin: 0 0 0.35rem;
+  padding: 0.22rem 0.6rem;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.family-combattants { background: color-mix(in srgb, var(--brand) 16%, transparent); color: var(--brand-strong); }
+.family-aventuriers { background: color-mix(in srgb, #3a8a4a 14%, transparent); color: #2a6a38; }
+.family-mystiques   { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent-strong); }
+.family-prestige    { background: color-mix(in srgb, #8a6a20 14%, transparent); color: #5c4510; }
+
+:root[data-theme='dark'] .family-aventuriers { color: #7bcf8a; }
+:root[data-theme='dark'] .family-prestige    { color: #d4a843; }
+
+.picker-voies {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.picker-voie {
+  padding: 0.58rem 0.6rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.93rem;
+  color: var(--text);
+  transition: background 100ms ease;
+}
+
+.picker-voie:hover {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.picker-empty { text-align: center; padding: 1rem 0; }
 </style>

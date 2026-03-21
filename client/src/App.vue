@@ -1,6 +1,14 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
+import { RouterLink, RouterView, useRouter } from 'vue-router'
 import { computed, ref } from 'vue'
+import { user, logout } from './composables/useAuth'
+
+const router = useRouter()
+
+async function handleLogout() {
+  await logout()
+  router.push('/login')
+}
 
 type Theme = 'light' | 'dark'
 
@@ -36,6 +44,16 @@ const themeIcon = computed(() => (theme.value === 'dark' ? '☀️' : '🌙'))
           <RouterLink to="/" class="nav-link">Assistant</RouterLink>
           <RouterLink to="/personnage" class="nav-link">Personnage</RouterLink>
         </nav>
+        <span v-if="user" class="nav-username">{{ user.username }}</span>
+        <button
+          v-if="user"
+          type="button"
+          class="btn ghost logout-btn"
+          title="Se déconnecter"
+          @click="handleLogout"
+        >
+          Déconnexion
+        </button>
         <button
           type="button"
           class="btn ghost theme-switch"
@@ -97,6 +115,18 @@ const themeIcon = computed(() => (theme.value === 'dark' ? '☀️' : '🌙'))
   flex-direction: column;
   gap: 0.55rem;
   width: 100%;
+}
+
+.nav-username {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.logout-btn {
+  font-size: 0.82rem;
+  padding: 0.35rem 0.7rem;
+  min-height: 32px;
 }
 
 .theme-switch {

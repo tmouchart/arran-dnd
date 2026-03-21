@@ -1,9 +1,10 @@
 :root {
-  font-family: Inter, 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: 'Crimson Pro', 'Iowan Old Style', Georgia, serif;
+  font-size: 18px;
   line-height: 1.6;
   font-weight: 400;
   color-scheme: light;
-  --title-font: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  --title-font: 'Metamorphous', 'Iowan Old Style', Georgia, serif;
   --bg: #ede5d6;
   --bg-alt: #dfd3be;
   --surface: #f6efdf;

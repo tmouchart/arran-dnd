@@ -4,6 +4,9 @@ primary_region = "cdg"
 
 [build]
 
+[deploy]
+  release_command = "node server/dist/scripts/migrate.js"
+
 [http_service]
   internal_port = 8080
   force_https = true

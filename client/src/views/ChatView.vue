@@ -1,14 +1,22 @@
 <script setup lang="ts">
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, onMounted } from 'vue'
 import MarkdownIt from 'markdown-it'
 import DOMPurify from 'dompurify'
 import { streamChat, type ChatMessage } from '../api/chat'
+import { SendHorizonal, SquarePen } from 'lucide-vue-next'
+import { useCharacter, loadCharacter } from '../composables/useCharacter'
 const input = ref('')
 const messages = ref<ChatMessage[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 const threadEl = ref<HTMLElement | null>(null)
 const textareaEl = ref<HTMLTextAreaElement | null>(null)
+
+const { character } = useCharacter()
+
+onMounted(() => {
+  if (!character.value.id) loadCharacter()
+})
 
 let scrollPending = false
 function scrollToBottom() {
@@ -51,7 +59,7 @@ async function submit() {
       onError: (msg) => {
         error.value = msg
       },
-    })
+    }, character.value.id ? (character.value as unknown as Record<string, unknown>) : undefined)
   } catch (e) {
     if (!error.value) {
       error.value = e instanceof Error ? e.message : 'Erreur inconnue'
@@ -73,17 +81,16 @@ function clearChat() {
 <template>
   <div class="page chat-page">
     <header class="page-head">
-      <h1>🔮 Isilwen, miroir astral</h1>
+      <div class="head-row">
+        <h1>🔮 Isilwen, miroir astral</h1>
+        <button type="button" class="new-chat-btn" @click="clearChat" title="Nouvelle conversation">
+          <SquarePen :size="20" />
+        </button>
+      </div>
       <p class="lede">
         Pose une question à Isilwen sur les Terres d’Arran
       </p>
     </header>
-
-    <div class="toolbar">
-      <button type="button" class="btn ghost" @click="clearChat">
-        Nouvelle conversation
-      </button>
-    </div>
 
     <div ref="threadEl" class="thread" role="log">
       <p v-if="messages.length === 0" class="empty">
@@ -117,9 +124,21 @@ function clearChat() {
         :disabled="loading"
         @keydown.enter.exact.prevent="submit"
       />
-      <button type="submit" class="btn primary" :disabled="loading || !input.trim()">
-        {{ loading ? 'Envoi…' : 'Envoyer' }}
-      </button>
+      <div class="composer-footer">
+        <div v-if="character.id" class="character-chip">
+          <span class="chip-icon">⚔️</span>
+          <span class="chip-name">{{ character.name }}</span>
+        </div>
+        <div v-else class="chip-placeholder" />
+        <button
+          type="submit"
+          class="send-icon-btn"
+          :disabled="loading || !input.trim()"
+          :title="loading ? 'Envoi…' : 'Envoyer'"
+        >
+          <SendHorizonal :size="20" aria-hidden="true" />
+        </button>
+      </div>
     </form>
   </div>
 </template>
@@ -139,26 +158,47 @@ function clearChat() {
   flex: 0 0 auto;
 }
 
+.head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.4rem;
+}
+
 .page-head h1 {
-  margin: 0 0 0.4rem;
+  margin: 0;
   font-size: clamp(1.35rem, 4.5vw, 1.95rem);
   font-family: var(--title-font);
   letter-spacing: 0.01em;
   color: var(--brand-strong);
 }
 
+.new-chat-btn {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.new-chat-btn:hover {
+  color: var(--brand-strong);
+  border-color: var(--brand);
+  background: color-mix(in srgb, var(--brand) 10%, var(--surface-2));
+}
+
 .lede {
   margin: 0;
   color: var(--muted);
   font-size: 0.97rem;
-}
-
-.toolbar {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  margin: 1rem 0 0.85rem;
-  flex: 0 0 auto;
 }
 
 .thread {
@@ -276,6 +316,61 @@ function clearChat() {
   color: var(--text);
   font-family: inherit;
   font-size: 1rem;
+}
+
+.composer-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.character-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--brand) 18%, var(--surface-2));
+  border: 1px solid color-mix(in srgb, var(--brand) 40%, var(--border));
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--brand-strong);
+  max-width: 16rem;
+  overflow: hidden;
+}
+
+.chip-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chip-placeholder {
+  flex: 0 0 auto;
+}
+
+.send-icon-btn {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 10px;
+  border: none;
+  background: var(--brand);
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.send-icon-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.send-icon-btn:not(:disabled):hover {
+  opacity: 0.85;
 }
 
 @media (min-width: 700px) {

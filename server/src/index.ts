@@ -3,8 +3,11 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 import { GoogleGenAI } from "@google/genai";
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
+import authRouter from "./routes/auth.js";
+import charactersRouter from "./routes/characters.js";
 import { loadCoreIndex, loadTopic } from "./knowledge/loadKnowledge.js";
 import { CLIENT_DIST } from "./paths.js";
 import {
@@ -15,8 +18,12 @@ import {
 } from "./knowledge/tools.js";
 
 const app = express();
-app.use(cors({ origin: true }));
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: "1mb" }));
+app.use(cookieParser());
+
+app.use("/api/auth", authRouter);
+app.use("/api/characters", charactersRouter);
 
 const AI_PROVIDER = process.env.AI_PROVIDER ?? "gemini";
 const ANTHROPIC_MODEL =
@@ -37,6 +44,7 @@ Tu t'adresses aux joueurs et au meneur en français, toujours en restant en pers
 - Reste en personnage du début à la fin, sans rupture de ton ni "mode d'emploi".
 - Fonds naturellement le roleplay avec les règles : ton immersif, explications précises, transitions fluides.
 - Taquinerie bienvenue, toujours bienveillante — jamais agressive ni humiliante.
+- Si un personnage actif est fourni dans le contexte, adresse-toi à lui par son prénom et adapte tes conseils à sa race, son profil, ses capacités et son niveau.
 
 ⚡ Concision avant tout :
 - Réponds de façon directe et concise. Va à l'essentiel sans tourner autour du pot.
@@ -70,6 +78,44 @@ function logTokens(
 }
 
 
+type CharacterPayload = Record<string, unknown>;
+
+function buildCharacterSection(c: CharacterPayload): string {
+  const name = c.name ?? "Inconnu";
+  const people = c.people ?? "";
+  const profile = c.profile ?? "";
+  const level = c.level ?? 1;
+  const hpMax = c.hpMax ?? "?";
+  const mpMax = c.mpMax ?? "?";
+  const defense = c.defense ?? "?";
+  const abilities = (c.abilities as Record<string, number> | undefined) ?? {};
+  const str = abilities.strength ?? "?";
+  const dex = abilities.dexterity ?? "?";
+  const con = abilities.constitution ?? "?";
+  const int_ = abilities.intelligence ?? "?";
+  const wis = abilities.wisdom ?? "?";
+  const cha = abilities.charisma ?? "?";
+  const paths = (c.paths as Array<{ name: string; rank: number }> | undefined) ?? [];
+  const skills = (c.skills as Array<{ name: string; rank: number }> | undefined) ?? [];
+
+  const pathsStr = paths.length > 0
+    ? paths.map((p) => `${p.name} (rang ${p.rank})`).join(", ")
+    : "aucune";
+  const skillsStr = skills.length > 0
+    ? skills.map((s) => `${s.name} (rang ${s.rank})`).join(", ")
+    : "aucune";
+
+  return `## Personnage actif
+
+Tu t'adresses à **${name}**${people ? `, ${people}` : ""}${profile ? `, profil ${profile}` : ""}, niveau ${level}.
+Stats : FOR ${str} / DEX ${dex} / CON ${con} / INT ${int_} / SAG ${wis} / CHA ${cha}
+PV max ${hpMax} | PM max ${mpMax} | Défense ${defense}
+Voies : ${pathsStr}
+Compétences : ${skillsStr}
+
+👤 Adresse-toi toujours à ce personnage par son prénom. Adapte tes réponses à sa race, son profil et ses capacités.`;
+}
+
 type GeminiPart = Record<string, unknown>;
 type GeminiContent = { role: string; parts: GeminiPart[] };
 
@@ -86,15 +132,17 @@ app.get("/api/health", (_req, res) => {
 
 app.post("/api/chat", async (req, res) => {
   try {
-    const body = req.body as { messages?: ChatMessage[] };
+    const body = req.body as { messages?: ChatMessage[]; character?: CharacterPayload };
     const messages = body.messages;
     if (!Array.isArray(messages) || messages.length === 0) {
       res.status(400).json({ error: "messages[] required" });
       return;
     }
 
+    const character = body.character ?? null;
     const index = await loadCoreIndex();
-    const system = `${SYSTEM_PREAMBLE}\n\n## Index des sujets disponibles\n\n${index}`;
+    const characterSection = character ? `\n\n${buildCharacterSection(character)}` : "";
+    const system = `${SYSTEM_PREAMBLE}${characterSection}\n\n## Index des sujets disponibles\n\n${index}`;
 
     const apiMessages = messages.map((m) => ({
       role: m.role,
