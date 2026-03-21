@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "./loadEnv.js";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
@@ -56,7 +56,7 @@ Tu t'adresses aux joueurs et au meneur en français, toujours en restant en pers
 - Les extraits proviennent d'une base interne (knowledge/) : ce n'est PAS une copie complète du livre.
 - Si une règle manque ou est incertaine, dis-le en une phrase, propose de vérifier le livre officiel, puis donne une alternative prudente.
 - N'invente pas de chiffres (bonus, coûts, DD) : si l'info n'est pas dans les extraits, ne la fabrique pas.
-- Tu as accès à un outil load_knowledge pour charger des règles détaillées. Utilise-le dès qu'une question porte sur un sujet spécifique (races, combat, magie, voies, création de personnage, monde...).`;
+- Tu as accès à un outil load_knowledge pour charger des règles détaillées. Utilise-le dès qu'une question porte sur un sujet spécifique (races, combat, magie, voies, équipement, création de personnage, monde...).`;
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 type SseEvent = "delta" | "done" | "error" | "tool_use";
@@ -211,6 +211,18 @@ app.post("/api/chat", async (req, res) => {
         }
       }
 
+      if (funcCall?.functionCall && !calledTopic && !closed) {
+        const raw =
+          (funcCall.functionCall as { args?: { topic?: string } }).args?.topic ?? "";
+        console.error(`[knowledge] load_knowledge ignored unknown topic: "${raw}"`);
+        writeSse(res, "error", {
+          error:
+            "Le serveur ne reconnaît pas ce sujet de règles. Recharge la page et réessaie.",
+        });
+        res.end();
+        return;
+      }
+
       if (calledTopic && !closed) {
         console.log(`[knowledge] AI requested topic: "${calledTopic}" (gemini)`);
         writeSse(res, "tool_use", { topic: calledTopic });
@@ -321,6 +333,17 @@ app.post("/api/chat", async (req, res) => {
       if ((TOPIC_NAMES as readonly string[]).includes(rawTopic)) {
         calledTopic = rawTopic as TopicName;
       }
+    }
+
+    if (toolUseBlock && !calledTopic && !closed) {
+      const rawTopic = (toolUseBlock.input as { topic?: string }).topic ?? "";
+      console.error(`[knowledge] load_knowledge ignored unknown topic: "${rawTopic}"`);
+      writeSse(res, "error", {
+        error:
+          "Le serveur ne reconnaît pas ce sujet de règles. Recharge la page et réessaie.",
+      });
+      res.end();
+      return;
     }
 
     if (toolUseBlock && calledTopic && !closed) {

@@ -8,6 +8,8 @@
     "start": "node dist/index.js",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:check": "tsx src/scripts/check-db-column.ts",
+    "db:repair": "tsx src/scripts/ensure-mystic-talent-column.ts",
     "create-user": "tsx src/scripts/create-user.ts"
   },
   "dependencies": {

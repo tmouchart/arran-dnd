@@ -5,7 +5,7 @@ import { characters } from '../db/schema.js'
 import { requireAuth, type AuthRequest } from '../auth/middleware.js'
 type SkillRow = { name: string; rank: number }
 type AttackRow = { name: string; attackBonus: string; damage: string; notes?: string }
-type PathRow = { name: string; rank: number; notes?: string }
+type PathRow = { id?: string; name: string; rank: number; kind?: string; notes?: string }
 
 const router = Router()
 router.use(requireAuth)
@@ -48,10 +48,15 @@ router.post('/', async (req, res) => {
     skills: SkillRow[]
     attacks: AttackRow[]
     paths: PathRow[]
+    mysticTalent: string | null
   }>
+
+  const existing = await db.select({ id: characters.id }).from(characters).where(eq(characters.userId, userId)).limit(1)
+  const isFirst = existing.length === 0
 
   const [row] = await db.insert(characters).values({
     userId,
+    isActive: isFirst,
     name: body.name ?? 'Nouveau héros',
     profile: body.profile ?? '',
     people: body.people ?? '',
@@ -69,6 +74,7 @@ router.post('/', async (req, res) => {
     skills: body.skills ?? [],
     attacks: body.attacks ?? [],
     paths: body.paths ?? [],
+    mysticTalent: body.mysticTalent ?? null,
   }).returning()
 
   res.status(201).json(row)
@@ -91,6 +97,7 @@ router.put('/:id', async (req, res) => {
     skills: SkillRow[]
     attacks: AttackRow[]
     paths: PathRow[]
+    mysticTalent: string | null
   }>
 
   const [row] = await db

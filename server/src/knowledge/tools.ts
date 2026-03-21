@@ -4,6 +4,7 @@ import { Type, type Tool as GeminiTool } from "@google/genai";
 export const TOPIC_NAMES = [
   "creation-personnage",
   "combat",
+  "equipement",
   "magie",
   "monde-arran",
   "races",
@@ -28,8 +29,9 @@ export const anthropicTool: Anthropic.Tool = {
         enum: [...TOPIC_NAMES],
         description:
           "Le sujet à charger. Valeurs possibles :\n" +
-          "- creation-personnage : création de personnage, caractéristiques, profils, voies de départ, PV/DEF/attaques, progression, équipement\n" +
+          "- creation-personnage : création de personnage, caractéristiques, profils, voies de départ, PV/DEF/attaques, progression\n" +
           "- combat : tests, difficultés, critiques, déroulé du combat, états préjudiciables, mort, PR, poursuite\n" +
+          "- equipement : armes, armures, devises, matériel, montures, poisons, tableaux de prix\n" +
           "- magie : PM, brûlure de magie, talents magiques, compendium des voies magiques\n" +
           "- monde-arran : peuples jouables, modificateurs, traits, aperçu des voies culturelles\n" +
           "- races : fiches détaillées des peuples/races avec voies culturelles complètes\n" +
@@ -54,8 +56,9 @@ export const geminiTool: GeminiTool = {
             enum: [...TOPIC_NAMES],
             description:
               "Le sujet à charger. Valeurs possibles :\n" +
-              "- creation-personnage : création de personnage, caractéristiques, profils, voies de départ, PV/DEF/attaques, progression, équipement\n" +
+              "- creation-personnage : création de personnage, caractéristiques, profils, voies de départ, PV/DEF/attaques, progression\n" +
               "- combat : tests, difficultés, critiques, déroulé du combat, états préjudiciables, mort, PR, poursuite\n" +
+              "- equipement : armes, armures, devises, matériel, montures, poisons, tableaux de prix\n" +
               "- magie : PM, brûlure de magie, talents magiques, compendium des voies magiques\n" +
               "- monde-arran : peuples jouables, modificateurs, traits, aperçu des voies culturelles\n" +
               "- races : fiches détaillées des peuples/races avec voies culturelles complètes\n" +

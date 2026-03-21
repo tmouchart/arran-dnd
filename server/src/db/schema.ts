@@ -47,6 +47,9 @@ export const characters = pgTable(
     attacks: jsonb('attacks').notNull().default([]),
     paths: jsonb('paths').notNull().default([]),
 
+    /** Mystic family magical talent id (client `mysticTalents.ts`), null if none */
+    mysticTalent: text('mystic_talent'),
+
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
