@@ -15,9 +15,11 @@ export interface AttackRow {
 }
 
 export interface PathRow {
+  id?: string
   name: string
   rank: number
-  notes?: string
+  /** 'peuple' et 'culturelle' sont gérés automatiquement via les dropdowns de la fiche. */
+  kind?: 'peuple' | 'culturelle'
 }
 
 export interface CharacterAbilities {
