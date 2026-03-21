@@ -24,3 +24,8 @@ dist/
 
 # Vite
 client/dist/
+
+# Local IDE / agent
+.claude/
+
+users.txt
