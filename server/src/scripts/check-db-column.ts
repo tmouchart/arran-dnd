@@ -3,11 +3,12 @@
  * Run: npm run db:check -w server
  */
 import '../loadEnv.js'
+import { getDatabaseUrl } from '../db/databaseUrl.js'
 import postgres from 'postgres'
 
-const url = process.env.DATABASE_URL
+const url = getDatabaseUrl()
 if (!url) {
-  console.error('DATABASE_URL is missing (check server/.env).')
+  console.error('DATABASE_URL or POSTGRES_URL is missing (check server/.env or platform env).')
   process.exit(1)
 }
 

@@ -1,4 +1,5 @@
 import "./loadEnv.js";
+import { getDatabaseUrl } from "./db/databaseUrl.js";
 import { runMigrations } from "./db/runMigrations.js";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
@@ -456,9 +457,13 @@ if (existsSync(CLIENT_DIST)) {
 const PORT = Number(process.env.PORT) || 3001;
 
 async function main(): Promise<void> {
-  const databaseUrl = process.env.DATABASE_URL;
+  const databaseUrl = getDatabaseUrl();
   if (databaseUrl) {
     await runMigrations(databaseUrl);
+  } else {
+    console.warn(
+      "[migrate] No DATABASE_URL / POSTGRES_URL — skipping migrations (chat-only mode or misconfiguration).",
+    );
   }
   app.listen(PORT, () => {
     console.log(`arran-dnd API listening on http://localhost:${PORT}`);

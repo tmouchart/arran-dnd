@@ -4,20 +4,14 @@
  * Run: npm run db:repair -w server
  */
 import '../loadEnv.js'
-import postgres from 'postgres'
+import { getDatabaseUrl } from '../db/databaseUrl.js'
+import { ensureMysticTalentColumn } from '../db/ensureMysticTalentColumn.js'
 
-const url = process.env.DATABASE_URL
+const url = getDatabaseUrl()
 if (!url) {
-  console.error('DATABASE_URL is missing (check server/.env).')
+  console.error('DATABASE_URL or POSTGRES_URL is missing (check server/.env or platform env).')
   process.exit(1)
 }
 
-const sql = postgres(url, { max: 1 })
-try {
-  await sql.unsafe(
-    'ALTER TABLE "character" ADD COLUMN IF NOT EXISTS "mystic_talent" text',
-  )
-  console.log('OK: column "character.mystic_talent" is present (added if it was missing).')
-} finally {
-  await sql.end()
-}
+await ensureMysticTalentColumn(url)
+console.log('OK: column "character.mystic_talent" is present (added if it was missing).')
