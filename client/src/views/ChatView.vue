@@ -110,8 +110,10 @@ function clearChat() {
 
     <div ref="threadEl" class="thread" role="log">
       <p v-if="messages.length === 0" class="empty">
-        Commence par une question, par exemple : « Comment fonctionne
-        l’initiative ? »
+        Je suis Isilwen : le miroir ne montre rien sans une question posée avec
+        intention. Héros des Terres d’Arran, qu’aimerais-tu éclaircir — une
+        règle, un sort ? Écris ta question, et nous tisserons la réponse
+        ensemble.
       </p>
       <article
         v-for="(m, i) in messages"

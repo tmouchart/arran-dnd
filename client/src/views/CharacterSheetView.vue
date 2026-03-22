@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useRoute, RouterLink } from "vue-router";
-import { CirclePlus, CircleMinus } from "lucide-vue-next";
+import { CirclePlus, CircleMinus, ChevronsDownUp } from "lucide-vue-next";
 import { useCharacter, loadCharacter } from "../composables/useCharacter";
 import {
   VOIES,
@@ -37,6 +37,9 @@ loadCharacter(id);
 function retryLoadSheet() {
   loadCharacter(id);
 }
+
+/** Toggle textarea row count (default 3 lines; expanded for long backstory). */
+const histoireExpanded = ref(false);
 
 // ── Ability list ──────────────────────────────────────────────────────────
 const abilityList = computed(() => [
@@ -120,15 +123,6 @@ function addPath(voie: Voie) {
   showPicker.value = false;
 }
 
-// ── Attacks ───────────────────────────────────────────────────────────────
-function addAttack() {
-  character.value.attacks.push({ name: "", attackBonus: "", damage: "" });
-}
-
-function removeAttack(i: number) {
-  character.value.attacks.splice(i, 1);
-}
-
 // ── Formations martiales & armes ─────────────────────────────────────────
 const catalogPick = ref("");
 
@@ -208,6 +202,31 @@ function voieData(p: PathRow): Voie | PeupleVoie | null {
   return p.id ? (ALL_VOIES_BY_ID[p.id] ?? null) : null;
 }
 
+/** Unlocked passive capacities (`active: false`) on the sheet, for quick reference. */
+const passiveAbilities = computed(() => {
+  const out: {
+    key: string;
+    pathName: string;
+    name: string;
+    description: string;
+  }[] = [];
+  character.value.paths.forEach((p, pi) => {
+    const vd = voieData(p);
+    if (!vd || p.rank <= 0) return;
+    vd.capacites.forEach((cap, ci) => {
+      if (p.rank > ci && cap.active === false) {
+        out.push({
+          key: `${p.id ?? `p${pi}`}-${ci}`,
+          pathName: p.name,
+          name: cap.name,
+          description: cap.description,
+        });
+      }
+    });
+  });
+  return out;
+});
+
 // ── Peuple & voie culturelle ──────────────────────────────────────────────
 const availableCultures = computed(() => {
   const peuple = PEUPLES_BY_ID[character.value.people];
@@ -219,28 +238,29 @@ const selectedCultureId = computed(() => {
   return character.value.paths.find((p) => p.kind === "culturelle")?.id ?? "";
 });
 
-/** Synchronise les voies de peuple dans paths quand le peuple change. */
-watch(
-  () => character.value.people,
-  (newPeople, oldPeople) => {
-    if (newPeople === oldPeople) return;
-    // Retire les anciennes voies de peuple et culturelle
-    character.value.paths = character.value.paths.filter(
-      (p) => p.kind !== "peuple" && p.kind !== "culturelle",
-    );
-    // Ajoute les nouvelles voies de peuple (peut être 2 pour semi-elfes)
-    const peuple = PEUPLES_BY_ID[newPeople];
-    if (peuple) {
-      const toAdd = peuple.voiesDePeuple.map((v) => ({
-        id: v.id,
-        name: v.name,
-        rank: 0,
-        kind: "peuple" as const,
-      }));
-      character.value.paths.unshift(...toAdd);
-    }
-  },
-);
+/**
+ * Réagit au choix du peuple dans l’UI uniquement (pas à l’hydratation depuis l’API).
+ * Un `watch` sur `people` effaçait voie culturelle + rangs au reload ("" → peuple sauvegardé).
+ */
+function applyPeupleUserChange(newPeople: string) {
+  const oldPeople = character.value.people;
+  if (newPeople === oldPeople) return;
+  character.value.people = newPeople;
+  // Retire les anciennes voies de peuple et culturelle
+  character.value.paths = character.value.paths.filter(
+    (p) => p.kind !== "peuple" && p.kind !== "culturelle",
+  );
+  const peuple = PEUPLES_BY_ID[newPeople];
+  if (peuple) {
+    const toAdd = peuple.voiesDePeuple.map((v) => ({
+      id: v.id,
+      name: v.name,
+      rank: 0,
+      kind: "peuple" as const,
+    }));
+    character.value.paths.unshift(...toAdd);
+  }
+}
 
 function selectCulture(id: string) {
   // Retire l'ancienne voie culturelle
@@ -314,7 +334,15 @@ function selectCulture(id: string) {
           </label>
           <div class="field">
             <span>Peuple</span>
-            <select v-model="character.people" class="input select">
+            <select
+              class="input select"
+              :value="character.people"
+              @change="
+                applyPeupleUserChange(
+                  ($event.target as HTMLSelectElement).value,
+                )
+              "
+            >
               <option value="">— Choisir —</option>
               <option v-for="p in PEUPLES" :key="p.id" :value="p.id">
                 {{ p.name }}
@@ -356,6 +384,29 @@ function selectCulture(id: string) {
                 {{ c.name }}
               </option>
             </select>
+          </div>
+          <div class="field span-2 histoire-block">
+            <div class="histoire-field-head">
+              <span>Histoire</span>
+              <button
+                type="button"
+                class="histoire-expand-btn"
+                :aria-expanded="histoireExpanded"
+                :aria-label="
+                  histoireExpanded
+                    ? 'Réduire le champ histoire'
+                    : 'Agrandir le champ histoire'
+                "
+                @click="histoireExpanded = !histoireExpanded"
+              >
+                <ChevronsDownUp :size="18" :stroke-width="2" />
+              </button>
+            </div>
+            <textarea
+              v-model="character.histoire"
+              class="input input-textarea"
+              :rows="histoireExpanded ? 12 : 3"
+            />
           </div>
         </div>
       </section>
@@ -560,6 +611,26 @@ function selectCulture(id: string) {
         <p v-else class="muted">Choisis tes voies en cliquant sur "Ajouter".</p>
       </section>
 
+      <!-- Passifs (capacités débloquées avec active: false) -->
+      <section v-if="passiveAbilities.length" class="card passifs-section">
+        <div class="card-head">
+          <h2>Passifs</h2>
+        </div>
+        <ul class="passif-list">
+          <li
+            v-for="passif in passiveAbilities"
+            :key="passif.key"
+            class="passif-card"
+          >
+            <div class="passif-top">
+              <span class="passif-name">{{ passif.name }}</span>
+              <span class="passif-path-tag">{{ passif.pathName }}</span>
+            </div>
+            <p class="passif-desc">{{ passif.description }}</p>
+          </li>
+        </ul>
+      </section>
+
       <!-- Formations martiales -->
       <section class="card">
         <div class="card-head">
@@ -718,64 +789,6 @@ function selectCulture(id: string) {
           </li>
         </ul>
         <p v-else class="muted">Aucune arme listée.</p>
-      </section>
-
-      <!-- Attaques -->
-      <section class="card">
-        <div class="card-head">
-          <h2>Attaques</h2>
-          <button type="button" class="btn ghost small" @click="addAttack">
-            + Ajouter
-          </button>
-        </div>
-        <ul v-if="character.attacks.length" class="attack-list">
-          <li
-            v-for="(atk, i) in character.attacks"
-            :key="i"
-            class="attack-card"
-          >
-            <input
-              v-model="atk.name"
-              type="text"
-              class="input"
-              placeholder="Arme ou sort"
-            />
-            <div class="grid-2 tight">
-              <label class="field">
-                <span>Attaque</span>
-                <input
-                  v-model="atk.attackBonus"
-                  type="text"
-                  class="input"
-                  placeholder="+5"
-                />
-              </label>
-              <label class="field">
-                <span>Dégâts</span>
-                <input
-                  v-model="atk.damage"
-                  type="text"
-                  class="input"
-                  placeholder="1d8+3"
-                />
-              </label>
-            </div>
-            <input
-              v-model="atk.notes"
-              type="text"
-              class="input"
-              placeholder="Notes (portée, spécial…)"
-            />
-            <button
-              type="button"
-              class="btn ghost small"
-              @click="removeAttack(i)"
-            >
-              Retirer
-            </button>
-          </li>
-        </ul>
-        <p v-else class="muted">Ajoute tes attaques ou sorts offensifs.</p>
       </section>
     </template>
   </div>
@@ -969,6 +982,51 @@ function selectCulture(id: string) {
   max-width: 6rem;
 }
 
+.field.histoire-block {
+  gap: 0.4rem;
+}
+
+.histoire-field-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.histoire-field-head > span {
+  font-size: 0.83rem;
+  color: var(--muted);
+}
+
+.histoire-expand-btn {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.histoire-expand-btn:hover {
+  background: var(--surface-1);
+}
+
+.input-textarea {
+  width: 100%;
+  min-height: 5.5rem;
+  line-height: 1.45;
+  resize: vertical;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: inherit;
+}
+
 .initiative-row {
   display: flex;
   flex-direction: row;
@@ -998,7 +1056,7 @@ function selectCulture(id: string) {
 }
 
 .input.score {
-  width: 3.25rem;
+  width: 3.5rem;
   text-align: center;
   font-size: 1.1rem;
 }
@@ -1272,7 +1330,7 @@ function selectCulture(id: string) {
 }
 
 .capacite.locked {
-  opacity: 0.32;
+  opacity: 0.52;
 }
 
 .cap-rank {
@@ -1319,6 +1377,69 @@ function selectCulture(id: string) {
   font-size: 0.85rem;
   color: var(--muted);
   font-style: italic;
+}
+
+/* ── Passifs (récap des capacités passives débloquées) ── */
+.passifs-section {
+  margin-top: 0;
+}
+
+.passif-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.passif-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-2);
+  padding: 0.62rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.passif-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.passif-name {
+  font-family: var(--title-font);
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+  flex: 1;
+  min-width: 0;
+}
+
+.passif-path-tag {
+  flex-shrink: 0;
+  max-width: 48%;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-align: right;
+  line-height: 1.25;
+  padding: 0.2rem 0.45rem;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  border: 1px solid var(--border);
+}
+
+.passif-desc {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.45;
 }
 
 /* ── Formations & armes ── */
@@ -1387,26 +1508,6 @@ function selectCulture(id: string) {
 }
 
 .weapon-sheet-card {
-  padding: 0.68rem;
-  border-radius: 10px;
-  border: 1px dashed var(--border-strong);
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  background: var(--surface-2);
-}
-
-/* ── Attacks ── */
-.attack-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
-}
-
-.attack-card {
   padding: 0.68rem;
   border-radius: 10px;
   border: 1px dashed var(--border-strong);

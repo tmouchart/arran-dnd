@@ -20,15 +20,6 @@ export interface SkillRow {
   rank: number
 }
 
-export interface AttackRow {
-  name: string
-  /** e.g. "+5" or "DEX" */
-  attackBonus: string
-  /** e.g. "1d8+3 tranchant" */
-  damage: string
-  notes?: string
-}
-
 export interface PathRow {
   id?: string
   name: string
@@ -50,6 +41,8 @@ export interface Character {
   id: string
   name: string
   profile: string
+  /** Background / backstory (UI: « Histoire »). */
+  histoire: string
   people: string
   level: number
   abilities: CharacterAbilities
@@ -61,7 +54,6 @@ export interface Character {
   /** Initiative score; persisted as `initiative_bonus` but always equals DEX (base rule). */
   initiativeBonus: number
   skills: SkillRow[]
-  attacks: AttackRow[]
   /** Martial weapon categories trained (excludes `paysan`, which is always considered trained). */
   martialFormations: MartialWeaponCategoryId[]
   weapons: WeaponRow[]

@@ -8,6 +8,7 @@ export interface ServerCharacter {
   isActive: boolean
   name: string
   profile: string
+  histoire: string
   people: string
   level: number
   hpMax: number
@@ -21,7 +22,6 @@ export interface ServerCharacter {
   wis: number
   cha: number
   skills: Character['skills']
-  attacks: Character['attacks']
   weapons: Character['weapons']
   martialFormations: Character['martialFormations']
   paths: Character['paths']

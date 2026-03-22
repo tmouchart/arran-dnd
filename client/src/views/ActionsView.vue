@@ -271,7 +271,7 @@ function familyClass(family?: VoieFamily): string {
       </div>
 
       <div
-        v-for="action in baseRuleActionsList"
+        v-for="action in actionsAfterWeapons"
         :key="action.source + '-' + action.name"
         class="action-bubble"
         :class="[
@@ -309,7 +309,7 @@ function familyClass(family?: VoieFamily): string {
       </div>
 
       <div
-        v-for="action in actionsAfterWeapons"
+        v-for="action in baseRuleActionsList"
         :key="action.source + '-' + action.name"
         class="action-bubble"
         :class="[

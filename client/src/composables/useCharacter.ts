@@ -26,6 +26,7 @@ function toCharacter(s: ServerCharacter): Character {
     id: String(s.id),
     name: s.name,
     profile: s.profile,
+    histoire: s.histoire ?? '',
     people: s.people,
     level: s.level,
     abilities: {
@@ -44,7 +45,6 @@ function toCharacter(s: ServerCharacter): Character {
     // CO / Terres d’Arran: initiative score equals DEX value (see creation-personnage.md)
     initiativeBonus: s.dex,
     skills: s.skills,
-    attacks: s.attacks,
     weapons: Array.isArray(s.weapons) ? s.weapons : [],
     martialFormations: Array.isArray(s.martialFormations)
       ? s.martialFormations.filter((id) => id !== 'paysan')
@@ -58,6 +58,7 @@ function toServerPayload(c: Character): Omit<ServerCharacter, 'id' | 'userId' | 
   return {
     name: c.name,
     profile: c.profile,
+    histoire: c.histoire,
     people: c.people,
     level: c.level,
     hpMax: c.hpMax,
@@ -71,7 +72,6 @@ function toServerPayload(c: Character): Omit<ServerCharacter, 'id' | 'userId' | 
     wis: c.abilities.wisdom,
     cha: c.abilities.charisma,
     skills: c.skills,
-    attacks: c.attacks,
     weapons: c.weapons,
     martialFormations: c.martialFormations,
     paths: c.paths,
@@ -84,6 +84,7 @@ export function createDefaultCharacter(): Character {
     id: '',
     name: 'Nouveau héros',
     profile: '',
+    histoire: '',
     people: '',
     level: 1,
     abilities: { strength: 10, dexterity: 10, constitution: 10, intelligence: 10, wisdom: 10, charisma: 10 },
@@ -94,7 +95,6 @@ export function createDefaultCharacter(): Character {
     defense: 12,
     initiativeBonus: 10,
     skills: [],
-    attacks: [],
     martialFormations: [],
     weapons: [],
     paths: [],
