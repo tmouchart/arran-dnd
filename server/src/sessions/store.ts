@@ -97,6 +97,23 @@ function writeSse(res: express.Response, event: string, data: unknown): void {
   res.write(`data: ${JSON.stringify(data)}\n\n`)
 }
 
+/** After DB updates to character PV, refresh in-memory session participants and notify SSE. */
+export function syncParticipantHpFromCharacter(
+  characterId: number,
+  userId: number,
+  hpCurrent: number,
+  hpMax: number,
+): void {
+  const clamped = Math.max(0, Math.min(hpCurrent, hpMax))
+  for (const session of sessions.values()) {
+    const p = session.participants.get(userId)
+    if (!p || p.characterId !== characterId) continue
+    p.hpCurrent = clamped
+    p.hpMax = hpMax
+    broadcastToSession(session.id, session)
+  }
+}
+
 export function broadcastToSession(sessionId: string, session: GameSession): void {
   const clients = sseClients.get(sessionId)
   if (!clients) return

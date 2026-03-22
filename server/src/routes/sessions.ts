@@ -96,7 +96,7 @@ router.post('/:id/join', async (req, res) => {
     username: userRow.username,
     characterId: activeChar.id,
     characterName: activeChar.name,
-    hpCurrent: typeof hpCurrent === 'number' ? hpCurrent : activeChar.hpMax,
+    hpCurrent: typeof hpCurrent === 'number' ? hpCurrent : activeChar.hpCurrent,
     hpMax: activeChar.hpMax,
     initiative: null,
   })

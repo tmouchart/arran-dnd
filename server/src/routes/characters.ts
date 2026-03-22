@@ -3,6 +3,7 @@ import { Router } from 'express'
 import { db } from '../db/index.js'
 import { characters } from '../db/schema.js'
 import { requireAuth, type AuthRequest } from '../auth/middleware.js'
+import { syncParticipantHpFromCharacter } from '../sessions/store.js'
 type SkillRow = { name: string; rank: number }
 type PathRow = { id?: string; name: string; rank: number; kind?: string; notes?: string }
 type WeaponRow = {
@@ -52,6 +53,7 @@ router.post('/', async (req, res) => {
     people: string
     level: number
     hpMax: number
+    hpCurrent?: number
     mpMax: number
     defense: number
     initiativeBonus: number
@@ -67,6 +69,7 @@ router.post('/', async (req, res) => {
   const isFirst = existing.length === 0
 
   const dex = body.dex ?? 10
+  const hpMax = body.hpMax ?? 10
   const [row] = await db.insert(characters).values({
     userId,
     isActive: isFirst,
@@ -75,7 +78,8 @@ router.post('/', async (req, res) => {
     histoire: body.histoire ?? '',
     people: body.people ?? '',
     level: body.level ?? 1,
-    hpMax: body.hpMax ?? 10,
+    hpMax,
+    hpCurrent: typeof body.hpCurrent === 'number' ? body.hpCurrent : hpMax,
     mpMax: body.mpMax ?? 0,
     defense: body.defense ?? 12,
     // Base initiative score = DEX (Terres d’Arran); default follows dex when omitted
@@ -108,6 +112,7 @@ router.put('/:id', async (req, res) => {
     people: string
     level: number
     hpMax: number
+    hpCurrent: number
     mpMax: number
     defense: number
     initiativeBonus: number
@@ -132,6 +137,42 @@ router.put('/:id', async (req, res) => {
     res.status(404).json({ error: 'Personnage introuvable' })
     return
   }
+  syncParticipantHpFromCharacter(row.id, userId, row.hpCurrent, row.hpMax)
+  res.json(row)
+})
+
+// PATCH /api/characters/:id — met à jour les PV courants (pj)
+router.patch('/:id', async (req, res) => {
+  const userId = (req as unknown as AuthRequest).userId
+  const id = Number(req.params.id)
+  const { hpCurrent } = req.body as { hpCurrent?: unknown }
+  if (typeof hpCurrent !== 'number' || !Number.isFinite(hpCurrent)) {
+    res.status(400).json({ error: 'hpCurrent doit être un nombre' })
+    return
+  }
+
+  const [existing] = await db
+    .select({ hpMax: characters.hpMax })
+    .from(characters)
+    .where(and(eq(characters.id, id), eq(characters.userId, userId)))
+
+  if (!existing) {
+    res.status(404).json({ error: 'Personnage introuvable' })
+    return
+  }
+
+  const clamped = Math.max(0, Math.min(Math.round(hpCurrent), existing.hpMax))
+  const [row] = await db
+    .update(characters)
+    .set({ hpCurrent: clamped, updatedAt: new Date() })
+    .where(and(eq(characters.id, id), eq(characters.userId, userId)))
+    .returning()
+
+  if (!row) {
+    res.status(404).json({ error: 'Personnage introuvable' })
+    return
+  }
+  syncParticipantHpFromCharacter(row.id, userId, row.hpCurrent, row.hpMax)
   res.json(row)
 })
 
