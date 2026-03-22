@@ -18,17 +18,19 @@ export interface StreamChatOptions {
   onDelta: (textDelta: string) => void
   onDone?: (meta: StreamDonePayload) => void
   onError?: (message: string) => void
+  onCharacterUpdated?: (character: Record<string, unknown>, previousCharacter: Record<string, unknown>) => void
 }
 
 export async function streamChat(
   messages: ChatMessage[],
   options: StreamChatOptions,
   character?: Record<string, unknown>,
+  previousCharacter?: Record<string, unknown>,
 ): Promise<void> {
   const res = await fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages, character }),
+    body: JSON.stringify({ messages, character, previousCharacter }),
   })
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
@@ -66,6 +68,20 @@ export async function streamChat(
         options.onDone?.(parsed)
       } catch {
         // Ignore malformed done event
+      }
+      return
+    }
+    if (eventName === 'character_updated') {
+      try {
+        const parsed = JSON.parse(eventData) as {
+          character?: Record<string, unknown>
+          previousCharacter?: Record<string, unknown>
+        }
+        if (parsed.character) {
+          options.onCharacterUpdated?.(parsed.character, parsed.previousCharacter ?? {})
+        }
+      } catch {
+        // ignore malformed event
       }
       return
     }

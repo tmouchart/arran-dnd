@@ -18,6 +18,7 @@ const threadEl = ref<HTMLElement | null>(null);
 const textareaEl = ref<HTMLTextAreaElement | null>(null);
 
 const { character, loadError } = useCharacter();
+const undoSnapshot = ref<Record<string, unknown> | null>(null);
 
 onMounted(() => {
   if (!character.value.id) loadCharacter();
@@ -72,10 +73,15 @@ async function submit() {
         onError: (msg) => {
           error.value = msg;
         },
+        onCharacterUpdated: (row, previous) => {
+          undoSnapshot.value = previous;
+          loadCharacter((row as { id?: number }).id);
+        },
       },
       character.value.id
         ? (character.value as unknown as Record<string, unknown>)
         : undefined,
+      undoSnapshot.value ?? undefined,
     );
   } catch (e) {
     if (!error.value) {
@@ -92,6 +98,7 @@ async function submit() {
 function clearChat() {
   messages.value = [];
   error.value = null;
+  undoSnapshot.value = null;
 }
 </script>
 
@@ -129,7 +136,13 @@ function clearChat() {
         class="bubble"
         :data-role="m.role"
       >
-        <span class="who">{{ m.role === "user" ? "Vous" : "Isilwen" }}</span>
+        <span class="who">{{
+          m.role === "user"
+            ? character.id
+              ? character.name.trim() || "Vous"
+              : "Vous"
+            : "Isilwen"
+        }}</span>
         <div
           v-if="m.role === 'assistant'"
           class="content assistant-content"
@@ -272,11 +285,25 @@ function clearChat() {
   border-radius: 13px;
   border: 1px solid var(--border);
   background: var(--surface-2);
+  box-sizing: border-box;
+  width: fit-content;
+  max-width: min(32rem, calc(100% - 2.75rem));
+  min-width: 0;
 }
 
+/* WhatsApp-like lanes: user on the right (gutter on the left), assistant on the left (gutter on the right) */
 .bubble[data-role="user"] {
+  align-self: flex-end;
   border-color: color-mix(in srgb, var(--brand) 45%, var(--border));
   background: color-mix(in srgb, var(--brand) 16%, var(--surface-2));
+}
+
+.bubble[data-role="assistant"] {
+  align-self: flex-start;
+}
+
+.bubble[data-role="user"] .who {
+  text-align: right;
 }
 
 .who {

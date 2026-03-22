@@ -19,6 +19,9 @@ import {
   TOPIC_NAMES,
   type TopicName,
 } from "./knowledge/tools.js";
+import { eq } from "drizzle-orm";
+import { db } from "./db/index.js";
+import { characters } from "./db/schema.js";
 
 const app = express();
 app.use(cors({ origin: true, credentials: true }));
@@ -60,14 +63,47 @@ Tu t'adresses aux joueurs et au meneur en français, toujours en restant en pers
 - Les extraits proviennent d'une base interne (knowledge/) : ce n'est PAS une copie complète du livre.
 - Si une règle manque ou est incertaine, dis-le en une phrase, propose de vérifier le livre officiel, puis donne une alternative prudente.
 - N'invente pas de chiffres (bonus, coûts, DD) : si l'info n'est pas dans les extraits, ne la fabrique pas.
-- Tu as accès à un outil load_knowledge pour charger des règles détaillées. Utilise-le dès qu'une question porte sur un sujet spécifique (races, combat, magie, voies, équipement, création de personnage, monde, histoire et lore des Terres d'Arran...).`;
+- Tu as accès à un outil load_knowledge pour charger des règles détaillées. Utilise-le dès qu'une question porte sur un sujet spécifique (races, combat, magie, voies, équipement, création de personnage, monde, histoire et lore des Terres d'Arran...).
+
+✏️ Modification de fiche (edit_character) :
+- Tu peux modifier les statistiques du personnage (FOR, DEX, CON, INT, SAG, CHA, niveau, PV max, PM max, défense) avec l'outil edit_character.
+- RÈGLE ABSOLUE : avant d'appeler edit_character, annonce EXACTEMENT ce que tu vas changer et attends la confirmation explicite du joueur ("oui", "ok", "vas-y", "d'accord"...).
+  Exemple : "Je peux passer ta FOR de 10 à 12 — veux-tu que je le fasse ?"
+- N'appelle JAMAIS edit_character si l'utilisateur n'a pas confirmé dans son dernier message.
+- Après modification, confirme brièvement en restant en personnage.
+
+↩️ Annulation (undo) :
+- Si un previousCharacter est présent dans le contexte du personnage, cela signifie qu'une modification a été faite lors de cette conversation.
+- Si l'utilisateur demande d'annuler ("annule", "undo", "remets comme avant"...), demande confirmation puis appelle edit_character avec les valeurs du previousCharacter.
+- Ne propose l'annulation que si previousCharacter est présent dans le contexte.`;
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
-type SseEvent = "delta" | "done" | "error" | "tool_use";
+type SseEvent = "delta" | "done" | "error" | "tool_use" | "character_updated";
 
 function writeSse(res: express.Response, event: SseEvent, data: unknown): void {
   res.write(`event: ${event}\n`);
   res.write(`data: ${JSON.stringify(data)}\n\n`);
+}
+
+const EDITABLE_FIELDS = new Set([
+  "str", "dex", "con", "int", "wis", "cha", "level", "hpMax", "mpMax", "defense",
+]);
+type EditableField = "str" | "dex" | "con" | "int" | "wis" | "cha" | "level" | "hpMax" | "mpMax" | "defense";
+
+function sanitizeChanges(raw: Record<string, unknown>): Partial<Record<EditableField, number>> {
+  const out: Partial<Record<EditableField, number>> = {};
+  for (const [k, v] of Object.entries(raw)) {
+    if (
+      EDITABLE_FIELDS.has(k) &&
+      typeof v === "number" &&
+      Number.isInteger(v) &&
+      v >= 0 &&
+      v <= 9999
+    ) {
+      out[k as EditableField] = v;
+    }
+  }
+  return out;
 }
 
 function logTokens(
@@ -206,9 +242,21 @@ app.get("/api/health", (_req, res) => {
   res.json({ ok: true, topics: TOPIC_NAMES });
 });
 
+function buildPreviousCharacterSection(prev: CharacterPayload): string {
+  const FIELD_LABELS: Record<string, string> = {
+    str: "FOR", dex: "DEX", con: "CON", int: "INT", wis: "SAG", cha: "CHA",
+    level: "Niveau", hpMax: "PV max", mpMax: "PM max", defense: "Défense",
+  };
+  const parts = Object.entries(prev)
+    .filter(([k, v]) => EDITABLE_FIELDS.has(k) && typeof v === "number")
+    .map(([k, v]) => `${FIELD_LABELS[k] ?? k}=${v}`);
+  if (parts.length === 0) return "";
+  return `\n\n⚠️ Modification récente (annulable) :\nValeurs avant modification — ${parts.join(", ")}`;
+}
+
 app.post("/api/chat", async (req, res) => {
   try {
-    const body = req.body as { messages?: ChatMessage[]; character?: CharacterPayload };
+    const body = req.body as { messages?: ChatMessage[]; character?: CharacterPayload; previousCharacter?: CharacterPayload };
     const messages = body.messages;
     if (!Array.isArray(messages) || messages.length === 0) {
       res.status(400).json({ error: "messages[] required" });
@@ -216,9 +264,11 @@ app.post("/api/chat", async (req, res) => {
     }
 
     const character = body.character ?? null;
+    const previousCharacter = body.previousCharacter ?? null;
     const index = await loadCoreIndex();
     const characterSection = character ? `\n\n${buildCharacterSection(character)}` : "";
-    const system = `${SYSTEM_PREAMBLE}${characterSection}\n\n## Index des sujets disponibles\n\n${index}`;
+    const previousSection = character && previousCharacter ? buildPreviousCharacterSection(previousCharacter) : "";
+    const system = `${SYSTEM_PREAMBLE}${characterSection}${previousSection}\n\n## Index des sujets disponibles\n\n${index}`;
 
     const apiMessages = messages.map((m) => ({
       role: m.role,
@@ -279,24 +329,24 @@ app.post("/api/chat", async (req, res) => {
       });
 
       const funcCall = turn1AllParts.find((p) => p.functionCall != null);
-      if (funcCall?.functionCall) {
-        const fc = funcCall.functionCall as { args?: { topic?: string } };
+      const funcName = funcCall
+        ? (funcCall.functionCall as { name?: string }).name
+        : null;
+
+      if (funcName === "load_knowledge") {
+        const fc = funcCall!.functionCall as { args?: { topic?: string } };
         const rawTopic = fc.args?.topic ?? "";
         if ((TOPIC_NAMES as readonly string[]).includes(rawTopic)) {
           calledTopic = rawTopic as TopicName;
         }
-      }
-
-      if (funcCall?.functionCall && !calledTopic && !closed) {
-        const raw =
-          (funcCall.functionCall as { args?: { topic?: string } }).args?.topic ?? "";
-        console.error(`[knowledge] load_knowledge ignored unknown topic: "${raw}"`);
-        writeSse(res, "error", {
-          error:
-            "Le serveur ne reconnaît pas ce sujet de règles. Recharge la page et réessaie.",
-        });
-        res.end();
-        return;
+        if (!calledTopic && !closed) {
+          console.error(`[knowledge] load_knowledge ignored unknown topic: "${rawTopic}"`);
+          writeSse(res, "error", {
+            error: "Le serveur ne reconnaît pas ce sujet de règles. Recharge la page et réessaie.",
+          });
+          res.end();
+          return;
+        }
       }
 
       if (calledTopic && !closed) {
@@ -346,6 +396,76 @@ app.post("/api/chat", async (req, res) => {
           if (text) writeSse(res, "delta", { text });
         }
         logTokens("gemini turn2", {
+          input: lastUsage?.promptTokenCount,
+          output: lastUsage?.candidatesTokenCount,
+          total: lastUsage?.totalTokenCount,
+        });
+      } else if (funcName === "edit_character" && !closed) {
+        const fc = funcCall!.functionCall as { args?: { changes?: Record<string, unknown> } };
+        const rawChanges = fc.args?.changes ?? {};
+        const safeChanges = sanitizeChanges(rawChanges);
+
+        if (Object.keys(safeChanges).length === 0) {
+          writeSse(res, "error", { error: "La fiche n'a pas pu être modifiée : aucun champ valide." });
+          res.end();
+          return;
+        }
+
+        const charId = Number(character?.id);
+        if (!Number.isFinite(charId) || charId <= 0) {
+          writeSse(res, "error", { error: "Identifiant de personnage invalide." });
+          res.end();
+          return;
+        }
+
+        const [oldRow] = await db.select().from(characters).where(eq(characters.id, charId));
+        if (!oldRow) {
+          writeSse(res, "error", { error: "Personnage introuvable." });
+          res.end();
+          return;
+        }
+
+        const [updatedRow] = await db
+          .update(characters)
+          .set({ ...safeChanges, updatedAt: new Date() })
+          .where(eq(characters.id, charId))
+          .returning();
+
+        console.log(`[edit_character] Updated character ${charId}:`, safeChanges);
+        writeSse(res, "character_updated", { character: updatedRow, previousCharacter: oldRow });
+
+        contents = [
+          ...contents,
+          {
+            role: "model",
+            parts: [{ functionCall: { name: "edit_character", args: { changes: safeChanges } } }],
+          },
+          {
+            role: "user",
+            parts: [{ functionResponse: { name: "edit_character", response: { content: `Modification appliquée : ${JSON.stringify(safeChanges)}` } } }],
+          },
+        ];
+
+        // Turn 2 — streaming confirmation
+        let lastUsage: { promptTokenCount?: number; candidatesTokenCount?: number; totalTokenCount?: number } | undefined;
+        const stream2 = await geminiClient.models.generateContentStream({
+          model: GEMINI_MODEL,
+          contents,
+          config: {
+            systemInstruction: system,
+            tools: [geminiTool],
+            maxOutputTokens: MAX_OUTPUT_TOKENS,
+            thinkingConfig: { thinkingBudget: 0 },
+          },
+        });
+
+        for await (const chunk of stream2) {
+          if (closed) break;
+          if (chunk.usageMetadata) lastUsage = chunk.usageMetadata;
+          const text = typeof chunk.text === "string" ? chunk.text : "";
+          if (text) writeSse(res, "delta", { text });
+        }
+        logTokens("gemini turn2 (edit)", {
           input: lastUsage?.promptTokenCount,
           output: lastUsage?.candidatesTokenCount,
           total: lastUsage?.totalTokenCount,

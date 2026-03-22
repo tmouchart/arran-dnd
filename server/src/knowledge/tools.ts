@@ -51,6 +51,10 @@ export const anthropicTool: Anthropic.Tool = {
   },
 };
 
+const EDIT_TOOL_DESCRIPTION =
+  "Modifie les statistiques du personnage actif. " +
+  "N'appelle cet outil QUE si le joueur a explicitement confirmé la modification dans son dernier message.";
+
 export const geminiTool: GeminiTool = {
   functionDeclarations: [
     {
@@ -79,6 +83,32 @@ export const geminiTool: GeminiTool = {
           },
         },
         required: ["topic"],
+      },
+    },
+    {
+      name: "edit_character",
+      description: EDIT_TOOL_DESCRIPTION,
+      parameters: {
+        type: Type.OBJECT,
+        properties: {
+          changes: {
+            type: Type.OBJECT,
+            description: "Champs à modifier. N'inclure QUE les champs qui changent réellement.",
+            properties: {
+              str:     { type: Type.INTEGER, description: "Force (1-30)" },
+              dex:     { type: Type.INTEGER, description: "Dextérité (1-30)" },
+              con:     { type: Type.INTEGER, description: "Constitution (1-30)" },
+              int:     { type: Type.INTEGER, description: "Intelligence (1-30)" },
+              wis:     { type: Type.INTEGER, description: "Sagesse (1-30)" },
+              cha:     { type: Type.INTEGER, description: "Charisme (1-30)" },
+              level:   { type: Type.INTEGER, description: "Niveau (1-20)" },
+              hpMax:   { type: Type.INTEGER, description: "PV maximum" },
+              mpMax:   { type: Type.INTEGER, description: "PM maximum" },
+              defense: { type: Type.INTEGER, description: "Valeur de défense" },
+            },
+          },
+        },
+        required: ["changes"],
       },
     },
   ],
