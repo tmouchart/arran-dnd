@@ -1,105 +1,132 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
-import { Swords } from 'lucide-vue-next'
-import { useCharacter, loadCharacter } from '../composables/useCharacter'
-import { VOIES_BY_ID, type VoieFamily } from '../data/voies'
-import { MYSTIC_TALENTS_BY_ID, isMysticTalentId } from '../data/mysticTalents'
-import { inferProfileFamily } from '../utils/inferProfileFamily'
+import { computed, onMounted } from "vue";
+import { Swords } from "lucide-vue-next";
+import { useCharacter, loadCharacter } from "../composables/useCharacter";
+import { VOIES_BY_ID, type VoieFamily } from "../data/voies";
+import { MYSTIC_TALENTS_BY_ID, isMysticTalentId } from "../data/mysticTalents";
+import { inferProfileFamily } from "../utils/inferProfileFamily";
 import {
   attackRollBonus,
   weaponAttackBonusWithProficiency,
   formatWeaponDamage,
   isMartialWeaponProficient,
-} from '../utils/attackBonus'
-import { MARTIAL_WEAPON_CATEGORY_BY_ID } from '../data/martialWeaponCategories'
+} from "../utils/attackBonus";
+import { MARTIAL_WEAPON_CATEGORY_BY_ID } from "../data/martialWeaponCategories";
 
-const { character, loading, loadError } = useCharacter()
+const { character, loading, loadError } = useCharacter();
 
 onMounted(() => {
-  if (!character.value.id) loadCharacter()
-})
+  if (!character.value.id) loadCharacter();
+});
 
 function retryLoad() {
-  loadCharacter()
+  loadCharacter();
 }
 
-const profileFamily = computed(() => inferProfileFamily(character.value.paths))
+const profileFamily = computed(() => inferProfileFamily(character.value.paths));
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-type ActionType = 'limitée' | 'attaque' | 'gratuite'
-type AttackType = 'contact' | 'distance' | 'magique' | null
+type ActionType = "limitée" | "attaque" | "gratuite" | "info";
+type AttackType = "contact" | "distance" | "magique" | null;
 
 interface Action {
-  name: string
-  description: string
-  actionType: ActionType
-  attackType: AttackType
-  source: string
-  voieFamily?: VoieFamily
+  name: string;
+  description: string;
+  actionType: ActionType;
+  attackType: AttackType;
+  source: string;
+  voieFamily?: VoieFamily;
   /** CO: PM = rang du sort. Only set for voies mystiques (talents magiques = pas de PM). */
-  pmCost: number | null
+  pmCost: number | null;
 }
 
 // ── Inférence depuis la description ──────────────────────────────────────────
 
 function inferActionType(desc: string): ActionType {
-  if (/action gratuite/i.test(desc)) return 'gratuite'
-  if (/action limitée/i.test(desc)) return 'limitée'
+  if (/action gratuite/i.test(desc)) return "gratuite";
+  if (/action limitée/i.test(desc)) return "limitée";
   // Default: action d'attaque (CO). Descriptions rarely spell it out when it is the usual case.
-  return 'attaque'
+  return "attaque";
 }
 
 function inferAttackType(desc: string): AttackType {
-  if (/attaque magique|test d.attaque magique/i.test(desc)) return 'magique'
-  if (/au contact|à mains nues|attaque de contact|attaque au contact/i.test(desc)) return 'contact'
-  if (/portée \d|à distance|attaque à distance/i.test(desc)) return 'distance'
-  return null
+  if (/attaque magique|test d.attaque magique/i.test(desc)) return "magique";
+  if (
+    /au contact|à mains nues|attaque de contact|attaque au contact/i.test(desc)
+  )
+    return "contact";
+  if (/portée \d|à distance|attaque à distance/i.test(desc)) return "distance";
+  return null;
 }
 
 // ── Bonus d'attaque ──────────────────────────────────────────────────────────
 
 function computeBonus(attackType: AttackType): number | null {
-  if (!attackType) return null
+  if (!attackType) return null;
   return attackRollBonus(
     attackType,
     character.value.level,
     character.value.abilities,
     profileFamily.value,
-  )
+  );
 }
 
 // ── Autres règles de base (les attaques normales passent par les armes sur la fiche) ──
 
 const BASE_RULE_ACTIONS: Action[] = [
   {
-    name: 'Attaque assurée',
-    description: '+5 en attaque, mais les dégâts sont divisés par 2. Aucun critique possible.',
-    actionType: 'limitée',
-    attackType: 'contact',
-    source: 'Règles de base',
+    name: "Attaque assurée",
+    description:
+      "+5 en attaque, mais les dégâts sont divisés par 2. Aucun critique possible.",
+    actionType: "limitée",
+    attackType: "contact",
+    source: "Règles de base",
     pmCost: null,
   },
   {
-    name: 'Soutien',
-    description: "Donne +5 en attaque à un allié qui cible le même adversaire à portée de contact.",
-    actionType: 'limitée',
+    name: "Soutien",
+    description:
+      "Donne +5 en attaque à un allié qui cible le même adversaire à portée de contact.",
+    actionType: "limitée",
     attackType: null,
-    source: 'Règles de base',
+    source: "Règles de base",
     pmCost: null,
   },
-]
+];
+
+const baseRuleActionsList = computed<Action[]>(() => {
+  const pourCePerso =
+    profileFamily.value === "combattants"
+      ? "Pour ce personnage (famille combattants) : 1 PM = 2 PV."
+      : "Pour ce personnage : 1 PM = 1 PV.";
+  const description = [
+    "Quand un PJ n’a pas assez de PM pour lancer un sort, il peut sacrifier des PV",
+    pourCePerso,
+  ].join("\n\n");
+  return [
+    ...BASE_RULE_ACTIONS,
+    {
+      name: "Brûlure de magie",
+      description,
+      actionType: "info" as const,
+      attackType: null,
+      source: "Magie (règle)",
+      pmCost: null,
+    },
+  ];
+});
 
 // ── Actions des voies débloquées ─────────────────────────────────────────────
 
 const voieActions = computed<Action[]>(() => {
-  const result: Action[] = []
+  const result: Action[] = [];
   for (const path of character.value.paths) {
-    const voie = VOIES_BY_ID[path.id ?? '']
-    if (!voie) continue
+    const voie = VOIES_BY_ID[path.id ?? ""];
+    if (!voie) continue;
     voie.capacites.forEach((cap, ci) => {
       if (path.rank > ci && cap.active) {
-        const spellRank = ci + 1
+        const spellRank = ci + 1;
         result.push({
           name: cap.name,
           description: cap.description,
@@ -107,78 +134,84 @@ const voieActions = computed<Action[]>(() => {
           attackType: inferAttackType(cap.description),
           source: voie.name,
           voieFamily: voie.family,
-          pmCost: voie.family === 'mystiques' ? spellRank : null,
-        })
+          pmCost: voie.family === "mystiques" ? spellRank : null,
+        });
       }
-    })
+    });
   }
-  return result
-})
+  return result;
+});
 
 const mysticTalentActions = computed<Action[]>(() => {
-  const id = character.value.mysticTalent
-  if (profileFamily.value !== 'mystiques' || !id || !isMysticTalentId(id)) return []
-  const t = MYSTIC_TALENTS_BY_ID[id]
+  const id = character.value.mysticTalent;
+  if (profileFamily.value !== "mystiques" || !id || !isMysticTalentId(id))
+    return [];
+  const t = MYSTIC_TALENTS_BY_ID[id];
   return [
     {
       name: t.name,
       description: t.description,
       actionType: t.actionType as ActionType,
       attackType: t.attackType as AttackType,
-      source: 'Talent magique',
-      voieFamily: 'mystiques' as VoieFamily,
+      source: "Talent magique",
+      voieFamily: "mystiques" as VoieFamily,
       pmCost: null,
     },
-  ]
-})
+  ];
+});
 
 const actionsAfterWeapons = computed<Action[]>(() => [
   ...mysticTalentActions.value,
   ...voieActions.value,
-])
+]);
 
 const weaponBubbles = computed(() => {
-  const fam = profileFamily.value
-  const c = character.value
+  const fam = profileFamily.value;
+  const c = character.value;
   return c.weapons.map((w) => {
-    const total = weaponAttackBonusWithProficiency(w, c, fam)
-    const incompetent = !isMartialWeaponProficient(w, c.martialFormations)
+    const total = weaponAttackBonusWithProficiency(w, c, fam);
+    const incompetent = !isMartialWeaponProficient(w, c.martialFormations);
     return {
       w,
-      hitDisplay: `d20 ${total >= 0 ? '+' : ''}${total} (vs DEF de la cible)`,
-      damageDisplay: formatWeaponDamage(w.damageDice, w.damageAbility, c.abilities),
+      hitDisplay: `d20 ${total >= 0 ? "+" : ""}${total} (vs DEF de la cible)`,
+      damageDisplay: formatWeaponDamage(
+        w.damageDice,
+        w.damageAbility,
+        c.abilities,
+      ),
       rangeDisplay: w.rangeMeters != null ? `${w.rangeMeters} m` : null,
       incompetent,
-    }
-  })
-})
+    };
+  });
+});
 
 // ── Labels & couleurs ────────────────────────────────────────────────────────
 
 function actionTypeLabel(t: ActionType): string {
-  if (t === 'limitée') return 'Limitée'
-  if (t === 'attaque') return 'Attaque'
-  return 'Gratuite'
+  if (t === "limitée") return "Limitée";
+  if (t === "attaque") return "Attaque";
+  if (t === "gratuite") return "Gratuite";
+  return "Info";
 }
 
 function attackTypeLabel(t: AttackType): string {
-  if (t === 'contact')  return 'Contact'
-  if (t === 'distance') return 'Distance'
-  if (t === 'magique')  return 'Magie'
-  return ''
+  if (t === "contact") return "Contact";
+  if (t === "distance") return "Distance";
+  if (t === "magique") return "Magie";
+  return "";
 }
 
 function bonusDisplay(bonus: number | null): string {
-  if (bonus === null) return '—'
-  return bonus >= 0 ? `+${bonus}` : String(bonus)
+  if (bonus === null) return "—";
+  return bonus >= 0 ? `+${bonus}` : String(bonus);
 }
 
 function familyClass(family?: VoieFamily): string {
-  if (family === 'combattants') return 'family-combattants'
-  if (family === 'aventuriers') return 'family-aventuriers'
-  if (family === 'mystiques')   return 'family-mystiques'
-  if (family === 'prestige')    return 'family-prestige'
-  return 'family-base'
+  if (family === "combattants") return "family-combattants";
+  if (family === "aventuriers") return "family-aventuriers";
+  if (family === "mystiques") return "family-mystiques";
+  if (family === "prestige") return "family-prestige";
+  return "family-base";
 }
 </script>
 
@@ -193,7 +226,9 @@ function familyClass(family?: VoieFamily): string {
 
     <div v-else-if="loadError" class="empty-state load-error-block">
       <p>{{ loadError }}</p>
-      <button type="button" class="btn-retry" @click="retryLoad">Réessayer</button>
+      <button type="button" class="btn-retry" @click="retryLoad">
+        Réessayer
+      </button>
     </div>
 
     <div v-else-if="!character.id" class="empty-state">
@@ -207,7 +242,7 @@ function familyClass(family?: VoieFamily): string {
         class="action-bubble family-base weapon-action"
       >
         <div class="action-header">
-          <span class="action-name">{{ item.w.name || 'Arme' }}</span>
+          <span class="action-name">{{ item.w.name || "Arme" }}</span>
           <span class="badge badge-attaque">Attaque</span>
         </div>
 
@@ -236,20 +271,25 @@ function familyClass(family?: VoieFamily): string {
       </div>
 
       <div
-        v-for="action in BASE_RULE_ACTIONS"
+        v-for="action in baseRuleActionsList"
         :key="action.source + '-' + action.name"
         class="action-bubble"
-        :class="familyClass(action.voieFamily)"
+        :class="[
+          familyClass(action.voieFamily),
+          { 'action-bubble--info': action.actionType === 'info' },
+        ]"
       >
         <div class="action-header">
           <span class="action-name">{{ action.name }}</span>
           <span class="badge" :class="`badge-${action.actionType}`">
             {{ actionTypeLabel(action.actionType) }}
           </span>
-          <span v-if="action.pmCost != null" class="badge badge-pm">PM:{{ action.pmCost }}</span>
+          <span v-if="action.pmCost != null" class="badge badge-pm"
+            >PM:{{ action.pmCost }}</span
+          >
         </div>
 
-        <div class="action-meta">
+        <div v-if="action.actionType !== 'info'" class="action-meta">
           <span v-if="action.attackType" class="attack-type-badge">
             {{ attackTypeLabel(action.attackType) }}
           </span>
@@ -272,17 +312,22 @@ function familyClass(family?: VoieFamily): string {
         v-for="action in actionsAfterWeapons"
         :key="action.source + '-' + action.name"
         class="action-bubble"
-        :class="familyClass(action.voieFamily)"
+        :class="[
+          familyClass(action.voieFamily),
+          { 'action-bubble--info': action.actionType === 'info' },
+        ]"
       >
         <div class="action-header">
           <span class="action-name">{{ action.name }}</span>
           <span class="badge" :class="`badge-${action.actionType}`">
             {{ actionTypeLabel(action.actionType) }}
           </span>
-          <span v-if="action.pmCost != null" class="badge badge-pm">PM:{{ action.pmCost }}</span>
+          <span v-if="action.pmCost != null" class="badge badge-pm"
+            >PM:{{ action.pmCost }}</span
+          >
         </div>
 
-        <div class="action-meta">
+        <div v-if="action.actionType !== 'info'" class="action-meta">
           <span v-if="action.attackType" class="attack-type-badge">
             {{ attackTypeLabel(action.attackType) }}
           </span>
@@ -334,7 +379,8 @@ function familyClass(family?: VoieFamily): string {
   margin: 0 auto;
   padding: 1.25rem 1.1rem;
   border-radius: 1rem;
-  border: 1px solid color-mix(in srgb, var(--danger, #c0392b) 45%, var(--border));
+  border: 1px solid
+    color-mix(in srgb, var(--danger, #c0392b) 45%, var(--border));
   background: color-mix(in srgb, var(--danger, #c0392b) 8%, var(--surface-2));
   color: var(--text);
 }
@@ -378,12 +424,22 @@ function familyClass(family?: VoieFamily): string {
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
-  transition: border-color 140ms ease, box-shadow 140ms ease;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease;
 }
 
 .action-bubble:hover {
   border-color: var(--accent);
   box-shadow: var(--shadow-soft);
+}
+
+.action-bubble--info {
+  border-style: dashed;
+}
+
+.action-bubble--info:hover {
+  border-color: color-mix(in srgb, var(--muted) 45%, var(--border));
 }
 
 /* Teintes par famille */
@@ -452,6 +508,14 @@ function familyClass(family?: VoieFamily): string {
   border: 1px solid color-mix(in srgb, #27ae60 35%, transparent);
 }
 
+.badge-info {
+  background: color-mix(in srgb, var(--muted) 14%, transparent);
+  color: var(--muted);
+  border: 1px solid color-mix(in srgb, var(--muted) 35%, transparent);
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
 .badge-pm {
   background: color-mix(in srgb, #2980b9 20%, transparent);
   color: #2471a3;
@@ -501,6 +565,7 @@ function familyClass(family?: VoieFamily): string {
   color: var(--muted);
   line-height: 1.45;
   margin: 0;
+  white-space: pre-line;
 }
 
 /* ── Source ─────────────────────────────────────────────────────────────── */
