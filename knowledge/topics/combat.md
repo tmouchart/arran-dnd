@@ -1,7 +1,7 @@
 ---
 source: tda-livre-joueur
-version: "0.2"
-last_reviewed: 2026-03-19
+version: "0.3"
+last_reviewed: 2026-03-22
 ---
 
 # Combat et système de jeu (CO — Terres d’Arran)
@@ -133,6 +133,32 @@ Exemples de malus :
 Quand un adversaire a une DEF “haute”, le MJ peut utiliser :
 - attaque assurée (L) : +5 au test d’attaque, mais DM divisés par 2 (arrondi à l’inférieur) ; pas de critique ;
 - soutenir (L) : donne un bonus de +5 à un allié qui cible le même adversaire au contact.
+
+### Les manœuvres (règle générale)
+
+Certaines capacités de profils orientés combat accordent des manœuvres spéciales (désarmer, renverser, etc.). Cette règle permet d’ouvrir ce type d’actions à **tous** les personnages, avec des **contreparties** que les capacités de profils ne subissent pas — elle ne doit pas se substituer avantageusement à ces capacités.
+
+**Déroulement**
+
+1. Le PJ réussit d’abord un **test d’attaque** contre l’adversaire (en général au contact ; le MJ peut autoriser distance ou magique selon le contexte et l’action).
+2. Si l’attaque porte, un **test opposé** (nature indiquée pour chaque manœuvre) ; adapter au besoin selon la situation, comme pour l’attaque.
+3. **Réussite** : appliquer les effets de la manœuvre. Une **réussite critique** sur le test d’**attaque** permet des effets plus puissants (colonne « Critique » ci-dessous).
+4. **Échec** sur le test opposé : la manœuvre échoue. **Échec avec une marge ≥ 10** : la manœuvre **se retourne contre le PJ**.
+
+Ces techniques sont des armes à double tranchant.
+
+**Pénalité de taille** (manœuvres marquées * ci-dessous : Bloquer, Renverser, Repousser) : si l’attaquant est **plus petit** que sa cible, **-5 au test d’attaque** par **catégorie de taille** d’écart.
+
+| Manœuvre | Effet en cas de réussite | Test opposé | Critique (sur l’attaque) |
+|----------|---------------------------|-------------|---------------------------|
+| **Aveugler** | Pendant **un tour complet** : la cible a **-5** en attaque, en DEF et aux DM. | DEX vs CON | La cible est aveuglée **1d6 tours** et subit des **DM normaux** (en plus). |
+| **Bloquer*** | La cible **ne peut pas se déplacer** lors de son **prochain tour**. | FOR vs FOR | La cible subit en plus l’effet de **Tenir à distance**. |
+| **Désarmer** | La cible **laisse tomber son arme** ; **une action de mouvement** pour la ramasser. | FOR **ou** DEX vs FOR | L’**attaquant s’empare** de l’arme. |
+| **Faire diversion** | Jusqu’au **prochain tour** de la cible : **-5** à tous ses tests de **perception** et en **DEF**. | CHA vs INT | Le malus passe à **-10**. |
+| **Menacer** | Si la cible **attaque le PJ** lors de son prochain tour : elle subit une **attaque au contact automatiquement réussie**, DM **+1d6**. | CHA vs SAG | Si la cible attaque : **DM doublés** (**+2d6**). |
+| **Renverser*** | La cible **tombe** : **-5 DEF** ; **une action de mouvement** pour se relever (cf. état Renversé). | FOR vs FOR | L’attaque inflige en plus des **DM normaux**. |
+| **Repousser*** | La cible **recule de 1d6 m**. | FOR vs FOR | Si le recul est **d’au moins 3 m**, la cible est en plus **renversée**. |
+| **Tenir à distance** | La cible **ne peut pas attaquer le personnage** au prochain tour. | DEX vs DEX | La cible subit en plus l’effet de **Bloquer**. |
 
 ### États préjudiciables
 

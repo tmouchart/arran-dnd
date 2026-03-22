@@ -257,6 +257,13 @@ async function submit() {
   margin: 0.25rem 0 0;
 }
 
+:global(:root[data-theme='dark']) .login-btn.btn.primary {
+  background: linear-gradient(180deg, #7d6240, #5c4830);
+  color: #f2e8dc;
+  border-color: color-mix(in srgb, #4a3825 75%, black);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.38);
+}
+
 .login-btn {
   margin-top: 1rem;
   width: 100%;

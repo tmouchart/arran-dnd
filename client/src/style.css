@@ -5,23 +5,24 @@
   font-weight: 400;
   color-scheme: light;
   --title-font: 'Metamorphous', 'Iowan Old Style', Georgia, serif;
-  --bg: #ede5d6;
-  --bg-alt: #dfd3be;
-  --surface: #f6efdf;
-  --surface-2: #efe4ce;
-  --surface-3: #e6d8bf;
-  --text: #2d251a;
-  --muted: #665f53;
-  --border: #b3a284;
-  --border-strong: #8e7a59;
-  --accent: #4f607a;
-  --accent-strong: #334862;
-  --accent-soft: rgba(79, 96, 122, 0.14);
-  --brand: #845c2a;
-  --brand-strong: #69471f;
-  --danger: #9f3535;
-  --shadow-soft: 0 5px 16px rgba(50, 35, 15, 0.12);
-  --shadow-card: 0 8px 20px rgba(62, 44, 20, 0.14);
+  /* Light: neutral stone / vellum — less yellow than cream, better readability */
+  --bg: #e3e1db;
+  --bg-alt: #d7d5cf;
+  --surface: #f5f4f0;
+  --surface-2: #eae8e2;
+  --surface-3: #dfdcd4;
+  --text: #1f1b17;
+  --muted: #5a554d;
+  --border: #aaa396;
+  --border-strong: #756d62;
+  --accent: #4a5b76;
+  --accent-strong: #2f3d56;
+  --accent-soft: rgba(74, 91, 118, 0.13);
+  --brand: #68492e;
+  --brand-strong: #4d3520;
+  --danger: #943232;
+  --shadow-soft: 0 5px 16px rgba(35, 33, 30, 0.1);
+  --shadow-card: 0 8px 22px rgba(35, 33, 30, 0.11);
   background-color: var(--bg);
   color: var(--text);
 }
@@ -56,12 +57,23 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at 18% 3%, rgba(255, 255, 255, 0.22), transparent 34%),
-    linear-gradient(180deg, var(--bg), var(--bg-alt));
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* Light: soft highlight + cool haze (offsets warm surfaces, less “yellow room”) */
+:root:not([data-theme='dark']) body {
+  background:
+    radial-gradient(circle at 16% 4%, rgba(255, 255, 255, 0.42), transparent 38%),
+    radial-gradient(ellipse 90% 45% at 50% -5%, rgba(74, 91, 118, 0.06), transparent 52%),
+    linear-gradient(180deg, var(--bg), var(--bg-alt));
+}
+
+:root[data-theme='dark'] body {
+  background:
+    radial-gradient(circle at 18% 3%, rgba(255, 255, 255, 0.08), transparent 34%),
+    linear-gradient(180deg, var(--bg), var(--bg-alt));
 }
 
 code {
@@ -70,9 +82,6 @@ code {
   border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--surface-2);
-}
-
-.page {
 }
 
 .btn {
@@ -103,7 +112,7 @@ code {
 
 .btn.primary {
   background: linear-gradient(180deg, var(--brand), var(--brand-strong));
-  color: #fff7ea;
+  color: #f7f4ef;
   border-color: color-mix(in srgb, var(--brand-strong) 65%, black);
   box-shadow: var(--shadow-soft);
 }

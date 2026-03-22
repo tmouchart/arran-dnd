@@ -22,6 +22,13 @@ const undoSnapshot = ref<Record<string, unknown> | null>(null);
 
 onMounted(() => {
   if (!character.value.id) loadCharacter();
+  // Restore scroll to latest messages after reload (localStorage hydrates before paint).
+  scrollToBottom();
+  requestAnimationFrame(() => {
+    if (threadEl.value) {
+      threadEl.value.scrollTop = threadEl.value.scrollHeight;
+    }
+  });
 });
 
 let scrollPending = false;
