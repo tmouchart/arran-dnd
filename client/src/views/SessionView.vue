@@ -3,6 +3,9 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Swords, Users, DoorOpen, Plus, X, Shield } from 'lucide-vue-next'
 import { useSession } from '../composables/useSession'
+import { user } from '../composables/useAuth'
+import { patchCharacterHp } from '../api/characters'
+import type { SessionParticipant } from '../api/sessions'
 
 const route = useRoute()
 const router = useRouter()
@@ -73,6 +76,13 @@ async function handleLeave() {
   await leave()
   router.push('/sessions')
 }
+
+async function adjustMyHp(p: SessionParticipant, delta: number) {
+  if (user.value?.id !== p.userId) return
+  const next = Math.max(0, Math.min(p.hpCurrent + delta, p.hpMax))
+  if (next === p.hpCurrent) return
+  await patchCharacterHp(p.characterId, next)
+}
 </script>
 
 <template>
@@ -128,7 +138,20 @@ async function handleLeave() {
           <span class="entity-name">
             {{ entry.kind === 'player' ? entry.data.characterName : entry.data.name }}
           </span>
-          <span v-if="entry.kind === 'player'" class="hp-chip">
+          <div
+            v-if="entry.kind === 'player' && entry.data.userId === user?.id"
+            class="monster-hp-controls"
+          >
+            <button class="hp-btn" type="button" @click="adjustMyHp(entry.data, -5)">-5</button>
+            <button class="hp-btn" type="button" @click="adjustMyHp(entry.data, -1)">-1</button>
+            <span class="hp-chip hp-chip-monster">
+              <Shield :size="12" />
+              {{ entry.data.hpCurrent }}/{{ entry.data.hpMax }}
+            </span>
+            <button class="hp-btn" type="button" @click="adjustMyHp(entry.data, 1)">+1</button>
+            <button class="hp-btn" type="button" @click="adjustMyHp(entry.data, 5)">+5</button>
+          </div>
+          <span v-else-if="entry.kind === 'player'" class="hp-chip">
             <Shield :size="12" />
             {{ entry.data.hpCurrent }}/{{ entry.data.hpMax }}
           </span>
@@ -159,7 +182,7 @@ async function handleLeave() {
           <input
             v-model.number="myInitiative"
             type="number"
-            class="text-input number-input"
+            class="input session-num-input"
             placeholder="—"
             min="-10"
             max="100"
@@ -179,7 +202,7 @@ async function handleLeave() {
             <div class="monster-controls">
               <input
                 type="number"
-                class="text-input number-input"
+                class="input session-num-input"
                 :value="m.hpCurrent"
                 :max="m.hpMax"
                 min="0"
@@ -189,7 +212,7 @@ async function handleLeave() {
               <span class="hp-max-label">/ {{ m.hpMax }}</span>
               <input
                 type="number"
-                class="text-input number-input init-input"
+                class="input session-init-input"
                 :value="m.initiative"
                 placeholder="Init"
                 title="Initiative"
@@ -210,14 +233,14 @@ async function handleLeave() {
         <form class="add-monster-form" @submit.prevent="handleAddMonster">
           <input
             v-model="monsterName"
-            class="text-input"
+            class="input add-monster-name"
             placeholder="Nom du monstre"
             required
           />
           <input
             v-model.number="monsterHpMax"
             type="number"
-            class="text-input number-input"
+            class="input session-num-input"
             placeholder="PV max"
             min="1"
             required
@@ -225,7 +248,7 @@ async function handleLeave() {
           <input
             v-model.number="monsterInitiative"
             type="number"
-            class="text-input number-input init-input"
+            class="input session-init-input"
             placeholder="Init"
           />
           <button type="submit" class="btn primary icon-btn" title="Ajouter">
@@ -250,7 +273,20 @@ async function handleLeave() {
           </div>
           <div class="participant-right">
             <span v-if="p.userId === session.gmUserId" class="badge badge-gm">MJ</span>
-            <span class="hp-chip">
+            <div
+              v-if="p.userId === user?.id"
+              class="monster-hp-controls"
+            >
+              <button class="hp-btn" type="button" @click="adjustMyHp(p, -5)">-5</button>
+              <button class="hp-btn" type="button" @click="adjustMyHp(p, -1)">-1</button>
+              <span class="hp-chip hp-chip-monster">
+                <Shield :size="12" />
+                {{ p.hpCurrent }}/{{ p.hpMax }}
+              </span>
+              <button class="hp-btn" type="button" @click="adjustMyHp(p, 1)">+1</button>
+              <button class="hp-btn" type="button" @click="adjustMyHp(p, 5)">+5</button>
+            </div>
+            <span v-else class="hp-chip">
               <Shield :size="12" />
               {{ p.hpCurrent }}/{{ p.hpMax }}
             </span>
@@ -466,11 +502,25 @@ async function handleLeave() {
 }
 
 .field-label {
-  font-size: 0.82rem;
+  font-size: 0.83rem;
   font-weight: 600;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+.session-num-input {
+  width: 4.5rem;
+  flex-shrink: 0;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.session-init-input {
+  width: 4rem;
+  flex-shrink: 0;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 /* ── Monster section ── */
@@ -533,18 +583,9 @@ async function handleLeave() {
   align-items: center;
 }
 
-.add-monster-form .text-input:first-child {
+.add-monster-form .add-monster-name {
   flex: 1;
   min-width: 120px;
-}
-
-.number-input {
-  width: 4.5rem;
-  text-align: center;
-}
-
-.init-input {
-  width: 4rem;
 }
 
 .btn-danger {

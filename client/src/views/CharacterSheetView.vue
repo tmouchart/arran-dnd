@@ -959,18 +959,7 @@ function selectCulture(id: string) {
   color: var(--muted);
 }
 
-/* ── Inputs ── */
-.input {
-  min-height: 42px;
-  padding: 0.5rem 0.64rem;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  color: var(--text);
-  font-family: inherit;
-  font-size: inherit;
-}
-
+/* ── Inputs (base `.input` in style.css) ── */
 .field-readonly.input {
   display: flex;
   align-items: center;

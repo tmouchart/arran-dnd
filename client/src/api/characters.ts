@@ -12,6 +12,7 @@ export interface ServerCharacter {
   people: string
   level: number
   hpMax: number
+  hpCurrent: number
   mpMax: number
   defense: number
   initiativeBonus: number
@@ -59,6 +60,17 @@ export async function updateCharacter(id: number, data: Partial<ServerCharacter>
     body: JSON.stringify(data),
   })
   if (!res.ok) throw new Error('Erreur lors de la sauvegarde')
+  return res.json()
+}
+
+export async function patchCharacterHp(id: number, hpCurrent: number): Promise<ServerCharacter> {
+  const res = await fetch(`${BASE}/${id}`, {
+    method: 'PATCH',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ hpCurrent }),
+  })
+  if (!res.ok) throw new Error('Erreur lors de la mise à jour des PV')
   return res.json()
 }
 

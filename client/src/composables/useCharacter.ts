@@ -8,7 +8,7 @@ import {
   type ServerCharacter,
 } from '../api/characters'
 
-// hp/mp courants restent en mémoire uniquement
+// PM courants : localStorage ; PV courants : colonne serveur `hp_current` (+ cache localStorage)
 const HP_KEY = 'arran-hp-current'
 const MP_KEY = 'arran-mp-current'
 
@@ -37,7 +37,10 @@ function toCharacter(s: ServerCharacter): Character {
       wisdom: s.wis,
       charisma: s.cha,
     },
-    hpCurrent: loadCurrentHp(s.hpMax),
+    hpCurrent:
+      typeof s.hpCurrent === 'number' && Number.isFinite(s.hpCurrent)
+        ? Math.max(0, Math.min(s.hpCurrent, s.hpMax))
+        : loadCurrentHp(s.hpMax),
     hpMax: s.hpMax,
     mpCurrent: loadCurrentMp(s.mpMax),
     mpMax: s.mpMax,
@@ -62,6 +65,7 @@ function toServerPayload(c: Character): Omit<ServerCharacter, 'id' | 'userId' | 
     people: c.people,
     level: c.level,
     hpMax: c.hpMax,
+    hpCurrent: c.hpCurrent,
     mpMax: c.mpMax,
     defense: c.defense,
     initiativeBonus: c.abilities.dexterity,

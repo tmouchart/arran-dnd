@@ -65,7 +65,7 @@ async function handleJoin(id: string) {
     <form v-if="showCreate" class="create-form" @submit.prevent="handleCreate">
       <input
         v-model="newName"
-        class="text-input"
+        class="input create-session-name"
         placeholder="Nom de la session"
         required
         autofocus
@@ -138,7 +138,7 @@ async function handleJoin(id: string) {
   border-radius: 1rem;
 }
 
-.create-form .text-input {
+.create-form .create-session-name {
   flex: 1;
   min-width: 0;
 }
