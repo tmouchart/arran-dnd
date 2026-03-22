@@ -36,6 +36,35 @@ router.post('/login', async (req, res) => {
   res.json({ user: { id: user.id, username: user.username } })
 })
 
+router.post('/register', async (req, res) => {
+  const { username, password } = req.body as { username?: string; password?: string }
+  if (!username || !password) {
+    res.status(400).json({ error: 'username et password requis' })
+    return
+  }
+  if (password.length < 6) {
+    res.status(400).json({ error: 'Le mot de passe doit faire au moins 6 caractères' })
+    return
+  }
+
+  const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.username, username)).limit(1)
+  if (existing) {
+    res.status(409).json({ error: 'Cet identifiant est déjà utilisé' })
+    return
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10)
+  const [newUser] = await db.insert(users).values({ username, passwordHash }).returning({ id: users.id, username: users.username })
+
+  const token = signToken(newUser.id)
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+  })
+  res.status(201).json({ user: { id: newUser.id, username: newUser.username } })
+})
+
 router.post('/logout', requireAuth, (_req, res) => {
   res.clearCookie('token')
   res.json({ ok: true })
