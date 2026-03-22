@@ -293,10 +293,8 @@ function selectCulture(id: string) {
           >← Liste</RouterLink
         >
       </div>
-      <p v-if="saveStatus === 'saving'" class="save-status saving">
-        Sauvegarde…
-      </p>
-      <p v-else-if="saveStatus === 'error'" class="save-status error">
+
+      <p v-if="saveStatus === 'error'" class="save-status error">
         Erreur de sauvegarde
       </p>
     </header>
