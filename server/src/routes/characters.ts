@@ -4,7 +4,6 @@ import { db } from '../db/index.js'
 import { characters } from '../db/schema.js'
 import { requireAuth, type AuthRequest } from '../auth/middleware.js'
 type SkillRow = { name: string; rank: number }
-type AttackRow = { name: string; attackBonus: string; damage: string; notes?: string }
 type PathRow = { id?: string; name: string; rank: number; kind?: string; notes?: string }
 type WeaponRow = {
   id: string
@@ -49,6 +48,7 @@ router.post('/', async (req, res) => {
   const body = req.body as Partial<{
     name: string
     profile: string
+    histoire: string
     people: string
     level: number
     hpMax: number
@@ -57,7 +57,6 @@ router.post('/', async (req, res) => {
     initiativeBonus: number
     str: number; dex: number; con: number; int: number; wis: number; cha: number
     skills: SkillRow[]
-    attacks: AttackRow[]
     weapons: WeaponRow[]
     martialFormations: string[]
     paths: PathRow[]
@@ -73,6 +72,7 @@ router.post('/', async (req, res) => {
     isActive: isFirst,
     name: body.name ?? 'Nouveau héros',
     profile: body.profile ?? '',
+    histoire: body.histoire ?? '',
     people: body.people ?? '',
     level: body.level ?? 1,
     hpMax: body.hpMax ?? 10,
@@ -87,7 +87,6 @@ router.post('/', async (req, res) => {
     wis: body.wis ?? 10,
     cha: body.cha ?? 10,
     skills: body.skills ?? [],
-    attacks: body.attacks ?? [],
     weapons: body.weapons ?? [],
     martialFormations: body.martialFormations ?? [],
     paths: body.paths ?? [],
@@ -101,9 +100,11 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   const userId = (req as unknown as AuthRequest).userId
   const id = Number(req.params.id)
-  const body = req.body as Partial<{
+  const { attacks: _legacyAttacks, ...rawBody } = (req.body ?? {}) as Record<string, unknown>
+  const body = rawBody as Partial<{
     name: string
     profile: string
+    histoire: string
     people: string
     level: number
     hpMax: number
@@ -112,7 +113,6 @@ router.put('/:id', async (req, res) => {
     initiativeBonus: number
     str: number; dex: number; con: number; int: number; wis: number; cha: number
     skills: SkillRow[]
-    attacks: AttackRow[]
     weapons: WeaponRow[]
     martialFormations: string[]
     paths: PathRow[]

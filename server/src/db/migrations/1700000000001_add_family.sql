@@ -1,0 +1,1 @@
+ALTER TABLE "character" ADD COLUMN IF NOT EXISTS "family" text DEFAULT '' NOT NULL;

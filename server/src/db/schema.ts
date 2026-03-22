@@ -28,6 +28,8 @@ export const characters = pgTable(
 
     name: text('name').notNull().default('Nouveau héros'),
     profile: text('profile').notNull().default(''),
+    /** Free-form character background / story (French UI: « Histoire »). */
+    histoire: text('histoire').notNull().default(''),
     people: text('people').notNull().default(''),
     level: integer('level').notNull().default(1),
 
@@ -44,7 +46,6 @@ export const characters = pgTable(
     cha: integer('cha').notNull().default(10),
 
     skills: jsonb('skills').notNull().default([]),
-    attacks: jsonb('attacks').notNull().default([]),
     weapons: jsonb('weapons').notNull().default([]),
     /** Martial categories trained (excludes paysan). */
     martialFormations: jsonb('martial_formations').notNull().default([]),

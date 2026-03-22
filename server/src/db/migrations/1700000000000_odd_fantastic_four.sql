@@ -1,4 +1,4 @@
-CREATE TABLE "character" (
+CREATE TABLE IF NOT EXISTS "character" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"user_id" integer NOT NULL,
 	"is_active" boolean DEFAULT false NOT NULL,
@@ -22,14 +22,22 @@ CREATE TABLE "character" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
---> statement-breakpoint
-CREATE TABLE "user" (
+CREATE TABLE IF NOT EXISTS "user" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"username" text NOT NULL,
 	"password_hash" text NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "user_username_unique" UNIQUE("username")
 );
---> statement-breakpoint
-ALTER TABLE "character" ADD CONSTRAINT "character_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-CREATE UNIQUE INDEX "one_active_per_user" ON "character" USING btree ("user_id") WHERE "character"."is_active" = true;
+DO $$
+BEGIN
+	IF NOT EXISTS (
+		SELECT 1 FROM pg_constraint
+		WHERE conname = 'character_user_id_user_id_fk'
+		AND conrelid = 'public.character'::regclass
+	) THEN
+		ALTER TABLE "character" ADD CONSTRAINT "character_user_id_user_id_fk"
+			FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;
+	END IF;
+END $$;
+CREATE UNIQUE INDEX IF NOT EXISTS "one_active_per_user" ON "character" USING btree ("user_id") WHERE "character"."is_active" = true;

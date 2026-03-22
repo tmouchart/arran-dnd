@@ -8,6 +8,7 @@
     "start": "node dist/index.js",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/scripts/migrate.ts",
+    "create-migration": "node scripts/create-migration.mjs",
     "create-user": "tsx src/scripts/create-user.ts"
   },
   "dependencies": {

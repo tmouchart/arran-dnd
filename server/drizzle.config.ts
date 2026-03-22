@@ -9,7 +9,8 @@ config({ path: resolve(__dirname, '.env'), override: false })
 
 export default defineConfig({
   schema: './src/db/schema.ts',
-  out: './src/db/migrations',
+  // Diff output only; copy SQL into `src/db/migrations` via `npm run create-migration -- <name>`.
+  out: './src/db/drizzle-kit',
   dialect: 'postgresql',
   dbCredentials: { url: process.env.DATABASE_URL! },
 })

@@ -1,0 +1,1 @@
+ALTER TABLE "character" ADD COLUMN IF NOT EXISTS "histoire" text NOT NULL DEFAULT '';

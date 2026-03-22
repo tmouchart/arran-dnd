@@ -6,6 +6,9 @@ node_modules/
 .env.local
 .env.*.local
 
+# Drizzle Kit diff output (review only; applied SQL lives in src/db/migrations)
+server/src/db/drizzle-kit/
+
 # Build outputs
 dist/
 *.tsbuildinfo

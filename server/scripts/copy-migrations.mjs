@@ -7,4 +7,5 @@ const serverRoot = path.join(__dirname, '..')
 const src = path.join(serverRoot, 'src/db/migrations')
 const dest = path.join(serverRoot, 'dist/db/migrations')
 
+fs.rmSync(dest, { recursive: true, force: true })
 fs.cpSync(src, dest, { recursive: true })
