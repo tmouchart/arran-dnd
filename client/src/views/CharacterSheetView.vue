@@ -544,6 +544,8 @@ function selectCulture(id: string) {
                   class="voie-kind-badge culturelle"
                   >Culture</span
                 >
+              </div>
+              <div class="voie-rank-controls">
                 <span class="voie-dots">
                   <span
                     v-for="dot in 5"
@@ -552,35 +554,35 @@ function selectCulture(id: string) {
                     :class="{ filled: p.rank >= dot }"
                   />
                 </span>
-              </div>
-              <div class="voie-controls" @click.stop>
-                <button
-                  type="button"
-                  class="rank-btn"
-                  :disabled="p.rank <= 0"
-                  @click="decreaseRank(p)"
-                  title="Réduire le rang"
-                >
-                  −
-                </button>
-                <button
-                  type="button"
-                  class="rank-btn"
-                  :disabled="!canIncrease(p)"
-                  @click="increaseRank(p)"
-                  title="Augmenter le rang"
-                >
-                  +
-                </button>
-                <button
-                  v-if="!p.kind"
-                  type="button"
-                  class="remove-btn"
-                  @click="removePath(i)"
-                  title="Retirer cette voie"
-                >
-                  ×
-                </button>
+                <div class="voie-controls" @click.stop>
+                  <button
+                    type="button"
+                    class="rank-btn"
+                    :disabled="p.rank <= 0"
+                    @click="decreaseRank(p)"
+                    title="Réduire le rang"
+                  >
+                    −
+                  </button>
+                  <button
+                    type="button"
+                    class="rank-btn"
+                    :disabled="!canIncrease(p)"
+                    @click="increaseRank(p)"
+                    title="Augmenter le rang"
+                  >
+                    +
+                  </button>
+                  <button
+                    v-if="!p.kind"
+                    type="button"
+                    class="remove-btn"
+                    @click="removePath(i)"
+                    title="Retirer cette voie"
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -672,7 +674,7 @@ function selectCulture(id: string) {
               class="input select weapon-catalog-select"
               @change="onCatalogWeaponChange"
             >
-              <option value="">— Ajouter depuis le livre —</option>
+              <option value="">Ajouter depuis le livre</option>
               <option
                 v-for="w in weaponsCatalogSorted"
                 :key="w.id"
@@ -1195,9 +1197,10 @@ function selectCulture(id: string) {
 /* Header row */
 .voie-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.6rem;
+  gap: 0.45rem 0.75rem;
   padding: 0.62rem 0.75rem;
   cursor: pointer;
   user-select: none;
@@ -1211,8 +1214,19 @@ function selectCulture(id: string) {
 .voie-name-block {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.55rem;
-  flex: 1;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.voie-rank-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem 0.55rem;
+  flex: 0 1 auto;
   min-width: 0;
 }
 
@@ -1221,9 +1235,8 @@ function selectCulture(id: string) {
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--brand-strong);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .voie-dots {
@@ -1253,7 +1266,26 @@ function selectCulture(id: string) {
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  flex-shrink: 0;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 699px) {
+  .voie-name-block {
+    flex: 1 1 100%;
+  }
+
+  .voie-rank-controls {
+    flex: 1 1 100%;
+    justify-content: flex-end;
+  }
+}
+
+@media (min-width: 700px) {
+  .voie-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 
 .rank-btn {

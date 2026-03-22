@@ -5,8 +5,13 @@ import DOMPurify from "dompurify";
 import { streamChat, type ChatMessage } from "../api/chat";
 import { SendHorizonal, SquarePen } from "lucide-vue-next";
 import { useCharacter, loadCharacter } from "../composables/useCharacter";
+import {
+  loadChatMessages,
+  useChatPersistence,
+} from "../composables/useChatHistory";
 const input = ref("");
-const messages = ref<ChatMessage[]>([]);
+const messages = ref<ChatMessage[]>(loadChatMessages());
+useChatPersistence(messages);
 const loading = ref(false);
 const error = ref<string | null>(null);
 const threadEl = ref<HTMLElement | null>(null);
@@ -94,7 +99,10 @@ function clearChat() {
   <div class="page chat-page">
     <header class="page-head">
       <div class="head-row">
-        <h1>🔮 Isilwen, miroir astral</h1>
+        <h1>
+          <span class="chat-title-short">🔮 Isilwen</span>
+          <span class="chat-title-full">🔮 Isilwen, miroir astral</span>
+        </h1>
         <button
           type="button"
           class="new-chat-btn"
@@ -191,6 +199,20 @@ function clearChat() {
   font-family: var(--title-font);
   letter-spacing: 0.01em;
   color: var(--brand-strong);
+}
+
+.chat-title-full {
+  display: none;
+}
+
+@media (min-width: 700px) {
+  .chat-title-short {
+    display: none;
+  }
+
+  .chat-title-full {
+    display: inline;
+  }
 }
 
 .new-chat-btn {
