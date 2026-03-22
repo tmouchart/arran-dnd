@@ -41,9 +41,14 @@ function toCharacter(s: ServerCharacter): Character {
     mpCurrent: loadCurrentMp(s.mpMax),
     mpMax: s.mpMax,
     defense: s.defense,
-    initiativeBonus: s.initiativeBonus,
+    // CO / Terres d’Arran: initiative score equals DEX value (see creation-personnage.md)
+    initiativeBonus: s.dex,
     skills: s.skills,
     attacks: s.attacks,
+    weapons: Array.isArray(s.weapons) ? s.weapons : [],
+    martialFormations: Array.isArray(s.martialFormations)
+      ? s.martialFormations.filter((id) => id !== 'paysan')
+      : [],
     paths: s.paths,
     mysticTalent: s.mysticTalent ?? '',
   }
@@ -58,7 +63,7 @@ function toServerPayload(c: Character): Omit<ServerCharacter, 'id' | 'userId' | 
     hpMax: c.hpMax,
     mpMax: c.mpMax,
     defense: c.defense,
-    initiativeBonus: c.initiativeBonus,
+    initiativeBonus: c.abilities.dexterity,
     str: c.abilities.strength,
     dex: c.abilities.dexterity,
     con: c.abilities.constitution,
@@ -67,6 +72,8 @@ function toServerPayload(c: Character): Omit<ServerCharacter, 'id' | 'userId' | 
     cha: c.abilities.charisma,
     skills: c.skills,
     attacks: c.attacks,
+    weapons: c.weapons,
+    martialFormations: c.martialFormations,
     paths: c.paths,
     mysticTalent: c.mysticTalent || null,
   }
@@ -85,9 +92,11 @@ export function createDefaultCharacter(): Character {
     mpCurrent: 0,
     mpMax: 0,
     defense: 12,
-    initiativeBonus: 0,
+    initiativeBonus: 10,
     skills: [],
     attacks: [],
+    martialFormations: [],
+    weapons: [],
     paths: [],
     mysticTalent: '',
   }
@@ -95,6 +104,13 @@ export function createDefaultCharacter(): Character {
 
 const character = ref<Character>(createDefaultCharacter())
 const serverId = ref<number | null>(null)
+
+watch(
+  () => character.value.abilities.dexterity,
+  (dex) => {
+    character.value.initiativeBonus = dex
+  },
+)
 const loading = ref(false)
 const loadError = ref<string | null>(null)
 const saveStatus = ref<'idle' | 'saving' | 'saved' | 'error'>('idle')

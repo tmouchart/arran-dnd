@@ -6,6 +6,17 @@ import { requireAuth, type AuthRequest } from '../auth/middleware.js'
 type SkillRow = { name: string; rank: number }
 type AttackRow = { name: string; attackBonus: string; damage: string; notes?: string }
 type PathRow = { id?: string; name: string; rank: number; kind?: string; notes?: string }
+type WeaponRow = {
+  id: string
+  name: string
+  attackType: 'contact' | 'distance'
+  damageDice: string
+  damageAbility: 'strength' | 'dexterity' | null
+  martialFamily: string
+  rangeMeters: number | null
+  catalogId?: string
+  notes?: string
+}
 
 const router = Router()
 router.use(requireAuth)
@@ -47,6 +58,8 @@ router.post('/', async (req, res) => {
     str: number; dex: number; con: number; int: number; wis: number; cha: number
     skills: SkillRow[]
     attacks: AttackRow[]
+    weapons: WeaponRow[]
+    martialFormations: string[]
     paths: PathRow[]
     mysticTalent: string | null
   }>
@@ -54,6 +67,7 @@ router.post('/', async (req, res) => {
   const existing = await db.select({ id: characters.id }).from(characters).where(eq(characters.userId, userId)).limit(1)
   const isFirst = existing.length === 0
 
+  const dex = body.dex ?? 10
   const [row] = await db.insert(characters).values({
     userId,
     isActive: isFirst,
@@ -64,15 +78,18 @@ router.post('/', async (req, res) => {
     hpMax: body.hpMax ?? 10,
     mpMax: body.mpMax ?? 0,
     defense: body.defense ?? 12,
-    initiativeBonus: body.initiativeBonus ?? 0,
+    // Base initiative score = DEX (Terres d’Arran); default follows dex when omitted
+    initiativeBonus: body.initiativeBonus ?? dex,
     str: body.str ?? 10,
-    dex: body.dex ?? 10,
+    dex,
     con: body.con ?? 10,
     int: body.int ?? 10,
     wis: body.wis ?? 10,
     cha: body.cha ?? 10,
     skills: body.skills ?? [],
     attacks: body.attacks ?? [],
+    weapons: body.weapons ?? [],
+    martialFormations: body.martialFormations ?? [],
     paths: body.paths ?? [],
     mysticTalent: body.mysticTalent ?? null,
   }).returning()
@@ -96,6 +113,8 @@ router.put('/:id', async (req, res) => {
     str: number; dex: number; con: number; int: number; wis: number; cha: number
     skills: SkillRow[]
     attacks: AttackRow[]
+    weapons: WeaponRow[]
+    martialFormations: string[]
     paths: PathRow[]
     mysticTalent: string | null
   }>

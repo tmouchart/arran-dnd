@@ -22,6 +22,8 @@ export interface ServerCharacter {
   cha: number
   skills: Character['skills']
   attacks: Character['attacks']
+  weapons: Character['weapons']
+  martialFormations: Character['martialFormations']
   paths: Character['paths']
   mysticTalent: string | null | undefined
 }

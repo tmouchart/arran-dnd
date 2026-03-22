@@ -16,11 +16,19 @@ import {
   PEUPLE_VOIES_BY_ID,
   type PeupleVoie,
 } from "../data/peuples";
-import type { PathRow } from "../types/character";
+import type { PathRow, WeaponRow } from "../types/character";
 import { MYSTIC_TALENTS } from "../data/mysticTalents";
 import { inferProfileFamily } from "../utils/inferProfileFamily";
+import type { MartialWeaponCategoryId } from "../data/martialWeaponCategories";
+import {
+  MARTIAL_WEAPON_CATEGORIES,
+  MARTIAL_FORMATION_SELECTABLE_IDS,
+  MARTIAL_WEAPON_CATEGORY_BY_ID,
+} from "../data/martialWeaponCategories";
+import { WEAPONS_CATALOG } from "../data/weaponsCatalog";
 
-const { character, loading, loadError, saveStatus, abilityModifier } = useCharacter();
+const { character, loading, loadError, saveStatus, abilityModifier } =
+  useCharacter();
 const route = useRoute();
 
 const id = route.query.id ? Number(route.query.id) : undefined;
@@ -119,6 +127,75 @@ function addAttack() {
 
 function removeAttack(i: number) {
   character.value.attacks.splice(i, 1);
+}
+
+// ── Formations martiales & armes ─────────────────────────────────────────
+const catalogPick = ref("");
+
+const weaponsCatalogSorted = computed(() =>
+  [...WEAPONS_CATALOG].sort((a, b) => a.name.localeCompare(b.name, "fr")),
+);
+
+function toggleMartialFormation(id: MartialWeaponCategoryId) {
+  if (id === "paysan") return;
+  const a = character.value.martialFormations;
+  const i = a.indexOf(id);
+  if (i >= 0) a.splice(i, 1);
+  else a.push(id);
+}
+
+function hasMartialFormation(id: MartialWeaponCategoryId): boolean {
+  return character.value.martialFormations.includes(id);
+}
+
+function weaponRowFromCatalog(
+  entry: (typeof WEAPONS_CATALOG)[number],
+): WeaponRow {
+  return {
+    id: crypto.randomUUID(),
+    name: entry.name,
+    attackType: entry.attackType,
+    damageDice: entry.damageDice,
+    damageAbility: entry.damageAbility,
+    martialFamily: entry.martialFamily,
+    rangeMeters: entry.rangeMeters,
+    catalogId: entry.id,
+    notes: entry.notes,
+  };
+}
+
+function onCatalogWeaponChange() {
+  const id = catalogPick.value;
+  if (!id) return;
+  const entry = WEAPONS_CATALOG.find((w) => w.id === id);
+  if (!entry) return;
+  character.value.weapons.push(weaponRowFromCatalog(entry));
+  catalogPick.value = "";
+}
+
+function addCustomWeapon() {
+  character.value.weapons.push({
+    id: crypto.randomUUID(),
+    name: "",
+    attackType: "contact",
+    damageDice: "1d6",
+    damageAbility: "strength",
+    martialFamily: "guerre",
+    rangeMeters: null,
+  });
+}
+
+function removeWeapon(i: number) {
+  character.value.weapons.splice(i, 1);
+}
+
+function setDamageAbilityFromSelect(w: WeaponRow, v: string) {
+  if (v === "") w.damageAbility = null;
+  else if (v === "strength" || v === "dexterity") w.damageAbility = v;
+}
+
+function damageAbilitySelectValue(w: WeaponRow): string {
+  return w.damageAbility ?? "";
 }
 
 // ── Voie display helper ───────────────────────────────────────────────────
@@ -244,7 +321,7 @@ function selectCulture(id: string) {
               </option>
             </select>
           </div>
-            <div class="field">
+          <div class="field">
             <span>Famille du profil</span>
             <div
               class="field-readonly input"
@@ -260,11 +337,7 @@ function selectCulture(id: string) {
             <span>Talent magique</span>
             <select v-model="character.mysticTalent" class="input select">
               <option value="">— Choisir —</option>
-              <option
-                v-for="t in MYSTIC_TALENTS"
-                :key="t.id"
-                :value="t.id"
-              >
+              <option v-for="t in MYSTIC_TALENTS" :key="t.id" :value="t.id">
                 {{ t.name }}
               </option>
             </select>
@@ -295,11 +368,19 @@ function selectCulture(id: string) {
             <div class="bar-label">
               <span>Points de vie</span>
               <div class="stat-stepper">
-                <button type="button" class="stepper-btn" @click="character.hpMax = Math.max(1, character.hpMax - 1)">
+                <button
+                  type="button"
+                  class="stepper-btn"
+                  @click="character.hpMax = Math.max(1, character.hpMax - 1)"
+                >
                   <CircleMinus :size="18" />
                 </button>
                 <span class="nums">{{ character.hpMax }}</span>
-                <button type="button" class="stepper-btn" @click="character.hpMax++">
+                <button
+                  type="button"
+                  class="stepper-btn"
+                  @click="character.hpMax++"
+                >
                   <CirclePlus :size="18" />
                 </button>
               </div>
@@ -312,17 +393,28 @@ function selectCulture(id: string) {
             <div class="bar-label">
               <span>Points de mana</span>
               <div class="stat-stepper">
-                <button type="button" class="stepper-btn" @click="character.mpMax = Math.max(0, character.mpMax - 1)">
+                <button
+                  type="button"
+                  class="stepper-btn"
+                  @click="character.mpMax = Math.max(0, character.mpMax - 1)"
+                >
                   <CircleMinus :size="18" />
                 </button>
                 <span class="nums">{{ character.mpMax }}</span>
-                <button type="button" class="stepper-btn" @click="character.mpMax++">
+                <button
+                  type="button"
+                  class="stepper-btn"
+                  @click="character.mpMax++"
+                >
                   <CirclePlus :size="18" />
                 </button>
               </div>
             </div>
             <div class="bar-track">
-              <div class="bar-fill mp" :style="{ width: character.mpMax > 0 ? '100%' : '0%' }" />
+              <div
+                class="bar-fill mp"
+                :style="{ width: character.mpMax > 0 ? '100%' : '0%' }"
+              />
             </div>
           </div>
         </div>
@@ -335,14 +427,18 @@ function selectCulture(id: string) {
               class="input narrow"
             />
           </label>
-          <label class="field">
-            <span>Initiative (bonus)</span>
-            <input
-              v-model.number="character.initiativeBonus"
-              type="number"
-              class="input narrow"
-            />
-          </label>
+          <div class="field">
+            <span>Initiative</span>
+            <div class="initiative-row">
+              <div
+                class="initiative-readonly"
+                title="Score de base = DEX (Terres d’Arran). Armure et capacités peuvent le modifier en combat."
+              >
+                {{ character.abilities.dexterity }}
+              </div>
+              <span class="field-hint">= DEX</span>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -462,6 +558,166 @@ function selectCulture(id: string) {
           </li>
         </ul>
         <p v-else class="muted">Choisis tes voies en cliquant sur "Ajouter".</p>
+      </section>
+
+      <!-- Formations martiales -->
+      <section class="card">
+        <div class="card-head">
+          <h2>Formations martiales</h2>
+        </div>
+        <ul class="formation-list">
+          <li class="formation-row">
+            <label class="formation-label">
+              <input type="checkbox" checked disabled class="formation-cb" />
+              <span>{{ MARTIAL_WEAPON_CATEGORY_BY_ID.paysan }}</span>
+            </label>
+            <span class="formation-note">Toujours actif</span>
+          </li>
+          <li
+            v-for="fid in MARTIAL_FORMATION_SELECTABLE_IDS"
+            :key="fid"
+            class="formation-row"
+          >
+            <label class="formation-label">
+              <input
+                type="checkbox"
+                class="formation-cb"
+                :checked="hasMartialFormation(fid)"
+                @change="toggleMartialFormation(fid)"
+              />
+              <span>{{ MARTIAL_WEAPON_CATEGORY_BY_ID[fid] }}</span>
+            </label>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Armes (livre + perso) -->
+      <section class="card">
+        <div class="card-head">
+          <h2>Armes</h2>
+          <div class="card-head-actions">
+            <select
+              v-model="catalogPick"
+              class="input select weapon-catalog-select"
+              @change="onCatalogWeaponChange"
+            >
+              <option value="">— Ajouter depuis le livre —</option>
+              <option
+                v-for="w in weaponsCatalogSorted"
+                :key="w.id"
+                :value="w.id"
+              >
+                {{ w.name }}
+              </option>
+            </select>
+            <button
+              type="button"
+              class="btn ghost small"
+              @click="addCustomWeapon"
+            >
+              + Perso
+            </button>
+          </div>
+        </div>
+        <ul v-if="character.weapons.length" class="weapon-sheet-list">
+          <li
+            v-for="(w, wi) in character.weapons"
+            :key="w.id"
+            class="weapon-sheet-card"
+          >
+            <input
+              v-model="w.name"
+              type="text"
+              class="input"
+              placeholder="Nom de l’arme"
+            />
+            <div class="grid-2 tight">
+              <label class="field">
+                <span>Type</span>
+                <select v-model="w.attackType" class="input select">
+                  <option value="contact">Contact</option>
+                  <option value="distance">Distance</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Catégorie martiale</span>
+                <select v-model="w.martialFamily" class="input select">
+                  <option
+                    v-for="c in MARTIAL_WEAPON_CATEGORIES"
+                    :key="c.id"
+                    :value="c.id"
+                  >
+                    {{ c.label }}
+                  </option>
+                </select>
+              </label>
+            </div>
+            <div class="grid-2 tight">
+              <label class="field">
+                <span>Dés de dégâts</span>
+                <input
+                  v-model="w.damageDice"
+                  type="text"
+                  class="input"
+                  placeholder="1d8"
+                />
+              </label>
+              <label class="field">
+                <span>Mod. dégâts</span>
+                <select
+                  class="input select"
+                  :value="damageAbilitySelectValue(w)"
+                  @change="
+                    setDamageAbilityFromSelect(
+                      w,
+                      ($event.target as HTMLSelectElement).value,
+                    )
+                  "
+                >
+                  <option value="">Aucun (—)</option>
+                  <option value="strength">FOR</option>
+                  <option value="dexterity">DEX</option>
+                </select>
+              </label>
+            </div>
+            <div class="grid-2 tight">
+              <label class="field">
+                <span>Portée (m)</span>
+                <input
+                  :value="w.rangeMeters ?? ''"
+                  type="number"
+                  min="0"
+                  step="1"
+                  class="input"
+                  placeholder="—"
+                  @input="
+                    w.rangeMeters =
+                      ($event.target as HTMLInputElement).value === ''
+                        ? null
+                        : Number(($event.target as HTMLInputElement).value)
+                  "
+                />
+              </label>
+              <label class="field">
+                <span>Notes</span>
+                <input
+                  v-model="w.notes"
+                  type="text"
+                  class="input"
+                  placeholder="Optionnel"
+                />
+              </label>
+            </div>
+            <button
+              type="button"
+              class="btn ghost small"
+              @click="removeWeapon(wi)"
+            >
+              Retirer
+            </button>
+          </li>
+        </ul>
+        <p v-else class="muted">Aucune arme listée.</p>
       </section>
 
       <!-- Attaques -->
@@ -712,6 +968,35 @@ function selectCulture(id: string) {
 .input.narrow {
   max-width: 6rem;
 }
+
+.initiative-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: nowrap;
+}
+
+.initiative-readonly {
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+  max-width: 6rem;
+  padding: 0.5rem 0.64rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: default;
+}
+
+.field-hint {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
 .input.score {
   width: 3.25rem;
   text-align: center;
@@ -1034,6 +1319,81 @@ function selectCulture(id: string) {
   font-size: 0.85rem;
   color: var(--muted);
   font-style: italic;
+}
+
+/* ── Formations & armes ── */
+.small-hint {
+  font-size: 0.82rem;
+  margin: 0 0 0.75rem;
+  line-height: 1.35;
+}
+
+.formation-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.formation-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.formation-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.92rem;
+}
+
+.formation-cb {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: var(--brand);
+}
+
+.formation-note {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.card-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  justify-content: flex-end;
+}
+
+.weapon-catalog-select {
+  min-width: 11rem;
+  max-width: 100%;
+}
+
+.weapon-sheet-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.weapon-sheet-card {
+  padding: 0.68rem;
+  border-radius: 10px;
+  border: 1px dashed var(--border-strong);
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  background: var(--surface-2);
 }
 
 /* ── Attacks ── */

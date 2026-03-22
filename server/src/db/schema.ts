@@ -45,6 +45,9 @@ export const characters = pgTable(
 
     skills: jsonb('skills').notNull().default([]),
     attacks: jsonb('attacks').notNull().default([]),
+    weapons: jsonb('weapons').notNull().default([]),
+    /** Martial categories trained (excludes paysan). */
+    martialFormations: jsonb('martial_formations').notNull().default([]),
     paths: jsonb('paths').notNull().default([]),
 
     /** Mystic family magical talent id (client `mysticTalents.ts`), null if none */

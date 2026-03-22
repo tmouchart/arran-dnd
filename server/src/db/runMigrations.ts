@@ -4,7 +4,6 @@ import { fileURLToPath } from 'node:url'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import { migrate } from 'drizzle-orm/postgres-js/migrator'
 import postgres from 'postgres'
-import { ensureMysticTalentColumn } from './ensureMysticTalentColumn.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const migrationsFolder = join(__dirname, 'migrations')
@@ -31,8 +30,4 @@ export async function runMigrations(databaseUrl: string): Promise<void> {
   } finally {
     await client.end()
   }
-
-  console.log('[migrate] Ensuring mystic_talent column…')
-  await ensureMysticTalentColumn(databaseUrl)
-  console.log('[migrate] Done.')
 }

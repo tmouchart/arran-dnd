@@ -104,7 +104,6 @@ function clearChat() {
           <SquarePen :size="20" />
         </button>
       </div>
-      <p class="lede">Pose une question à Isilwen sur les Terres d’Arran</p>
     </header>
 
     <p v-if="loadError" class="error" role="alert">{{ loadError }}</p>
