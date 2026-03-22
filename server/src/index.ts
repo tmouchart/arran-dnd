@@ -46,7 +46,7 @@ Tu t'adresses aux joueurs et au meneur en français, toujours en restant en pers
 - Reste en personnage du début à la fin, sans rupture de ton ni "mode d'emploi".
 - Fonds naturellement le roleplay avec les règles : ton immersif, explications précises, transitions fluides.
 - Taquinerie bienvenue, toujours bienveillante — jamais agressive ni humiliante.
-- Si un personnage actif est fourni dans le contexte, adresse-toi à lui par son prénom et adapte tes conseils à sa race, son profil, ses capacités et son niveau.
+- Si un personnage actif est fourni dans le contexte, adresse-toi à lui par son prénom et adapte tes conseils à sa race, son profil, son histoire (si fournie), ses armes et capacités, et son niveau.
 
 ⚡ Concision avant tout :
 - Réponds de façon directe et concise. Va à l'essentiel sans tourner autour du pot.
@@ -89,7 +89,16 @@ function buildCharacterSection(c: CharacterPayload): string {
   const level = c.level ?? 1;
   const hpMax = c.hpMax ?? "?";
   const mpMax = c.mpMax ?? "?";
+  const hpCurrent = c.hpCurrent;
+  const mpCurrent = c.mpCurrent;
   const defense = c.defense ?? "?";
+  const initiativeBonus = c.initiativeBonus;
+  const histoire = typeof c.histoire === "string" ? c.histoire.trim() : "";
+  const mysticTalent =
+    typeof c.mysticTalent === "string" && c.mysticTalent.trim() !== ""
+      ? c.mysticTalent.trim()
+      : "";
+
   const abilities = (c.abilities as Record<string, number> | undefined) ?? {};
   const str = abilities.strength ?? "?";
   const dex = abilities.dexterity ?? "?";
@@ -99,6 +108,21 @@ function buildCharacterSection(c: CharacterPayload): string {
   const cha = abilities.charisma ?? "?";
   const paths = (c.paths as Array<{ name: string; rank: number }> | undefined) ?? [];
   const skills = (c.skills as Array<{ name: string; rank: number }> | undefined) ?? [];
+  const martialFormations = Array.isArray(c.martialFormations)
+    ? (c.martialFormations as string[])
+    : [];
+  const weapons =
+    (c.weapons as
+      | Array<{
+          name: string;
+          attackType?: string;
+          damageDice?: string;
+          damageAbility?: string | null;
+          martialFamily?: string;
+          rangeMeters?: number | null;
+          notes?: string;
+        }>
+      | undefined) ?? [];
 
   const pathsStr = paths.length > 0
     ? paths.map((p) => `${p.name} (rang ${p.rank})`).join(", ")
@@ -107,15 +131,63 @@ function buildCharacterSection(c: CharacterPayload): string {
     ? skills.map((s) => `${s.name} (rang ${s.rank})`).join(", ")
     : "aucune";
 
+  const pvPmLine =
+    typeof hpCurrent === "number" && typeof mpCurrent === "number"
+      ? `PV ${hpCurrent}/${hpMax} | PM ${mpCurrent}/${mpMax}`
+      : `PV max ${hpMax} | PM max ${mpMax}`;
+
+  const initiativeLine =
+    typeof initiativeBonus === "number"
+      ? `Initiative (score) ${initiativeBonus}`
+      : "";
+
+  const martialLine =
+    martialFormations.length > 0
+      ? `Formations martiales (catégories d'armes) : ${martialFormations.join(", ")}`
+      : "";
+
+  const mysticLine = mysticTalent
+    ? `Talent mystique (identifiant) : ${mysticTalent}`
+    : "";
+
+  const weaponsStr =
+    weapons.length > 0
+      ? weapons
+          .map((w) => {
+            const parts = [w.name];
+            if (w.damageDice) parts.push(`dégâts ${w.damageDice}`);
+            if (w.attackType) parts.push(w.attackType);
+            if (w.damageAbility) parts.push(`Mod. ${w.damageAbility}`);
+            if (w.martialFamily) parts.push(`famille ${w.martialFamily}`);
+            if (w.rangeMeters != null) parts.push(`portée ${w.rangeMeters} m`);
+            if (w.notes?.trim()) parts.push(`note: ${w.notes.trim()}`);
+            return parts.join(" — ");
+          })
+          .join("\n")
+      : "";
+
+  const histoireBlock = histoire
+    ? `\n\n### Histoire et contexte (fiche joueur)\n\n${histoire}`
+    : "";
+
+  const extraBlocks = [
+    initiativeLine,
+    martialLine,
+    mysticLine,
+    weaponsStr ? `Armes :\n${weaponsStr}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
   return `## Personnage actif
 
 Tu t'adresses à **${name}**${people ? `, ${people}` : ""}${profile ? `, profil ${profile}` : ""}, niveau ${level}.
 Stats : FOR ${str} / DEX ${dex} / CON ${con} / INT ${int_} / SAG ${wis} / CHA ${cha}
-PV max ${hpMax} | PM max ${mpMax} | Défense ${defense}
+${pvPmLine} | Défense ${defense}${extraBlocks ? `\n${extraBlocks}` : ""}
 Voies : ${pathsStr}
-Compétences : ${skillsStr}
+Compétences : ${skillsStr}${histoireBlock}
 
-👤 Adresse-toi toujours à ce personnage par son prénom. Adapte tes réponses à sa race, son profil et ses capacités.`;
+👤 Adresse-toi toujours à ce personnage par son prénom. Adapte tes réponses à sa race, son profil, son histoire (si fournie), ses armes et ses capacités.`;
 }
 
 type GeminiPart = Record<string, unknown>;
