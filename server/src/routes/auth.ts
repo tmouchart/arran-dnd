@@ -5,6 +5,7 @@ import { db } from '../db/index.js'
 import { users } from '../db/schema.js'
 import { signToken } from '../auth/jwt.js'
 import { requireAuth, type AuthRequest } from '../auth/middleware.js'
+import googleAuthRouter from './googleAuth.js'
 
 const router = Router()
 
@@ -18,6 +19,11 @@ router.post('/login', async (req, res) => {
   const [user] = await db.select().from(users).where(eq(users.username, username)).limit(1)
   if (!user) {
     res.status(401).json({ error: 'Identifiants incorrects' })
+    return
+  }
+
+  if (!user.passwordHash) {
+    res.status(401).json({ error: 'Ce compte utilise la connexion Google' })
     return
   }
 
@@ -82,5 +88,7 @@ router.get('/me', requireAuth, async (req, res) => {
   }
   res.json({ user })
 })
+
+router.use('/google', googleAuthRouter)
 
 export default router

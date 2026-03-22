@@ -13,7 +13,9 @@ import {
 export const users = pgTable('user', {
   id: serial('id').primaryKey(),
   username: text('username').notNull().unique(),
-  passwordHash: text('password_hash').notNull(),
+  passwordHash: text('password_hash'),
+  googleId: text('google_id').unique(),
+  email: text('email'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 })
 

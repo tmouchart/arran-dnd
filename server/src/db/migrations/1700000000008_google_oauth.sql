@@ -1,0 +1,6 @@
+ALTER TABLE "user"
+  ADD COLUMN IF NOT EXISTS google_id text UNIQUE,
+  ADD COLUMN IF NOT EXISTS email text;
+
+ALTER TABLE "user"
+  ALTER COLUMN password_hash DROP NOT NULL;
