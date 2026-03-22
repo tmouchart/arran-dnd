@@ -8,6 +8,8 @@ last_reviewed: 2026-03-20
 
 Pour les **fiches complètes** (roleplay, voies de peuple, voies culturelles), voir **`races.md`**.
 
+Pour l’**histoire du monde**, les **crystaux**, les **ordres nains** et le **lore** des ethnies (hors règles mécaniques), voir **`monde-lore-chroniques.md`** et les fichiers **`monde-lore-peuples-*.md`**.
+
 ## 1) Règles de base : peuple et culture
 
 À la création d'un personnage :

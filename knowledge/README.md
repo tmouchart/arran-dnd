@@ -19,6 +19,10 @@ Curated rules and references for the **in-app Q&A** (Claude) and for agents work
 | [topics/combat.md](topics/combat.md) | Combat flow, attacks, damage (CO-style) |
 | [topics/magie.md](topics/magie.md) | Magic / resources overview *(expand from PDF)* |
 | [topics/monde-arran.md](topics/monde-arran.md) | Peuples d’Arran — aperçu création *(voir aussi `races.md` pour le détail)* |
+| [topics/monde-lore-chroniques.md](topics/monde-lore-chroniques.md) | Lore — chronologie, crystaux, Grand Schisme, Fléaux, prophéties |
+| [topics/monde-lore-peuples-elfes.md](topics/monde-lore-peuples-elfes.md) | Lore — Elfes par ethnie, Semi-Elfes |
+| [topics/monde-lore-peuples-nains-humains.md](topics/monde-lore-peuples-nains-humains.md) | Lore — ordres nains, cultures humaines |
+| [topics/monde-lore-peuples-autres.md](topics/monde-lore-peuples-autres.md) | Lore — Orcs, Gobelins, Ogres, Trolls, Centaures |
 | [topics/races.md](topics/races.md) | Peuples jouables : lore, roleplay, modificateurs, voie de peuple, voies culturelles |
 | [topics/voies-de-profil.md](topics/voies-de-profil.md) | Detailed profile paths, ranks, effects and prerequisites |
 | [topics/voies-de-prestige.md](topics/voies-de-prestige.md) | Prestige paths and progression details |

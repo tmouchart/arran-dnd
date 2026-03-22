@@ -7,6 +7,10 @@ export const TOPIC_NAMES = [
   "equipement",
   "magie",
   "monde-arran",
+  "monde-lore-chroniques",
+  "monde-lore-peuples-elfes",
+  "monde-lore-peuples-nains-humains",
+  "monde-lore-peuples-autres",
   "races",
   "voies-de-profil",
   "voies-de-prestige",
@@ -34,6 +38,10 @@ export const anthropicTool: Anthropic.Tool = {
           "- equipement : armes, armures, devises, matériel, montures, poisons, tableaux de prix\n" +
           "- magie : PM, brûlure de magie, talents magiques, compendium des voies magiques\n" +
           "- monde-arran : peuples jouables, modificateurs, traits, aperçu des voies culturelles\n" +
+          "- monde-lore-chroniques : histoire du monde (ères, crystaux, Grand Schisme, Fléaux, prophéties) — lore narratif\n" +
+          "- monde-lore-peuples-elfes : Elfes par ethnie, Semi-Elfes — lore narratif\n" +
+          "- monde-lore-peuples-nains-humains : ordres nains, cultures humaines — lore narratif\n" +
+          "- monde-lore-peuples-autres : Orcs, Gobelins, Ogres, Trolls, Centaures — lore narratif\n" +
           "- races : fiches détaillées des peuples/races avec voies culturelles complètes\n" +
           "- voies-de-profil : voies liées aux profils (guerrier, rôdeur, mage, etc.)\n" +
           "- voies-de-prestige : voies de prestige avancées",
@@ -61,6 +69,10 @@ export const geminiTool: GeminiTool = {
               "- equipement : armes, armures, devises, matériel, montures, poisons, tableaux de prix\n" +
               "- magie : PM, brûlure de magie, talents magiques, compendium des voies magiques\n" +
               "- monde-arran : peuples jouables, modificateurs, traits, aperçu des voies culturelles\n" +
+              "- monde-lore-chroniques : histoire du monde (ères, crystaux, Grand Schisme, Fléaux, prophéties) — lore narratif\n" +
+              "- monde-lore-peuples-elfes : Elfes par ethnie, Semi-Elfes — lore narratif\n" +
+              "- monde-lore-peuples-nains-humains : ordres nains, cultures humaines — lore narratif\n" +
+              "- monde-lore-peuples-autres : Orcs, Gobelins, Ogres, Trolls, Centaures — lore narratif\n" +
               "- races : fiches détaillées des peuples/races avec voies culturelles complètes\n" +
               "- voies-de-profil : voies liées aux profils (guerrier, rôdeur, mage, etc.)\n" +
               "- voies-de-prestige : voies de prestige avancées",
