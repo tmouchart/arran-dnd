@@ -4,6 +4,8 @@ import CharacterSheetView from '../views/CharacterSheetView.vue'
 import CharacterListView from '../views/CharacterListView.vue'
 import ActionsView from '../views/ActionsView.vue'
 import LoginView from '../views/LoginView.vue'
+import SessionListView from '../views/SessionListView.vue'
+import SessionView from '../views/SessionView.vue'
 import { authReady, user, initAuth } from '../composables/useAuth'
 
 export const router = createRouter({
@@ -14,6 +16,8 @@ export const router = createRouter({
     { path: '/personnages', name: 'characters', component: CharacterListView },
     { path: '/personnage', name: 'character', component: CharacterSheetView },
     { path: '/actions', name: 'actions', component: ActionsView },
+    { path: '/sessions', name: 'sessions', component: SessionListView },
+    { path: '/sessions/:id', name: 'session', component: SessionView },
   ],
 })
 

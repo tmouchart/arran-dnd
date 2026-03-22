@@ -10,6 +10,7 @@ import cors from "cors";
 import express from "express";
 import authRouter from "./routes/auth.js";
 import charactersRouter from "./routes/characters.js";
+import sessionsRouter from "./routes/sessions.js";
 import { loadCoreIndex, loadTopic } from "./knowledge/loadKnowledge.js";
 import { CLIENT_DIST } from "./paths.js";
 import {
@@ -26,6 +27,7 @@ app.use(cookieParser());
 
 app.use("/api/auth", authRouter);
 app.use("/api/characters", charactersRouter);
+app.use("/api/sessions", sessionsRouter);
 
 const AI_PROVIDER = process.env.AI_PROVIDER ?? "gemini";
 const ANTHROPIC_MODEL =
@@ -58,7 +60,7 @@ Tu t'adresses aux joueurs et au meneur en français, toujours en restant en pers
 - Les extraits proviennent d'une base interne (knowledge/) : ce n'est PAS une copie complète du livre.
 - Si une règle manque ou est incertaine, dis-le en une phrase, propose de vérifier le livre officiel, puis donne une alternative prudente.
 - N'invente pas de chiffres (bonus, coûts, DD) : si l'info n'est pas dans les extraits, ne la fabrique pas.
-- Tu as accès à un outil load_knowledge pour charger des règles détaillées. Utilise-le dès qu'une question porte sur un sujet spécifique (races, combat, magie, voies, équipement, création de personnage, monde...).`;
+- Tu as accès à un outil load_knowledge pour charger des règles détaillées. Utilise-le dès qu'une question porte sur un sujet spécifique (races, combat, magie, voies, équipement, création de personnage, monde, histoire et lore des Terres d'Arran...).`;
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 type SseEvent = "delta" | "done" | "error" | "tool_use";

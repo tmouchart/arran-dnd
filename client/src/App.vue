@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RouterLink, RouterView, useRouter } from "vue-router";
 import { computed, ref } from "vue";
-import { LogOut } from "lucide-vue-next";
+import { LogOut, Users } from "lucide-vue-next";
 import { user, logout } from "./composables/useAuth";
 
 const router = useRouter();
@@ -47,6 +47,9 @@ const themeIcon = computed(() => (theme.value === "dark" ? "☀️" : "🌙"));
           <RouterLink to="/" class="nav-link" title="Assistant">🔮</RouterLink>
           <RouterLink to="/personnage" class="nav-link" title="Personnage">⚔️</RouterLink>
           <RouterLink to="/actions" class="nav-link" title="Mes actions">⚡</RouterLink>
+          <RouterLink to="/sessions" class="nav-link" title="Sessions de jeu">
+            <Users :size="18" />
+          </RouterLink>
         </nav>
         <span v-if="user" class="nav-username">{{ user.username }}</span>
         <div class="nav-controls">
