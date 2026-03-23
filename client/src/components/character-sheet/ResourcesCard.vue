@@ -95,7 +95,7 @@ const mpWisTooltip = computed(() => {
   return `Mod. SAG (${props.character.abilities.wisdom} → ${sign}${mod})`;
 });
 const mpIsMystique = computed(() => props.family === "mystiques");
-const mpBase = computed(() => props.character.level + mpWisMod.value);
+
 </script>
 
 <template>

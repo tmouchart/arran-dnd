@@ -239,9 +239,9 @@ watch(() => props.show, (shown) => {
               v-for="(val, key) in racialMods"
               :key="key"
               class="racial-chip"
-              :class="val > 0 ? 'positive' : 'negative'"
+              :class="(val ?? 0) > 0 ? 'positive' : 'negative'"
             >
-              {{ ABILITY_LABELS[key as AbilityKey] }} {{ racialModSign(val) }}
+              {{ ABILITY_LABELS[key as AbilityKey] }} {{ racialModSign(val ?? 0) }}
             </span>
             <span class="racial-info">Ces modificateurs s'appliqueront au résultat final.</span>
           </div>
