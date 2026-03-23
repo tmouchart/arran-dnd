@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, nextTick, onMounted } from "vue";
+import { ref, nextTick, onMounted, onUnmounted } from "vue";
 import MarkdownIt from "markdown-it";
 import DOMPurify from "dompurify";
 import { streamChat, type ChatMessage } from "../api/chat";
@@ -17,6 +17,45 @@ const loading = ref(false);
 const error = ref<string | null>(null);
 const threadEl = ref<HTMLElement | null>(null);
 const textareaEl = ref<HTMLTextAreaElement | null>(null);
+
+// Typewriter effect: buffer incoming delta chars and drip them out slowly.
+const TYPEWRITER_INTERVAL_MS = 5; // ~45 chars/sec
+const typewriterQueue = ref<string[]>([]);
+let typewriterTimer: ReturnType<typeof setInterval> | null = null;
+
+function startTypewriter() {
+  if (typewriterTimer !== null) return;
+  typewriterTimer = setInterval(() => {
+    if (typewriterQueue.value.length === 0) return;
+    const char = typewriterQueue.value.shift()!;
+    const last = messages.value[messages.value.length - 1];
+    if (last && last.role === "assistant") {
+      last.content += char;
+      scrollToBottom();
+    }
+  }, TYPEWRITER_INTERVAL_MS);
+}
+
+function stopTypewriter() {
+  if (typewriterTimer !== null) {
+    clearInterval(typewriterTimer);
+    typewriterTimer = null;
+  }
+}
+
+function flushTypewriterQueue() {
+  // Drain remaining chars instantly (e.g. on stream end or error)
+  const last = messages.value[messages.value.length - 1];
+  if (last && last.role === "assistant") {
+    last.content += typewriterQueue.value.join("");
+  }
+  typewriterQueue.value = [];
+  stopTypewriter();
+}
+
+onUnmounted(() => {
+  stopTypewriter();
+});
 
 const { character, loadError } = useCharacter();
 const undoSnapshot = ref<Record<string, unknown> | null>(null);
@@ -69,16 +108,18 @@ async function submit() {
   loading.value = true;
   scrollToBottom();
   try {
+    typewriterQueue.value = [];
+    startTypewriter();
     await streamChat(
       next,
       {
         onDelta: (delta) => {
-          const last = messages.value[messages.value.length - 1];
-          if (!last || last.role !== "assistant") return;
-          last.content += delta;
-          scrollToBottom();
+          for (const char of delta) {
+            typewriterQueue.value.push(char);
+          }
         },
         onError: (msg) => {
+          flushTypewriterQueue();
           error.value = msg;
         },
         onCharacterUpdated: (row, previous) => {
@@ -91,7 +132,18 @@ async function submit() {
         : undefined,
       undoSnapshot.value ?? undefined,
     );
+    // Wait for the typewriter to drain before releasing loading state.
+    await new Promise<void>((resolve) => {
+      const check = setInterval(() => {
+        if (typewriterQueue.value.length === 0) {
+          clearInterval(check);
+          resolve();
+        }
+      }, 50);
+    });
+    flushTypewriterQueue();
   } catch (e) {
+    flushTypewriterQueue();
     if (!error.value) {
       error.value = e instanceof Error ? e.message : "Erreur inconnue";
     }
