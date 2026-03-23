@@ -1,19 +1,22 @@
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
-import { Swords } from "lucide-vue-next";
+import { computed, onMounted, ref } from "vue";
+import { Swords, ChevronDown, ChevronUp, CirclePlus, CircleMinus } from "lucide-vue-next";
+import AppPageHead from "../components/ui/AppPageHead.vue";
+import AppBadge from "../components/ui/AppBadge.vue";
+import AppEmptyState from "../components/ui/AppEmptyState.vue";
+import PassifsCard from "../components/character-sheet/PassifsCard.vue";
 import { useCharacter, loadCharacter } from "../composables/useCharacter";
 import { VOIES_BY_ID, type VoieFamily } from "../data/voies";
+import { PEUPLE_VOIES_BY_ID } from "../data/peuples";
 import { MYSTIC_TALENTS_BY_ID, isMysticTalentId } from "../data/mysticTalents";
 import { inferProfileFamily } from "../utils/inferProfileFamily";
 import {
-  attackRollBonus,
-  weaponAttackBonusWithProficiency,
   formatWeaponDamage,
   isMartialWeaponProficient,
 } from "../utils/attackBonus";
 import { MARTIAL_WEAPON_CATEGORY_BY_ID } from "../data/martialWeaponCategories";
 
-const { character, loading, loadError } = useCharacter();
+const { character, loading, loadError, computedAttackContact, computedAttackDistance, computedAttackMagique, computedHp, computedMp, abilityModifier } = useCharacter();
 
 onMounted(() => {
   if (!character.value.id) loadCharacter();
@@ -63,13 +66,10 @@ function inferAttackType(desc: string): AttackType {
 // ── Bonus d'attaque ──────────────────────────────────────────────────────────
 
 function computeBonus(attackType: AttackType): number | null {
-  if (!attackType) return null;
-  return attackRollBonus(
-    attackType,
-    character.value.level,
-    character.value.abilities,
-    profileFamily.value,
-  );
+  if (attackType === 'contact') return computedAttackContact.value;
+  if (attackType === 'distance') return computedAttackDistance.value;
+  if (attackType === 'magique') return computedAttackMagique.value;
+  return null;
 }
 
 // ── Autres règles de base (les attaques normales passent par les armes sur la fiche) ──
@@ -165,12 +165,21 @@ const actionsAfterWeapons = computed<Action[]>(() => [
   ...voieActions.value,
 ]);
 
+const hasPassifs = computed(() => {
+  const allVoies = { ...VOIES_BY_ID, ...PEUPLE_VOIES_BY_ID } as Record<string, { capacites: { active?: boolean }[] }>;
+  return character.value.paths.some((p) => {
+    const vd = p.id ? allVoies[p.id] : null;
+    if (!vd || p.rank <= 0) return false;
+    return vd.capacites.some((cap, ci) => p.rank > ci && cap.active === false);
+  });
+});
+
 const weaponBubbles = computed(() => {
-  const fam = profileFamily.value;
   const c = character.value;
   return c.weapons.map((w) => {
-    const total = weaponAttackBonusWithProficiency(w, c, fam);
+    const base = w.attackType === 'contact' ? computedAttackContact.value : computedAttackDistance.value;
     const incompetent = !isMartialWeaponProficient(w, c.martialFormations);
+    const total = incompetent ? base - 3 : base;
     return {
       w,
       hitDisplay: `d20 ${total >= 0 ? "+" : ""}${total} (vs DEF de la cible)`,
@@ -184,6 +193,93 @@ const weaponBubbles = computed(() => {
     };
   });
 });
+
+// ── Combat header ─────────────────────────────────────────────────────────────
+
+const ABILITY_LABELS: { key: keyof typeof character.value.abilities; label: string }[] = [
+  { key: "strength",     label: "FOR" },
+  { key: "dexterity",    label: "DEX" },
+  { key: "constitution", label: "CON" },
+  { key: "intelligence", label: "INT" },
+  { key: "wisdom",       label: "SAG" },
+  { key: "charisma",     label: "CHA" },
+];
+
+function modDisplay(score: number): string {
+  const m = abilityModifier(score);
+  return m >= 0 ? `+${m}` : String(m);
+}
+
+// ── Manoeuvres ────────────────────────────────────────────────────────────────
+
+const manoeuversOpen = ref(false);
+
+interface Manoeuvre {
+  name: string;
+  sizePenalty: boolean;
+  testOppose: string;
+  effet: string;
+  critique: string;
+}
+
+const MANOEUVRES: Manoeuvre[] = [
+  {
+    name: "Aveugler",
+    sizePenalty: false,
+    testOppose: "DEX vs CON",
+    effet: "Pendant un tour complet, la cible a -5 en attaque, en DEF et aux DM.",
+    critique: "La cible est aveuglée 1d6 tours et subit des DM normaux en plus.",
+  },
+  {
+    name: "Bloquer",
+    sizePenalty: true,
+    testOppose: "FOR vs FOR",
+    effet: "La cible ne peut pas se déplacer lors de son prochain tour.",
+    critique: "La cible subit en plus l'effet de Tenir à distance.",
+  },
+  {
+    name: "Désarmer",
+    sizePenalty: false,
+    testOppose: "FOR ou DEX vs FOR",
+    effet: "La cible laisse tomber son arme. Il lui faut une action de mouvement pour la ramasser.",
+    critique: "L'attaquant s'empare de l'arme.",
+  },
+  {
+    name: "Faire diversion",
+    sizePenalty: false,
+    testOppose: "CHA vs INT",
+    effet: "Jusqu'au prochain tour de la cible : -5 à tous ses tests de perception et en DEF.",
+    critique: "Le malus passe à -10.",
+  },
+  {
+    name: "Menacer",
+    sizePenalty: false,
+    testOppose: "CHA vs SAG",
+    effet: "Si la cible attaque le PJ lors de son prochain tour, elle subit une attaque au contact automatiquement réussie infligeant +1d6 DM.",
+    critique: "Si la cible attaque : DM doublés (+2d6).",
+  },
+  {
+    name: "Renverser",
+    sizePenalty: true,
+    testOppose: "FOR vs FOR",
+    effet: "La cible tombe : -5 en DEF. Il lui faut une action de mouvement pour se relever.",
+    critique: "L'attaque inflige en plus des DM normaux.",
+  },
+  {
+    name: "Repousser",
+    sizePenalty: true,
+    testOppose: "FOR vs FOR",
+    effet: "La cible recule de 1d6 mètres.",
+    critique: "Si le recul est d'au moins 3 m, la cible est aussi renversée.",
+  },
+  {
+    name: "Tenir à distance",
+    sizePenalty: false,
+    testOppose: "DEX vs DEX",
+    effet: "La cible ne peut pas attaquer le personnage lors de son prochain tour.",
+    critique: "La cible subit en plus l'effet de Bloquer.",
+  },
+];
 
 // ── Labels & couleurs ────────────────────────────────────────────────────────
 
@@ -217,23 +313,58 @@ function familyClass(family?: VoieFamily): string {
 
 <template>
   <div class="actions-page">
-    <h1 class="page-title">
+    <AppPageHead>
       <Swords :size="22" />
       Mes actions
-    </h1>
+      <template #actions>
+        <RouterLink to="/personnage" class="btn ghost small">← Fiche</RouterLink>
+      </template>
+    </AppPageHead>
 
-    <div v-if="loading" class="loading-state">Chargement…</div>
+    <div v-if="character.id" class="combat-header">
+      <!-- PV / PM -->
+      <div class="ch-resources">
+        <div class="ch-resource ch-resource--hp">
+          <span class="ch-res-label">PV</span>
+          <div class="ch-stepper">
+            <button type="button" class="ch-btn" @click="character.hpCurrent = Math.max(0, character.hpCurrent - 1)"><CircleMinus :size="17" /></button>
+            <span class="ch-res-value">{{ character.hpCurrent }}<span class="ch-res-max"> / {{ computedHp }}</span></span>
+            <button type="button" class="ch-btn" @click="character.hpCurrent = Math.min(computedHp, character.hpCurrent + 1)"><CirclePlus :size="17" /></button>
+          </div>
+        </div>
+        <div class="ch-resource ch-resource--mp">
+          <span class="ch-res-label">PM</span>
+          <div class="ch-stepper">
+            <button type="button" class="ch-btn" @click="character.mpCurrent = Math.max(0, character.mpCurrent - 1)"><CircleMinus :size="17" /></button>
+            <span class="ch-res-value">{{ character.mpCurrent }}<span class="ch-res-max"> / {{ computedMp }}</span></span>
+            <button type="button" class="ch-btn" @click="character.mpCurrent = Math.min(computedMp, character.mpCurrent + 1)"><CirclePlus :size="17" /></button>
+          </div>
+        </div>
+      </div>
+      <!-- Caractéristiques -->
+      <div class="ch-abilities">
+        <div v-for="ab in ABILITY_LABELS" :key="ab.key" class="ch-ability">
+          <span class="ch-ab-label">{{ ab.label }}</span>
+          <span class="ch-ab-mod" :class="abilityModifier(character.abilities[ab.key]) > 0 ? 'mod-pos' : abilityModifier(character.abilities[ab.key]) < 0 ? 'mod-neg' : 'mod-zero'">
+            {{ modDisplay(character.abilities[ab.key]) }}
+          </span>
+          <span class="ch-ab-score">{{ character.abilities[ab.key] }}</span>
+        </div>
+      </div>
+    </div>
 
-    <div v-else-if="loadError" class="empty-state load-error-block">
+    <AppEmptyState v-if="loading" variant="loading">Chargement…</AppEmptyState>
+
+    <AppEmptyState v-else-if="loadError" variant="error">
       <p>{{ loadError }}</p>
-      <button type="button" class="btn-retry" @click="retryLoad">
-        Réessayer
-      </button>
-    </div>
+      <template #actions>
+        <button type="button" class="btn ghost small" @click="retryLoad">Réessayer</button>
+      </template>
+    </AppEmptyState>
 
-    <div v-else-if="!character.id" class="empty-state">
+    <AppEmptyState v-else-if="!character.id">
       Aucun personnage actif.
-    </div>
+    </AppEmptyState>
 
     <div v-else class="actions-list">
       <div
@@ -243,7 +374,7 @@ function familyClass(family?: VoieFamily): string {
       >
         <div class="action-header">
           <span class="action-name">{{ item.w.name || "Arme" }}</span>
-          <span class="badge badge-attaque">Attaque</span>
+          <AppBadge variant="attaque">Attaque</AppBadge>
         </div>
 
         <div class="action-meta">
@@ -281,12 +412,8 @@ function familyClass(family?: VoieFamily): string {
       >
         <div class="action-header">
           <span class="action-name">{{ action.name }}</span>
-          <span class="badge" :class="`badge-${action.actionType}`">
-            {{ actionTypeLabel(action.actionType) }}
-          </span>
-          <span v-if="action.pmCost != null" class="badge badge-pm"
-            >PM:{{ action.pmCost }}</span
-          >
+          <AppBadge :variant="action.actionType">{{ actionTypeLabel(action.actionType) }}</AppBadge>
+          <AppBadge v-if="action.pmCost != null" variant="pm">PM:{{ action.pmCost }}</AppBadge>
         </div>
 
         <div v-if="action.actionType !== 'info'" class="action-meta">
@@ -319,12 +446,8 @@ function familyClass(family?: VoieFamily): string {
       >
         <div class="action-header">
           <span class="action-name">{{ action.name }}</span>
-          <span class="badge" :class="`badge-${action.actionType}`">
-            {{ actionTypeLabel(action.actionType) }}
-          </span>
-          <span v-if="action.pmCost != null" class="badge badge-pm"
-            >PM:{{ action.pmCost }}</span
-          >
+          <AppBadge :variant="action.actionType">{{ actionTypeLabel(action.actionType) }}</AppBadge>
+          <AppBadge v-if="action.pmCost != null" variant="pm">PM:{{ action.pmCost }}</AppBadge>
         </div>
 
         <div v-if="action.actionType !== 'info'" class="action-meta">
@@ -345,6 +468,58 @@ function familyClass(family?: VoieFamily): string {
 
         <div class="action-source">{{ action.source }}</div>
       </div>
+
+      <!-- Manoeuvres collapsibles -->
+      <div
+        class="action-bubble manoeuvres-group"
+        :class="{ 'manoeuvres-group--open': manoeuversOpen }"
+        @click.self="manoeuversOpen = !manoeuversOpen"
+      >
+        <div class="action-header manoeuvres-header" @click="manoeuversOpen = !manoeuversOpen">
+          <span class="action-name">Manoeuvres</span>
+          <span class="manoeuvres-count">{{ MANOEUVRES.length }}</span>
+          <ChevronUp v-if="manoeuversOpen" :size="16" class="manoeuvres-chevron" />
+          <ChevronDown v-else :size="16" class="manoeuvres-chevron" />
+        </div>
+        <p v-if="!manoeuversOpen" class="action-description manoeuvres-hint">
+          Désarmement, renversement, aveuglement... Toutes les manoeuvres accessibles à tous les personnages.
+        </p>
+        <template v-if="manoeuversOpen">
+          <p class="action-description manoeuvres-rule">
+            <strong>Déroulement :</strong> 1) Réussir un test d'attaque (contact). 2) Test opposé indiqué ci-dessous. 3) En cas de réussite, appliquer l'effet. Un échec avec un écart &ge; 10 retourne la manoeuvre contre le PJ.
+          </p>
+          <div class="manoeuvres-list">
+            <div
+              v-for="m in MANOEUVRES"
+              :key="m.name"
+              class="action-bubble manoeuvre-bubble"
+              @click.stop
+            >
+              <div class="action-header">
+                <span class="action-name">
+                  {{ m.name }}<span v-if="m.sizePenalty" class="size-penalty-mark" title="Pénalité de taille : -5 par catégorie de taille si plus petit que la cible">*</span>
+                </span>
+                <span class="attack-type-badge">Contact</span>
+                <span class="attack-roll">d20 {{ bonusDisplay(computedAttackContact) }}</span>
+              </div>
+              <div class="manoeuvre-body">
+                <p class="manoeuvre-line"><strong>Effet :</strong> {{ m.effet }}</p>
+                <p class="manoeuvre-line"><strong>Test opposé :</strong> {{ m.testOppose }}</p>
+                <p class="manoeuvre-line manoeuvre-crit"><strong>Critique :</strong> {{ m.critique }}</p>
+              </div>
+              <div class="action-source">Manoeuvre</div>
+            </div>
+          </div>
+          <p v-if="MANOEUVRES.some(m => m.sizePenalty)" class="action-description manoeuvres-footnote">
+            * Pénalité de taille : -5 au test d'attaque par catégorie de taille d'écart si l'attaquant est plus petit que sa cible.
+          </p>
+        </template>
+      </div>
+
+      <template v-if="hasPassifs">
+        <div class="passifs-divider" />
+        <PassifsCard :character="character" class="passifs-in-actions" />
+      </template>
     </div>
   </div>
 </template>
@@ -355,56 +530,136 @@ function familyClass(family?: VoieFamily): string {
   margin: 0 auto;
 }
 
-.page-title {
+.actions-page :deep(a.btn) {
+  text-decoration: none;
+}
+
+/* ── Combat header ──────────────────────────────────────────────────────── */
+
+.combat-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+  padding: 0.75rem 1rem;
+  border-radius: 1.2rem;
+  border: 1.5px solid var(--border);
+  background: var(--surface-2);
+}
+
+.ch-resources {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.ch-resource {
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-family: var(--title-font);
-  font-size: clamp(1.3rem, 4vw, 1.7rem);
-  color: var(--brand-strong);
-  margin-bottom: 1.25rem;
+  gap: 0.45rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 0.75rem;
+  border: 1.5px solid var(--border);
 }
 
-.loading-state,
-.empty-state {
-  text-align: center;
+.ch-resource--hp {
+  border-color: color-mix(in srgb, #c95f56 40%, var(--border));
+  background: color-mix(in srgb, #c95f56 8%, var(--surface-2));
+}
+
+.ch-resource--mp {
+  border-color: color-mix(in srgb, #678fc2 40%, var(--border));
+  background: color-mix(in srgb, #678fc2 8%, var(--surface-2));
+}
+
+.ch-res-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   color: var(--muted);
-  padding: 3rem 1rem;
-  font-size: 1rem;
+  min-width: 1.6rem;
 }
 
-.load-error-block {
-  text-align: left;
-  max-width: 520px;
-  margin: 0 auto;
-  padding: 1.25rem 1.1rem;
-  border-radius: 1rem;
-  border: 1px solid
-    color-mix(in srgb, var(--danger, #c0392b) 45%, var(--border));
-  background: color-mix(in srgb, var(--danger, #c0392b) 8%, var(--surface-2));
-  color: var(--text);
+.ch-stepper {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex: 1;
+  justify-content: center;
 }
 
-.load-error-block p {
-  margin: 0 0 0.85rem;
-  line-height: 1.45;
-  font-size: 0.92rem;
-}
-
-.btn-retry {
-  font: inherit;
-  font-weight: 600;
+.ch-btn {
+  display: flex;
+  align-items: center;
+  border: none;
+  background: none;
+  color: var(--muted);
   cursor: pointer;
-  padding: 0.45rem 1rem;
-  border-radius: 999px;
-  border: 1px solid var(--accent);
-  background: var(--accent-soft);
-  color: var(--brand-strong);
+  padding: 0;
+  transition: color 0.15s;
+}
+.ch-btn:hover { color: var(--accent-strong); }
+
+.ch-res-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  min-width: 3.5rem;
+  text-align: center;
+  line-height: 1.1;
 }
 
-.btn-retry:hover {
-  filter: brightness(1.05);
+.ch-res-max {
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: var(--muted);
 }
+
+.ch-abilities {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.35rem;
+}
+
+.ch-ability {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  padding: 0.35rem 0.2rem;
+  border-radius: 0.65rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.ch-ab-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.ch-ab-mod {
+  font-size: 1.15rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.ch-ab-score {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.mod-pos { color: #3a8a4a; }
+:root[data-theme="dark"] .mod-pos { color: #7bcf8a; }
+.mod-neg { color: #c95f56; }
+.mod-zero { color: var(--muted); }
 
 /* ── Liste ──────────────────────────────────────────────────────────────── */
 
@@ -477,53 +732,6 @@ function familyClass(family?: VoieFamily): string {
   min-width: 0;
 }
 
-/* ── Badges type d'action ───────────────────────────────────────────────── */
-
-.badge {
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  padding: 0.18em 0.65em;
-  border-radius: 999px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.badge-limitée {
-  background: color-mix(in srgb, #8e44ad 18%, transparent);
-  color: #8e44ad;
-  border: 1px solid color-mix(in srgb, #8e44ad 35%, transparent);
-}
-
-.badge-attaque {
-  background: color-mix(in srgb, #e67e22 18%, transparent);
-  color: #e67e22;
-  border: 1px solid color-mix(in srgb, #e67e22 35%, transparent);
-}
-
-.badge-gratuite {
-  background: color-mix(in srgb, #27ae60 18%, transparent);
-  color: #27ae60;
-  border: 1px solid color-mix(in srgb, #27ae60 35%, transparent);
-}
-
-.badge-info {
-  background: color-mix(in srgb, var(--muted) 14%, transparent);
-  color: var(--muted);
-  border: 1px solid color-mix(in srgb, var(--muted) 35%, transparent);
-  text-transform: none;
-  letter-spacing: 0.02em;
-}
-
-.badge-pm {
-  background: color-mix(in srgb, #2980b9 20%, transparent);
-  color: #2471a3;
-  border: 1px solid color-mix(in srgb, #2980b9 38%, transparent);
-  text-transform: none;
-  letter-spacing: 0.02em;
-  font-variant-numeric: tabular-nums;
-}
 
 /* ── Méta (type attaque + jet) ──────────────────────────────────────────── */
 
@@ -595,6 +803,129 @@ function familyClass(family?: VoieFamily): string {
   font-style: italic;
 }
 
+/* ── Passifs en bas ─────────────────────────────────────────────────────── */
+
+.passifs-divider {
+  border-top: 1px solid var(--border);
+  margin-top: 0.25rem;
+}
+
+.passifs-in-actions {
+  margin-top: 0;
+}
+
+.passifs-in-actions :deep(.card-head h2) {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.passifs-in-actions :deep(.passif-name) {
+  font-size: 0.88rem;
+}
+
+.passifs-in-actions :deep(.passif-desc) {
+  font-size: 0.78rem;
+}
+
+.passifs-in-actions :deep(.passif-path-tag) {
+  font-size: 0.65rem;
+}
+
+/* ── Manoeuvres group ───────────────────────────────────────────────────── */
+
+.manoeuvres-group {
+  cursor: pointer;
+  border-color: color-mix(in srgb, #e67e22 35%, var(--border));
+  background: color-mix(in srgb, #e67e22 5%, var(--surface-2));
+}
+
+.manoeuvres-group--open {
+  cursor: default;
+}
+
+.manoeuvres-header {
+  cursor: pointer;
+  user-select: none;
+}
+
+.manoeuvres-count {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 0.1em 0.55em;
+  border-radius: 999px;
+}
+
+.manoeuvres-chevron {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.manoeuvres-hint {
+  font-style: italic;
+}
+
+.manoeuvres-rule {
+  font-size: 0.8rem;
+  background: color-mix(in srgb, #e67e22 8%, var(--surface));
+  border-radius: 0.6rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid color-mix(in srgb, #e67e22 20%, var(--border));
+}
+
+.manoeuvres-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.25rem;
+}
+
+.manoeuvre-bubble {
+  background: var(--surface);
+  border-color: color-mix(in srgb, #e67e22 20%, var(--border));
+  cursor: default;
+  padding: 0.75rem 0.9rem 0.65rem;
+}
+
+.manoeuvre-bubble:hover {
+  border-color: color-mix(in srgb, #e67e22 50%, var(--border));
+}
+
+.manoeuvre-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.manoeuvre-line {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.manoeuvre-crit {
+  color: color-mix(in srgb, #e67e22 80%, var(--text));
+}
+
+.size-penalty-mark {
+  color: #e67e22;
+  font-weight: 900;
+  margin-left: 0.05em;
+}
+
+.manoeuvres-footnote {
+  font-size: 0.75rem;
+  font-style: italic;
+  margin-top: 0.1rem;
+  color: color-mix(in srgb, var(--muted) 80%, #e67e22);
+}
+
 /* ── Desktop : 2 colonnes ───────────────────────────────────────────────── */
 
 @media (min-width: 600px) {
@@ -603,6 +934,18 @@ function familyClass(family?: VoieFamily): string {
     grid-template-columns: 1fr 1fr;
     gap: 0.9rem;
     align-items: start;
+  }
+
+  .passifs-divider,
+  .passifs-in-actions,
+  .manoeuvres-group {
+    grid-column: 1 / -1;
+  }
+
+  .manoeuvres-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
   }
 }
 </style>

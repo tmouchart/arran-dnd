@@ -4,6 +4,7 @@ import MarkdownIt from "markdown-it";
 import DOMPurify from "dompurify";
 import { streamChat, type ChatMessage } from "../api/chat";
 import { SendHorizonal, SquarePen } from "lucide-vue-next";
+import AppIconBtn from "../components/ui/AppIconBtn.vue";
 import { useCharacter, loadCharacter } from "../composables/useCharacter";
 import {
   loadChatMessages,
@@ -117,14 +118,9 @@ function clearChat() {
           <span class="chat-title-short">🔮 Isilwen</span>
           <span class="chat-title-full">🔮 Isilwen, miroir astral</span>
         </h1>
-        <button
-          type="button"
-          class="new-chat-btn"
-          @click="clearChat"
-          title="Nouvelle conversation"
-        >
-          <SquarePen :size="20" />
-        </button>
+        <AppIconBtn :size="34" title="Nouvelle conversation" class="new-chat-btn" @click="clearChat">
+          <SquarePen :size="18" />
+        </AppIconBtn>
       </div>
     </header>
 
@@ -236,27 +232,13 @@ function clearChat() {
 }
 
 .new-chat-btn {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.1rem;
-  height: 2.1rem;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--surface-2);
   color: var(--muted);
-  cursor: pointer;
-  transition:
-    color 0.15s,
-    border-color 0.15s,
-    background 0.15s;
 }
 
 .new-chat-btn:hover {
   color: var(--brand-strong);
-  border-color: var(--brand);
-  background: color-mix(in srgb, var(--brand) 10%, var(--surface-2));
+  border-color: var(--brand) !important;
+  background: color-mix(in srgb, var(--brand) 10%, var(--surface-2)) !important;
 }
 
 .lede {

@@ -10,6 +10,9 @@ import {
 } from "../api/characters";
 import { MYSTIC_TALENTS_BY_ID, isMysticTalentId } from "../data/mysticTalents";
 import { inferProfileFamily } from "../utils/inferProfileFamily";
+import AppPageHead from "../components/ui/AppPageHead.vue";
+import AppBadge from "../components/ui/AppBadge.vue";
+import AppEmptyState from "../components/ui/AppEmptyState.vue";
 
 const router = useRouter();
 const characters = ref<ServerCharacter[]>([]);
@@ -88,24 +91,28 @@ function listMetaLine(c: ServerCharacter): string {
 
 <template>
   <div class="page list-page">
-    <header class="page-head">
-      <h1>Personnages</h1>
-      <button
-        type="button"
-        class="btn ghost small"
-        :disabled="creating"
-        @click="handleCreate"
-      >
-        {{ creating ? "…" : "+ Créer" }}
-      </button>
-    </header>
+    <AppPageHead>
+      Personnages
+      <template #actions>
+        <button
+          type="button"
+          class="btn ghost small"
+          :disabled="creating"
+          @click="handleCreate"
+        >
+          {{ creating ? "…" : "+ Créer" }}
+        </button>
+      </template>
+    </AppPageHead>
 
-    <div v-if="loading" class="loading-msg">Chargement…</div>
+    <AppEmptyState v-if="loading" variant="loading">Chargement…</AppEmptyState>
 
-    <div v-else-if="listError" class="load-error">
+    <AppEmptyState v-else-if="listError" variant="error">
       <p>{{ listError }}</p>
-      <button type="button" class="btn ghost small" @click="load">Réessayer</button>
-    </div>
+      <template #actions>
+        <button type="button" class="btn ghost small" @click="load">Réessayer</button>
+      </template>
+    </AppEmptyState>
 
     <ul v-else class="char-list">
       <li
@@ -130,7 +137,7 @@ function listMetaLine(c: ServerCharacter): string {
         <button type="button" class="char-name" @click="openSheet(c)">
           <span class="name-row">
             <span class="name">{{ c.name }}</span>
-            <span v-if="c.isActive" class="chip-active">Actif</span>
+            <AppBadge v-if="c.isActive" variant="active">Actif</AppBadge>
           </span>
           <span class="meta">{{ listMetaLine(c) }}</span>
         </button>
@@ -147,9 +154,9 @@ function listMetaLine(c: ServerCharacter): string {
       </li>
     </ul>
 
-    <p v-if="!loading && !listError && characters.length === 0" class="muted">
+    <AppEmptyState v-if="!loading && !listError && characters.length === 0">
       Aucun personnage.
-    </p>
+    </AppEmptyState>
   </div>
 </template>
 
@@ -157,43 +164,6 @@ function listMetaLine(c: ServerCharacter): string {
 .list-page {
   max-width: 32rem;
   margin: 0 auto;
-}
-
-.page-head {
-  margin-bottom: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.8rem;
-}
-
-.page-head h1 {
-  margin: 0;
-  font-size: clamp(1.35rem, 4.5vw, 1.95rem);
-  font-family: var(--title-font);
-  color: var(--brand-strong);
-}
-
-.loading-msg {
-  color: var(--muted);
-  font-size: 0.95rem;
-  padding: 2rem 0;
-  text-align: center;
-}
-
-.load-error {
-  padding: 1.25rem 1rem;
-  border-radius: 12px;
-  border: 1px solid color-mix(in srgb, var(--danger, #c0392b) 45%, var(--border));
-  background: color-mix(in srgb, var(--danger, #c0392b) 8%, var(--surface));
-  color: var(--text);
-  font-size: 0.92rem;
-  line-height: 1.45;
-  margin-bottom: 0.75rem;
-}
-
-.load-error p {
-  margin: 0 0 0.75rem;
 }
 
 .char-list {
@@ -290,22 +260,6 @@ function listMetaLine(c: ServerCharacter): string {
   flex-wrap: wrap;
 }
 
-.chip-active {
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 0.15rem 0.5rem;
-  border-radius: 999px;
-  background: #1a7a3c22;
-  color: #1a7a3c;
-  border: 1px solid #1a7a3c55;
-  letter-spacing: 0.04em;
-}
-
-[data-theme="dark"] .chip-active {
-  background: #1db95422;
-  color: #4ade80;
-  border-color: #4ade8055;
-}
 
 .btn-delete {
   flex-shrink: 0;
@@ -332,8 +286,4 @@ function listMetaLine(c: ServerCharacter): string {
   cursor: not-allowed;
 }
 
-.muted {
-  color: var(--muted);
-  font-size: 0.9rem;
-}
 </style>

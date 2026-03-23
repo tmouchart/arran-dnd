@@ -4,6 +4,9 @@ import { useRouter } from 'vue-router'
 import { Plus, LogIn, Users } from 'lucide-vue-next'
 import { fetchSessions, createSession, joinSession, type SessionSummary } from '../api/sessions'
 import { useCharacter } from '../composables/useCharacter'
+import AppPageHead from '../components/ui/AppPageHead.vue'
+import AppIconBtn from '../components/ui/AppIconBtn.vue'
+import AppEmptyState from '../components/ui/AppEmptyState.vue'
 
 const router = useRouter()
 const { character } = useCharacter()
@@ -48,19 +51,15 @@ async function handleJoin(id: string) {
 
 <template>
   <div class="session-list-page">
-    <header class="page-header">
-      <h1 class="page-title">
-        <Users :size="22" />
-        Sessions de jeu
-      </h1>
-      <button
-        class="btn primary icon-btn"
-        title="Nouvelle session"
-        @click="showCreate = !showCreate"
-      >
-        <Plus :size="18" />
-      </button>
-    </header>
+    <AppPageHead>
+      <Users :size="22" />
+      Sessions de jeu
+      <template #actions>
+        <AppIconBtn variant="primary" title="Nouvelle session" @click="showCreate = !showCreate">
+          <Plus :size="18" />
+        </AppIconBtn>
+      </template>
+    </AppPageHead>
 
     <form v-if="showCreate" class="create-form" @submit.prevent="handleCreate">
       <input
@@ -76,11 +75,11 @@ async function handleJoin(id: string) {
 
     <p v-if="joinError" class="form-error">{{ joinError }}</p>
 
-    <div v-if="loading" class="empty-state">Chargement…</div>
+    <AppEmptyState v-if="loading" variant="loading">Chargement…</AppEmptyState>
 
-    <div v-else-if="sessions.length === 0 && !showCreate" class="empty-state">
+    <AppEmptyState v-else-if="sessions.length === 0 && !showCreate">
       Aucune session active. Crée-en une !
-    </div>
+    </AppEmptyState>
 
     <div v-else class="sessions-list">
       <div v-for="s in sessions" :key="s.id" class="session-card">
@@ -88,13 +87,9 @@ async function handleJoin(id: string) {
           <span class="session-name">{{ s.name }}</span>
           <span class="session-meta">{{ s.participantCount }} joueur{{ s.participantCount > 1 ? 's' : '' }}</span>
         </div>
-        <button
-          class="btn ghost icon-btn"
-          title="Rejoindre"
-          @click="handleJoin(s.id)"
-        >
+        <AppIconBtn title="Rejoindre" @click="handleJoin(s.id)">
           <LogIn :size="18" />
-        </button>
+        </AppIconBtn>
       </div>
     </div>
   </div>
@@ -109,23 +104,6 @@ async function handleJoin(id: string) {
   gap: 1rem;
 }
 
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-}
-
-.page-title {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-family: var(--title-font);
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: var(--brand-strong);
-  margin: 0;
-}
 
 .create-form {
   display: flex;
@@ -186,12 +164,6 @@ async function handleJoin(id: string) {
   color: var(--muted);
 }
 
-.empty-state {
-  text-align: center;
-  color: var(--muted);
-  padding: 2rem 1rem;
-  font-size: 0.95rem;
-}
 
 .form-error {
   width: 100%;

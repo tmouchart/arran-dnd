@@ -3,6 +3,7 @@ import { RouterLink, RouterView, useRouter } from "vue-router";
 import { computed, ref } from "vue";
 import { LogOut, Users } from "lucide-vue-next";
 import { user, logout } from "./composables/useAuth";
+import AppIconBtn from "./components/ui/AppIconBtn.vue";
 
 const router = useRouter();
 
@@ -53,24 +54,20 @@ const themeIcon = computed(() => (theme.value === "dark" ? "☀️" : "🌙"));
         </nav>
         <span v-if="user" class="nav-username">{{ user.username }}</span>
         <div class="nav-controls">
-          <button
+          <AppIconBtn
             v-if="user"
-            type="button"
-            class="btn ghost icon-btn"
             title="Se déconnecter"
             @click="handleLogout"
           >
             <LogOut :size="18" />
-          </button>
-          <button
-            type="button"
-            class="btn ghost theme-switch"
+          </AppIconBtn>
+          <AppIconBtn
             :aria-label="themeAriaLabel"
             :title="themeAriaLabel"
             @click="toggleTheme"
           >
             <span aria-hidden="true">{{ themeIcon }}</span>
-          </button>
+          </AppIconBtn>
         </div>
       </div>
     </header>
@@ -164,26 +161,6 @@ const themeIcon = computed(() => (theme.value === "dark" ? "☀️" : "🌙"));
   }
 }
 
-.icon-btn {
-  width: 40px;
-  height: 40px;
-  min-height: 40px;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.theme-switch {
-  width: 40px;
-  height: 40px;
-  min-height: 40px;
-  padding: 0;
-  font-size: 1rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
 
 .nav-link {
   width: 40px;
