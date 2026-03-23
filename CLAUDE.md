@@ -50,6 +50,18 @@ Any new feature that contains non-trivial logic (game mechanics, calculations, s
 - Test pure functions first; for Vue composables, mutate `character.value` directly and read computed `.value`
 - Use `/write-tests` to generate tests interactively
 
+## Project Skills
+
+These skills are available via `/skill-name`. They are **not** auto-injected into context — invoke them explicitly.
+
+| Skill | Trigger | Purpose |
+|---|---|---|
+| `/add-knowledge` | Adding rules/lore from a `.txt` file | Analyse le contenu et l'intègre dans `knowledge/topics/` |
+| `/commit-push` | After completing a feature or fix | Commit + push with a conventional commit message |
+| `/write-tests` | After writing non-trivial logic | Generate Vitest unit tests for the current feature |
+| `/quick-start` | New developer onboarding | Step-by-step guide to run the project locally |
+| `/db-prod` | Production database access | Connect and query the production PostgreSQL database |
+
 ## Database Migrations
 
 Whenever a new migration file is created under `server/src/db/migrations/`, **immediately run it**:
