@@ -19,7 +19,7 @@ export async function runMigrations(databaseUrl: string): Promise<void> {
   }
   console.log(`[migrate] Folder: ${migrationsFolder}`)
 
-  const client = postgres(databaseUrl, { max: 1 })
+  const client = postgres(databaseUrl, { max: 1, onnotice: () => {} })
   try {
     await client`
       CREATE TABLE IF NOT EXISTS public.__applied_migrations (

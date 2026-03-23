@@ -161,6 +161,11 @@ function buildCharacterSection(c: CharacterPayload): string {
           notes?: string;
         }>
       | undefined) ?? [];
+  const items =
+    (c.items as Array<{ name: string; description?: string; quantity: number }> | undefined) ?? [];
+  const goldCoins = typeof c.goldCoins === "number" ? c.goldCoins : 0;
+  const silverCoins = typeof c.silverCoins === "number" ? c.silverCoins : 0;
+  const copperCoins = typeof c.copperCoins === "number" ? c.copperCoins : 0;
 
   const pathsStr = paths.length > 0
     ? paths.map((p) => `${p.name} (rang ${p.rank})`).join(", ")
@@ -208,11 +213,24 @@ function buildCharacterSection(c: CharacterPayload): string {
     ? `\n\n### Histoire et contexte (fiche joueur)\n\n${histoire}`
     : "";
 
+  const moneyLine = (goldCoins > 0 || silverCoins > 0 || copperCoins > 0)
+    ? `Argent : ${goldCoins} po / ${silverCoins} pa / ${copperCoins} pc`
+    : "";
+
+  const itemsStr = items.length > 0
+    ? items.map((it) => {
+        const desc = it.description?.trim() ? ` (${it.description.trim()})` : "";
+        return `- ${it.name}${desc} ×${it.quantity}`;
+      }).join("\n")
+    : "";
+
   const extraBlocks = [
     initiativeLine,
     martialLine,
     mysticLine,
     weaponsStr ? `Armes :\n${weaponsStr}` : "",
+    moneyLine,
+    itemsStr ? `Inventaire :\n${itemsStr}` : "",
   ]
     .filter(Boolean)
     .join("\n");

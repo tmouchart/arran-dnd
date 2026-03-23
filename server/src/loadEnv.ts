@@ -10,3 +10,5 @@ import { fileURLToPath } from 'node:url'
 const here = dirname(fileURLToPath(import.meta.url))
 // Never override existing process.env (Railway/Heroku DATABASE_URL, etc.). Local dev still gets vars from server/.env when unset in the shell.
 config({ path: resolve(here, '../.env'), override: false })
+// .env.local overrides .env for local dev (not committed, ignored in prod)
+config({ path: resolve(here, '../.env.local'), override: true })

@@ -6,6 +6,7 @@ import { requireAuth, type AuthRequest } from '../auth/middleware.js'
 import { syncParticipantHpFromCharacter } from '../sessions/store.js'
 type SkillRow = { name: string; rank: number }
 type PathRow = { id?: string; name: string; rank: number; kind?: string; notes?: string }
+type ItemRow = { id: string; name: string; description?: string; quantity: number }
 type WeaponRow = {
   id: string
   name: string
@@ -63,6 +64,14 @@ router.post('/', async (req, res) => {
     martialFormations: string[]
     paths: PathRow[]
     mysticTalent: string | null
+    armorId: string | null
+    shieldId: string | null
+    items: ItemRow[]
+    goldCoins: number
+    silverCoins: number
+    copperCoins: number
+    pcCurrent: number
+    prCurrent: number
   }>
 
   const existing = await db.select({ id: characters.id }).from(characters).where(eq(characters.userId, userId)).limit(1)
@@ -122,6 +131,14 @@ router.put('/:id', async (req, res) => {
     martialFormations: string[]
     paths: PathRow[]
     mysticTalent: string | null
+    armorId: string | null
+    shieldId: string | null
+    items: ItemRow[]
+    goldCoins: number
+    silverCoins: number
+    copperCoins: number
+    pcCurrent: number
+    prCurrent: number
   }>
 
   const [row] = await db
