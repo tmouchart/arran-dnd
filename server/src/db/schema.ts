@@ -57,6 +57,28 @@ export const characters = pgTable(
     /** Mystic family magical talent id (client `mysticTalents.ts`), null if none */
     mysticTalent: text('mystic_talent'),
 
+    /** Id of the equipped armor (client `armorsCatalog.ts`), null/empty = no armor */
+    armorId: text('armor_id'),
+    /** Id of the equipped shield (client `armorsCatalog.ts` SHIELDS_CATALOG), null/empty = no shield */
+    shieldId: text('shield_id'),
+    /** Miscellaneous DEF bonus (abilities, magic, etc.) */
+    defenseBonus: integer('defense_bonus').notNull().default(0),
+
+    /** Raw die rolls for HP gained at each level >= 2 (CON mod is computed live). Length = level - 1. */
+    hpLevelGains: jsonb('hp_level_gains').notNull().default([]),
+
+    /** Inventory items: [{ id, name, description?, quantity }] */
+    items: jsonb('items').notNull().default([]),
+    /** Currency (po = pièces d'or). Conversion: 1 po = 10 pa = 100 pc. */
+    goldCoins: integer('gold_coins').notNull().default(0),
+    silverCoins: integer('silver_coins').notNull().default(0),
+    copperCoins: integer('copper_coins').notNull().default(0),
+
+    /** Points de Chance courants (max = 2 + Mod. CHA ; aventuriers +2). */
+    pcCurrent: integer('pc_current').notNull().default(0),
+    /** Points de Récupération courants (max = 5). */
+    prCurrent: integer('pr_current').notNull().default(5),
+
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
