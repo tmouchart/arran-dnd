@@ -79,6 +79,7 @@ function removeItem(i: number) {
   align-items: center;
   gap: 0.3rem;
   flex: 1;
+  min-width: 0;
 }
 
 .money-label {
@@ -95,6 +96,8 @@ function removeItem(i: number) {
   text-align: center;
   font-weight: 600;
   padding: 0.38rem 0.3rem;
+  min-width: 0;
+  width: 100%;
 }
 
 .item-list {

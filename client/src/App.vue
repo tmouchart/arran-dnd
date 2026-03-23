@@ -42,12 +42,12 @@ const themeIcon = computed(() => (theme.value === "dark" ? "☀️" : "🌙"));
 <template>
   <div class="app-shell">
     <header class="top-nav">
-      <RouterLink to="/" class="brand">Terres d’Arran</RouterLink>
+      <RouterLink to="/personnage" class="brand">Terres d’Arran</RouterLink>
       <div class="top-nav-actions">
         <nav class="nav-links">
-          <RouterLink to="/" class="nav-link" title="Assistant">🔮</RouterLink>
           <RouterLink to="/personnage" class="nav-link" title="Personnage">⚔️</RouterLink>
           <RouterLink to="/actions" class="nav-link" title="Mes actions">⚡</RouterLink>
+          <RouterLink to="/chat" class="nav-link" title="Isilwen">🔮</RouterLink>
           <RouterLink to="/sessions" class="nav-link" title="Sessions de jeu">
             <Users :size="18" />
           </RouterLink>

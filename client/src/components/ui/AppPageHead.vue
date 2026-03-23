@@ -15,12 +15,12 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.8rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.65rem;
 }
 
 .page-head-title {
   margin: 0;
-  font-size: clamp(1.35rem, 4.5vw, 1.95rem);
+  font-size: clamp(1.1rem, 4.5vw, 1.95rem);
   font-family: var(--title-font);
   color: var(--brand-strong);
   display: flex;

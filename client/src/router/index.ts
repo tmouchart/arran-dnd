@@ -12,7 +12,8 @@ export const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
-    { path: '/', name: 'chat', component: ChatView },
+    { path: '/', redirect: '/personnage' },
+    { path: '/chat', name: 'chat', component: ChatView },
     { path: '/personnages', name: 'characters', component: CharacterListView },
     { path: '/personnage', name: 'character', component: CharacterSheetView },
     { path: '/actions', name: 'actions', component: ActionsView },

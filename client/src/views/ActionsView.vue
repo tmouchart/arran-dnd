@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
-import { Swords, ChevronDown, ChevronUp, CirclePlus, CircleMinus } from "lucide-vue-next";
+import { Swords, ChevronDown, ChevronUp, CirclePlus, CircleMinus, Scroll } from "lucide-vue-next";
 import AppPageHead from "../components/ui/AppPageHead.vue";
 import AppBadge from "../components/ui/AppBadge.vue";
 import AppEmptyState from "../components/ui/AppEmptyState.vue";
@@ -213,6 +213,7 @@ function modDisplay(score: number): string {
 // ── Manoeuvres ────────────────────────────────────────────────────────────────
 
 const manoeuversOpen = ref(false);
+const diversOpen = ref(false);
 
 interface Manoeuvre {
   name: string;
@@ -435,38 +436,53 @@ function familyClass(family?: VoieFamily): string {
         <div class="action-source">{{ action.source }}</div>
       </div>
 
+      <!-- Divers collapsibles -->
       <div
-        v-for="action in baseRuleActionsList"
-        :key="action.source + '-' + action.name"
-        class="action-bubble"
-        :class="[
-          familyClass(action.voieFamily),
-          { 'action-bubble--info': action.actionType === 'info' },
-        ]"
+        class="action-bubble divers-group"
+        :class="{ 'divers-group--open': diversOpen }"
+        @click.self="diversOpen = !diversOpen"
       >
-        <div class="action-header">
-          <span class="action-name">{{ action.name }}</span>
-          <AppBadge :variant="action.actionType">{{ actionTypeLabel(action.actionType) }}</AppBadge>
-          <AppBadge v-if="action.pmCost != null" variant="pm">PM:{{ action.pmCost }}</AppBadge>
+        <div class="action-header divers-header" @click="diversOpen = !diversOpen">
+          <Scroll :size="15" class="divers-icon" />
+          <span class="action-name">Divers</span>
+          <span class="divers-count">{{ baseRuleActionsList.length }}</span>
+          <ChevronUp v-if="diversOpen" :size="16" class="divers-chevron" />
+          <ChevronDown v-else :size="16" class="divers-chevron" />
         </div>
-
-        <div v-if="action.actionType !== 'info'" class="action-meta">
-          <span v-if="action.attackType" class="attack-type-badge">
-            {{ attackTypeLabel(action.attackType) }}
-          </span>
-          <span class="attack-roll">
-            <template v-if="action.attackType">
-              d20 {{ bonusDisplay(computeBonus(action.attackType)) }}
-            </template>
-            <template v-else>
-              <span class="no-roll">Aucun jet d'attaque</span>
-            </template>
-          </span>
-        </div>
-
-        <p class="action-description">{{ action.description }}</p>
-
-        <div class="action-source">{{ action.source }}</div>
+        <p v-if="!diversOpen" class="action-description divers-hint">
+          Attaque assurée, soutien, brulure de magie...
+        </p>
+        <template v-if="diversOpen">
+          <div class="divers-list">
+            <div
+              v-for="action in baseRuleActionsList"
+              :key="action.source + '-' + action.name"
+              class="action-bubble divers-bubble"
+              :class="{ 'action-bubble--info': action.actionType === 'info' }"
+              @click.stop
+            >
+              <div class="action-header">
+                <span class="action-name">{{ action.name }}</span>
+                <AppBadge :variant="action.actionType">{{ actionTypeLabel(action.actionType) }}</AppBadge>
+              </div>
+              <div v-if="action.actionType !== 'info'" class="action-meta">
+                <span v-if="action.attackType" class="attack-type-badge">
+                  {{ attackTypeLabel(action.attackType) }}
+                </span>
+                <span class="attack-roll">
+                  <template v-if="action.attackType">
+                    d20 {{ bonusDisplay(computeBonus(action.attackType)) }}
+                  </template>
+                  <template v-else>
+                    <span class="no-roll">Aucun jet d'attaque</span>
+                  </template>
+                </span>
+              </div>
+              <p class="action-description">{{ action.description }}</p>
+              <div class="action-source">{{ action.source }}</div>
+            </div>
+          </div>
+        </template>
       </div>
 
       <!-- Manoeuvres collapsibles -->
@@ -554,10 +570,11 @@ function familyClass(family?: VoieFamily): string {
 
 .ch-resource {
   flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 0.45rem;
-  padding: 0.45rem 0.65rem;
+  padding: 0.45rem 0.5rem;
   border-radius: 0.75rem;
   border: 1.5px solid var(--border);
 }
@@ -586,6 +603,7 @@ function familyClass(family?: VoieFamily): string {
   align-items: center;
   gap: 0.3rem;
   flex: 1;
+  min-width: 0;
   justify-content: center;
 }
 
@@ -602,13 +620,14 @@ function familyClass(family?: VoieFamily): string {
 .ch-btn:hover { color: var(--accent-strong); }
 
 .ch-res-value {
-  font-size: 1.35rem;
+  font-size: 1.2rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--text);
-  min-width: 3.5rem;
+  min-width: 0;
   text-align: center;
   line-height: 1.1;
+  white-space: nowrap;
 }
 
 .ch-res-max {
@@ -926,6 +945,65 @@ function familyClass(family?: VoieFamily): string {
   color: color-mix(in srgb, var(--muted) 80%, #e67e22);
 }
 
+/* ── Divers group ───────────────────────────────────────────────────────── */
+
+.divers-group {
+  cursor: pointer;
+  border-color: color-mix(in srgb, #7f8c8d 35%, var(--border));
+  background: color-mix(in srgb, #7f8c8d 5%, var(--surface-2));
+}
+
+.divers-group--open {
+  cursor: default;
+}
+
+.divers-header {
+  cursor: pointer;
+  user-select: none;
+}
+
+.divers-icon {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.divers-count {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 0.1em 0.55em;
+  border-radius: 999px;
+}
+
+.divers-chevron {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.divers-hint {
+  font-style: italic;
+}
+
+.divers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.25rem;
+}
+
+.divers-bubble {
+  background: var(--surface);
+  border-color: color-mix(in srgb, #7f8c8d 20%, var(--border));
+  cursor: default;
+  padding: 0.75rem 0.9rem 0.65rem;
+}
+
+.divers-bubble:hover {
+  border-color: color-mix(in srgb, #7f8c8d 50%, var(--border));
+}
+
 /* ── Desktop : 2 colonnes ───────────────────────────────────────────────── */
 
 @media (min-width: 600px) {
@@ -938,7 +1016,8 @@ function familyClass(family?: VoieFamily): string {
 
   .passifs-divider,
   .passifs-in-actions,
-  .manoeuvres-group {
+  .manoeuvres-group,
+  .divers-group {
     grid-column: 1 / -1;
   }
 

@@ -162,7 +162,7 @@ function clearChat() {
         ref="textareaEl"
         v-model="input"
         class="textarea"
-        rows="3"
+        rows="2"
         placeholder="Pose une question à Isilwen…"
         :disabled="loading"
         @keydown.enter.exact.prevent="submit"
@@ -189,15 +189,23 @@ function clearChat() {
 <style scoped>
 .chat-page {
   max-width: 46rem;
-  margin: 0 auto;
-  height: calc(100dvh - 7.5rem);
+  margin: 0 auto -1.5rem; /* absorb main's padding-bottom on mobile */
+  /* nav (~3.6rem) + main padding-top (1rem) */
+  height: calc(100dvh - 4.6rem);
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
+@media (min-width: 740px) {
+  .chat-page {
+    margin-bottom: -2rem; /* main padding-bottom at desktop */
+    height: calc(100dvh - 4.85rem); /* nav + 1.25rem padding-top */
+  }
+}
+
 .page-head {
-  margin-bottom: 0.95rem;
+  margin-bottom: 0.5rem;
   flex: 0 0 auto;
 }
 
@@ -206,12 +214,12 @@ function clearChat() {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0;
 }
 
 .page-head h1 {
   margin: 0;
-  font-size: clamp(1.35rem, 4.5vw, 1.95rem);
+  font-size: clamp(1.1rem, 4.5vw, 1.95rem);
   font-family: var(--title-font);
   letter-spacing: 0.01em;
   color: var(--brand-strong);
@@ -369,8 +377,8 @@ function clearChat() {
 .textarea {
   width: 100%;
   resize: vertical;
-  min-height: 7.3rem;
-  padding: 0.7rem 0.8rem;
+  min-height: 4rem;
+  padding: 0.55rem 0.8rem;
   border-radius: 10px;
   border: 1px solid var(--border);
   background: var(--surface-2);
