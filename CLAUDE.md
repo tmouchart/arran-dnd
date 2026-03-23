@@ -41,6 +41,15 @@ Do **not** re-create `.page-head`, `.card`, `.badge`, `.empty-state`, or `.icon-
 - A file getting long is a signal to refactor, not to keep adding.
 - If an implementation requires a non-obvious trick, a framework workaround, or complexity that feels disproportionate to the feature → **ask the user before proceeding**.
 
+### Unit tests
+Any new feature that contains non-trivial logic (game mechanics, calculations, state transformations) **must have unit tests**.
+
+- Tests live next to the source file: `foo.ts` → `foo.test.ts`
+- Run with `npm test` (root), `npm test -w client`, or `npm test -w server`
+- Use **Vitest** (already installed). Same API as Jest: `describe`, `it`, `expect`
+- Test pure functions first; for Vue composables, mutate `character.value` directly and read computed `.value`
+- Use `/write-tests` to generate tests interactively
+
 ## Database Migrations
 
 Whenever a new migration file is created under `server/src/db/migrations/`, **immediately run it**:
