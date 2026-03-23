@@ -182,6 +182,18 @@ const cultureNainErrants: PeupleVoie = {
   ],
 }
 
+const cultureNainMalt: PeupleVoie = {
+  id: 'culture-nain-malt',
+  name: 'Ordre du Malt',
+  capacites: [
+    { name: 'Art du brassage', description: '+5 à tous les tests d\'artisanat et de connaissances liés au brassage et à l\'alcool ; +5 aux tests de CON pour résister aux effets de l\'alcool.', active: false },
+    { name: 'Sens de l\'effort', description: 'Choisir une capacité de rang 1 ou 2 de la voie de la puissance ou de la voie du charme ; au rang 4, capacité supplémentaire de rang 1 ou 2 dans l\'une de ces voies.', active: false },
+    { name: 'Tiser entre amis', description: '+5 à tous les tests de CHA avec toute personne qui accepte de partager une boisson alcoolisée avec lui.', active: false },
+    { name: 'Courage liquide', description: 'Après absorption d\'une quantité importante d\'alcool : gagne (Rang)d6 PV temporaires (perdus en premier) pendant une heure, insensibilité à toute forme de peur, et jusqu\'à 3 fois +5 à un test de FOR, CON ou CHA. 1 fois par jour.', active: true },
+    { name: 'Seigneur du Malt', description: '+2 CHA et +2 CON.', active: false },
+  ],
+}
+
 // — Humains —
 
 const cultureHumainNordique: PeupleVoie = {
@@ -295,7 +307,7 @@ export const PEUPLES: Peuple[] = [
     voiesCulturelles: [
       cultureElfeBleu, cultureElfeSylvain, cultureElfeBlanc, cultureElfeNoir,
       cultureHumainNordique, cultureHumainMitan, cultureHumainAustral, cultureHumainOriental,
-      cultureNainForge, cultureNainTalion, cultureNainTemple, cultureNainBouclier, cultureNainErrants,
+      cultureNainForge, cultureNainTalion, cultureNainTemple, cultureNainBouclier, cultureNainErrants, cultureNainMalt,
       cultureOrc, cultureGobelin, cultureOgre,
     ],
   },
@@ -304,7 +316,7 @@ export const PEUPLES: Peuple[] = [
     name: 'Nain',
     voiesDePeuple: [voiePeupleNain],
     voiesCulturelles: [
-      cultureNainForge, cultureNainTalion, cultureNainTemple, cultureNainBouclier, cultureNainErrants,
+      cultureNainForge, cultureNainTalion, cultureNainTemple, cultureNainBouclier, cultureNainErrants, cultureNainMalt,
     ],
   },
   {

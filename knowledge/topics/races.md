@@ -247,6 +247,16 @@ Hors forteresses, les Nains sont **rares**, souvent engagés comme experts (guer
 4. **Solidarité des Errants** — quand un **miséreux** peut aider : lancer **1d6** — sur **1–4**, aide totale (le MJ lance en secret **1d6** : sur **6**, trahison pour profit).
 5. **Volonté héroïque** — +2 CON et +2 SAG.
 
+#### Ordre du Malt
+
+*Ordre mineur indépendant — brasseurs, viticulteurs, bouilleurs de cru, ouvriers de chai. Résiste à l'absorption par l'**Ordre du Talion**. L'alcool comme **lien culturel** entre toutes les cités naines (personnage : **Gurdan**, recruteur de la Légion de fer).*
+
+1. **Art du brassage** — **+5** à tous les tests d'**artisanat** et de **connaissances** liés au brassage et à l'alcool ; **+5** aux tests de **CON** pour résister aux effets de l'alcool.
+2. **Sens de l'effort** — capacité de rang 1 ou 2 de la **voie de la puissance** ou de la **voie du charme** ; au rang 4, capacité supplémentaire de rang 1 ou 2 dans l'une de ces voies.
+3. **Tiser entre amis** — **+5** à tous les tests de **CHA** avec toute personne qui **accepte de partager une boisson alcoolisée** avec lui.
+4. **Courage liquide** — après absorption d'une quantité importante d'alcool : gagne **(Rang)d6 PV temporaires** (perdus en premier) pendant **une heure** ; insensible à toute forme de **peur** ; peut bénéficier jusqu'à **3 fois** d'un **+5** à un test de **FOR, CON ou CHA**. **1 fois par jour.**
+5. **Seigneur du Malt** — +2 CHA et +2 CON.
+
 ---
 
 ## Les Humains
