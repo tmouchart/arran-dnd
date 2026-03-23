@@ -207,9 +207,6 @@ watch(() => props.show, (shown) => {
               Répartissez les valeurs <strong>16, 14, 13, 12, 11, 10</strong> dans vos 6 caractéristiques.
               Glissez les lignes pour changer l'ordre.
             </p>
-            <div class="dist-values-bar">
-              <span v-for="v in DISTRIBUTION_VALUES" :key="v" class="dist-chip">{{ v }}</span>
-            </div>
             <div class="dist-list">
               <div
                 v-for="(key, idx) in distOrder"
@@ -406,21 +403,6 @@ watch(() => props.show, (shown) => {
 }
 
 /* ── Distribution ────────────────────────────────────────────────────────── */
-
-.dist-values-bar {
-  display: flex;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-}
-
-.dist-chip {
-  background: var(--accent);
-  color: white;
-  border-radius: 8px;
-  padding: 0.18rem 0.55rem;
-  font-size: 0.88rem;
-  font-weight: 700;
-}
 
 .dist-row {
   display: flex;
