@@ -20,6 +20,13 @@ export interface SkillRow {
   rank: number
 }
 
+export interface ItemRow {
+  id: string
+  name: string
+  description?: string
+  quantity: number
+}
+
 export interface PathRow {
   id?: string
   name: string
@@ -60,4 +67,22 @@ export interface Character {
   paths: PathRow[]
   /** Id from `mysticTalents.ts` when the profile family is mystiques; empty string if none */
   mysticTalent: string
+  /** Id from `armorsCatalog.ts` of the equipped armor; empty string = aucune armure */
+  armorId: string
+  /** Id from `armorsCatalog.ts` (SHIELDS_CATALOG) of the equipped shield; empty string = aucun bouclier */
+  shieldId: string
+  /** Bonus de DEF divers (capacités, magie, situations…) saisi manuellement */
+  defenseBonus: number
+  /** Raw die rolls for HP gained at each level >= 2. Length = level - 1. CON mod is computed live. */
+  hpLevelGains: number[]
+  /** Inventory items. */
+  items: ItemRow[]
+  /** Currency. Conversion: 1 po = 10 pa = 100 pc. */
+  goldCoins: number
+  silverCoins: number
+  copperCoins: number
+  /** Points de Chance courants. Max = 2 + Mod. CHA (aventuriers +2). */
+  pcCurrent: number
+  /** Points de Récupération courants (max = 5). */
+  prCurrent: number
 }

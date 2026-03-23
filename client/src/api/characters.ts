@@ -27,6 +27,16 @@ export interface ServerCharacter {
   martialFormations: Character['martialFormations']
   paths: Character['paths']
   mysticTalent: string | null | undefined
+  armorId: string | null | undefined
+  shieldId: string | null | undefined
+  defenseBonus: number | undefined
+  hpLevelGains: number[] | undefined
+  items: Character['items'] | undefined
+  goldCoins: number | undefined
+  silverCoins: number | undefined
+  copperCoins: number | undefined
+  pcCurrent: number | undefined
+  prCurrent: number | undefined
 }
 
 export async function fetchCharacter(id: number): Promise<ServerCharacter> {
