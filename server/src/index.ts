@@ -11,6 +11,7 @@ import express from "express";
 import authRouter from "./routes/auth.js";
 import charactersRouter from "./routes/characters.js";
 import sessionsRouter from "./routes/sessions.js";
+import { requireAuth, type AuthRequest } from "./auth/middleware.js";
 import { loadCoreIndex, loadTopic } from "./knowledge/loadKnowledge.js";
 import { CLIENT_DIST } from "./paths.js";
 import {
@@ -272,8 +273,9 @@ function buildPreviousCharacterSection(prev: CharacterPayload): string {
   return `\n\n⚠️ Modification récente (annulable) :\nValeurs avant modification — ${parts.join(", ")}`;
 }
 
-app.post("/api/chat", async (req, res) => {
+app.post("/api/chat", requireAuth, async (req, res) => {
   try {
+    const chatUser = (req as AuthRequest).username;
     const body = req.body as { messages?: ChatMessage[]; character?: CharacterPayload; previousCharacter?: CharacterPayload };
     const messages = body.messages;
     if (!Array.isArray(messages) || messages.length === 0) {
@@ -315,6 +317,7 @@ app.post("/api/chat", async (req, res) => {
 
       let contents: GeminiContent[] = messagestoGeminiContents(messages);
       let calledTopic: TopicName | null = null;
+      let geminiTotalTokens = 0;
 
       // Turn 1 — streaming: text is emitted live, tool call detected at the end
       const turn1AllParts: GeminiPart[] = [];
@@ -345,6 +348,7 @@ app.post("/api/chat", async (req, res) => {
         output: turn1LastUsage?.candidatesTokenCount,
         total: turn1LastUsage?.totalTokenCount,
       });
+      geminiTotalTokens += turn1LastUsage?.totalTokenCount ?? 0;
 
       const funcCall = turn1AllParts.find((p) => p.functionCall != null);
       const funcName = funcCall
@@ -418,6 +422,7 @@ app.post("/api/chat", async (req, res) => {
           output: lastUsage?.candidatesTokenCount,
           total: lastUsage?.totalTokenCount,
         });
+        geminiTotalTokens += lastUsage?.totalTokenCount ?? 0;
       } else if (funcName === "edit_character" && !closed) {
         const fc = funcCall!.functionCall as { args?: { changes?: Record<string, unknown> } };
         const rawChanges = fc.args?.changes ?? {};
@@ -488,10 +493,12 @@ app.post("/api/chat", async (req, res) => {
           output: lastUsage?.candidatesTokenCount,
           total: lastUsage?.totalTokenCount,
         });
+        geminiTotalTokens += lastUsage?.totalTokenCount ?? 0;
       } else {
         console.log("[knowledge] No tool call — answering from core index (gemini)");
       }
 
+      console.log(`[chat] user=${chatUser} tokens=${geminiTotalTokens} topic=${calledTopic ?? 'none'}`);
       if (!closed) {
         writeSse(res, "done", { model: GEMINI_MODEL, usage: null, topic: calledTopic });
         res.end();
@@ -609,6 +616,9 @@ app.post("/api/chat", async (req, res) => {
         input: finalMessage.usage.input_tokens,
         output: finalMessage.usage.output_tokens,
       });
+      const anthropicTotalTokens = (turn1Final.usage.input_tokens + turn1Final.usage.output_tokens)
+        + (finalMessage.usage.input_tokens + finalMessage.usage.output_tokens);
+      console.log(`[chat] user=${chatUser} tokens=${anthropicTotalTokens} topic=${calledTopic ?? 'none'}`);
       if (!closed) {
         writeSse(res, "done", {
           model: finalMessage.model,
@@ -619,6 +629,8 @@ app.post("/api/chat", async (req, res) => {
       }
     } else {
       console.log("[knowledge] No tool call — answering from core index (anthropic)");
+      const anthropicTotalTokens = turn1Final.usage.input_tokens + turn1Final.usage.output_tokens;
+      console.log(`[chat] user=${chatUser} tokens=${anthropicTotalTokens} topic=none`);
       if (!closed) {
         writeSse(res, "done", {
           model: turn1Final.model,

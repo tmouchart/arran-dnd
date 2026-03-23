@@ -33,12 +33,13 @@ router.post('/login', async (req, res) => {
     return
   }
 
-  const token = signToken(user.id)
+  const token = signToken(user.id, user.username)
   res.cookie('token', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
   })
+  console.log(`[auth] login: user=${user.username}`)
   res.json({ user: { id: user.id, username: user.username } })
 })
 
@@ -62,12 +63,13 @@ router.post('/register', async (req, res) => {
   const passwordHash = await bcrypt.hash(password, 10)
   const [newUser] = await db.insert(users).values({ username, passwordHash }).returning({ id: users.id, username: users.username })
 
-  const token = signToken(newUser.id)
+  const token = signToken(newUser.id, newUser.username)
   res.cookie('token', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
   })
+  console.log(`[auth] register: user=${newUser.username}`)
   res.status(201).json({ user: { id: newUser.id, username: newUser.username } })
 })
 

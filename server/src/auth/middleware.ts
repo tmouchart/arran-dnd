@@ -3,6 +3,7 @@ import { verifyToken } from './jwt.js'
 
 export interface AuthRequest extends Request {
   userId: number
+  username: string
 }
 
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
@@ -14,6 +15,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
   try {
     const payload = verifyToken(token)
     ;(req as AuthRequest).userId = payload.sub
+    ;(req as AuthRequest).username = payload.username
     next()
   } catch {
     res.status(401).json({ error: 'Token invalide' })

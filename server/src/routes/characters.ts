@@ -3,6 +3,10 @@ import { Router } from 'express'
 import { db } from '../db/index.js'
 import { characters } from '../db/schema.js'
 import { requireAuth, type AuthRequest } from '../auth/middleware.js'
+
+function username(req: unknown): string {
+  return (req as AuthRequest).username ?? 'unknown'
+}
 import { syncParticipantHpFromCharacter } from '../sessions/store.js'
 type SkillRow = { name: string; rank: number }
 type PathRow = { id?: string; name: string; rank: number; kind?: string; notes?: string }
@@ -106,6 +110,7 @@ router.post('/', async (req, res) => {
     mysticTalent: body.mysticTalent ?? null,
   }).returning()
 
+  console.log(`[character] created: user=${username(req)} name="${row.name}"`)
   res.status(201).json(row)
 })
 
@@ -154,6 +159,7 @@ router.put('/:id', async (req, res) => {
     res.status(404).json({ error: 'Personnage introuvable' })
     return
   }
+  console.log(`[character] updated: user=${username(req)} name="${row.name}"`)
   syncParticipantHpFromCharacter(row.id, userId, row.hpCurrent, row.hpMax)
   res.json(row)
 })

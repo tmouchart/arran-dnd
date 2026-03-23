@@ -87,12 +87,13 @@ router.get('/callback', async (req, res) => {
         .returning()
     }
 
-    const token = signToken(user.id)
+    const token = signToken(user.id, user.username)
     res.cookie('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
     })
+    console.log(`[auth] google-login: user=${user.username}`)
     res.redirect(CLIENT_URL)
   } catch (err) {
     console.error('[google-auth] OAuth callback error:', err)
