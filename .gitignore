@@ -29,6 +29,6 @@ dist/
 client/dist/
 
 # Local IDE / agent
-.claude/
+.claude/settings.local.json
 
 users.txt
