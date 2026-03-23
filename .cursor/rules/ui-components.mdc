@@ -1,0 +1,75 @@
+---
+description: UI base components — always use these when writing new Vue code
+globs: client/src/**/*.vue
+alwaysApply: true
+---
+
+# Arran DnD — UI Base Components
+
+All shared UI primitives are in `client/src/components/ui/`. **Always use these — never redefine their patterns inline.**
+
+## Available Components
+
+### `AppPageHead` — page header
+```vue
+<AppPageHead>
+  Page Title
+  <template #actions>
+    <!-- buttons go here -->
+  </template>
+</AppPageHead>
+```
+
+### `AppCard` — bordered card
+```vue
+<!-- Simple title -->
+<AppCard title="Section Title">
+  content
+</AppCard>
+
+<!-- Title with action buttons -->
+<AppCard title="Section Title">
+  <template #titleActions>
+    <button class="btn ghost small">+ Add</button>
+  </template>
+  content
+</AppCard>
+
+<!-- Complex header (use manual .card-head in slot) -->
+<AppCard>
+  <div class="card-head">
+    <h2>Custom header</h2>
+    <button>...</button>
+  </div>
+  content
+</AppCard>
+```
+
+### `AppBadge` — colored pill
+Variants: `attaque` | `limitée` | `gratuite` | `info` | `pm` | `active`
+```vue
+<AppBadge variant="attaque">Attaque</AppBadge>
+```
+
+### `AppEmptyState` — feedback block
+Variants: `loading` | `empty` (default) | `error`
+```vue
+<AppEmptyState variant="loading">Chargement…</AppEmptyState>
+<AppEmptyState variant="error">
+  <p>{{ error }}</p>
+  <template #actions><button @click="retry">Réessayer</button></template>
+</AppEmptyState>
+```
+
+### `AppIconBtn` — 40×40 icon button
+Variants: `ghost` (default) | `primary` | `danger`
+```vue
+<AppIconBtn variant="primary" title="Add" @click="...">
+  <Plus :size="18" />
+</AppIconBtn>
+```
+
+## Rules
+- Import from `../components/ui/ComponentName.vue`
+- Do NOT re-create `.page-head`, `.card`, `.badge`, `.empty-state`, or `.icon-btn` patterns in scoped styles
+- All icons via `lucide-vue-next` only (no other icon libraries)

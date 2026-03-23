@@ -1,0 +1,40 @@
+---
+description: Code quality rules — apply to all code written in this project
+globs: "**/*"
+alwaysApply: true
+---
+
+# Code Quality Rules
+
+## Core principles
+
+**Simple > clever.** The best solution is the one that's easiest to read and change. If a solution feels clever, it's a warning sign.
+
+**No unnecessary complexity.** Before implementing something intricate, ask: is there a simpler way? If you're about to write a workaround or a non-obvious abstraction, stop and confirm with the user first.
+
+**Modular by default.** Split code into focused, reusable units. No file should try to do too many things.
+
+## Rules
+
+### Simplicity
+- Prefer straightforward logic over optimized-but-opaque code
+- Avoid premature abstractions — don't generalize until there are at least 2–3 real use cases
+- Never add workarounds to paper over a deeper issue; fix the root cause or ask the user
+
+### Maintainability
+- Each file, function, or component should have one clear responsibility
+- Name things for what they *do*, not how they're implemented
+- Avoid magic numbers and undocumented assumptions
+
+### Modularity
+- **Frontend**: Extract reusable UI into `client/src/components/`. Split large Vue files into sub-components
+- **Backend**: Extract business logic into dedicated service functions; keep route handlers thin
+- A file that's getting long is a signal to refactor, not to keep adding
+
+### Before implementing
+If an implementation requires:
+- more than one non-obvious trick,
+- a workaround for a framework/library limitation,
+- or significant complexity that feels disproportionate to the feature,
+
+→ **pause and confirm with the user** before proceeding.
