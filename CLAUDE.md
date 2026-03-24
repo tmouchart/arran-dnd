@@ -1,5 +1,108 @@
 # Arran DnD — Rules for Claude
 
+## Project Structure
+
+Arran DnD is a monorepo with three workspaces. Run everything from the root with `npm run dev`.
+
+```
+arran-dnd/
+├── client/          # Vue 3 SPA (Vite + TypeScript)
+├── server/          # Express API (Node + TypeScript + Drizzle ORM)
+└── knowledge/       # Game rules & lore (Markdown, loaded at runtime by the AI)
+```
+
+### `knowledge/`
+
+Static Markdown files describing the game rules and world lore. The server reads these files at startup to populate the AI's context.
+
+```
+knowledge/
+└── topics/
+    ├── 00-index.md          # Master index — lists all topics
+    ├── combat.md
+    ├── creation-personnage.md
+    ├── equipement.md
+    ├── magie.md
+    ├── races.md
+    ├── voies-de-profil.md
+    ├── voies-de-prestige.md
+    ├── monde-arran.md
+    └── monde-lore-*.md      # World lore (peoples, chronicles…)
+```
+
+- Never edit these files by hand unless correcting a factual error in the game rules.
+- Use `/add-knowledge` to ingest new rules from a `.txt` source file.
+- The server exposes topics as AI tool calls via `server/src/knowledge/tools.ts`.
+
+### `server/`
+
+Express REST API + AI chat endpoint. Entry point: `server/src/index.ts`.
+
+```
+server/src/
+├── index.ts              # App bootstrap, AI /api/chat endpoint
+├── routes/
+│   ├── auth.ts           # Login / logout / Google OAuth callback
+│   ├── characters.ts     # CRUD for character sheets
+│   └── sessions.ts       # Game session management
+├── auth/
+│   └── middleware.ts     # requireAuth — protects all non-public routes
+├── db/
+│   ├── schema.ts         # Drizzle table definitions (users, characters, sessions)
+│   ├── index.ts          # db client (postgres-js + drizzle)
+│   ├── migrations/       # SQL migration files — run with `npm run db:migrate`
+│   └── runMigrations.ts
+├── knowledge/
+│   ├── loadKnowledge.ts  # Reads topics/ at startup
+│   └── tools.ts          # Exposes knowledge as Anthropic/Gemini tool definitions
+└── sessions/             # Session state helpers
+```
+
+Key env vars (`.env` at root): `DATABASE_URL`, `SESSION_SECRET`, `AI_PROVIDER` (`anthropic` | `gemini`), `ANTHROPIC_MODEL`, `GEMINI_MODEL`.
+
+### `client/`
+
+Vue 3 SPA built with Vite. Entry point: `client/src/main.ts`.
+
+```
+client/src/
+├── views/                      # One file per route
+│   ├── LoginView.vue
+│   ├── CharacterListView.vue
+│   ├── CharacterSheetView.vue  # Main character sheet (tabs)
+│   ├── ActionsView.vue         # Combat actions reference
+│   ├── ChatView.vue            # AI chat interface
+│   ├── SessionListView.vue
+│   └── SessionView.vue
+├── components/
+│   ├── ui/                     # Shared primitives (AppCard, AppBadge…) — see below
+│   └── character-sheet/        # Cards rendered inside CharacterSheetView
+│       ├── AbilitiesCard.vue
+│       ├── CombatCard.vue
+│       ├── VoiesCard.vue
+│       ├── ItemsCard.vue
+│       └── …
+├── composables/                # useAuth, useCharacter, etc.
+├── api/                        # Typed fetch wrappers for each API route
+├── data/                       # Static game data (catalogs, lookups)
+├── types/                      # Shared TypeScript interfaces
+└── utils/                      # Pure helpers (game calculations, formatting)
+```
+
+Routes (defined in `client/src/router/index.ts`):
+
+| Path | View | Notes |
+|---|---|---|
+| `/login` | `LoginView` | Public |
+| `/personnage` | `CharacterSheetView` | Default redirect from `/` |
+| `/personnages` | `CharacterListView` | |
+| `/actions` | `ActionsView` | |
+| `/chat` | `ChatView` | |
+| `/sessions` | `SessionListView` | |
+| `/sessions/:id` | `SessionView` | |
+
+---
+
 ## Design
 
 This is a **roleplay game tool**, not a corporate app. Design must feel fun, immersive, and magical.

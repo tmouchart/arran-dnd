@@ -1,101 +1,143 @@
 ---
 name: quick-start
-description: Guide a new developer through running arran-dnd locally after cloning the repo
+description: Guide a new user (including non-developers) through installing and running arran-dnd locally on Windows
+triggers:
+  - initialiser le projet
+  - démarrer le projet
+  - commencer le projet
+  - installer le projet
+  - quick start
+  - comment lancer
+  - comment démarrer
 allowed_tools: Bash, Read, Glob, Grep
 ---
 
-Help the user get the project running locally. Walk through each step below, run checks where possible, and surface errors immediately.
+Guide l'utilisateur pas à pas pour installer et lancer le projet sur Windows. Explique chaque étape clairement, comme si la personne n'avait jamais touché à du code. Vérifie chaque prérequis avant de passer à l'étape suivante.
 
-## Prerequisites
+---
 
-Check that the following are available before proceeding:
+## Avant de commencer — Installations requises (Windows uniquement)
 
-- **Node.js ≥ 20** — `node --version`
-- **Docker** (for PostgreSQL) — `docker --version` and `docker compose version`
+Ces logiciels sont nécessaires. Si tu ne les as pas encore, installe-les dans l'ordre en cliquant sur les liens ci-dessous et en suivant les instructions à l'écran.
 
-If either is missing, tell the user to install it and stop there.
+### 1. Node.js (le moteur qui fait tourner le projet)
 
-## Step 1 — Install dependencies
+Rends-toi sur le site officiel de Node.js et télécharge la version **LTS** (Long Term Support) :
+👉 https://nodejs.org
 
-From the repo root:
+Suis l'installateur jusqu'à la fin, laisse toutes les options par défaut cochées.
+
+### 2. Git Bash (pour taper des commandes)
+
+Rends-toi sur le site officiel de Git :
+👉 https://git-scm.com/downloads/win
+
+Télécharge la version Windows et suis l'installateur. Laisse toutes les options par défaut. Git Bash sera le terminal que tu utiliseras pour les commandes.
+
+### 3. Docker Desktop (pour la base de données)
+
+Rends-toi sur le site officiel de Docker :
+👉 https://www.docker.com/products/docker-desktop
+
+Télécharge **Docker Desktop for Windows**. Pendant l'installation :
+- Quand il te demande de choisir un backend, sélectionne **WSL 2** (et non Hyper-V)
+- Une fois l'installation terminée, **redémarre ton ordinateur**
+
+Après le redémarrage, ouvre Docker Desktop et attends que le logo Docker en bas à gauche soit vert (ça peut prendre 1-2 minutes).
+
+---
+
+## Vérification des prérequis
+
+Une fois les trois logiciels installés et l'ordinateur redémarré, ouvre **Git Bash** et vérifie que tout est en place :
+
+```bash
+node --version      # doit afficher v20 ou plus
+git --version       # doit afficher une version de git
+docker --version    # doit afficher une version de docker
+```
+
+Si une commande affiche une erreur, retourne à l'étape d'installation correspondante.
+
+---
+
+## Étape 1 — Cloner le projet
+
+Dans Git Bash, navigue là où tu veux mettre le projet (par exemple ton bureau) puis clone le dépôt :
+
+```bash
+cd ~/Desktop
+git clone <URL_DU_REPO>
+cd arran-dnd
+```
+
+Remplace `<URL_DU_REPO>` par le lien que tu as reçu.
+
+---
+
+## Étape 2 — Installer les dépendances
+
+Toujours dans Git Bash, depuis le dossier `arran-dnd` :
 
 ```bash
 npm install
 ```
 
-This installs dependencies for both the `client/` and `server/` workspaces via npm workspaces.
+Cette commande télécharge tous les composants nécessaires au projet. Ça peut prendre quelques minutes.
 
-## Step 2 — Environment variables
+---
 
-Check whether `server/.env` exists. If not, copy the template:
+## Étape 3 — Fichier de configuration (.env)
 
-```bash
-cp server/.env.example server/.env
+Le projet a besoin d'un fichier `.env` qui contient des informations sensibles (clés API, mots de passe). Ce fichier n'est pas inclus dans le dépôt pour des raisons de sécurité.
+
+**Demande une copie du fichier `.env` à Thomas**, puis place-le dans le dossier `server/` du projet :
+
+```
+arran-dnd/
+  server/
+    .env   ← colle le fichier ici
 ```
 
-Then display the required values the user must fill in:
+---
 
-| Variable                                    | Required             | Default / Note                                                                |
-| ------------------------------------------- | -------------------- | ----------------------------------------------------------------------------- |
-| `GEMINI_API_KEY`                            | **Yes** (default AI) | Get from Google AI Studio                                                     |
-| `JWT_SECRET`                                | **Yes**              | Any string ≥ 32 chars                                                         |
-| `DATABASE_URL`                              | No                   | `postgres://arran:arran_dev@localhost:5432/arrandnd` (matches docker-compose) |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | No                   | Only for Google OAuth login                                                   |
+## Étape 4 — Démarrer la base de données
 
-Tell the user to edit `server/.env` and set at minimum `GEMINI_API_KEY` and `JWT_SECRET` before continuing.
-
-## Step 3 — Start PostgreSQL
+Lance la base de données PostgreSQL avec Docker :
 
 ```bash
 docker compose up -d
 ```
 
-This starts a PostgreSQL 16 container:
-
-- Host: `localhost`, Port: `5432`
-- DB: `arrandnd`, User: `arran`, Password: `arran_dev`
-
-Verify it's running: `docker compose ps`
-
-## Step 4 — Run database migrations
+Vérifie qu'elle tourne bien :
 
 ```bash
-npm run db:migrate
+docker compose ps
 ```
 
-This applies all SQL migrations from `server/src/db/migrations/` to initialize the schema.
+Tu dois voir un conteneur avec le statut `running`.
 
-## Step 5 — Create a user account
+---
 
-There is no signup UI. Users are created via script:
-
-```bash
-npm run create-user -- <username> <password>
-```
-
-Replace `<username>` and `<password>` with the desired credentials.
-
-## Step 6 — Start dev servers
+## Étape 5 — Lancer le projet
 
 ```bash
 npm run dev
 ```
 
-This runs both servers concurrently:
+Cette commande démarre tout en même temps : le serveur et l'interface web. Les migrations de base de données sont appliquées automatiquement au démarrage.
 
-- **API**: http://localhost:3001 (health check: `GET /api/health`)
-- **Client**: http://localhost:5173
+Une fois lancé, ouvre ton navigateur et va sur :
+👉 http://localhost:5173
 
-Open http://localhost:5173 in a browser and log in with the credentials from Step 5.
+---
 
-## Troubleshooting
+## Dépannage
 
-| Symptom                       | Fix                                                              |
-| ----------------------------- | ---------------------------------------------------------------- |
-| PostgreSQL connection refused | Run `docker compose up -d` and wait a few seconds                |
-| `npm run db:migrate` fails    | Check `DATABASE_URL` in `server/.env`                            |
-| 401 Unauthorized              | Create a user with `npm run create-user`                         |
-| Client can't reach API        | Ensure server is on port 3001; Vite proxies `/api` automatically |
-| AI responses fail             | Check `GEMINI_API_KEY` (or `ANTHROPIC_API_KEY`) is set and valid |
-
-Display all steps clearly to the user, running checks after each step where possible.
+| Problème | Solution |
+|---|---|
+| `node` non reconnu | Réinstalle Node.js et redémarre Git Bash |
+| `docker` non reconnu | Assure-toi que Docker Desktop est lancé et redémarre Git Bash |
+| Erreur de connexion à la base de données | Lance `docker compose up -d` et attends quelques secondes |
+| Page blanche ou erreur réseau | Vérifie que `npm run dev` tourne toujours dans Git Bash |
+| Erreur d'API (AI) | Vérifie que le fichier `server/.env` est bien présent et complet |

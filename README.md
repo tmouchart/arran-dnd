@@ -50,7 +50,7 @@ npm install
 npm run dev
 ```
 
-- **API** : [http://localhost:3001](http://localhost:3001) — santé : `GET /api/health`  
+- **API** : [http://localhost:3566](http://localhost:3566) — santé : `GET /api/health`  
 - **Interface** : [http://localhost:5173](http://localhost:5173)
 
 Les scripts racine (`npm run build`, `npm start`, migrations PostgreSQL si vous les utilisez) s’appuient sur les workspaces `client` et `server`.

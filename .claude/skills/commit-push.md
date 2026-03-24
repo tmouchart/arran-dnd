@@ -1,6 +1,6 @@
 ---
 name: commit-push
-description: Stage all changes, create a commit with a generated message, and push to remote
+description: Stage all changes, create one or more commits grouped by feature, and push to remote
 allowed_tools: Bash, Read, Glob, Grep
 ---
 
@@ -10,12 +10,13 @@ Follow the git commit protocol below, then push to remote.
 
 1. Run `git status` and `git diff` in parallel to see what changed.
 2. Run `git log --oneline -5` to match the repo's commit message style.
-3. Stage the relevant modified files (prefer specific filenames over `git add -A`).
-4. Draft a commit message:
-   - Concise subject line (imperative, ≤72 chars)
-   - Follows the repo's existing style (conventional commits if used)
-   - Focuses on *why*, not just *what*
-   - Ends with: `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>`
-5. Commit using a HEREDOC to preserve formatting.
-6. Run `git push`.
-7. Confirm with the short commit SHA.
+3. **Group the changes by feature or functional area.** If the diff touches multiple independent features or concerns, create one commit per group — do not bundle unrelated changes into a single commit.
+4. For each group:
+   - Stage only the relevant files (prefer specific filenames over `git add -A`)
+   - Draft a commit message:
+     - Concise subject line (imperative, ≤72 chars)
+     - Follows the repo's existing style (conventional commits if used)
+     - Focuses on *why*, not just *what*
+   - Commit using a HEREDOC to preserve formatting
+5. Run `git push` once all commits are done.
+6. Confirm with the list of commit SHAs created.

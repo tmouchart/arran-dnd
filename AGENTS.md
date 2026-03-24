@@ -36,7 +36,7 @@ The *Livre du joueur Terres d’Arran* PDF is copyrighted. Do **not** commit the
 
 1. **API keys**: Copy `server/.env.example` to `server/.env` and set `ANTHROPIC_API_KEY`.
 2. **Install**: From repo root, `npm install` (workspaces install `client` and `server`).
-3. **Dev**: `npm run dev` — runs the API on port 3001 and Vite on 5173 with proxy to the API.
+3. **Dev**: `npm run dev` — runs the API on port 3566 and Vite on 5173 with proxy to the API.
 
 ## Anthropic
 
