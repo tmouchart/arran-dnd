@@ -9,6 +9,7 @@ function username(req: unknown): string {
 }
 import { syncParticipantHpFromCharacter } from '../sessions/store.js'
 type SkillRow = { name: string; rank: number }
+type CompetenceRow = { id: string; name: string; ability: string | null; bonus: number }
 type PathRow = { id?: string; name: string; rank: number; kind?: string; notes?: string }
 type ItemRow = { id: string; name: string; description?: string; quantity: number }
 type WeaponRow = {
@@ -76,6 +77,7 @@ router.post('/', async (req, res) => {
     copperCoins: number
     pcCurrent: number
     prCurrent: number
+    competences: CompetenceRow[]
   }>
 
   const existing = await db.select({ id: characters.id }).from(characters).where(eq(characters.userId, userId)).limit(1)
@@ -144,6 +146,7 @@ router.put('/:id', async (req, res) => {
     copperCoins: number
     pcCurrent: number
     prCurrent: number
+    competences: CompetenceRow[]
   }>
 
   const [row] = await db

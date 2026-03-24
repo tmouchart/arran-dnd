@@ -4,7 +4,8 @@ import AppPageHead from "../components/ui/AppPageHead.vue";
 import AppEmptyState from "../components/ui/AppEmptyState.vue";
 import { useCharacter, loadCharacter } from "../composables/useCharacter";
 import { inferProfileFamily } from "../utils/inferProfileFamily";
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
+import AgonieModal from "../components/AgonieModal.vue";
 
 import IdentityCard from "../components/character-sheet/IdentityCard.vue";
 import AbilitiesCard from "../components/character-sheet/AbilitiesCard.vue";
@@ -14,7 +15,7 @@ import VoiesCard from "../components/character-sheet/VoiesCard.vue";
 import PassifsCard from "../components/character-sheet/PassifsCard.vue";
 import MartialFormationsCard from "../components/character-sheet/MartialFormationsCard.vue";
 import WeaponsCard from "../components/character-sheet/WeaponsCard.vue";
-import ItemsCard from "../components/character-sheet/ItemsCard.vue";
+import CompetencesCard from "../components/character-sheet/CompetencesCard.vue";
 import { PR_MAX } from "../composables/useCharacter";
 
 const { character, loading, loadError, saveStatus, abilityModifier, computedDef, computedMp, computedHp, computedHpBase, computedHpGrowth, computedDv, computedInitiative, computedPcMax, computedAttackContact, computedAttackDistance, computedAttackMagique } = useCharacter();
@@ -26,6 +27,37 @@ loadCharacter(id);
 
 function retryLoadSheet() {
   loadCharacter(id);
+}
+
+const showAgonie = ref(false)
+const isStabilised = ref(false)
+
+// Only start watching HP changes after the character has finished loading,
+// so the initial load (0 HP from server) never triggers the modal.
+const stopLoadingWatch = watch(loading, (isLoading) => {
+  if (isLoading) return
+  // Character is now loaded — start tracking HP changes from here
+  watch(
+    () => character.value.hpCurrent,
+    (hp, prev) => {
+      if (hp === 0 && prev !== undefined && prev > 0 && !isStabilised.value) {
+        showAgonie.value = true
+      }
+      if (hp > 0) {
+        isStabilised.value = false
+      }
+    },
+  )
+  stopLoadingWatch()
+})
+
+function onStabilise() {
+  showAgonie.value = false
+  isStabilised.value = true
+}
+
+function onDeath() {
+  showAgonie.value = false
 }
 </script>
 
@@ -49,6 +81,14 @@ function retryLoadSheet() {
       </template>
     </AppEmptyState>
 
+    <AgonieModal
+      v-if="showAgonie"
+      :character-name="character.name"
+      @stabilise="onStabilise"
+      @death="onDeath"
+      @close="showAgonie = false"
+    />
+
     <template v-else>
       <IdentityCard :character="character" />
       <AbilitiesCard :character="character" :ability-modifier="abilityModifier" />
@@ -58,7 +98,7 @@ function retryLoadSheet() {
       <PassifsCard :character="character" />
       <MartialFormationsCard :character="character" />
       <WeaponsCard :character="character" />
-      <ItemsCard :character="character" />
+      <CompetencesCard :character="character" />
     </template>
   </div>
 </template>

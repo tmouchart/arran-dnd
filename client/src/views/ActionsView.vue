@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, reactive } from "vue";
-import { Swords, ChevronDown, ChevronUp, CirclePlus, CircleMinus, Scroll, Dices } from "lucide-vue-next";
+import { computed, onMounted, ref, reactive, watch } from "vue";
+import { Swords, ChevronDown, ChevronUp, CirclePlus, CircleMinus, Scroll, Dices, Sparkles, RefreshCw } from "lucide-vue-next";
 import AppPageHead from "../components/ui/AppPageHead.vue";
 import AppBadge from "../components/ui/AppBadge.vue";
 import AppEmptyState from "../components/ui/AppEmptyState.vue";
@@ -14,10 +14,13 @@ import {
   formatWeaponDamage,
   isMartialWeaponProficient,
 } from "../utils/attackBonus";
-import { rollDie, rollDiceNotation, type DiceRoll } from "../utils/dice";
+import { rollDie, rollDiceNotation } from "../utils/dice";
 import { MARTIAL_WEAPON_CATEGORY_BY_ID } from "../data/martialWeaponCategories";
+import { useRollHistory } from "../composables/useRollHistory";
+import AgonieModal from "../components/AgonieModal.vue";
 
 const { character, loading, loadError, computedAttackContact, computedAttackDistance, computedAttackMagique, computedHp, computedMp, abilityModifier } = useCharacter();
+const { addRoll } = useRollHistory();
 
 onMounted(() => {
   if (!character.value.id) loadCharacter();
@@ -213,6 +216,7 @@ function modDisplay(score: number): string {
 
 // ── Manoeuvres ────────────────────────────────────────────────────────────────
 
+const competencesOpen = ref(false);
 const manoeuversOpen = ref(false);
 const diversOpen = ref(false);
 
@@ -322,16 +326,21 @@ interface WeaponRollResult {
   damageRolls: number[];
   damageModifier: number;
   damageTotal: number;
+  luckUsed: boolean;
 }
 
 interface ActionRollResult {
   attackDie: number;
   attackBonus: number;
   attackTotal: number;
+  luckUsed: boolean;
 }
 
 const weaponRolls = reactive<Record<string, WeaponRollResult>>({});
 const actionRolls = reactive<Record<string, ActionRollResult>>({});
+const abilityRolls = reactive<Record<string, ActionRollResult>>({});
+const lastRolledAbilityKey = ref<string | null>(null);
+const manoeuverRolls = reactive<Record<string, ActionRollResult>>({});
 
 function rollWeapon(item: (typeof weaponBubbles.value)[number]) {
   const bonus = item.w.attackType === 'contact' ? computedAttackContact.value : computedAttackDistance.value;
@@ -353,7 +362,17 @@ function rollWeapon(item: (typeof weaponBubbles.value)[number]) {
     damageRolls: dmg.rolls,
     damageModifier: damageAbilityMod,
     damageTotal: dmg.total,
+    luckUsed: false,
   };
+  addRoll({
+    characterName: character.value.name,
+    kind: 'weapon',
+    label: item.w.name || 'Arme',
+    die: attackDie,
+    bonus: attackBonus,
+    total: attackTotal,
+    damage: { total: dmg.total, critical: attackDie === 20, fumble: attackDie === 1 },
+  });
 }
 
 function rollAction(action: Action) {
@@ -365,16 +384,122 @@ function rollAction(action: Action) {
     attackDie,
     attackBonus: bonus,
     attackTotal: attackDie + bonus,
+    luckUsed: false,
   };
+  addRoll({
+    characterName: character.value.name,
+    kind: 'action',
+    label: action.name,
+    die: attackDie,
+    bonus,
+    total: attackDie + bonus,
+  });
+}
+
+function spendLuck(roll: WeaponRollResult | ActionRollResult, mode: 'reroll' | 'add10') {
+  if (character.value.pcCurrent <= 0 || roll.luckUsed) return;
+  if (mode === 'reroll') {
+    roll.attackDie = rollDie(20);
+    roll.attackTotal = roll.attackDie + roll.attackBonus;
+  } else {
+    roll.attackTotal += 10;
+  }
+  roll.luckUsed = true;
+  character.value.pcCurrent = Math.max(0, character.value.pcCurrent - 1);
+}
+
+function rollAbility(key: string) {
+  const score = character.value.abilities[key as keyof typeof character.value.abilities];
+  const mod = abilityModifier(score);
+  const die = rollDie(20);
+  abilityRolls[key] = { attackDie: die, attackBonus: mod, attackTotal: die + mod, luckUsed: false };
+  lastRolledAbilityKey.value = key;
+  addRoll({
+    characterName: character.value.name,
+    kind: 'ability',
+    label: ABILITY_LABELS.find((a) => a.key === key)?.label ?? key,
+    die,
+    bonus: mod,
+    total: die + mod,
+  });
+}
+
+function rollManoeuvre(name: string) {
+  const die = rollDie(20);
+  const bonus = computedAttackContact.value;
+  manoeuverRolls[name] = { attackDie: die, attackBonus: bonus, attackTotal: die + bonus, luckUsed: false };
+  addRoll({
+    characterName: character.value.name,
+    kind: 'manoeuvre',
+    label: name,
+    die,
+    bonus,
+    total: die + bonus,
+  });
+}
+
+const competenceRolls = reactive<Record<string, ActionRollResult>>({});
+
+function rollCompetence(id: string) {
+  const comp = character.value.competences.find((c) => c.id === id);
+  if (!comp) return;
+  const abilityBonus = comp.ability ? abilityModifier(character.value.abilities[comp.ability]) : 0;
+  const bonus = abilityBonus + comp.bonus;
+  const die = rollDie(20);
+  competenceRolls[id] = { attackDie: die, attackBonus: bonus, attackTotal: die + bonus, luckUsed: false };
+  addRoll({
+    characterName: character.value.name,
+    kind: 'competence',
+    label: comp.name || 'Compétence',
+    die,
+    bonus,
+    total: die + bonus,
+  });
 }
 
 function signedNum(n: number): string {
   return n >= 0 ? `+${n}` : String(n);
 }
+
+const showAgonie = ref(false)
+const isStabilised = ref(false)
+
+const stopLoadingWatch = watch(loading, (isLoading) => {
+  if (isLoading) return
+  watch(
+    () => character.value.hpCurrent,
+    (hp, prev) => {
+      if (hp === 0 && prev !== undefined && prev > 0 && !isStabilised.value) {
+        showAgonie.value = true
+      }
+      if (hp > 0) {
+        isStabilised.value = false
+      }
+    },
+  )
+  stopLoadingWatch()
+})
+
+function onStabilise() {
+  showAgonie.value = false
+  isStabilised.value = true
+}
+
+function onDeath() {
+  showAgonie.value = false
+}
 </script>
 
 <template>
   <div class="actions-page">
+    <AgonieModal
+      v-if="showAgonie"
+      :character-name="character.name"
+      @stabilise="onStabilise"
+      @death="onDeath"
+      @close="showAgonie = false"
+    />
+
     <AppPageHead>
       <Swords :size="22" />
       Mes actions
@@ -405,12 +530,49 @@ function signedNum(n: number): string {
       </div>
       <!-- Caractéristiques -->
       <div class="ch-abilities">
-        <div v-for="ab in ABILITY_LABELS" :key="ab.key" class="ch-ability">
+        <div
+          v-for="ab in ABILITY_LABELS"
+          :key="ab.key"
+          class="ch-ability"
+          role="button"
+          @click="rollAbility(ab.key)"
+        >
           <span class="ch-ab-label">{{ ab.label }}</span>
           <span class="ch-ab-mod" :class="abilityModifier(character.abilities[ab.key]) > 0 ? 'mod-pos' : abilityModifier(character.abilities[ab.key]) < 0 ? 'mod-neg' : 'mod-zero'">
             {{ modDisplay(character.abilities[ab.key]) }}
           </span>
           <span class="ch-ab-score">{{ character.abilities[ab.key] }}</span>
+          <div class="ch-ab-bottom">
+            <Dices :size="11" class="ch-ab-dice-icon" />
+          </div>
+        </div>
+      </div>
+      <div v-if="lastRolledAbilityKey && abilityRolls[lastRolledAbilityKey]" class="ability-roll-zone">
+        <div
+          class="roll-result"
+          :class="{
+            'roll-result--fumble': abilityRolls[lastRolledAbilityKey].attackDie === 1,
+            'roll-result--critical': abilityRolls[lastRolledAbilityKey].attackDie === 20,
+          }"
+        >
+          <span class="roll-result__attack">
+            Test {{ ABILITY_LABELS.find(a => a.key === lastRolledAbilityKey)?.label }} :
+            <strong>{{ abilityRolls[lastRolledAbilityKey].attackTotal }}</strong>
+            <span class="roll-result__detail">(dé {{ abilityRolls[lastRolledAbilityKey].attackDie }} {{ signedNum(abilityRolls[lastRolledAbilityKey].attackBonus) }})</span>
+          </span>
+          <span v-if="abilityRolls[lastRolledAbilityKey].attackDie === 1" class="roll-result__crit-label">Échec critique</span>
+          <span v-else-if="abilityRolls[lastRolledAbilityKey].attackDie === 20" class="roll-result__crit-label">Réussite critique</span>
+        </div>
+        <div v-if="!abilityRolls[lastRolledAbilityKey].luckUsed && character.pcCurrent > 0" class="luck-box">
+          <span class="luck-box__title"><Sparkles :size="13" /> Utiliser la chance <span class="luck-box__pc">{{ character.pcCurrent }} PC</span></span>
+          <div class="luck-box__actions">
+            <button type="button" class="luck-btn" @click.stop="spendLuck(abilityRolls[lastRolledAbilityKey!], 'reroll')">
+              <RefreshCw :size="13" /> Relancer le d20
+            </button>
+            <button type="button" class="luck-btn" @click.stop="spendLuck(abilityRolls[lastRolledAbilityKey!], 'add10')">
+              +10 au résultat
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -458,16 +620,45 @@ function signedNum(n: number): string {
         </p>
         <p v-if="item.w.notes" class="action-description">{{ item.w.notes }}</p>
 
-        <div v-if="weaponRolls[item.w.id]" class="roll-result">
-          <span class="roll-result__attack">
-            Attaque : <strong>{{ weaponRolls[item.w.id].attackTotal }}</strong>
-            <span class="roll-result__detail">(dé {{ weaponRolls[item.w.id].attackDie }} {{ signedNum(weaponRolls[item.w.id].attackBonus) }})</span>
-          </span>
-          <span class="roll-result__damage">
-            Dégâts : <strong>{{ weaponRolls[item.w.id].damageTotal }}</strong>
-            <span class="roll-result__detail">({{ weaponRolls[item.w.id].damageRolls.join('+') }}{{ weaponRolls[item.w.id].damageModifier !== 0 ? ' ' + signedNum(weaponRolls[item.w.id].damageModifier) : '' }})</span>
-          </span>
-        </div>
+        <template v-if="weaponRolls[item.w.id]">
+          <div
+            class="roll-result"
+            :class="{
+              'roll-result--fumble': weaponRolls[item.w.id].attackDie === 1,
+              'roll-result--critical': weaponRolls[item.w.id].attackDie === 20,
+            }"
+          >
+            <span class="roll-result__attack">
+              Attaque : <strong>{{ weaponRolls[item.w.id].attackTotal }}</strong>
+              <span class="roll-result__detail">(dé {{ weaponRolls[item.w.id].attackDie }} {{ signedNum(weaponRolls[item.w.id].attackBonus) }})</span>
+            </span>
+            <span v-if="weaponRolls[item.w.id].attackDie === 1" class="roll-result__crit-label">
+              Échec critique
+            </span>
+            <template v-else-if="weaponRolls[item.w.id].attackDie === 20">
+              <span class="roll-result__crit-label">Réussite critique</span>
+              <span class="roll-result__damage">
+                Dégâts : <strong>{{ weaponRolls[item.w.id].damageTotal * 2 }}</strong>
+                <span class="roll-result__detail">({{ weaponRolls[item.w.id].damageRolls.join('+') }}{{ weaponRolls[item.w.id].damageModifier !== 0 ? ' ' + signedNum(weaponRolls[item.w.id].damageModifier) : '' }} × 2)</span>
+              </span>
+            </template>
+            <span v-else class="roll-result__damage">
+              Dégâts : <strong>{{ weaponRolls[item.w.id].damageTotal }}</strong>
+              <span class="roll-result__detail">({{ weaponRolls[item.w.id].damageRolls.join('+') }}{{ weaponRolls[item.w.id].damageModifier !== 0 ? ' ' + signedNum(weaponRolls[item.w.id].damageModifier) : '' }})</span>
+            </span>
+          </div>
+          <div v-if="!weaponRolls[item.w.id].luckUsed && character.pcCurrent > 0" class="luck-box">
+            <span class="luck-box__title"><Sparkles :size="13" /> Utiliser la chance <span class="luck-box__pc">{{ character.pcCurrent }} PC</span></span>
+            <div class="luck-box__actions">
+              <button type="button" class="luck-btn" @click="spendLuck(weaponRolls[item.w.id], 'reroll')">
+                <RefreshCw :size="13" /> Relancer le d20
+              </button>
+              <button type="button" class="luck-btn" @click="spendLuck(weaponRolls[item.w.id], 'add10')">
+                +10 au résultat
+              </button>
+            </div>
+          </div>
+        </template>
 
         <div class="action-footer">
           <div class="action-source">
@@ -475,7 +666,7 @@ function signedNum(n: number): string {
           </div>
           <button type="button" class="roll-btn" @click="rollWeapon(item)">
             <Dices :size="15" />
-            Lancer le jet
+            Lancer les dés
           </button>
         </div>
       </div>
@@ -511,12 +702,25 @@ function signedNum(n: number): string {
 
         <p class="action-description">{{ action.description }}</p>
 
-        <div v-if="actionRolls[action.source + '-' + action.name]" class="roll-result">
-          <span class="roll-result__attack">
-            Attaque : <strong>{{ actionRolls[action.source + '-' + action.name].attackTotal }}</strong>
-            <span class="roll-result__detail">(dé {{ actionRolls[action.source + '-' + action.name].attackDie }} {{ signedNum(actionRolls[action.source + '-' + action.name].attackBonus) }})</span>
-          </span>
-        </div>
+        <template v-if="actionRolls[action.source + '-' + action.name]">
+          <div class="roll-result">
+            <span class="roll-result__attack">
+              Attaque : <strong>{{ actionRolls[action.source + '-' + action.name].attackTotal }}</strong>
+              <span class="roll-result__detail">(dé {{ actionRolls[action.source + '-' + action.name].attackDie }} {{ signedNum(actionRolls[action.source + '-' + action.name].attackBonus) }})</span>
+            </span>
+          </div>
+          <div v-if="!actionRolls[action.source + '-' + action.name].luckUsed && character.pcCurrent > 0" class="luck-box">
+            <span class="luck-box__title"><Sparkles :size="13" /> Utiliser la chance <span class="luck-box__pc">{{ character.pcCurrent }} PC</span></span>
+            <div class="luck-box__actions">
+              <button type="button" class="luck-btn" @click="spendLuck(actionRolls[action.source + '-' + action.name], 'reroll')">
+                <RefreshCw :size="13" /> Relancer le d20
+              </button>
+              <button type="button" class="luck-btn" @click="spendLuck(actionRolls[action.source + '-' + action.name], 'add10')">
+                +10 au résultat
+              </button>
+            </div>
+          </div>
+        </template>
 
         <div class="action-footer">
           <div class="action-source">{{ action.source }}</div>
@@ -527,9 +731,154 @@ function signedNum(n: number): string {
             @click="rollAction(action)"
           >
             <Dices :size="15" />
-            Lancer le jet
+            Lancer les dés
           </button>
         </div>
+      </div>
+
+      <!-- Compétences collapsibles -->
+      <div
+        v-if="character.competences && character.competences.length"
+        class="action-bubble competences-group"
+        :class="{ 'competences-group--open': competencesOpen }"
+        @click.self="competencesOpen = !competencesOpen"
+      >
+        <div class="action-header competences-header" @click="competencesOpen = !competencesOpen">
+          <span class="action-name">Compétences</span>
+          <span class="competences-count">{{ character.competences.length }}</span>
+          <ChevronUp v-if="competencesOpen" :size="16" class="competences-chevron" />
+          <ChevronDown v-else :size="16" class="competences-chevron" />
+        </div>
+        <p v-if="!competencesOpen" class="action-description competences-hint">
+          {{ character.competences.map(c => c.name || 'Compétence').join(', ') }}
+        </p>
+        <template v-if="competencesOpen">
+          <div class="competences-list">
+            <div
+              v-for="comp in character.competences"
+              :key="'comp-' + comp.id"
+              class="action-bubble competence-bubble"
+              @click.stop
+            >
+              <div class="action-header">
+                <span class="action-name">{{ comp.name || 'Compétence' }}</span>
+                <span class="attack-roll">
+                  d20
+                  <template v-if="comp.ability">
+                    {{ signedNum(abilityModifier(character.abilities[comp.ability])) }} ({{ { strength: 'FOR', dexterity: 'DEX', constitution: 'CON', intelligence: 'INT', wisdom: 'SAG', charisma: 'CHA' }[comp.ability] }})
+                  </template>
+                  <template v-if="comp.bonus !== 0">{{ signedNum(comp.bonus) }} bonus</template>
+                </span>
+              </div>
+
+              <template v-if="competenceRolls[comp.id]">
+                <div
+                  class="roll-result"
+                  :class="{
+                    'roll-result--fumble': competenceRolls[comp.id].attackDie === 1,
+                    'roll-result--critical': competenceRolls[comp.id].attackDie === 20,
+                  }"
+                >
+                  <span class="roll-result__attack">
+                    Test : <strong>{{ competenceRolls[comp.id].attackTotal }}</strong>
+                    <span class="roll-result__detail">(dé {{ competenceRolls[comp.id].attackDie }} {{ signedNum(competenceRolls[comp.id].attackBonus) }})</span>
+                  </span>
+                  <span v-if="competenceRolls[comp.id].attackDie === 1" class="roll-result__crit-label">Échec critique</span>
+                  <span v-else-if="competenceRolls[comp.id].attackDie === 20" class="roll-result__crit-label">Réussite critique</span>
+                </div>
+                <div v-if="!competenceRolls[comp.id].luckUsed && character.pcCurrent > 0" class="luck-box">
+                  <span class="luck-box__title"><Sparkles :size="13" /> Utiliser la chance <span class="luck-box__pc">{{ character.pcCurrent }} PC</span></span>
+                  <div class="luck-box__actions">
+                    <button type="button" class="luck-btn" @click="spendLuck(competenceRolls[comp.id], 'reroll')">
+                      <RefreshCw :size="13" /> Relancer le d20
+                    </button>
+                    <button type="button" class="luck-btn" @click="spendLuck(competenceRolls[comp.id], 'add10')">
+                      +10 au résultat
+                    </button>
+                  </div>
+                </div>
+              </template>
+
+              <div class="action-footer">
+                <div class="action-source">Compétence personnalisée</div>
+                <button type="button" class="roll-btn" @click="rollCompetence(comp.id)">
+                  <Dices :size="15" /> Lancer les dés
+                </button>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- Manoeuvres collapsibles -->
+      <div
+        class="action-bubble manoeuvres-group"
+        :class="{ 'manoeuvres-group--open': manoeuversOpen }"
+        @click.self="manoeuversOpen = !manoeuversOpen"
+      >
+        <div class="action-header manoeuvres-header" @click="manoeuversOpen = !manoeuversOpen">
+          <span class="action-name">Manoeuvres</span>
+          <span class="manoeuvres-count">{{ MANOEUVRES.length }}</span>
+          <ChevronUp v-if="manoeuversOpen" :size="16" class="manoeuvres-chevron" />
+          <ChevronDown v-else :size="16" class="manoeuvres-chevron" />
+        </div>
+        <p v-if="!manoeuversOpen" class="action-description manoeuvres-hint">
+          Désarmement, renversement, aveuglement... Toutes les manoeuvres accessibles à tous les personnages.
+        </p>
+        <template v-if="manoeuversOpen">
+          <p class="action-description manoeuvres-rule">
+            <strong>Déroulement :</strong> 1) Réussir un test d'attaque (contact). 2) Test opposé indiqué ci-dessous. 3) En cas de réussite, appliquer l'effet. Un échec avec un écart &ge; 10 retourne la manoeuvre contre le PJ.
+          </p>
+          <div class="manoeuvres-list">
+            <div
+              v-for="m in MANOEUVRES"
+              :key="m.name"
+              class="action-bubble manoeuvre-bubble"
+              @click.stop
+            >
+              <div class="action-header">
+                <span class="action-name">
+                  {{ m.name }}<span v-if="m.sizePenalty" class="size-penalty-mark" title="Pénalité de taille : -5 par catégorie de taille si plus petit que la cible">*</span>
+                </span>
+                <span class="attack-type-badge">Contact</span>
+                <span class="attack-roll">d20 {{ bonusDisplay(computedAttackContact) }}</span>
+              </div>
+              <div class="manoeuvre-body">
+                <p class="manoeuvre-line"><strong>Effet :</strong> {{ m.effet }}</p>
+                <p class="manoeuvre-line"><strong>Test opposé :</strong> {{ m.testOppose }}</p>
+                <p class="manoeuvre-line manoeuvre-crit"><strong>Critique :</strong> {{ m.critique }}</p>
+              </div>
+              <template v-if="manoeuverRolls[m.name]">
+                <div class="roll-result">
+                  <span class="roll-result__attack">
+                    Attaque : <strong>{{ manoeuverRolls[m.name].attackTotal }}</strong>
+                    <span class="roll-result__detail">(dé {{ manoeuverRolls[m.name].attackDie }} {{ signedNum(manoeuverRolls[m.name].attackBonus) }})</span>
+                  </span>
+                </div>
+                <div v-if="!manoeuverRolls[m.name].luckUsed && character.pcCurrent > 0" class="luck-box">
+                  <span class="luck-box__title"><Sparkles :size="13" /> Utiliser la chance <span class="luck-box__pc">{{ character.pcCurrent }} PC</span></span>
+                  <div class="luck-box__actions">
+                    <button type="button" class="luck-btn" @click="spendLuck(manoeuverRolls[m.name], 'reroll')">
+                      <RefreshCw :size="13" /> Relancer le d20
+                    </button>
+                    <button type="button" class="luck-btn" @click="spendLuck(manoeuverRolls[m.name], 'add10')">
+                      +10 au résultat
+                    </button>
+                  </div>
+                </div>
+              </template>
+              <div class="action-footer">
+                <div class="action-source">Manoeuvre</div>
+                <button type="button" class="roll-btn" @click="rollManoeuvre(m.name)">
+                  <Dices :size="15" /> Lancer les dés
+                </button>
+              </div>
+            </div>
+          </div>
+          <p v-if="MANOEUVRES.some(m => m.sizePenalty)" class="action-description manoeuvres-footnote">
+            * Pénalité de taille : -5 au test d'attaque par catégorie de taille d'écart si l'attaquant est plus petit que sa cible.
+          </p>
+        </template>
       </div>
 
       <!-- Divers collapsibles -->
@@ -581,58 +930,12 @@ function signedNum(n: number): string {
         </template>
       </div>
 
-      <!-- Manoeuvres collapsibles -->
-      <div
-        class="action-bubble manoeuvres-group"
-        :class="{ 'manoeuvres-group--open': manoeuversOpen }"
-        @click.self="manoeuversOpen = !manoeuversOpen"
-      >
-        <div class="action-header manoeuvres-header" @click="manoeuversOpen = !manoeuversOpen">
-          <span class="action-name">Manoeuvres</span>
-          <span class="manoeuvres-count">{{ MANOEUVRES.length }}</span>
-          <ChevronUp v-if="manoeuversOpen" :size="16" class="manoeuvres-chevron" />
-          <ChevronDown v-else :size="16" class="manoeuvres-chevron" />
-        </div>
-        <p v-if="!manoeuversOpen" class="action-description manoeuvres-hint">
-          Désarmement, renversement, aveuglement... Toutes les manoeuvres accessibles à tous les personnages.
-        </p>
-        <template v-if="manoeuversOpen">
-          <p class="action-description manoeuvres-rule">
-            <strong>Déroulement :</strong> 1) Réussir un test d'attaque (contact). 2) Test opposé indiqué ci-dessous. 3) En cas de réussite, appliquer l'effet. Un échec avec un écart &ge; 10 retourne la manoeuvre contre le PJ.
-          </p>
-          <div class="manoeuvres-list">
-            <div
-              v-for="m in MANOEUVRES"
-              :key="m.name"
-              class="action-bubble manoeuvre-bubble"
-              @click.stop
-            >
-              <div class="action-header">
-                <span class="action-name">
-                  {{ m.name }}<span v-if="m.sizePenalty" class="size-penalty-mark" title="Pénalité de taille : -5 par catégorie de taille si plus petit que la cible">*</span>
-                </span>
-                <span class="attack-type-badge">Contact</span>
-                <span class="attack-roll">d20 {{ bonusDisplay(computedAttackContact) }}</span>
-              </div>
-              <div class="manoeuvre-body">
-                <p class="manoeuvre-line"><strong>Effet :</strong> {{ m.effet }}</p>
-                <p class="manoeuvre-line"><strong>Test opposé :</strong> {{ m.testOppose }}</p>
-                <p class="manoeuvre-line manoeuvre-crit"><strong>Critique :</strong> {{ m.critique }}</p>
-              </div>
-              <div class="action-source">Manoeuvre</div>
-            </div>
-          </div>
-          <p v-if="MANOEUVRES.some(m => m.sizePenalty)" class="action-description manoeuvres-footnote">
-            * Pénalité de taille : -5 au test d'attaque par catégorie de taille d'écart si l'attaquant est plus petit que sa cible.
-          </p>
-        </template>
-      </div>
-
       <template v-if="hasPassifs">
         <div class="passifs-divider" />
         <PassifsCard :character="character" class="passifs-in-actions" />
       </template>
     </div>
+
   </div>
 </template>
 
@@ -641,6 +944,7 @@ function signedNum(n: number): string {
   max-width: 680px;
   margin: 0 auto;
 }
+
 
 .actions-page :deep(a.btn) {
   text-decoration: none;
@@ -775,6 +1079,43 @@ function signedNum(n: number): string {
 :root[data-theme="dark"] .mod-pos { color: #7bcf8a; }
 .mod-neg { color: #c95f56; }
 .mod-zero { color: var(--muted); }
+
+.ch-ability {
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.ch-ability:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+}
+
+.ch-ab-bottom {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin-top: 0.05rem;
+  min-height: 14px;
+}
+
+.ch-ab-dice-icon {
+  color: var(--muted);
+  opacity: 0.5;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.ch-ability:hover .ch-ab-dice-icon {
+  opacity: 1;
+  color: var(--accent);
+}
+
+/* ── Zone résultat sous la grille de carac ──────────────────────────────── */
+
+.ability-roll-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.15rem;
+}
 
 /* ── Liste ──────────────────────────────────────────────────────────────── */
 
@@ -949,6 +1290,49 @@ function signedNum(n: number): string {
   font-size: 0.65rem;
 }
 
+/* ── Compétences group ──────────────────────────────────────────────────── */
+
+.competences-group {
+  cursor: pointer;
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface-2));
+}
+
+.competences-group--open {
+  cursor: default;
+}
+
+.competences-header {
+  cursor: pointer;
+  user-select: none;
+}
+
+.competences-count {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+  margin-left: auto;
+}
+
+.competences-chevron { opacity: 0.6; }
+.competences-hint { font-style: italic; color: var(--muted); font-size: 0.85rem; margin: 0.4rem 0 0; }
+
+.competences-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+}
+
+.competence-bubble {
+  background: var(--surface);
+  cursor: default;
+}
+
 /* ── Manoeuvres group ───────────────────────────────────────────────────── */
 
 .manoeuvres-group {
@@ -1112,6 +1496,7 @@ function signedNum(n: number): string {
 
   .passifs-divider,
   .passifs-in-actions,
+  .competences-group,
   .manoeuvres-group,
   .divers-group {
     grid-column: 1 / -1;
@@ -1190,5 +1575,106 @@ function signedNum(n: number): string {
   font-size: 0.75rem;
   color: var(--muted);
   font-family: var(--mono-font, monospace);
+}
+
+/* ── Fumble (1) ─────────────────────────────────────────────────────────── */
+
+.roll-result--fumble {
+  background: color-mix(in srgb, #c95f56 10%, var(--surface));
+  border-color: #c95f56;
+}
+
+.roll-result--fumble .roll-result__attack,
+.roll-result--fumble .roll-result__attack strong {
+  color: #c95f56;
+}
+
+/* ── Critique (20) ──────────────────────────────────────────────────────── */
+
+.roll-result--critical {
+  background: color-mix(in srgb, #d4ac0d 10%, var(--surface));
+  border-color: #d4ac0d;
+}
+
+.roll-result--critical .roll-result__attack,
+.roll-result--critical .roll-result__attack strong {
+  color: #c8950a;
+}
+
+/* ── Label critique / fumble ────────────────────────────────────────────── */
+
+.roll-result__crit-label {
+  width: 100%;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.roll-result--fumble .roll-result__crit-label {
+  color: #c95f56;
+}
+
+.roll-result--critical .roll-result__crit-label {
+  color: #c8950a;
+}
+
+/* ── Box "Utiliser la chance" ───────────────────────────────────────────── */
+
+.luck-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.7rem;
+  background: color-mix(in srgb, #d4ac0d 10%, var(--surface));
+  border: 1.5px solid color-mix(in srgb, #d4ac0d 45%, var(--border));
+}
+
+.luck-box__title {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: color-mix(in srgb, #d4ac0d 80%, var(--text));
+}
+
+.luck-box__pc {
+  margin-left: auto;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 0.1em 0.5em;
+  border-radius: 999px;
+}
+
+.luck-box__actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.luck-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3em 0.7em;
+  border-radius: 999px;
+  border: 1.5px solid color-mix(in srgb, #d4ac0d 60%, var(--border));
+  background: transparent;
+  color: color-mix(in srgb, #d4ac0d 80%, var(--text));
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.luck-btn:hover {
+  background: color-mix(in srgb, #d4ac0d 20%, var(--surface));
+  border-color: #d4ac0d;
 }
 </style>

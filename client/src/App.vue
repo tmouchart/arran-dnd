@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RouterLink, RouterView, useRouter } from "vue-router";
 import { computed, ref } from "vue";
-import { LogOut, Users } from "lucide-vue-next";
+import { LogOut, Users, Handbag } from "lucide-vue-next";
 import { user, logout } from "./composables/useAuth";
 import AppIconBtn from "./components/ui/AppIconBtn.vue";
 
@@ -47,7 +47,9 @@ const themeIcon = computed(() => (theme.value === "dark" ? "☀️" : "🌙"));
         <nav class="nav-links">
           <RouterLink to="/personnage" class="nav-link" title="Personnage">⚔️</RouterLink>
           <RouterLink to="/actions" class="nav-link" title="Mes actions">⚡</RouterLink>
+          <RouterLink to="/inventaire" class="nav-link" title="Inventaire"><Handbag :size="18" /></RouterLink>
           <RouterLink to="/chat" class="nav-link" title="Isilwen">🔮</RouterLink>
+          <RouterLink to="/jets" class="nav-link" title="Historique des jets">🎲</RouterLink>
           <RouterLink to="/sessions" class="nav-link" title="Sessions de jeu">
             <Users :size="18" />
           </RouterLink>

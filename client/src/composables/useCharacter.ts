@@ -75,6 +75,7 @@ function toCharacter(s: ServerCharacter): Character {
     copperCoins: s.copperCoins ?? 0,
     pcCurrent: typeof s.pcCurrent === 'number' ? s.pcCurrent : 0,
     prCurrent: typeof s.prCurrent === 'number' ? s.prCurrent : 5,
+    competences: Array.isArray(s.competences) ? s.competences : [],
   }
 }
 
@@ -111,6 +112,7 @@ function toServerPayload(c: Character): Omit<ServerCharacter, 'id' | 'userId' | 
     copperCoins: c.copperCoins,
     pcCurrent: c.pcCurrent,
     prCurrent: c.prCurrent,
+    competences: c.competences,
   }
 }
 
@@ -144,6 +146,7 @@ export function createDefaultCharacter(): Character {
     copperCoins: 0,
     pcCurrent: 0,
     prCurrent: 5,
+    competences: [],
   }
 }
 

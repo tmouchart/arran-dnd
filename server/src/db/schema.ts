@@ -79,6 +79,9 @@ export const characters = pgTable(
     /** Points de Récupération courants (max = 5). */
     prCurrent: integer('pr_current').notNull().default(5),
 
+    /** Custom rollable competences: [{ id, name, ability, bonus }] */
+    competences: jsonb('competences').notNull().default([]),
+
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
