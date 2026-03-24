@@ -17,7 +17,15 @@ export const users = pgTable('user', {
   googleId: text('google_id').unique(),
   email: text('email'),
   avatarUrl: text('avatar_url'),
+  /** Notes personnelles du joueur (privées). */
+  notesPerso: text('notes_perso').notNull().default(''),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export const journalCompagnie = pgTable('journal_compagnie', {
+  id: integer('id').primaryKey().default(1),
+  content: text('content').notNull().default(''),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })
 
 export const characters = pgTable(

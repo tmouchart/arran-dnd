@@ -11,6 +11,7 @@ import express from "express";
 import authRouter from "./routes/auth.js";
 import charactersRouter from "./routes/characters.js";
 import sessionsRouter from "./routes/sessions.js";
+import journalRouter from "./routes/journal.js";
 import { requireAuth, type AuthRequest } from "./auth/middleware.js";
 import { loadCoreIndex, loadTopic } from "./knowledge/loadKnowledge.js";
 import { CLIENT_DIST } from "./paths.js";
@@ -32,6 +33,7 @@ app.use(cookieParser());
 app.use("/api/auth", authRouter);
 app.use("/api/characters", charactersRouter);
 app.use("/api/sessions", sessionsRouter);
+app.use("/api/journal", journalRouter);
 
 const AI_PROVIDER = process.env.AI_PROVIDER ?? "gemini";
 const ANTHROPIC_MODEL =
