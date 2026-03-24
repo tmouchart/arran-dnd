@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
-import { Swords, ChevronDown, ChevronUp, CirclePlus, CircleMinus, Scroll } from "lucide-vue-next";
+import { computed, onMounted, ref, reactive } from "vue";
+import { Swords, ChevronDown, ChevronUp, CirclePlus, CircleMinus, Scroll, Dices } from "lucide-vue-next";
 import AppPageHead from "../components/ui/AppPageHead.vue";
 import AppBadge from "../components/ui/AppBadge.vue";
 import AppEmptyState from "../components/ui/AppEmptyState.vue";
@@ -14,6 +14,7 @@ import {
   formatWeaponDamage,
   isMartialWeaponProficient,
 } from "../utils/attackBonus";
+import { rollDie, rollDiceNotation, type DiceRoll } from "../utils/dice";
 import { MARTIAL_WEAPON_CATEGORY_BY_ID } from "../data/martialWeaponCategories";
 
 const { character, loading, loadError, computedAttackContact, computedAttackDistance, computedAttackMagique, computedHp, computedMp, abilityModifier } = useCharacter();
@@ -310,6 +311,66 @@ function familyClass(family?: VoieFamily): string {
   if (family === "prestige") return "family-prestige";
   return "family-base";
 }
+
+// ── Lancers de dés ────────────────────────────────────────────────────────────
+
+interface WeaponRollResult {
+  attackDie: number;
+  attackBonus: number;
+  attackTotal: number;
+  damageDice: string;
+  damageRolls: number[];
+  damageModifier: number;
+  damageTotal: number;
+}
+
+interface ActionRollResult {
+  attackDie: number;
+  attackBonus: number;
+  attackTotal: number;
+}
+
+const weaponRolls = reactive<Record<string, WeaponRollResult>>({});
+const actionRolls = reactive<Record<string, ActionRollResult>>({});
+
+function rollWeapon(item: (typeof weaponBubbles.value)[number]) {
+  const bonus = item.w.attackType === 'contact' ? computedAttackContact.value : computedAttackDistance.value;
+  const incompetentPenalty = item.incompetent ? -3 : 0;
+  const attackBonus = bonus + incompetentPenalty;
+  const attackDie = rollDie(20);
+  const attackTotal = attackDie + attackBonus;
+
+  const damageAbilityMod = item.w.damageAbility
+    ? abilityModifier(character.value.abilities[item.w.damageAbility])
+    : 0;
+  const dmg = rollDiceNotation(item.w.damageDice, damageAbilityMod);
+
+  weaponRolls[item.w.id] = {
+    attackDie,
+    attackBonus,
+    attackTotal,
+    damageDice: item.w.damageDice,
+    damageRolls: dmg.rolls,
+    damageModifier: damageAbilityMod,
+    damageTotal: dmg.total,
+  };
+}
+
+function rollAction(action: Action) {
+  const bonus = computeBonus(action.attackType);
+  if (bonus === null) return;
+  const attackDie = rollDie(20);
+  const key = action.source + '-' + action.name;
+  actionRolls[key] = {
+    attackDie,
+    attackBonus: bonus,
+    attackTotal: attackDie + bonus,
+  };
+}
+
+function signedNum(n: number): string {
+  return n >= 0 ? `+${n}` : String(n);
+}
 </script>
 
 <template>
@@ -397,8 +458,25 @@ function familyClass(family?: VoieFamily): string {
         </p>
         <p v-if="item.w.notes" class="action-description">{{ item.w.notes }}</p>
 
-        <div class="action-source">
-          Arme · {{ MARTIAL_WEAPON_CATEGORY_BY_ID[item.w.martialFamily] }}
+        <div v-if="weaponRolls[item.w.id]" class="roll-result">
+          <span class="roll-result__attack">
+            Attaque : <strong>{{ weaponRolls[item.w.id].attackTotal }}</strong>
+            <span class="roll-result__detail">(dé {{ weaponRolls[item.w.id].attackDie }} {{ signedNum(weaponRolls[item.w.id].attackBonus) }})</span>
+          </span>
+          <span class="roll-result__damage">
+            Dégâts : <strong>{{ weaponRolls[item.w.id].damageTotal }}</strong>
+            <span class="roll-result__detail">({{ weaponRolls[item.w.id].damageRolls.join('+') }}{{ weaponRolls[item.w.id].damageModifier !== 0 ? ' ' + signedNum(weaponRolls[item.w.id].damageModifier) : '' }})</span>
+          </span>
+        </div>
+
+        <div class="action-footer">
+          <div class="action-source">
+            Arme · {{ MARTIAL_WEAPON_CATEGORY_BY_ID[item.w.martialFamily] }}
+          </div>
+          <button type="button" class="roll-btn" @click="rollWeapon(item)">
+            <Dices :size="15" />
+            Lancer le jet
+          </button>
         </div>
       </div>
 
@@ -433,7 +511,25 @@ function familyClass(family?: VoieFamily): string {
 
         <p class="action-description">{{ action.description }}</p>
 
-        <div class="action-source">{{ action.source }}</div>
+        <div v-if="actionRolls[action.source + '-' + action.name]" class="roll-result">
+          <span class="roll-result__attack">
+            Attaque : <strong>{{ actionRolls[action.source + '-' + action.name].attackTotal }}</strong>
+            <span class="roll-result__detail">(dé {{ actionRolls[action.source + '-' + action.name].attackDie }} {{ signedNum(actionRolls[action.source + '-' + action.name].attackBonus) }})</span>
+          </span>
+        </div>
+
+        <div class="action-footer">
+          <div class="action-source">{{ action.source }}</div>
+          <button
+            v-if="action.attackType"
+            type="button"
+            class="roll-btn"
+            @click="rollAction(action)"
+          >
+            <Dices :size="15" />
+            Lancer le jet
+          </button>
+        </div>
       </div>
 
       <!-- Divers collapsibles -->
@@ -1026,5 +1122,73 @@ function familyClass(family?: VoieFamily): string {
     grid-template-columns: 1fr 1fr;
     gap: 0.6rem;
   }
+}
+
+/* ── Footer (source + bouton jet) ───────────────────────────────────────── */
+
+.action-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.1rem;
+  flex-wrap: wrap;
+}
+
+/* ── Bouton "Lancer le jet" ─────────────────────────────────────────────── */
+
+.roll-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3em 0.75em;
+  border-radius: 999px;
+  border: 1.5px solid var(--accent);
+  background: transparent;
+  color: var(--accent-strong);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.roll-btn:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ── Résultat du jet ────────────────────────────────────────────────────── */
+
+.roll-result {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: 0.7rem;
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+  font-size: 0.85rem;
+}
+
+.roll-result__attack,
+.roll-result__damage {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  color: var(--text);
+}
+
+.roll-result__attack strong,
+.roll-result__damage strong {
+  font-size: 1.1rem;
+  color: var(--accent-strong);
+}
+
+.roll-result__detail {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-family: var(--mono-font, monospace);
 }
 </style>
