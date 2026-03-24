@@ -678,7 +678,7 @@ if (existsSync(CLIENT_DIST)) {
   });
 }
 
-const PORT = Number(process.env.PORT) || 3001;
+const PORT = Number(process.env.PORT) || 3566;
 
 async function main(): Promise<void> {
   const databaseUrl = getDatabaseUrl();

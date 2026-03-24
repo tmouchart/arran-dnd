@@ -10,7 +10,7 @@ const router = Router()
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID ?? ''
 const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET ?? ''
 const REDIRECT_URI =
-  process.env.GOOGLE_REDIRECT_URI ?? 'http://localhost:3001/api/auth/google/callback'
+  process.env.GOOGLE_REDIRECT_URI ?? 'http://localhost:3566/api/auth/google/callback'
 const CLIENT_URL = process.env.CLIENT_URL ?? 'http://localhost:5173'
 
 const oauth2Client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI)
