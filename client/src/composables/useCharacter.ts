@@ -206,6 +206,17 @@ export const computedHpBase = computed(() => {
   return dieMax + conMod
 })
 
+/** Valeur du dé de vie (nombre max, ex: 10 pour combattants). */
+export const computedHpDv = computed(() => {
+  const family = inferProfileFamily(character.value.paths)
+  return FAMILY_DIE_MAX[family]
+})
+
+/** Mod CON appliqué aux PV de base. */
+export const computedHpConMod = computed(() =>
+  Math.floor((character.value.abilities.constitution - 10) / 2),
+)
+
 /**
  * Croissance PV (niveaux 2+) = somme des jets + mod CON par niveau
  */
@@ -393,6 +404,8 @@ export function useCharacter() {
     computedMp,
     computedHp,
     computedHpBase,
+    computedHpDv,
+    computedHpConMod,
     computedHpGrowth,
     computedDv,
     computedInitiative,

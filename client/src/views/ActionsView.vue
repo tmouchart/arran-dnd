@@ -538,12 +538,9 @@ function onDeath() {
           @click="rollAbility(ab.key)"
         >
           <span class="ch-ab-label">{{ ab.label }}</span>
-          <span class="ch-ab-mod" :class="abilityModifier(character.abilities[ab.key]) > 0 ? 'mod-pos' : abilityModifier(character.abilities[ab.key]) < 0 ? 'mod-neg' : 'mod-zero'">
-            {{ modDisplay(character.abilities[ab.key]) }}
-          </span>
-          <span class="ch-ab-score">{{ character.abilities[ab.key] }}</span>
-          <div class="ch-ab-bottom">
-            <Dices :size="11" class="ch-ab-dice-icon" />
+          <div class="ch-ab-row">
+            <span class="ch-ab-score">{{ character.abilities[ab.key] }}</span>
+            <span class="ch-ab-mod" :class="abilityModifier(character.abilities[ab.key]) > 0 ? 'mod-pos' : abilityModifier(character.abilities[ab.key]) < 0 ? 'mod-neg' : 'mod-zero'">({{ modDisplay(character.abilities[ab.key]) }})</span>
           </div>
         </div>
       </div>
@@ -1061,18 +1058,25 @@ function onDeath() {
   color: var(--muted);
 }
 
-.ch-ab-mod {
-  font-size: 1.15rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.1;
+.ch-ab-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.2rem;
 }
 
 .ch-ab-score {
-  font-size: 0.7rem;
-  font-weight: 500;
-  color: var(--muted);
+  font-size: 1.05rem;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  color: var(--fg);
+}
+
+.ch-ab-mod {
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
 }
 
 .mod-pos { color: #3a8a4a; }
@@ -1089,24 +1093,6 @@ function onDeath() {
   background: color-mix(in srgb, var(--accent) 6%, var(--surface));
 }
 
-.ch-ab-bottom {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  margin-top: 0.05rem;
-  min-height: 14px;
-}
-
-.ch-ab-dice-icon {
-  color: var(--muted);
-  opacity: 0.5;
-  margin-left: auto;
-  flex-shrink: 0;
-}
-.ch-ability:hover .ch-ab-dice-icon {
-  opacity: 1;
-  color: var(--accent);
-}
 
 /* ── Zone résultat sous la grille de carac ──────────────────────────────── */
 

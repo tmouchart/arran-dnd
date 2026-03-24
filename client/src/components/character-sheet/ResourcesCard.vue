@@ -3,73 +3,25 @@ import { computed, ref } from "vue";
 import { CirclePlus, CircleMinus } from "lucide-vue-next";
 import AppCard from "../ui/AppCard.vue";
 import HpGrowthModal from "./HpGrowthModal.vue";
-import { ARMORS_CATALOG, SHIELDS_CATALOG } from "../../data/armorsCatalog";
 import type { Character } from "../../types/character";
 import type { VoieFamily } from "../../data/voies";
 
 const props = defineProps<{
   character: Character;
-  computedDef: number;
   computedMp: number;
   computedHp: number;
   computedHpBase: number;
+  computedHpDv: number;
+  computedHpConMod: number;
   computedHpGrowth: number;
   family: VoieFamily;
   abilityModifier: (score: number) => number;
   computedDv: string;
-  computedInitiative: number;
   computedPcMax: number;
   prMax: number;
 }>();
 
 const showHpModal = ref(false);
-
-const ARMOR_GROUPS = [
-  { label: "Armures légères", type: "légère" as const },
-  { label: "Armures lourdes", type: "lourde" as const },
-];
-
-function armorOptionLabel(armor: (typeof ARMORS_CATALOG)[number]): string {
-  const enc = armor.encombrant ? ", encombrante" : "";
-  return `${armor.name} (+${armor.defBonus} DEF${enc})`;
-}
-
-function shieldOptionLabel(shield: (typeof SHIELDS_CATALOG)[number]): string {
-  return `${shield.name} (+${shield.defBonus} DEF)`;
-}
-
-const currentArmor = computed(() =>
-  props.character.armorId
-    ? ARMORS_CATALOG.find((a) => a.id === props.character.armorId) ?? null
-    : null,
-);
-
-const currentShield = computed(() =>
-  props.character.shieldId
-    ? SHIELDS_CATALOG.find((s) => s.id === props.character.shieldId) ?? null
-    : null,
-);
-
-const defDexContrib = computed(() =>
-  currentArmor.value?.encombrant ? 0 : props.abilityModifier(props.character.abilities.dexterity),
-);
-
-const defArmorBonus = computed(() => currentArmor.value?.defBonus ?? 0);
-const defShieldBonus = computed(() => currentShield.value?.defBonus ?? 0);
-
-const defDexTooltip = computed(() => {
-  if (currentArmor.value?.encombrant) return "DEX annulée (armure encombrante)";
-  const mod = props.abilityModifier(props.character.abilities.dexterity);
-  const sign = mod >= 0 ? "+" : "";
-  return `Mod. DEX (${props.character.abilities.dexterity} → ${sign}${mod})`;
-});
-
-const defDexBlocked = computed(() => defDexContrib.value === 0 && !!currentArmor.value?.encombrant);
-const defDexClasses = computed(() =>
-  defDexBlocked.value ? ["def-chip", "def-chip--blocked"] : ["def-chip"],
-);
-const defDexSign = computed(() => (defDexContrib.value >= 0 ? "+" : ""));
-const defArmorTitle = computed(() => currentArmor.value?.name ?? "Aucune armure");
 
 // PC
 const pcChaMod = computed(() => props.abilityModifier(props.character.abilities.charisma));
@@ -117,12 +69,14 @@ const mpIsMystique = computed(() => props.family === "mystiques");
             <span class="def-chip-value">{{ computedHp }}</span>
           </div>
           <span class="def-op">=</span>
-          <div
-            class="def-chip"
-            :title="`Niv. 1 — Dé max famille (${computedHpBase - abilityModifier(character.abilities.constitution)}) + Mod. CON (${abilityModifier(character.abilities.constitution) >= 0 ? '+' : ''}${abilityModifier(character.abilities.constitution)})`"
-          >
-            <span class="def-chip-label">Base</span>
-            <span class="def-chip-value">{{ computedHpBase }}</span>
+          <div class="def-chip" :title="`Dé de vie famille (${computedDv})`">
+            <span class="def-chip-label">{{ computedDv }}</span>
+            <span class="def-chip-value">{{ computedHpDv }}</span>
+          </div>
+          <span class="def-op">+</span>
+          <div class="def-chip" :title="`Mod. CON (${character.abilities.constitution})`">
+            <span class="def-chip-label">CON</span>
+            <span class="def-chip-value">{{ computedHpConMod >= 0 ? '+' : '' }}{{ computedHpConMod }}</span>
           </div>
           <template v-if="character.level > 1">
             <span class="def-op">+</span>
@@ -185,107 +139,6 @@ const mpIsMystique = computed(() => props.family === "mystiques");
       :con-mod="abilityModifier(character.abilities.constitution)"
       v-model:hp-level-gains="character.hpLevelGains"
     />
-
-    <!-- Défense + Initiative -->
-    <div class="def-initiative-row">
-      <div class="field">
-        <span>Défense</span>
-        <div class="def-formula">
-          <div class="def-chip def-chip--total" title="DEF totale calculée">
-            <span class="def-chip-label">Total</span>
-            <span class="def-chip-value">{{ computedDef }}</span>
-          </div>
-          <span class="def-op">=</span>
-          <div class="def-chip" title="Valeur de base (règle CO)">
-            <span class="def-chip-label">Base</span>
-            <span class="def-chip-value">10</span>
-          </div>
-          <span class="def-op">+</span>
-          <div :class="defDexClasses" :title="defDexTooltip">
-            <span class="def-chip-label">DEX</span>
-            <span class="def-chip-value">{{ defDexSign }}{{ defDexContrib }}</span>
-          </div>
-          <span class="def-op">+</span>
-          <div class="def-chip" :title="defArmorTitle">
-            <span class="def-chip-label">Armure</span>
-            <span class="def-chip-value">{{ defArmorBonus }}</span>
-          </div>
-          <span class="def-op">+</span>
-          <div class="def-chip" :title="currentShield?.name ?? 'Aucun bouclier'">
-            <span class="def-chip-label">Bouclier</span>
-            <span class="def-chip-value">{{ defShieldBonus }}</span>
-          </div>
-          <span class="def-op">+</span>
-          <label class="def-chip def-chip--editable" title="Bonus divers (capacités, magie…)">
-            <span class="def-chip-label">Bonus</span>
-            <input
-              v-model.number="character.defenseBonus"
-              type="number"
-              class="def-bonus-input"
-              placeholder="0"
-            />
-          </label>
-        </div>
-      </div>
-      <div class="field">
-        <span>Initiative</span>
-        <div class="initiative-row">
-          <div class="def-chip def-chip--total" title="Score d'initiative = DEX − bonus DEF armure">
-            <span class="def-chip-label">Total</span>
-            <span class="def-chip-value">{{ computedInitiative }}</span>
-          </div>
-          <span class="def-op">=</span>
-          <div class="def-chip" title="Valeur de DEX">
-            <span class="def-chip-label">DEX</span>
-            <span class="def-chip-value">{{ character.abilities.dexterity }}</span>
-          </div>
-          <template v-if="currentArmor">
-            <span class="def-op">−</span>
-            <div class="def-chip" :title="`Pénalité armure : ${currentArmor.name}`">
-              <span class="def-chip-label">Armure</span>
-              <span class="def-chip-value">{{ currentArmor.defBonus }}</span>
-            </div>
-          </template>
-          <template v-if="currentShield">
-            <span class="def-op">−</span>
-            <div class="def-chip" :title="`Pénalité bouclier : ${currentShield.name}`">
-              <span class="def-chip-label">Bouclier</span>
-              <span class="def-chip-value">{{ currentShield.defBonus }}</span>
-            </div>
-          </template>
-        </div>
-      </div>
-    </div>
-
-    <!-- Armure & Bouclier -->
-    <div class="armor-section">
-      <div class="armor-row">
-        <div class="field">
-          <span>Armure</span>
-          <select v-model="character.armorId" class="input select">
-            <option value="">— Aucune —</option>
-            <optgroup v-for="group in ARMOR_GROUPS" :key="group.type" :label="group.label">
-              <option
-                v-for="armor in ARMORS_CATALOG.filter((a) => a.type === group.type)"
-                :key="armor.id"
-                :value="armor.id"
-              >
-                {{ armorOptionLabel(armor) }}
-              </option>
-            </optgroup>
-          </select>
-        </div>
-        <div class="field">
-          <span>Bouclier</span>
-          <select v-model="character.shieldId" class="input select">
-            <option value="">— Aucun —</option>
-            <option v-for="shield in SHIELDS_CATALOG" :key="shield.id" :value="shield.id">
-              {{ shieldOptionLabel(shield) }}
-            </option>
-          </select>
-        </div>
-      </div>
-    </div>
 
     <!-- PC + DV + Récupération -->
     <div class="extra-row">
@@ -574,22 +427,6 @@ const mpIsMystique = computed(() => props.family === "mystiques");
   padding: 0;
 }
 
-.armor-section {
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--border);
-}
-
-.armor-row {
-  display: flex;
-  flex-direction: row;
-  gap: 0.75rem;
-}
-
-.armor-row .field {
-  flex: 1;
-  min-width: 0;
-}
 
 .extra-row {
   margin-top: 0.75rem;

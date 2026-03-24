@@ -8,6 +8,7 @@ import SessionListView from '../views/SessionListView.vue'
 import SessionView from '../views/SessionView.vue'
 import JetsView from '../views/JetsView.vue'
 import InventaireView from '../views/InventaireView.vue'
+import OptionsView from '../views/OptionsView.vue'
 import { authReady, user, initAuth } from '../composables/useAuth'
 
 export const router = createRouter({
@@ -23,6 +24,7 @@ export const router = createRouter({
     { path: '/jets', name: 'jets', component: JetsView },
     { path: '/sessions', name: 'sessions', component: SessionListView },
     { path: '/sessions/:id', name: 'session', component: SessionView },
+    { path: '/options', name: 'options', component: OptionsView },
   ],
 })
 

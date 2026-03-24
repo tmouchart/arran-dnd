@@ -9,8 +9,13 @@ const props = defineProps<{ character: Character }>();
 
 const catalogPick = ref("");
 
-const weaponsCatalogSorted = computed(() =>
-  [...WEAPONS_CATALOG].sort((a, b) => a.name.localeCompare(b.name, "fr")),
+const weaponsByCategory = computed(() =>
+  MARTIAL_WEAPON_CATEGORIES.map((cat) => ({
+    id: cat.id,
+    label: cat.label,
+    weapons: WEAPONS_CATALOG.filter((w) => w.martialFamily === cat.id)
+      .sort((a, b) => a.name.localeCompare(b.name, "fr")),
+  })).filter((g) => g.weapons.length > 0),
 );
 
 function weaponRowFromCatalog(entry: (typeof WEAPONS_CATALOG)[number]): WeaponRow {
@@ -67,7 +72,9 @@ function setDamageAbilityFromSelect(w: WeaponRow, v: string) {
           @change="onCatalogWeaponChange"
         >
           <option value="">Ajouter depuis le livre</option>
-          <option v-for="w in weaponsCatalogSorted" :key="w.id" :value="w.id">{{ w.name }}</option>
+          <optgroup v-for="g in weaponsByCategory" :key="g.id" :label="g.label">
+            <option v-for="w in g.weapons" :key="w.id" :value="w.id">{{ w.name }}</option>
+          </optgroup>
         </select>
         <button type="button" class="btn ghost small" @click="addCustomWeapon">+ Perso</button>
       </div>

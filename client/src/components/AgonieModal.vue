@@ -34,7 +34,7 @@ function roll() {
   let result: DeathRoll['result']
   if (die === 20) result = 'critical-save'
   else if (die === 1) result = 'critical-death'
-  else if (die >= 10) result = 'success'
+  else if (die >= 11) result = 'success'
   else result = 'failure'
   rolls.value.push({ die, result })
 }
@@ -61,7 +61,7 @@ function confirm() {
       </div>
 
       <h2 class="modal-title">Agonie — {{ characterName }}</h2>
-      <p class="modal-subtitle">0 PV — jets de mort (d20 ≥ 10 = succès)</p>
+      <p class="modal-subtitle">0 PV — jets de mort (d20 ≥ 11 = succès)</p>
 
       <!-- Trackers -->
       <div class="trackers">

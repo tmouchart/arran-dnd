@@ -10,6 +10,8 @@ const props = defineProps<{
   computedAttackContact: number;
   computedAttackDistance: number;
   computedAttackMagique: number;
+  computedDef: number;
+  computedInitiative: number;
   abilityModifier: (score: number) => number;
   family: VoieFamily;
 }>();
@@ -38,6 +40,19 @@ const dexMod = computed(() => props.abilityModifier(props.character.abilities.de
 const intMod = computed(() => props.abilityModifier(props.character.abilities.intelligence));
 
 function sign(n: number) { return n >= 0 ? `+${n}` : `${n}`; }
+
+const defDexContrib = computed(() =>
+  armor.value?.encombrant ? 0 : props.abilityModifier(props.character.abilities.dexterity),
+);
+const defArmorBonus = computed(() => armor.value?.defBonus ?? 0);
+const defShieldBonus = computed(() => shield.value?.defBonus ?? 0);
+const defDexSign = computed(() => (defDexContrib.value >= 0 ? "+" : ""));
+const defDexBlocked = computed(() => defDexContrib.value === 0 && !!armor.value?.encombrant);
+const defDexTooltip = computed(() => {
+  if (armor.value?.encombrant) return "DEX annulée (armure encombrante)";
+  const mod = props.abilityModifier(props.character.abilities.dexterity);
+  return `Mod. DEX (${props.character.abilities.dexterity} → ${mod >= 0 ? "+" : ""}${mod})`;
+});
 </script>
 
 <template>
@@ -142,7 +157,74 @@ function sign(n: number) { return n >= 0 ? `+${n}` : `${n}`; }
         </div>
       </div>
 
+      <!-- Défense -->
+      <div class="attack-row">
+        <span class="attack-label">Défense</span>
+        <div class="def-formula">
+          <div class="def-chip def-chip--total def-chip--def" title="DEF totale calculée">
+            <span class="def-chip-label">Total</span>
+            <span class="def-chip-value">{{ computedDef }}</span>
+          </div>
+          <span class="def-op">=</span>
+          <div class="def-chip" title="Valeur de base (règle CO)">
+            <span class="def-chip-label">Base</span>
+            <span class="def-chip-value">10</span>
+          </div>
+          <span class="def-op">+</span>
+          <div :class="['def-chip', defDexBlocked && 'def-chip--blocked']" :title="defDexTooltip">
+            <span class="def-chip-label">DEX</span>
+            <span class="def-chip-value">{{ defDexSign }}{{ defDexContrib }}</span>
+          </div>
+          <span class="def-op">+</span>
+          <div class="def-chip" :title="armor?.name ?? 'Aucune armure'">
+            <span class="def-chip-label">Armure</span>
+            <span class="def-chip-value">{{ defArmorBonus }}</span>
+          </div>
+          <span class="def-op">+</span>
+          <div class="def-chip" :title="shield?.name ?? 'Aucun bouclier'">
+            <span class="def-chip-label">Bouclier</span>
+            <span class="def-chip-value">{{ defShieldBonus }}</span>
+          </div>
+          <span class="def-op">+</span>
+          <label class="def-chip def-chip--editable" title="Bonus divers (capacités, magie…)">
+            <span class="def-chip-label">Bonus</span>
+            <input v-model.number="character.defenseBonus" type="number" class="def-bonus-input" placeholder="0" />
+          </label>
+        </div>
+      </div>
+
+      <!-- Initiative -->
+      <div class="attack-row">
+        <span class="attack-label">Initiative</span>
+        <div class="def-formula">
+          <div class="def-chip def-chip--total def-chip--init" title="Score d'initiative = DEX − bonus armure">
+            <span class="def-chip-label">Total</span>
+            <span class="def-chip-value">{{ computedInitiative }}</span>
+          </div>
+          <span class="def-op">=</span>
+          <div class="def-chip" title="Valeur de DEX">
+            <span class="def-chip-label">DEX</span>
+            <span class="def-chip-value">{{ character.abilities.dexterity }}</span>
+          </div>
+          <template v-if="armor">
+            <span class="def-op">−</span>
+            <div class="def-chip" :title="`Pénalité armure : ${armor.name}`">
+              <span class="def-chip-label">Armure</span>
+              <span class="def-chip-value">{{ armor.defBonus }}</span>
+            </div>
+          </template>
+          <template v-if="shield">
+            <span class="def-op">−</span>
+            <div class="def-chip" :title="`Pénalité bouclier : ${shield.name}`">
+              <span class="def-chip-label">Bouclier</span>
+              <span class="def-chip-value">{{ shield.defBonus }}</span>
+            </div>
+          </template>
+        </div>
+      </div>
+
     </div>
+
   </AppCard>
 </template>
 
@@ -243,4 +325,42 @@ function sign(n: number) { return n >= 0 ? `+${n}` : `${n}`; }
   opacity: 0.8;
 }
 .def-chip--penalty .def-chip-value { color: #a04040; }
+
+.def-chip--def {
+  border-color: #5a7fb0;
+  background: color-mix(in srgb, #5a7fb0 14%, var(--surface-2));
+}
+.def-chip--def .def-chip-value { color: #3a5f90; }
+:root[data-theme="dark"] .def-chip--def .def-chip-value { color: #8ab0d8; }
+
+.def-chip--init {
+  border-color: #6a9a6a;
+  background: color-mix(in srgb, #6a9a6a 14%, var(--surface-2));
+}
+.def-chip--init .def-chip-value { color: #3a6a3a; }
+:root[data-theme="dark"] .def-chip--init .def-chip-value { color: #8acf8a; }
+
+.def-chip--blocked {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+
+.def-chip--editable {
+  cursor: text;
+  border-style: dashed;
+}
+
+.def-bonus-input {
+  width: 2.6rem;
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  padding: 0;
+}
+
 </style>
