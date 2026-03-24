@@ -153,6 +153,7 @@ export function createDefaultCharacter(): Character {
 const character = ref<Character>(createDefaultCharacter())
 const serverId = ref<number | null>(null)
 
+
 watch(
   () => character.value.abilities.dexterity,
   (dex) => {
@@ -304,6 +305,7 @@ export const computedAttackMagique = computed(() => {
 watch(computedHp, (val) => {
   character.value.hpMax = val
 }, { immediate: true })
+
 
 // Auto-resize hpLevelGains when level changes
 watch(

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { Pencil, PencilOff } from "lucide-vue-next";
+import { Pencil, PencilOff, TrendingUp } from "lucide-vue-next";
 import AppCard from "../ui/AppCard.vue";
+import LevelUpModal from "./LevelUpModal.vue";
 import { PEUPLES, PEUPLES_BY_ID, PEUPLE_VOIES_BY_ID } from "../../data/peuples";
 import { FAMILY_LABELS, VOIES_BY_ID } from "../../data/voies";
 import { MYSTIC_TALENTS } from "../../data/mysticTalents";
@@ -17,6 +18,7 @@ import type { Character } from "../../types/character";
 const props = defineProps<{ character: Character }>();
 
 const histoireVisible = ref(false);
+const showLevelUp = ref(false);
 
 const inferredProfileFamily = computed(() =>
   inferProfileFamily(props.character.paths),
@@ -124,10 +126,15 @@ function onProfileSelect(value: string) {
         <span>Nom</span>
         <input v-model="character.name" type="text" class="input" />
       </label>
-      <label class="field">
+      <div class="field">
         <span>Niveau</span>
-        <input v-model.number="character.level" type="number" min="1" class="input narrow" />
-      </label>
+        <div class="level-row">
+          <input v-model.number="character.level" type="number" min="1" class="input narrow" />
+          <button type="button" class="levelup-btn" title="Monter en niveau" @click="showLevelUp = true">
+            <TrendingUp :size="15" />
+          </button>
+        </div>
+      </div>
       <div class="field">
         <span>Peuple</span>
         <select
@@ -217,6 +224,12 @@ function onProfileSelect(value: string) {
       </div>
     </div>
   </AppCard>
+
+  <LevelUpModal
+    v-model:show="showLevelUp"
+    :character="character"
+    @confirm="() => {}"
+  />
 </template>
 
 <style scoped>
@@ -257,6 +270,37 @@ function onProfileSelect(value: string) {
 
 .input.narrow {
   max-width: 6rem;
+}
+
+.level-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.levelup-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  border: 1px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent-strong);
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, transform 100ms ease;
+}
+
+.levelup-btn:hover {
+  background: var(--accent);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.levelup-btn:active {
+  transform: translateY(0);
 }
 
 .input.select {

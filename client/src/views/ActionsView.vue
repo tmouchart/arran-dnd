@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, reactive, watch } from "vue";
-import { Swords, ChevronDown, ChevronUp, CirclePlus, CircleMinus, Scroll, Dices, Sparkles, RefreshCw } from "lucide-vue-next";
+import { Swords, ChevronDown, ChevronUp, CirclePlus, CircleMinus, Scroll, Dices, Sparkles, RefreshCw, Bandage } from "lucide-vue-next";
 import AppPageHead from "../components/ui/AppPageHead.vue";
 import AppBadge from "../components/ui/AppBadge.vue";
 import AppEmptyState from "../components/ui/AppEmptyState.vue";
@@ -19,7 +19,7 @@ import { MARTIAL_WEAPON_CATEGORY_BY_ID } from "../data/martialWeaponCategories";
 import { useRollHistory } from "../composables/useRollHistory";
 import AgonieModal from "../components/AgonieModal.vue";
 
-const { character, loading, loadError, computedAttackContact, computedAttackDistance, computedAttackMagique, computedHp, computedMp, abilityModifier } = useCharacter();
+const { character, loading, loadError, computedAttackContact, computedAttackDistance, computedAttackMagique, computedHp, computedMp, computedDef, computedInitiative, computedPcMax, computedHpDv, computedHpConMod, abilityModifier } = useCharacter();
 const { addRoll } = useRollHistory();
 
 onMounted(() => {
@@ -378,6 +378,22 @@ function rollWeapon(item: (typeof weaponBubbles.value)[number]) {
 function rollAction(action: Action) {
   const bonus = computeBonus(action.attackType);
   if (bonus === null) return;
+
+  // Déduire le coût en PM (brûlure de magie si insuffisant)
+  if (action.pmCost != null && action.pmCost > 0) {
+    const c = character.value;
+    const available = c.mpCurrent;
+    if (available >= action.pmCost) {
+      c.mpCurrent = available - action.pmCost;
+    } else {
+      const deficit = action.pmCost - available;
+      c.mpCurrent = 0;
+      // Combattants : 1 PM manquant = 2 PV perdus ; autres : 1 PM = 1 PV
+      const pvCost = profileFamily.value === 'combattants' ? deficit * 2 : deficit;
+      c.hpCurrent = Math.max(0, c.hpCurrent - pvCost);
+    }
+  }
+
   const attackDie = rollDie(20);
   const key = action.source + '-' + action.name;
   actionRolls[key] = {
@@ -464,21 +480,20 @@ function signedNum(n: number): string {
 const showAgonie = ref(false)
 const isStabilised = ref(false)
 
-const stopLoadingWatch = watch(loading, (isLoading) => {
-  if (isLoading) return
-  watch(
-    () => character.value.hpCurrent,
-    (hp, prev) => {
-      if (hp === 0 && prev !== undefined && prev > 0 && !isStabilised.value) {
-        showAgonie.value = true
-      }
-      if (hp > 0) {
-        isStabilised.value = false
-      }
-    },
-  )
-  stopLoadingWatch()
-})
+watch(
+  () => character.value.hpCurrent,
+  (hp) => {
+    if (loading.value) return
+    if (hp === 0 && !isStabilised.value) {
+      showAgonie.value = true
+    }
+    if (hp > 0) {
+      isStabilised.value = false
+      showAgonie.value = false
+    }
+  },
+  { immediate: true },
+)
 
 function onStabilise() {
   showAgonie.value = false
@@ -487,6 +502,33 @@ function onStabilise() {
 
 function onDeath() {
   showAgonie.value = false
+}
+
+// ── Repos (PR) ────────────────────────────────────────────────────────────────
+const showReposConfirm = ref(false)
+
+interface ReposRollResult {
+  roll: number
+  conMod: number
+  level: number
+  total: number
+  hpBefore: number
+  hpAfter: number
+}
+const reposResult = ref<ReposRollResult | null>(null)
+
+function confirmerRepos() {
+  const c = character.value
+  if (c.prCurrent <= 0) return
+  const dv = computedHpDv.value
+  const conMod = computedHpConMod.value
+  const roll = rollDie(dv)
+  const gain = Math.max(1, roll + conMod + c.level)
+  const hpBefore = c.hpCurrent
+  c.prCurrent -= 1
+  c.hpCurrent = Math.min(computedHp.value, c.hpCurrent + gain)
+  reposResult.value = { roll, conMod, level: c.level, total: gain, hpBefore, hpAfter: c.hpCurrent }
+  showReposConfirm.value = false
 }
 </script>
 
@@ -527,6 +569,28 @@ function onDeath() {
             <button type="button" class="ch-btn" @click="character.mpCurrent = Math.min(computedMp, character.mpCurrent + 1)"><CirclePlus :size="17" /></button>
           </div>
         </div>
+      </div>
+      <!-- Init / DEF / PC / PR -->
+      <div class="ch-secondary">
+        <div class="ch-sec-chip">
+          <span class="ch-sec-label">INIT</span>
+          <span class="ch-sec-value">{{ computedInitiative }}</span>
+        </div>
+        <div class="ch-sec-chip">
+          <span class="ch-sec-label">DEF</span>
+          <span class="ch-sec-value">{{ computedDef }}</span>
+        </div>
+        <div class="ch-sec-chip">
+          <span class="ch-sec-label">PC</span>
+          <span class="ch-sec-value">{{ character.pcCurrent }}<span class="ch-sec-max">/{{ computedPcMax }}</span></span>
+        </div>
+        <button type="button" class="ch-sec-chip ch-sec-chip--pr" :disabled="character.prCurrent <= 0" @click="showReposConfirm = true; reposResult = null">
+          <span class="ch-sec-label">PR</span>
+          <span class="ch-sec-value-row">
+            <span class="ch-sec-value">{{ character.prCurrent }}<span class="ch-sec-max">/5</span></span>
+            <Bandage :size="15" class="pr-bandage-icon" />
+          </span>
+        </button>
       </div>
       <!-- Caractéristiques -->
       <div class="ch-abilities">
@@ -933,6 +997,37 @@ function onDeath() {
       </template>
     </div>
 
+    <!-- Confirmation repos -->
+    <Teleport to="body">
+      <div v-if="showReposConfirm" class="modal-backdrop" @click.self="showReposConfirm = false">
+        <div class="modal-box">
+          <p class="modal-question">Voulez-vous vous reposer ?</p>
+          <p class="modal-hint">Dépense 1 PR — regagne 1d{{ computedHpDv }} + Mod. CON + Niv.</p>
+          <div class="modal-actions">
+            <button class="btn-modal btn-modal--primary" @click="confirmerRepos">Oui</button>
+            <button class="btn-modal btn-modal--ghost" @click="showReposConfirm = false">Non</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Résultat repos -->
+    <Teleport to="body">
+      <div v-if="reposResult" class="modal-backdrop" @click.self="reposResult = null">
+        <div class="modal-box">
+          <p class="modal-question">Repos — soin</p>
+          <p class="modal-heal">
+            +{{ reposResult!.total }} PV
+            <span class="modal-detail">({{ reposResult!.roll }} {{ reposResult!.conMod >= 0 ? '+' : '' }}{{ reposResult!.conMod }} CON + {{ reposResult!.level }} niv.)</span>
+          </p>
+          <p class="modal-hp-change">{{ reposResult!.hpBefore }} → <strong>{{ reposResult!.hpAfter }}</strong> PV</p>
+          <div class="modal-actions">
+            <button class="btn-modal btn-modal--primary" @click="reposResult = null">OK</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
   </div>
 </template>
 
@@ -1032,6 +1127,164 @@ function onDeath() {
   font-weight: 400;
   color: var(--muted);
 }
+
+.ch-secondary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.35rem;
+}
+
+.ch-sec-chip {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 0.65rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.ch-sec-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.ch-sec-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.ch-sec-value-row {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.pr-bandage-icon {
+  color: #3a8a4a;
+  flex-shrink: 0;
+}
+:root[data-theme="dark"] .pr-bandage-icon { color: #7bcf8a; }
+
+.ch-sec-max {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.ch-sec-chip--pr {
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  transition: background 120ms, border-color 120ms;
+  text-align: center;
+  font: inherit;
+}
+.ch-sec-chip--pr:not(:disabled):hover {
+  border-color: #3a8a4a;
+  background: color-mix(in srgb, #3a8a4a 10%, var(--surface));
+}
+.ch-sec-chip--pr:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── Modals repos ── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-box {
+  background: var(--surface);
+  border: 1.5px solid var(--border-strong);
+  border-radius: 16px;
+  padding: 1.5rem 1.5rem 1.25rem;
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+}
+
+.modal-question {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  font-style: italic;
+}
+
+.modal-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.modal-heal {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #3a8a4a;
+}
+:root[data-theme="dark"] .modal-heal { color: #7bcf8a; }
+
+.modal-detail {
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--muted);
+  display: block;
+}
+
+.modal-hp-change {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.modal-hp-change strong { color: var(--text); }
+
+.modal-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.4rem;
+}
+
+.btn-modal {
+  padding: 0.5rem 1.4rem;
+  border-radius: 10px;
+  border: none;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-modal--primary {
+  background: var(--accent);
+  color: #fff;
+}
+.btn-modal--primary:hover { background: var(--accent-strong); }
+.btn-modal--ghost {
+  background: var(--surface-2);
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+.btn-modal--ghost:hover { color: var(--text); }
 
 .ch-abilities {
   display: grid;

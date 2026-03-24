@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from "vue-router";
-import { Users, Handbag, UserCircle } from "lucide-vue-next";
+import { Users, Handbag, UserCircle, ClipboardPen, BookText } from "lucide-vue-next";
 import { user } from "./composables/useAuth";
 
 // Apply saved theme on boot
@@ -19,11 +19,12 @@ document.documentElement.dataset.theme = savedTheme;
       <RouterLink to="/personnage" class="brand">Terres d'Arran</RouterLink>
       <div class="top-nav-actions">
         <nav class="nav-links">
-          <RouterLink to="/personnage" class="nav-link" title="Personnage">⚔️</RouterLink>
+          <RouterLink to="/personnage" class="nav-link" title="Personnage"><ClipboardPen :size="18" /></RouterLink>
           <RouterLink to="/actions" class="nav-link" title="Mes actions">⚡</RouterLink>
           <RouterLink to="/inventaire" class="nav-link" title="Inventaire"><Handbag :size="18" /></RouterLink>
           <RouterLink to="/chat" class="nav-link" title="Isilwen">🔮</RouterLink>
           <RouterLink to="/jets" class="nav-link" title="Historique des jets">🎲</RouterLink>
+          <RouterLink to="/journal" class="nav-link" title="Journal"><BookText :size="18" /></RouterLink>
           <RouterLink to="/sessions" class="nav-link" title="Sessions de jeu">
             <Users :size="18" />
           </RouterLink>

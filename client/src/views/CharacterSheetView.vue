@@ -4,8 +4,7 @@ import AppPageHead from "../components/ui/AppPageHead.vue";
 import AppEmptyState from "../components/ui/AppEmptyState.vue";
 import { useCharacter, loadCharacter } from "../composables/useCharacter";
 import { inferProfileFamily } from "../utils/inferProfileFamily";
-import { computed, ref, watch } from "vue";
-import AgonieModal from "../components/AgonieModal.vue";
+import { computed, ref } from "vue";
 
 import IdentityCard from "../components/character-sheet/IdentityCard.vue";
 import AbilitiesCard from "../components/character-sheet/AbilitiesCard.vue";
@@ -28,34 +27,6 @@ loadCharacter(id);
 
 function retryLoadSheet() {
   loadCharacter(id);
-}
-
-const showAgonie = ref(false)
-const isStabilised = ref(false)
-
-const stopLoadingWatch = watch(loading, (isLoading) => {
-  if (isLoading) return
-  watch(
-    () => character.value.hpCurrent,
-    (hp, prev) => {
-      if (hp === 0 && prev !== undefined && prev > 0 && !isStabilised.value) {
-        showAgonie.value = true
-      }
-      if (hp > 0) {
-        isStabilised.value = false
-      }
-    },
-  )
-  stopLoadingWatch()
-})
-
-function onStabilise() {
-  showAgonie.value = false
-  isStabilised.value = true
-}
-
-function onDeath() {
-  showAgonie.value = false
 }
 
 // ── Onglets ───────────────────────────────────────────────────────────────────
@@ -86,14 +57,6 @@ const TABS: { id: TabId; label: string; icon: string }[] = [
       </template>
     </AppEmptyState>
 
-    <AgonieModal
-      v-if="showAgonie"
-      :character-name="character.name"
-      @stabilise="onStabilise"
-      @death="onDeath"
-      @close="showAgonie = false"
-    />
-
     <template v-else-if="!loading && !loadError">
       <!-- Tab bar -->
       <nav class="tab-bar">
@@ -116,8 +79,7 @@ const TABS: { id: TabId; label: string; icon: string }[] = [
         <AbilitiesCard :character="character" :ability-modifier="abilityModifier" />
         <ResourcesCard
           :character="character"
-          :computed-mp="computedMp" 
-          :computed-initiative="computedInitiative"
+          :computed-mp="computedMp"
           :computed-hp="computedHp"
           :computed-hp-base="computedHpBase"
           :computed-hp-dv="computedHpDv"
