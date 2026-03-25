@@ -6,6 +6,10 @@ import ActionsView from '../views/ActionsView.vue'
 import LoginView from '../views/LoginView.vue'
 import SessionListView from '../views/SessionListView.vue'
 import SessionView from '../views/SessionView.vue'
+import JetsView from '../views/JetsView.vue'
+import InventaireView from '../views/InventaireView.vue'
+import OptionsView from '../views/OptionsView.vue'
+import JournalView from '../views/JournalView.vue'
 import { authReady, user, initAuth } from '../composables/useAuth'
 
 export const router = createRouter({
@@ -17,8 +21,12 @@ export const router = createRouter({
     { path: '/personnages', name: 'characters', component: CharacterListView },
     { path: '/personnage', name: 'character', component: CharacterSheetView },
     { path: '/actions', name: 'actions', component: ActionsView },
+    { path: '/inventaire', name: 'inventaire', component: InventaireView },
+    { path: '/jets', name: 'jets', component: JetsView },
+    { path: '/journal', name: 'journal', component: JournalView },
     { path: '/sessions', name: 'sessions', component: SessionListView },
     { path: '/sessions/:id', name: 'session', component: SessionView },
+    { path: '/options', name: 'options', component: OptionsView },
   ],
 })
 

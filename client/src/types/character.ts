@@ -44,6 +44,14 @@ export interface CharacterAbilities {
   charisma: number
 }
 
+export interface CompetenceRow {
+  id: string
+  name: string
+  /** Ability score used for the roll, or null for flat bonus only */
+  ability: keyof CharacterAbilities | null
+  bonus: number
+}
+
 export interface Character {
   id: string
   name: string
@@ -85,4 +93,6 @@ export interface Character {
   pcCurrent: number
   /** Points de Récupération courants (max = 5). */
   prCurrent: number
+  /** Custom rollable competences (nom + carac + bonus). */
+  competences: CompetenceRow[]
 }

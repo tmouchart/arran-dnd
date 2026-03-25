@@ -3,6 +3,7 @@ const BASE = '/api/auth'
 export interface AuthUser {
   id: number
   username: string
+  avatarUrl: string | null
 }
 
 export async function login(username: string, password: string): Promise<AuthUser> {
@@ -37,5 +38,17 @@ export async function fetchMe(): Promise<AuthUser | null> {
   const res = await fetch(`${BASE}/me`, { credentials: 'include' })
   if (!res.ok) return null
   const data = await res.json()
+  return data.user as AuthUser
+}
+
+export async function updateMe(fields: { avatarUrl?: string | null; username?: string }): Promise<AuthUser> {
+  const res = await fetch(`${BASE}/me`, {
+    method: 'PATCH',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(fields),
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error ?? 'Erreur lors de la mise à jour')
   return data.user as AuthUser
 }

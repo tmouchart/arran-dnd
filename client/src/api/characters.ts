@@ -37,6 +37,7 @@ export interface ServerCharacter {
   copperCoins: number | undefined
   pcCurrent: number | undefined
   prCurrent: number | undefined
+  competences: Character['competences'] | undefined
 }
 
 export async function fetchCharacter(id: number): Promise<ServerCharacter> {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { Wand2 } from "lucide-vue-next";
+import { Wand2, ChevronUp, ChevronDown } from "lucide-vue-next";
 import AppCard from "../ui/AppCard.vue";
 import AppIconBtn from "../ui/AppIconBtn.vue";
 import AbilityInitModal from "./AbilityInitModal.vue";
@@ -25,6 +25,11 @@ const abilityList = [
   { key: "wisdom" as const, label: "SAG" },
   { key: "charisma" as const, label: "CHA" },
 ];
+
+function modDisplay(score: number): string {
+  const m = props.abilityModifier(score);
+  return (m >= 0 ? "+" : "") + m;
+}
 </script>
 
 <template>
@@ -43,10 +48,22 @@ const abilityList = [
     <div class="abilities">
       <div v-for="a in abilityList" :key="a.key" class="ability">
         <span class="abil-label">{{ a.label }}</span>
-        <input v-model.number="character.abilities[a.key]" type="number" class="input score" />
-        <span class="mod">
-          {{ abilityModifier(character.abilities[a.key]) >= 0 ? "+" : "" }}{{ abilityModifier(character.abilities[a.key]) }}
-        </span>
+        <div class="ability-row">
+          <div class="score-mod">
+            <span class="score-val">{{ character.abilities[a.key] }}</span>
+            <span class="mod" :class="abilityModifier(character.abilities[a.key]) > 0 ? 'mod-pos' : abilityModifier(character.abilities[a.key]) < 0 ? 'mod-neg' : 'mod-zero'">
+              ({{ modDisplay(character.abilities[a.key]) }})
+            </span>
+          </div>
+          <div class="ab-btns">
+            <button type="button" class="ab-btn" @click="character.abilities[a.key]++">
+              <ChevronUp :size="12" :stroke-width="2.5" />
+            </button>
+            <button type="button" class="ab-btn" :disabled="character.abilities[a.key] <= 1" @click="character.abilities[a.key]--">
+              <ChevronDown :size="12" :stroke-width="2.5" />
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </AppCard>
@@ -56,16 +73,21 @@ const abilityList = [
 <style scoped>
 .abilities {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(5rem, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6rem 0.75rem;
+}
+
+@media (min-width: 520px) {
+  .abilities {
+    grid-template-columns: repeat(6, 1fr);
+  }
 }
 
 .ability {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem 0;
+  gap: 0.3rem;
 }
 
 .abil-label {
@@ -75,15 +97,68 @@ const abilityList = [
   color: var(--muted);
 }
 
-.input.score {
-  width: 3.5rem;
-  text-align: center;
-  font-size: 1.1rem;
+.ability-row {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.3rem 0.4rem 0.3rem 0.55rem;
+}
+
+.score-mod {
+  display: flex;
+  align-items: baseline;
+  gap: 0.2rem;
+}
+
+.score-val {
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  line-height: 1;
 }
 
 .mod {
-  font-size: 0.9rem;
-  color: var(--accent-strong);
+  font-size: 0.72rem;
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.mod-pos { color: var(--accent-strong); }
+.mod-neg { color: var(--danger); }
+.mod-zero { color: var(--muted); }
+
+.ab-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.ab-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 14px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 100ms ease, color 100ms ease;
+}
+
+.ab-btn:hover:not(:disabled) {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.ab-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 </style>

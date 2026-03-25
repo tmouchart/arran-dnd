@@ -1,16 +1,24 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { ChevronsDownUp } from "lucide-vue-next";
+import { Pencil, PencilOff, TrendingUp } from "lucide-vue-next";
 import AppCard from "../ui/AppCard.vue";
+import LevelUpModal from "./LevelUpModal.vue";
 import { PEUPLES, PEUPLES_BY_ID, PEUPLE_VOIES_BY_ID } from "../../data/peuples";
-import { FAMILY_LABELS } from "../../data/voies";
+import { FAMILY_LABELS, VOIES_BY_ID } from "../../data/voies";
 import { MYSTIC_TALENTS } from "../../data/mysticTalents";
 import { inferProfileFamily } from "../../utils/inferProfileFamily";
+import {
+  getProfilesForPeuple,
+  findProfileByName,
+  FAMILY_LABELS as PROFILE_FAMILY_LABELS,
+  type ProfileEntry,
+} from "../../data/profilesCatalog";
 import type { Character } from "../../types/character";
 
 const props = defineProps<{ character: Character }>();
 
-const histoireExpanded = ref(false);
+const histoireVisible = ref(false);
+const showLevelUp = ref(false);
 
 const inferredProfileFamily = computed(() =>
   inferProfileFamily(props.character.paths),
@@ -33,6 +41,7 @@ function applyPeupleUserChange(newPeople: string) {
   const c = props.character;
   if (newPeople === c.people) return;
   c.people = newPeople;
+  c.profile = "";
   c.paths = c.paths.filter((p) => p.kind !== "peuple" && p.kind !== "culturelle");
   const peuple = PEUPLES_BY_ID[newPeople];
   if (peuple) {
@@ -56,6 +65,58 @@ function selectCulture(id: string) {
     kind: "culturelle" as const,
   });
 }
+
+// ── Profile select & auto-apply ───────────────────────────────────────────────
+
+const profileGroups = computed(() => {
+  const profiles = getProfilesForPeuple(props.character.people);
+  if (!profiles.length) return [];
+  const families = ["combattants", "aventuriers", "mystiques"] as const;
+  return families
+    .map((fam) => ({
+      family: fam,
+      label: PROFILE_FAMILY_LABELS[fam],
+      profiles: profiles.filter((p) => p.family === fam),
+    }))
+    .filter((g) => g.profiles.length > 0);
+});
+
+const profileSelectValue = computed(() => props.character.profile);
+
+/** Remove profile-applied voies (those without kind, added by previous profile). */
+function clearProfileVoies() {
+  props.character.paths = props.character.paths.filter((p) => p.kind !== undefined);
+}
+
+function applyProfile(entry: ProfileEntry) {
+  const c = props.character;
+
+  // 1. Remove previously applied profile voies (kind === undefined = profile/manual voies)
+  clearProfileVoies();
+
+  // 2. Add voies from the profile (skip already-present ones)
+  const existingIds = new Set(c.paths.map((p) => p.id).filter(Boolean));
+  for (const voieId of entry.voieIds) {
+    if (existingIds.has(voieId)) continue;
+    const voieData = VOIES_BY_ID[voieId];
+    if (!voieData) continue;
+    c.paths.push({ id: voieData.id, name: voieData.name, rank: 0 });
+  }
+
+  // 3. Apply martial formations (union — don't remove existing ones)
+  for (const fid of entry.martialFormations) {
+    if (!c.martialFormations.includes(fid)) {
+      c.martialFormations.push(fid);
+    }
+  }
+}
+
+function onProfileSelect(value: string) {
+  props.character.profile = value;
+  if (!value) return;
+  const entry = findProfileByName(value);
+  if (entry) applyProfile(entry);
+}
 </script>
 
 <template>
@@ -65,14 +126,15 @@ function selectCulture(id: string) {
         <span>Nom</span>
         <input v-model="character.name" type="text" class="input" />
       </label>
-      <label class="field">
+      <div class="field">
         <span>Niveau</span>
-        <input v-model.number="character.level" type="number" min="1" class="input narrow" />
-      </label>
-      <label class="field">
-        <span>Profil</span>
-        <input v-model="character.profile" type="text" class="input" />
-      </label>
+        <div class="level-row">
+          <input v-model.number="character.level" type="number" min="1" class="input narrow" />
+          <button type="button" class="levelup-btn" title="Monter en niveau" @click="showLevelUp = true">
+            <TrendingUp :size="15" />
+          </button>
+        </div>
+      </div>
       <div class="field">
         <span>Peuple</span>
         <select
@@ -84,6 +146,41 @@ function selectCulture(id: string) {
           <option v-for="p in PEUPLES" :key="p.id" :value="p.id">{{ p.name }}</option>
         </select>
       </div>
+      <div v-if="availableCultures.length" class="field">
+        <span>Voie culturelle</span>
+        <select
+          :value="selectedCultureId"
+          class="input select"
+          @change="selectCulture(($event.target as HTMLSelectElement).value)"
+        >
+          <option value="">— Choisir —</option>
+          <option v-for="c in availableCultures" :key="c.id" :value="c.id">{{ c.name }}</option>
+        </select>
+      </div>
+
+      <!-- Profil : liste déroulante groupée par famille si le peuple est choisi -->
+      <div class="field">
+        <span>Profil</span>
+        <template v-if="profileGroups.length">
+          <select
+            class="input select"
+            :value="profileSelectValue"
+            @change="onProfileSelect(($event.target as HTMLSelectElement).value)"
+          >
+            <option value="">— Choisir —</option>
+            <optgroup v-for="g in profileGroups" :key="g.family" :label="g.label">
+              <option v-for="p in g.profiles" :key="p.id" :value="p.name">{{ p.name }}</option>
+            </optgroup>
+          </select>
+          <p v-if="character.profile" class="profile-hint">
+            ✓ Voies et formations pré-sélectionnées
+          </p>
+        </template>
+        <template v-else>
+          <input v-model="character.profile" type="text" class="input" placeholder="Saisir un profil" />
+        </template>
+      </div>
+
       <div class="field">
         <span>Famille du profil</span>
         <div class="field-readonly input" :class="'family-' + inferredProfileFamily">
@@ -97,38 +194,42 @@ function selectCulture(id: string) {
           <option v-for="t in MYSTIC_TALENTS" :key="t.id" :value="t.id">{{ t.name }}</option>
         </select>
       </div>
-      <div v-if="availableCultures.length" class="field span-2">
-        <span>Voie culturelle</span>
-        <select
-          :value="selectedCultureId"
-          class="input select"
-          @change="selectCulture(($event.target as HTMLSelectElement).value)"
-        >
-          <option value="">— Choisir —</option>
-          <option v-for="c in availableCultures" :key="c.id" :value="c.id">{{ c.name }}</option>
-        </select>
-      </div>
+
+      <!-- Histoire avec toggle affiché/caché -->
       <div class="field span-2 histoire-block">
         <div class="histoire-field-head">
           <span>Histoire</span>
           <button
             type="button"
             class="histoire-expand-btn"
-            :aria-expanded="histoireExpanded"
-            :aria-label="histoireExpanded ? 'Réduire le champ histoire' : 'Agrandir le champ histoire'"
-            @click="histoireExpanded = !histoireExpanded"
+            :aria-expanded="histoireVisible"
+            :aria-label="histoireVisible ? 'Cacher l\'histoire' : 'Afficher l\'histoire'"
+            :title="histoireVisible ? 'Cacher' : 'Afficher'"
+            @click="histoireVisible = !histoireVisible"
           >
-            <ChevronsDownUp :size="18" :stroke-width="2" />
+            <PencilOff v-if="histoireVisible" :size="16" :stroke-width="2" />
+            <Pencil v-else :size="16" :stroke-width="2" />
           </button>
         </div>
         <textarea
+          v-if="histoireVisible"
           v-model="character.histoire"
           class="input input-textarea"
-          :rows="histoireExpanded ? 12 : 3"
+          :rows="8"
+          placeholder="L'histoire de ton personnage…"
         />
+        <p v-else class="histoire-hidden-hint">
+          {{ character.histoire ? character.histoire.slice(0, 60) + (character.histoire.length > 60 ? '…' : '') : 'Aucune histoire renseignée.' }}
+        </p>
       </div>
     </div>
   </AppCard>
+
+  <LevelUpModal
+    v-model:show="showLevelUp"
+    :character="character"
+    @confirm="() => {}"
+  />
 </template>
 
 <style scoped>
@@ -171,6 +272,37 @@ function selectCulture(id: string) {
   max-width: 6rem;
 }
 
+.level-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.levelup-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  border: 1px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent-strong);
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, transform 100ms ease;
+}
+
+.levelup-btn:hover {
+  background: var(--accent);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.levelup-btn:active {
+  transform: translateY(0);
+}
+
 .input.select {
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
@@ -178,6 +310,13 @@ function selectCulture(id: string) {
   background-position: right 0.7rem center;
   padding-right: 2rem;
   cursor: pointer;
+}
+
+.profile-hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--accent-strong);
+  font-style: italic;
 }
 
 .field.histoire-block {
@@ -194,6 +333,7 @@ function selectCulture(id: string) {
 .histoire-field-head > span {
   font-size: 0.83rem;
   color: var(--muted);
+  font-weight: 600;
 }
 
 .histoire-expand-btn {
@@ -201,18 +341,29 @@ function selectCulture(id: string) {
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   padding: 0;
-  border-radius: 10px;
+  border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--surface-2);
-  color: var(--text);
+  color: var(--muted);
   cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
 }
 
 .histoire-expand-btn:hover {
-  background: var(--surface-1);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
+.histoire-hidden-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-style: italic;
+  padding: 0.3rem 0;
 }
 
 .input-textarea {

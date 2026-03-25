@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { X, Dices } from "lucide-vue-next";
+import { X } from "lucide-vue-next";
 import type { VoieFamily } from "../../data/voies";
 import { FAMILY_DIE_MAX } from "../../composables/useCharacter";
 
@@ -14,7 +14,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   "update:show": [value: boolean];
-  "update:hpLevelGains": [value: number[]];
 }>();
 
 const dieMax = computed(() => FAMILY_DIE_MAX[props.family]);
@@ -41,18 +40,6 @@ function rollAt(levelIndex: number): number {
 
 function gainAt(levelIndex: number): number {
   return rollAt(levelIndex) + props.conMod;
-}
-
-function setRoll(levelIndex: number, value: number) {
-  const clamped = Math.max(1, Math.min(dieMax.value, value));
-  const updated = [...props.hpLevelGains];
-  updated[levelIndex] = clamped;
-  emit("update:hpLevelGains", updated);
-}
-
-function randomRoll(levelIndex: number) {
-  const roll = Math.ceil(Math.random() * dieMax.value);
-  setRoll(levelIndex, roll);
 }
 
 function close() {
@@ -94,17 +81,7 @@ function close() {
             >
               <span class="lvl-badge">Niv. {{ i + 1 }}</span>
               <span class="lvl-desc">Jet</span>
-              <input
-                type="number"
-                class="lvl-roll-input"
-                :min="1"
-                :max="dieMax"
-                :value="rollAt(i - 1)"
-                @change="setRoll(i - 1, Number(($event.target as HTMLInputElement).value))"
-              />
-              <button class="dice-btn" @click="randomRoll(i - 1)" :title="`Jet aléatoire (1–${dieMax})`">
-                <Dices :size="15" />
-              </button>
+              <span class="lvl-roll fixed">{{ rollAt(i - 1) }}</span>
               <span class="lvl-sep">+</span>
               <span class="lvl-con">CON {{ conSign }}{{ conMod }}</span>
               <span class="lvl-sep">=</span>

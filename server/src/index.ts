@@ -11,6 +11,7 @@ import express from "express";
 import authRouter from "./routes/auth.js";
 import charactersRouter from "./routes/characters.js";
 import sessionsRouter from "./routes/sessions.js";
+import journalRouter from "./routes/journal.js";
 import { requireAuth, type AuthRequest } from "./auth/middleware.js";
 import { loadCoreIndex, loadTopic } from "./knowledge/loadKnowledge.js";
 import { CLIENT_DIST } from "./paths.js";
@@ -29,9 +30,20 @@ app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
 
+// Request logging
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on("finish", () => {
+    const ms = Date.now() - start;
+    console.log(`[http] ${req.method} ${req.originalUrl} ${res.statusCode} ${ms}ms`);
+  });
+  next();
+});
+
 app.use("/api/auth", authRouter);
 app.use("/api/characters", charactersRouter);
 app.use("/api/sessions", sessionsRouter);
+app.use("/api/journal", journalRouter);
 
 const AI_PROVIDER = process.env.AI_PROVIDER ?? "gemini";
 const ANTHROPIC_MODEL =

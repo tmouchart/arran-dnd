@@ -75,6 +75,7 @@ function toCharacter(s: ServerCharacter): Character {
     copperCoins: s.copperCoins ?? 0,
     pcCurrent: typeof s.pcCurrent === 'number' ? s.pcCurrent : 0,
     prCurrent: typeof s.prCurrent === 'number' ? s.prCurrent : 5,
+    competences: Array.isArray(s.competences) ? s.competences : [],
   }
 }
 
@@ -111,6 +112,7 @@ function toServerPayload(c: Character): Omit<ServerCharacter, 'id' | 'userId' | 
     copperCoins: c.copperCoins,
     pcCurrent: c.pcCurrent,
     prCurrent: c.prCurrent,
+    competences: c.competences,
   }
 }
 
@@ -144,11 +146,13 @@ export function createDefaultCharacter(): Character {
     copperCoins: 0,
     pcCurrent: 0,
     prCurrent: 5,
+    competences: [],
   }
 }
 
 const character = ref<Character>(createDefaultCharacter())
 const serverId = ref<number | null>(null)
+
 
 watch(
   () => character.value.abilities.dexterity,
@@ -202,6 +206,17 @@ export const computedHpBase = computed(() => {
   const conMod = Math.floor((c.abilities.constitution - 10) / 2)
   return dieMax + conMod
 })
+
+/** Valeur du dé de vie (nombre max, ex: 10 pour combattants). */
+export const computedHpDv = computed(() => {
+  const family = inferProfileFamily(character.value.paths)
+  return FAMILY_DIE_MAX[family]
+})
+
+/** Mod CON appliqué aux PV de base. */
+export const computedHpConMod = computed(() =>
+  Math.floor((character.value.abilities.constitution - 10) / 2),
+)
 
 /**
  * Croissance PV (niveaux 2+) = somme des jets + mod CON par niveau
@@ -290,6 +305,7 @@ export const computedAttackMagique = computed(() => {
 watch(computedHp, (val) => {
   character.value.hpMax = val
 }, { immediate: true })
+
 
 // Auto-resize hpLevelGains when level changes
 watch(
@@ -390,6 +406,8 @@ export function useCharacter() {
     computedMp,
     computedHp,
     computedHpBase,
+    computedHpDv,
+    computedHpConMod,
     computedHpGrowth,
     computedDv,
     computedInitiative,

@@ -4,6 +4,7 @@ import AppCard from "../ui/AppCard.vue";
 import VoiePickerModal from "./VoiePickerModal.vue";
 import { VOIES, VOIES_BY_ID, FAMILY_LABELS, FAMILY_ORDER, type Voie, type VoieFamily } from "../../data/voies";
 import { PEUPLE_VOIES_BY_ID, type PeupleVoie } from "../../data/peuples";
+import { findProfileByName } from "../../data/profilesCatalog";
 import type { Character, PathRow } from "../../types/character";
 
 const props = defineProps<{ character: Character }>();
@@ -37,9 +38,29 @@ function increaseTooltip(p: PathRow): string {
   return "Augmenter le rang";
 }
 
-function increaseRank(p: PathRow) { if (canIncrease(p)) p.rank++; }
-function decreaseRank(p: PathRow) { if (p.rank > 0) p.rank--; }
-function removePath(i: number) { props.character.paths.splice(i, 1); }
+function checkProfileMatch() {
+  const c = props.character;
+  if (!c.profile || c.profile === 'Customisé') return;
+  const entry = findProfileByName(c.profile);
+  if (!entry) return;
+  const freeIds = c.paths
+    .filter((p) => {
+      if (p.kind) return false;
+      const vd = ALL_VOIES_BY_ID[p.id ?? ''];
+      if (vd && 'family' in vd && (vd as Voie).family === 'prestige') return false;
+      return true;
+    })
+    .map((p) => p.id)
+    .filter(Boolean) as string[];
+  const profileIds = [...entry.voieIds].sort();
+  const currentIds = [...freeIds].sort();
+  const matches = profileIds.length === currentIds.length && profileIds.every((id, i) => id === currentIds[i]);
+  if (!matches) c.profile = 'Customisé';
+}
+
+function increaseRank(p: PathRow) { if (canIncrease(p)) { p.rank++; checkProfileMatch(); } }
+function decreaseRank(p: PathRow) { if (p.rank > 0) { p.rank--; checkProfileMatch(); } }
+function removePath(i: number) { props.character.paths.splice(i, 1); checkProfileMatch(); }
 
 // ── Expand/collapse ────────────────────────────────────────────────────────
 const expandedSet = ref<Set<number>>(new Set());
@@ -72,6 +93,20 @@ function voieFamily(p: PathRow): VoieFamily | null {
   return (vd as Voie).family;
 }
 
+// ── Limite voies libres ────────────────────────────────────────────────────
+const MAX_FREE_PATHS = 3;
+
+const freePaths = computed(() =>
+  props.character.paths.filter((p) => {
+    if (p.kind) return false; // peuple, culturelle
+    const vd = ALL_VOIES_BY_ID[p.id ?? ''];
+    if (vd && 'family' in vd && (vd as Voie).family === 'prestige') return false;
+    return true;
+  }),
+);
+
+const canAddPath = computed(() => freePaths.value.length < MAX_FREE_PATHS);
+
 // ── Picker ─────────────────────────────────────────────────────────────────
 const showPicker = ref(false);
 
@@ -90,6 +125,7 @@ const pickerByFamily = computed(() =>
 function addPath(voie: Voie) {
   props.character.paths.push({ id: voie.id, name: voie.name, rank: 0 });
   showPicker.value = false;
+  checkProfileMatch();
 }
 </script>
 
@@ -101,8 +137,16 @@ function addPath(voie: Voie) {
         <span class="pts-badge" :class="{ depleted: remainingPoints <= 0 }">
           {{ spentPoints }} / {{ totalPoints }} pts
         </span>
+        <span class="pts-badge" :class="{ depleted: !canAddPath }">
+          {{ freePaths.length }} / {{ MAX_FREE_PATHS }} voies
+        </span>
       </div>
-      <button type="button" class="btn ghost small" @click="showPicker = true">+ Ajouter</button>
+      <button
+        v-if="canAddPath"
+        type="button"
+        class="btn ghost small"
+        @click="showPicker = true"
+      >+ Ajouter</button>
     </div>
 
     <ul v-if="character.paths.length" class="voie-list">
@@ -116,14 +160,19 @@ function addPath(voie: Voie) {
             <span v-else-if="voieFamily(p)" class="voie-kind-badge" :class="`family-${voieFamily(p)}`">{{ FAMILY_BADGE_LABELS[voieFamily(p)!] }}</span>
           </div>
           <div class="voie-rank-controls">
-            <span class="voie-dots">
-              <span v-for="dot in 5" :key="dot" class="dot" :class="{ filled: p.rank >= dot }" />
+            <template v-if="expandedSet.has(i)">
+              <span class="voie-dots">
+                <span v-for="dot in 5" :key="dot" class="dot" :class="{ filled: p.rank >= dot }" />
+              </span>
+              <div class="voie-controls" @click.stop>
+                <button type="button" class="rank-btn" :disabled="p.rank <= 0" title="Réduire le rang" @click="decreaseRank(p)">−</button>
+                <button type="button" class="rank-btn" :disabled="!canIncrease(p)" :title="increaseTooltip(p)" @click="increaseRank(p)">+</button>
+                <button v-if="!p.kind" type="button" class="remove-btn" title="Retirer cette voie" @click="removePath(i)">×</button>
+              </div>
+            </template>
+            <span v-else class="voie-rank-collapsed">
+              Rang {{ p.rank }}
             </span>
-            <div class="voie-controls" @click.stop>
-              <button type="button" class="rank-btn" :disabled="p.rank <= 0" title="Réduire le rang" @click="decreaseRank(p)">−</button>
-              <button type="button" class="rank-btn" :disabled="!canIncrease(p)" :title="increaseTooltip(p)" @click="increaseRank(p)">+</button>
-              <button v-if="!p.kind" type="button" class="remove-btn" title="Retirer cette voie" @click="removePath(i)">×</button>
-            </div>
           </div>
         </div>
 
@@ -393,6 +442,14 @@ function addPath(voie: Voie) {
 :root[data-theme="dark"] .voie-kind-badge.family-aventuriers { color: #7bcf8a; }
 :root[data-theme="dark"] .voie-kind-badge.family-mystiques { color: #b07ce8; }
 :root[data-theme="dark"] .voie-kind-badge.family-prestige { color: #d4a843; }
+
+.voie-rank-collapsed {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
 
 .muted { color: var(--muted); font-size: 0.9rem; margin: 0; }
 .btn.small { min-height: 38px; padding: 0.3rem 0.58rem; font-size: 0.82rem; }

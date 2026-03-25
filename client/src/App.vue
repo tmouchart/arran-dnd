@@ -1,74 +1,41 @@
 <script setup lang="ts">
-import { RouterLink, RouterView, useRouter } from "vue-router";
-import { computed, ref } from "vue";
-import { LogOut, Users } from "lucide-vue-next";
-import { user, logout } from "./composables/useAuth";
-import AppIconBtn from "./components/ui/AppIconBtn.vue";
+import { RouterLink, RouterView } from "vue-router";
+import { Users, Handbag, UserCircle, ClipboardPen, BookText } from "lucide-vue-next";
+import { user } from "./composables/useAuth";
 
-const router = useRouter();
-
-async function handleLogout() {
-  await logout();
-  router.push("/login");
-}
-
+// Apply saved theme on boot
 type Theme = "light" | "dark";
-
 const STORAGE_KEY = "arran-theme";
 const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-const initialTheme =
+const savedTheme =
   (localStorage.getItem(STORAGE_KEY) as Theme | null) ??
   (prefersDark ? "dark" : "light");
-const theme = ref<Theme>(initialTheme);
-
-function applyTheme(nextTheme: Theme): void {
-  theme.value = nextTheme;
-  document.documentElement.dataset.theme = nextTheme;
-  localStorage.setItem(STORAGE_KEY, nextTheme);
-}
-
-function toggleTheme(): void {
-  applyTheme(theme.value === "dark" ? "light" : "dark");
-}
-
-applyTheme(initialTheme);
-
-const themeAriaLabel = computed(() =>
-  theme.value === "dark" ? "Passer en mode clair" : "Passer en mode sombre",
-);
-const themeIcon = computed(() => (theme.value === "dark" ? "☀️" : "🌙"));
+document.documentElement.dataset.theme = savedTheme;
 </script>
 
 <template>
   <div class="app-shell">
     <header class="top-nav">
-      <RouterLink to="/personnage" class="brand">Terres d’Arran</RouterLink>
+      <RouterLink to="/personnage" class="brand">Terres d'Arran</RouterLink>
       <div class="top-nav-actions">
         <nav class="nav-links">
-          <RouterLink to="/personnage" class="nav-link" title="Personnage">⚔️</RouterLink>
+          <RouterLink to="/personnage" class="nav-link" title="Personnage"><ClipboardPen :size="18" /></RouterLink>
           <RouterLink to="/actions" class="nav-link" title="Mes actions">⚡</RouterLink>
+          <RouterLink to="/inventaire" class="nav-link" title="Inventaire"><Handbag :size="18" /></RouterLink>
           <RouterLink to="/chat" class="nav-link" title="Isilwen">🔮</RouterLink>
+          <RouterLink to="/jets" class="nav-link" title="Historique des jets">🎲</RouterLink>
+          <RouterLink to="/journal" class="nav-link" title="Journal"><BookText :size="18" /></RouterLink>
           <RouterLink to="/sessions" class="nav-link" title="Sessions de jeu">
             <Users :size="18" />
           </RouterLink>
         </nav>
-        <span v-if="user" class="nav-username">{{ user.username }}</span>
-        <div class="nav-controls">
-          <AppIconBtn
-            v-if="user"
-            title="Se déconnecter"
-            @click="handleLogout"
-          >
-            <LogOut :size="18" />
-          </AppIconBtn>
-          <AppIconBtn
-            :aria-label="themeAriaLabel"
-            :title="themeAriaLabel"
-            @click="toggleTheme"
-          >
-            <span aria-hidden="true">{{ themeIcon }}</span>
-          </AppIconBtn>
-        </div>
+        <RouterLink v-if="user" to="/options" class="nav-user" title="Options">
+          <div class="nav-avatar">
+            <img v-if="user.avatarUrl" :src="user.avatarUrl" alt="Avatar" class="nav-avatar-img" />
+            <UserCircle v-else :size="22" />
+          </div>
+          <span class="nav-username">{{ user.username }}</span>
+        </RouterLink>
       </div>
     </header>
     <main class="main">
@@ -128,39 +95,76 @@ const themeIcon = computed(() => (theme.value === "dark" ? "☀️" : "🌙"));
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.5rem;
+}
+
+/* ── User pill ──────────────────────────────────────────────────────────── */
+.nav-user {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  text-decoration: none;
+  padding: 0.22rem 0.6rem 0.22rem 0.28rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  transition:
+    border-color 160ms ease,
+    background 160ms ease;
+  color: inherit;
+  max-width: 160px;
+}
+
+.nav-user:hover,
+.nav-user.router-link-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.nav-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--muted);
+}
+
+.nav-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .nav-username {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--muted);
+  font-family: var(--title-font);
+  font-size: 0.97rem;
+  font-weight: 700;
+  color: var(--fg);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 @media (max-width: 739px) {
   .nav-username {
     display: none;
   }
-}
 
-.nav-controls {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 0.25rem;
-}
+  .nav-user {
+    padding: 0.22rem;
+    border-radius: 50%;
+    max-width: none;
+  }
 
-@media (max-width: 739px) {
   .top-nav-actions {
     flex: 1;
-  }
-
-  .nav-controls {
-    margin-left: auto;
+    justify-content: space-between;
   }
 }
-
 
 .nav-link {
   width: 40px;

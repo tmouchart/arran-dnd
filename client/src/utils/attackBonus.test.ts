@@ -52,6 +52,7 @@ function makeCharacter(overrides: Partial<Character> = {}): Character {
     copperCoins: 0,
     pcCurrent: 0,
     prCurrent: 5,
+    competences: [],
     ...overrides,
   }
 }
