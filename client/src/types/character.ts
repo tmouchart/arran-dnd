@@ -13,6 +13,8 @@ export interface WeaponRow {
   rangeMeters: number | null
   catalogId?: string
   notes?: string
+  /** Rôle dans le combat à deux armes (voie-du-combat-a-deux-armes). */
+  handRole?: 'main' | 'offhand'
 }
 
 export interface SkillRow {

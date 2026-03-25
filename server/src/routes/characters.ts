@@ -22,6 +22,7 @@ type WeaponRow = {
   rangeMeters: number | null
   catalogId?: string
   notes?: string
+  handRole?: 'main' | 'offhand'
 }
 
 const router = Router()
