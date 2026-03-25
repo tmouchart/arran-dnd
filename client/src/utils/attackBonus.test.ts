@@ -64,7 +64,7 @@ function makeWeapon(overrides: Partial<WeaponRow> = {}): WeaponRow {
     attackType: 'contact',
     damageDice: '1d8',
     damageAbility: 'strength',
-    martialFamily: 'epee',
+    martialFamily: 'guerre',
     rangeMeters: null,
     ...overrides,
   }
@@ -130,17 +130,17 @@ describe('isMartialWeaponProficient', () => {
   })
 
   it('formation correspondante → compétent', () => {
-    const weapon = makeWeapon({ martialFamily: 'epee' })
-    expect(isMartialWeaponProficient(weapon, ['epee', 'arc'])).toBe(true)
+    const weapon = makeWeapon({ martialFamily: 'guerre' })
+    expect(isMartialWeaponProficient(weapon, ['guerre', 'tir'])).toBe(true)
   })
 
   it('formation absente → non compétent', () => {
-    const weapon = makeWeapon({ martialFamily: 'epee' })
-    expect(isMartialWeaponProficient(weapon, ['arc'])).toBe(false)
+    const weapon = makeWeapon({ martialFamily: 'guerre' })
+    expect(isMartialWeaponProficient(weapon, ['tir'])).toBe(false)
   })
 
   it('aucune formation → non compétent', () => {
-    const weapon = makeWeapon({ martialFamily: 'hache' })
+    const weapon = makeWeapon({ martialFamily: 'hast' })
     expect(isMartialWeaponProficient(weapon, [])).toBe(false)
   })
 })
@@ -149,15 +149,15 @@ describe('isMartialWeaponProficient', () => {
 
 describe('weaponAttackBonusWithProficiency', () => {
   it('compétent → bonus sans malus', () => {
-    const character = makeCharacter({ level: 2, abilities: makeAbilities({ strength: 12 }), martialFormations: ['epee'] })
-    const weapon = makeWeapon({ martialFamily: 'epee', attackType: 'contact' })
+    const character = makeCharacter({ level: 2, abilities: makeAbilities({ strength: 12 }), martialFormations: ['guerre'] })
+    const weapon = makeWeapon({ martialFamily: 'guerre', attackType: 'contact' })
     // niveau 2 + mod FOR +1 + aventuriers +1 = 4 (pas de malus)
     expect(weaponAttackBonusWithProficiency(weapon, character, 'aventuriers')).toBe(4)
   })
 
   it('non compétent → bonus - 3', () => {
     const character = makeCharacter({ level: 2, abilities: makeAbilities({ strength: 12 }), martialFormations: [] })
-    const weapon = makeWeapon({ martialFamily: 'hache', attackType: 'contact' })
+    const weapon = makeWeapon({ martialFamily: 'hast', attackType: 'contact' })
     expect(weaponAttackBonusWithProficiency(weapon, character, 'aventuriers')).toBe(4 - 3)
   })
 
