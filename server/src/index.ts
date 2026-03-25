@@ -30,6 +30,16 @@ app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
 
+// Request logging
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on("finish", () => {
+    const ms = Date.now() - start;
+    console.log(`[http] ${req.method} ${req.originalUrl} ${res.statusCode} ${ms}ms`);
+  });
+  next();
+});
+
 app.use("/api/auth", authRouter);
 app.use("/api/characters", charactersRouter);
 app.use("/api/sessions", sessionsRouter);
