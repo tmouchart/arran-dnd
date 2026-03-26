@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Swords, Users, DoorOpen, Plus, X, Shield } from 'lucide-vue-next'
+import { Swords, Users, DoorOpen, Plus, X, Shield, BookOpen } from 'lucide-vue-next'
 import { useSession } from '../composables/useSession'
 import { user } from '../composables/useAuth'
 import { patchCharacterHp } from '../api/characters'
-import type { SessionParticipant } from '../api/sessions'
+import { MONSTERS_CATALOG, type Monster } from '../data/monstersCatalog'
+import { findCatalogMonster, filterCatalog } from '../utils/monsterSession'
+import MonsterDetailModal from '../components/session/MonsterDetailModal.vue'
+import type { SessionParticipant, SessionMonster } from '../api/sessions'
 
 const route = useRoute()
 const router = useRouter()
@@ -36,6 +39,33 @@ const myInitiative = ref<number | null>(null)
 async function handleSetInitiative() {
   if (myInitiative.value == null) return
   await setInitiative(myInitiative.value)
+}
+
+// ── Monster detail modal ──
+const selectedMonster = ref<SessionMonster | null>(null)
+const selectedMonsterCatalog = computed<Monster | undefined>(() => {
+  if (!selectedMonster.value) return undefined
+  return findCatalogMonster(selectedMonster.value.name, MONSTERS_CATALOG)
+})
+
+function openMonsterDetail(monster: SessionMonster) {
+  selectedMonster.value = monster
+}
+
+// ── Catalog picker ──
+const catalogSearch = ref('')
+const showCatalogPicker = ref(false)
+
+const filteredCatalog = computed(() =>
+  filterCatalog(catalogSearch.value, MONSTERS_CATALOG),
+)
+
+function pickCatalogMonster(monster: Monster) {
+  monsterName.value = monster.name
+  monsterHpMax.value = monster.pv
+  monsterInitiative.value = monster.init
+  showCatalogPicker.value = false
+  catalogSearch.value = ''
 }
 
 // Ajout de monstre (MJ)
@@ -135,7 +165,11 @@ async function adjustMyHp(p: SessionParticipant, delta: number) {
           <span class="init-badge">
             {{ entry.data.initiative ?? '?' }}
           </span>
-          <span class="entity-name">
+          <span
+            class="entity-name"
+            :class="{ clickable: entry.kind === 'monster' }"
+            @click="entry.kind === 'monster' && openMonsterDetail(entry.data)"
+          >
             {{ entry.kind === 'player' ? entry.data.characterName : entry.data.name }}
           </span>
           <div
@@ -198,7 +232,7 @@ async function adjustMyHp(p: SessionParticipant, delta: number) {
         <!-- Liste monstres existants -->
         <div v-if="session.monsters.length" class="monster-list">
           <div v-for="m in session.monsters" :key="m.id" class="monster-row">
-            <span class="monster-name">{{ m.name }}</span>
+            <span class="monster-name clickable" @click="openMonsterDetail(m)">{{ m.name }}</span>
             <div class="monster-controls">
               <input
                 type="number"
@@ -226,6 +260,40 @@ async function adjustMyHp(p: SessionParticipant, delta: number) {
                 <X :size="14" />
               </button>
             </div>
+          </div>
+        </div>
+
+        <!-- Catalog picker -->
+        <div class="catalog-picker">
+          <button
+            type="button"
+            class="btn catalog-btn"
+            @click="showCatalogPicker = !showCatalogPicker"
+          >
+            <BookOpen :size="15" />
+            Ajouter depuis le catalogue
+          </button>
+          <div v-if="showCatalogPicker" class="catalog-dropdown">
+            <input
+              v-model="catalogSearch"
+              class="input catalog-search"
+              placeholder="Rechercher un monstre…"
+              autofocus
+            />
+            <ul class="catalog-list">
+              <li
+                v-for="m in filteredCatalog"
+                :key="m.name"
+                class="catalog-item"
+                @click="pickCatalogMonster(m)"
+              >
+                <span class="catalog-item-name">{{ m.name }}</span>
+                <span class="catalog-item-meta">NC {{ m.nc }} · {{ m.pv }} PV</span>
+              </li>
+              <li v-if="filteredCatalog.length === 0" class="catalog-empty">
+                Aucun monstre trouvé.
+              </li>
+            </ul>
           </div>
         </div>
 
@@ -295,6 +363,14 @@ async function adjustMyHp(p: SessionParticipant, delta: number) {
       </div>
     </div>
 
+    <!-- Monster detail modal -->
+    <MonsterDetailModal
+      v-if="selectedMonster"
+      :session-monster="selectedMonster"
+      :catalog="selectedMonsterCatalog"
+      :is-gm="isGm"
+      @close="selectedMonster = null"
+    />
   </div>
 </template>
 
@@ -638,6 +714,110 @@ async function adjustMyHp(p: SessionParticipant, delta: number) {
   align-items: center;
   gap: 0.5rem;
   flex-shrink: 0;
+}
+
+/* ── Clickable entity names ── */
+.entity-name.clickable,
+.monster-name.clickable {
+  cursor: pointer;
+  transition: color 120ms ease;
+}
+
+.entity-name.clickable:hover,
+.monster-name.clickable:hover {
+  color: var(--accent-strong);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 2px;
+}
+
+/* ── Catalog picker ── */
+.catalog-picker {
+  position: relative;
+}
+
+.catalog-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.5rem 0.85rem;
+  border-radius: 0.85rem;
+  border: 1.5px dashed var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  cursor: pointer;
+  width: 100%;
+  justify-content: center;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.catalog-btn:hover {
+  background: color-mix(in srgb, var(--accent-soft) 80%, var(--accent));
+}
+
+.catalog-dropdown {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border: 1.5px solid var(--border-strong);
+  border-radius: 1rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  z-index: 50;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.catalog-search {
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  padding: 0.65rem 0.8rem;
+  font-size: 0.88rem;
+}
+
+.catalog-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 14rem;
+  overflow-y: auto;
+}
+
+.catalog-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.8rem;
+  cursor: pointer;
+  transition: background-color 80ms ease;
+}
+
+.catalog-item:hover {
+  background: var(--accent-soft);
+}
+
+.catalog-item-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.catalog-item-meta {
+  font-size: 0.78rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.catalog-empty {
+  padding: 0.8rem;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.85rem;
 }
 
 .empty-state {
