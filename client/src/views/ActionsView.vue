@@ -17,10 +17,16 @@ import {
 import { rollDie, rollDiceNotation } from "../utils/dice";
 import { MARTIAL_WEAPON_CATEGORY_BY_ID } from "../data/martialWeaponCategories";
 import { useRollHistory } from "../composables/useRollHistory";
+import { useDualWield, type SingleHandRoll } from "../composables/useDualWield";
 import AgonieModal from "../components/AgonieModal.vue";
 
 const { character, loading, loadError, computedAttackContact, computedAttackDistance, computedAttackMagique, computedHp, computedMp, computedDef, computedInitiative, computedPcMax, computedHpDv, computedHpConMod, abilityModifier } = useCharacter();
 const { addRoll } = useRollHistory();
+const {
+  dualWieldRoll, dualWieldError,
+  hasDualWieldVoie,
+  isFinesseWeapon, weaponAttackBonus, setHandRole, rollDualWieldAction,
+} = useDualWield(character, computedAttackContact, computedAttackDistance, abilityModifier);
 
 onMounted(() => {
   if (!character.value.id) loadCharacter();
@@ -181,9 +187,10 @@ const hasPassifs = computed(() => {
 const weaponBubbles = computed(() => {
   const c = character.value;
   return c.weapons.map((w) => {
-    const base = w.attackType === 'contact' ? computedAttackContact.value : computedAttackDistance.value;
+    const finesse = isFinesseWeapon(w);
+    const baseBonus = weaponAttackBonus(w);
     const incompetent = !isMartialWeaponProficient(w, c.martialFormations);
-    const total = incompetent ? base - 3 : base;
+    const total = incompetent ? baseBonus - 3 : baseBonus;
     return {
       w,
       hitDisplay: `d20 ${total >= 0 ? "+" : ""}${total} (vs DEF de la cible)`,
@@ -194,6 +201,7 @@ const weaponBubbles = computed(() => {
       ),
       rangeDisplay: w.rangeMeters != null ? `${w.rangeMeters} m` : null,
       incompetent,
+      isFinesseWeapon: finesse,
     };
   });
 });
@@ -343,9 +351,9 @@ const lastRolledAbilityKey = ref<string | null>(null);
 const manoeuverRolls = reactive<Record<string, ActionRollResult>>({});
 
 function rollWeapon(item: (typeof weaponBubbles.value)[number]) {
-  const bonus = item.w.attackType === 'contact' ? computedAttackContact.value : computedAttackDistance.value;
+  const effectiveBonus = weaponAttackBonus(item.w);
   const incompetentPenalty = item.incompetent ? -3 : 0;
-  const attackBonus = bonus + incompetentPenalty;
+  const attackBonus = effectiveBonus + incompetentPenalty;
   const attackDie = rollDie(20);
   const attackTotal = attackDie + attackBonus;
 
@@ -375,7 +383,36 @@ function rollWeapon(item: (typeof weaponBubbles.value)[number]) {
   });
 }
 
+function rollDualWield() {
+  const result = rollDualWieldAction();
+  if (!result) return;
+
+  const c = character.value;
+  addRoll({
+    characterName: c.name,
+    kind: 'weapon',
+    label: `${result.mainHand.weaponName} (main directrice)`,
+    die: result.mainHand.attackDie,
+    bonus: result.mainHand.attackBonus,
+    total: result.mainHand.attackTotal,
+    damage: { total: result.mainHand.damageTotal, critical: result.mainHand.attackDie === 20, fumble: result.mainHand.attackDie === 1 },
+  });
+  addRoll({
+    characterName: c.name,
+    kind: 'weapon',
+    label: `${result.offHand.weaponName} (main faible)`,
+    die: result.offHand.attackDie,
+    bonus: result.offHand.attackBonus,
+    total: result.offHand.attackTotal,
+    damage: { total: result.offHand.damageTotal, critical: false, fumble: result.offHand.attackDie === 1 },
+  });
+}
+
 function rollAction(action: Action) {
+  if (action.name === 'Combat à deux armes') {
+    return rollDualWield();
+  }
+
   const bonus = computeBonus(action.attackType);
   if (bonus === null) return;
 
@@ -412,7 +449,7 @@ function rollAction(action: Action) {
   });
 }
 
-function spendLuck(roll: WeaponRollResult | ActionRollResult, mode: 'reroll' | 'add10') {
+function spendLuck(roll: WeaponRollResult | ActionRollResult | SingleHandRoll, mode: 'reroll' | 'add10'): void {
   if (character.value.pcCurrent <= 0 || roll.luckUsed) return;
   if (mode === 'reroll') {
     roll.attackDie = rollDie(20);
@@ -679,6 +716,18 @@ function confirmerRepos() {
         </p>
         <p v-if="item.w.notes" class="action-description">{{ item.w.notes }}</p>
 
+        <div v-if="hasDualWieldVoie && item.w.attackType === 'contact'" class="hand-role-selector">
+          <button
+            v-for="role in ([null, 'main', 'offhand'] as const)"
+            :key="role ?? 'none'"
+            type="button"
+            :class="['hand-role-btn', { active: item.w.handRole === role || (!item.w.handRole && role === null) }]"
+            @click="setHandRole(item.w, role)"
+          >
+            {{ role === null ? '—' : role === 'main' ? 'Main directrice' : 'Main faible' }}
+          </button>
+        </div>
+
         <template v-if="weaponRolls[item.w.id]">
           <div
             class="roll-result"
@@ -761,7 +810,70 @@ function confirmerRepos() {
 
         <p class="action-description">{{ action.description }}</p>
 
-        <template v-if="actionRolls[action.source + '-' + action.name]">
+        <!-- Résultat spécial : Combat à deux armes -->
+        <template v-if="action.name === 'Combat à deux armes'">
+          <p v-if="dualWieldError" class="weapon-incompetent-hint">
+            Désignez une main directrice et une main faible dans la liste des armes.
+          </p>
+          <template v-if="dualWieldRoll">
+            <!-- Main directrice (d20) -->
+            <div
+              class="roll-result"
+              :class="{
+                'roll-result--fumble': dualWieldRoll.mainHand.attackDie === 1,
+                'roll-result--critical': dualWieldRoll.mainHand.attackDie === 20,
+              }"
+            >
+              <span class="roll-result__hand-label">Main directrice · {{ dualWieldRoll.mainHand.weaponName }}</span>
+              <span class="roll-result__attack">
+                Attaque : <strong>{{ dualWieldRoll.mainHand.attackTotal }}</strong>
+                <span class="roll-result__detail">(d20 {{ signedNum(dualWieldRoll.mainHand.attackBonus) }})</span>
+              </span>
+              <span v-if="dualWieldRoll.mainHand.attackDie === 1" class="roll-result__crit-label">Échec critique</span>
+              <template v-else-if="dualWieldRoll.mainHand.attackDie === 20">
+                <span class="roll-result__crit-label">Réussite critique</span>
+                <span class="roll-result__damage">
+                  Dégâts : <strong>{{ dualWieldRoll.mainHand.damageTotal * 2 }}</strong>
+                  <span class="roll-result__detail">({{ dualWieldRoll.mainHand.damageRolls.join('+') }}{{ dualWieldRoll.mainHand.damageModifier !== 0 ? ' ' + signedNum(dualWieldRoll.mainHand.damageModifier) : '' }} × 2)</span>
+                </span>
+              </template>
+              <span v-else class="roll-result__damage">
+                Dégâts : <strong>{{ dualWieldRoll.mainHand.damageTotal }}</strong>
+                <span class="roll-result__detail">({{ dualWieldRoll.mainHand.damageRolls.join('+') }}{{ dualWieldRoll.mainHand.damageModifier !== 0 ? ' ' + signedNum(dualWieldRoll.mainHand.damageModifier) : '' }})</span>
+              </span>
+            </div>
+            <div v-if="!dualWieldRoll.mainHand.luckUsed && character.pcCurrent > 0" class="luck-box">
+              <span class="luck-box__title"><Sparkles :size="13" /> Utiliser la chance <span class="luck-box__pc">{{ character.pcCurrent }} PC</span></span>
+              <div class="luck-box__actions">
+                <button type="button" class="luck-btn" @click="spendLuck(dualWieldRoll.mainHand, 'reroll')">
+                  <RefreshCw :size="13" /> Relancer le d20
+                </button>
+                <button type="button" class="luck-btn" @click="spendLuck(dualWieldRoll.mainHand, 'add10')">
+                  +10 au résultat
+                </button>
+              </div>
+            </div>
+            <!-- Main faible (d12) -->
+            <div
+              class="roll-result roll-result--offhand"
+              :class="{ 'roll-result--fumble': dualWieldRoll.offHand.attackDie === 1 }"
+            >
+              <span class="roll-result__hand-label">Main faible · {{ dualWieldRoll.offHand.weaponName }}</span>
+              <span class="roll-result__attack">
+                Attaque : <strong>{{ dualWieldRoll.offHand.attackTotal }}</strong>
+                <span class="roll-result__detail">(d12 {{ signedNum(dualWieldRoll.offHand.attackBonus) }})</span>
+              </span>
+              <span v-if="dualWieldRoll.offHand.attackDie === 1" class="roll-result__crit-label">Échec critique</span>
+              <span v-else class="roll-result__damage">
+                Dégâts : <strong>{{ dualWieldRoll.offHand.damageTotal }}</strong>
+                <span class="roll-result__detail">({{ dualWieldRoll.offHand.damageRolls.join('+') }}{{ dualWieldRoll.offHand.damageModifier !== 0 ? ' ' + signedNum(dualWieldRoll.offHand.damageModifier) : '' }})</span>
+              </span>
+            </div>
+          </template>
+        </template>
+
+        <!-- Résultat standard pour toutes les autres actions -->
+        <template v-else-if="actionRolls[action.source + '-' + action.name]">
           <div class="roll-result">
             <span class="roll-result__attack">
               Attaque : <strong>{{ actionRolls[action.source + '-' + action.name].attackTotal }}</strong>
@@ -784,7 +896,7 @@ function confirmerRepos() {
         <div class="action-footer">
           <div class="action-source">{{ action.source }}</div>
           <button
-            v-if="action.attackType"
+            v-if="action.attackType || action.name === 'Combat à deux armes'"
             type="button"
             class="roll-btn"
             @click="rollAction(action)"
@@ -1848,6 +1960,47 @@ function confirmerRepos() {
 
 .roll-result--critical .roll-result__crit-label {
   color: #c8950a;
+}
+
+/* ── Combat à deux armes : sélecteur de rôle ───────────────────────────── */
+
+.hand-role-selector {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.hand-role-btn {
+  flex: 1;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 0.72rem;
+  cursor: pointer;
+  background: transparent;
+  color: var(--muted);
+}
+
+.hand-role-btn.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+/* ── Main faible (offhand) ──────────────────────────────────────────────── */
+
+.roll-result--offhand {
+  border-style: dashed;
+  opacity: 0.92;
+}
+
+.roll-result__hand-label {
+  width: 100%;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
 /* ── Box "Utiliser la chance" ───────────────────────────────────────────── */

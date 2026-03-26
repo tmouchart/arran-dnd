@@ -44,7 +44,7 @@ export const VOIES: Voie[] = [
     name: 'Voie du combat à deux armes',
     family: 'combattants',
     capacites: [
-      { name: 'Combat à deux armes', description: "Attaque de chaque main : d20 pour la main directrice, d12 pour la main faible (arme légère max d6 DM).", active: true },
+      { name: 'Combat à deux armes', description: "Action limitée. Attaque de chaque main : d20 pour la main directrice, d12 pour la main faible (arme légère max d6 DM). Désignez vos armes dans la liste ci-dessus.", active: true },
       { name: 'Parade croisée', description: "+2 DEF ce tour avec une seule attaque. Résultat pair = main principale, impair = main faible.", active: true },
       { name: 'Symétrie', description: "Plus obligé de manier une arme légère en main faible (jusqu'à d8). Deux armes légères accordent un bonus supplémentaire.", active: false },
       { name: 'Double peine', description: "Si les deux armes atteignent la cible le même tour, +1d6 DM sur l'une des deux attaques.", active: false },
