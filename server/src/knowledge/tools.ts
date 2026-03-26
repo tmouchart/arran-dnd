@@ -14,6 +14,7 @@ export const TOPIC_NAMES = [
   "races",
   "voies-de-profil",
   "voies-de-prestige",
+  "bestiaire",
 ] as const;
 
 export type TopicName = (typeof TOPIC_NAMES)[number];
@@ -44,7 +45,8 @@ export const anthropicTool: Anthropic.Tool = {
           "- monde-lore-peuples-autres : Orcs, Gobelins, Ogres, Trolls, Centaures — lore narratif\n" +
           "- races : fiches détaillées des peuples/races avec voies culturelles complètes\n" +
           "- voies-de-profil : voies liées aux profils (guerrier, rôdeur, mage, etc.)\n" +
-          "- voies-de-prestige : voies de prestige avancées",
+          "- voies-de-prestige : voies de prestige avancées\n" +
+          "- bestiaire : fiches complètes des monstres et créatures (stats, attaques, capacités)",
       },
     },
     required: ["topic"],
@@ -79,7 +81,8 @@ export const geminiTool: GeminiTool = {
               "- monde-lore-peuples-autres : Orcs, Gobelins, Ogres, Trolls, Centaures — lore narratif\n" +
               "- races : fiches détaillées des peuples/races avec voies culturelles complètes\n" +
               "- voies-de-profil : voies liées aux profils (guerrier, rôdeur, mage, etc.)\n" +
-              "- voies-de-prestige : voies de prestige avancées",
+              "- voies-de-prestige : voies de prestige avancées\n" +
+          "- bestiaire : fiches complètes des monstres et créatures (stats, attaques, capacités)",
           },
         },
         required: ["topic"],
