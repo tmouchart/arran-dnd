@@ -156,6 +156,12 @@ function buildCharacterSection(c: CharacterPayload): string {
       : "";
 
   const abilities = (c.abilities as Record<string, number> | undefined) ?? {};
+  const mod = (score: number | string) =>
+    typeof score === "number" ? Math.floor((score - 10) / 2) : "?";
+  const fmtMod = (score: number | string) => {
+    const m = mod(score);
+    return typeof m === "number" ? (m >= 0 ? `+${m}` : `${m}`) : "?";
+  };
   const str = abilities.strength ?? "?";
   const dex = abilities.dexterity ?? "?";
   const con = abilities.constitution ?? "?";
@@ -256,7 +262,7 @@ function buildCharacterSection(c: CharacterPayload): string {
   return `## Personnage actif
 
 Tu t'adresses à **${name}**${people ? `, ${people}` : ""}${profile ? `, profil ${profile}` : ""}, niveau ${level}.
-Stats : FOR ${str} / DEX ${dex} / CON ${con} / INT ${int_} / SAG ${wis} / CHA ${cha}
+Stats : FOR ${str} (${fmtMod(str)}) / DEX ${dex} (${fmtMod(dex)}) / CON ${con} (${fmtMod(con)}) / INT ${int_} (${fmtMod(int_)}) / SAG ${wis} (${fmtMod(wis)}) / CHA ${cha} (${fmtMod(cha)})
 ${pvPmLine} | Défense ${defense}${extraBlocks ? `\n${extraBlocks}` : ""}
 Voies : ${pathsStr}
 Compétences : ${skillsStr}${histoireBlock}
