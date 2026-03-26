@@ -16,12 +16,17 @@ import {
 } from "../utils/attackBonus";
 import { rollDie, rollDiceNotation } from "../utils/dice";
 import { MARTIAL_WEAPON_CATEGORY_BY_ID } from "../data/martialWeaponCategories";
-import type { WeaponRow } from "../types/character";
 import { useRollHistory } from "../composables/useRollHistory";
+import { useDualWield, type SingleHandRoll } from "../composables/useDualWield";
 import AgonieModal from "../components/AgonieModal.vue";
 
 const { character, loading, loadError, computedAttackContact, computedAttackDistance, computedAttackMagique, computedHp, computedMp, computedDef, computedInitiative, computedPcMax, computedHpDv, computedHpConMod, abilityModifier } = useCharacter();
 const { addRoll } = useRollHistory();
+const {
+  dualWieldRoll, dualWieldError,
+  hasDualWieldVoie,
+  isFinesseWeapon, weaponAttackBonus, setHandRole, rollDualWieldAction,
+} = useDualWield(character, computedAttackContact, computedAttackDistance, abilityModifier);
 
 onMounted(() => {
   if (!character.value.id) loadCharacter();
@@ -32,16 +37,6 @@ function retryLoad() {
 }
 
 const profileFamily = computed(() => inferProfileFamily(character.value.paths));
-
-// ── Helpers voies ─────────────────────────────────────────────────────────────
-
-function hasVoie(id: string, minRank = 1): boolean {
-  return character.value.paths.some(p => p.id === id && p.rank >= minRank);
-}
-
-function isDaggerWeapon(w: WeaponRow): boolean {
-  return w.id === 'dague' || (w.notes?.toLowerCase().includes('dague') ?? false);
-}
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -189,24 +184,11 @@ const hasPassifs = computed(() => {
   });
 });
 
-const hasFinesseVoie = computed(() => hasVoie('voie-de-lescrime'));
-const hasDualWieldVoie = computed(() => hasVoie('voie-du-combat-a-deux-armes'));
-const contactWeapons = computed(() =>
-  character.value.weapons.filter(w => w.attackType === 'contact')
-);
-
 const weaponBubbles = computed(() => {
   const c = character.value;
   return c.weapons.map((w) => {
-    const isFinesseWeapon =
-      hasFinesseVoie.value &&
-      w.attackType === 'contact' &&
-      (w.martialFamily === 'duel' || isDaggerWeapon(w));
-    const baseBonus = w.attackType === 'contact'
-      ? (isFinesseWeapon
-          ? Math.max(computedAttackContact.value, computedAttackDistance.value)
-          : computedAttackContact.value)
-      : computedAttackDistance.value;
+    const finesse = isFinesseWeapon(w);
+    const baseBonus = weaponAttackBonus(w);
     const incompetent = !isMartialWeaponProficient(w, c.martialFormations);
     const total = incompetent ? baseBonus - 3 : baseBonus;
     return {
@@ -219,7 +201,7 @@ const weaponBubbles = computed(() => {
       ),
       rangeDisplay: w.rangeMeters != null ? `${w.rangeMeters} m` : null,
       incompetent,
-      isFinesseWeapon,
+      isFinesseWeapon: finesse,
     };
   });
 });
@@ -362,48 +344,14 @@ interface ActionRollResult {
   luckUsed: boolean;
 }
 
-interface SingleHandRoll {
-  weaponName: string;
-  attackDie: number;
-  attackBonus: number;
-  attackTotal: number;
-  damageDice: string;
-  damageRolls: number[];
-  damageModifier: number;
-  damageTotal: number;
-  luckUsed: boolean;
-}
-
-interface OffHandRoll {
-  weaponName: string;
-  attackDie: number; // d12
-  attackBonus: number;
-  attackTotal: number;
-  damageDice: string;
-  damageRolls: number[];
-  damageModifier: number;
-  damageTotal: number;
-}
-
-interface DualWieldRoll {
-  mainHand: SingleHandRoll;
-  offHand: OffHandRoll;
-}
-
 const weaponRolls = reactive<Record<string, WeaponRollResult>>({});
 const actionRolls = reactive<Record<string, ActionRollResult>>({});
 const abilityRolls = reactive<Record<string, ActionRollResult>>({});
 const lastRolledAbilityKey = ref<string | null>(null);
 const manoeuverRolls = reactive<Record<string, ActionRollResult>>({});
-const dualWieldRoll = ref<DualWieldRoll | null>(null);
-const dualWieldError = ref(false);
 
 function rollWeapon(item: (typeof weaponBubbles.value)[number]) {
-  const effectiveBonus = item.w.attackType === 'contact'
-    ? (item.isFinesseWeapon
-        ? Math.max(computedAttackContact.value, computedAttackDistance.value)
-        : computedAttackContact.value)
-    : computedAttackDistance.value;
+  const effectiveBonus = weaponAttackBonus(item.w);
   const incompetentPenalty = item.incompetent ? -3 : 0;
   const attackBonus = effectiveBonus + incompetentPenalty;
   const attackDie = rollDie(20);
@@ -435,86 +383,28 @@ function rollWeapon(item: (typeof weaponBubbles.value)[number]) {
   });
 }
 
-function setHandRole(weapon: WeaponRow, role: 'main' | 'offhand' | null) {
-  if (role !== null) {
-    character.value.weapons.forEach(w => {
-      if (w.attackType === 'contact' && w.id !== weapon.id && w.handRole === role) {
-        w.handRole = undefined;
-      }
-    });
-  }
-  weapon.handRole = role ?? undefined;
-}
-
 function rollDualWield() {
-  const mainWeapon = contactWeapons.value.find(w => w.handRole === 'main');
-  const offWeapon = contactWeapons.value.find(w => w.handRole === 'offhand');
-
-  if (!mainWeapon || !offWeapon) {
-    dualWieldError.value = true;
-    return;
-  }
-  dualWieldError.value = false;
+  const result = rollDualWieldAction();
+  if (!result) return;
 
   const c = character.value;
-
-  // Main directrice — d20
-  const mainBonus = computedAttackContact.value +
-    (!isMartialWeaponProficient(mainWeapon, c.martialFormations) ? -3 : 0);
-  const mainDie = rollDie(20);
-  const mainDamAbility = mainWeapon.damageAbility
-    ? abilityModifier(c.abilities[mainWeapon.damageAbility]) : 0;
-  const mainDmg = rollDiceNotation(mainWeapon.damageDice, mainDamAbility);
-
-  // Main faible — d12
-  const offBonus = computedAttackContact.value +
-    (!isMartialWeaponProficient(offWeapon, c.martialFormations) ? -3 : 0);
-  const offDie = rollDie(12);
-  const offDamAbility = offWeapon.damageAbility
-    ? abilityModifier(c.abilities[offWeapon.damageAbility]) : 0;
-  const offDmg = rollDiceNotation(offWeapon.damageDice, offDamAbility);
-
-  dualWieldRoll.value = {
-    mainHand: {
-      weaponName: mainWeapon.name || 'Arme',
-      attackDie: mainDie,
-      attackBonus: mainBonus,
-      attackTotal: mainDie + mainBonus,
-      damageDice: mainWeapon.damageDice,
-      damageRolls: mainDmg.rolls,
-      damageModifier: mainDamAbility,
-      damageTotal: mainDmg.total,
-      luckUsed: false,
-    },
-    offHand: {
-      weaponName: offWeapon.name || 'Arme',
-      attackDie: offDie,
-      attackBonus: offBonus,
-      attackTotal: offDie + offBonus,
-      damageDice: offWeapon.damageDice,
-      damageRolls: offDmg.rolls,
-      damageModifier: offDamAbility,
-      damageTotal: offDmg.total,
-    },
-  };
-
   addRoll({
     characterName: c.name,
     kind: 'weapon',
-    label: `${mainWeapon.name || 'Arme'} (main directrice)`,
-    die: mainDie,
-    bonus: mainBonus,
-    total: mainDie + mainBonus,
-    damage: { total: mainDmg.total, critical: mainDie === 20, fumble: mainDie === 1 },
+    label: `${result.mainHand.weaponName} (main directrice)`,
+    die: result.mainHand.attackDie,
+    bonus: result.mainHand.attackBonus,
+    total: result.mainHand.attackTotal,
+    damage: { total: result.mainHand.damageTotal, critical: result.mainHand.attackDie === 20, fumble: result.mainHand.attackDie === 1 },
   });
   addRoll({
     characterName: c.name,
     kind: 'weapon',
-    label: `${offWeapon.name || 'Arme'} (main faible)`,
-    die: offDie,
-    bonus: offBonus,
-    total: offDie + offBonus,
-    damage: { total: offDmg.total, critical: false, fumble: offDie === 1 },
+    label: `${result.offHand.weaponName} (main faible)`,
+    die: result.offHand.attackDie,
+    bonus: result.offHand.attackBonus,
+    total: result.offHand.attackTotal,
+    damage: { total: result.offHand.damageTotal, critical: false, fumble: result.offHand.attackDie === 1 },
   });
 }
 
@@ -559,7 +449,7 @@ function rollAction(action: Action) {
   });
 }
 
-function spendLuck(roll: WeaponRollResult | ActionRollResult | SingleHandRoll, mode: 'reroll' | 'add10') {
+function spendLuck(roll: WeaponRollResult | ActionRollResult | SingleHandRoll, mode: 'reroll' | 'add10'): void {
   if (character.value.pcCurrent <= 0 || roll.luckUsed) return;
   if (mode === 'reroll') {
     roll.attackDie = rollDie(20);
