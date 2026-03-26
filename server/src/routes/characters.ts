@@ -134,6 +134,7 @@ router.put('/:id', async (req, res) => {
     hpMax: number
     hpCurrent: number
     mpMax: number
+    mpCurrent: number
     defense: number
     initiativeBonus: number
     attackContactBonus: number

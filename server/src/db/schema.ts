@@ -47,6 +47,7 @@ export const characters = pgTable(
     hpMax: integer('hp_max').notNull().default(10),
     hpCurrent: integer('hp_current').notNull().default(10),
     mpMax: integer('mp_max').notNull().default(0),
+    mpCurrent: integer('mp_current').notNull().default(0),
     defense: integer('defense').notNull().default(12),
     initiativeBonus: integer('initiative_bonus').notNull().default(0),
 
