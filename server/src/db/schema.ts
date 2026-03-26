@@ -72,6 +72,12 @@ export const characters = pgTable(
     shieldId: text('shield_id'),
     /** Miscellaneous DEF bonus (abilities, magic, etc.) */
     defenseBonus: integer('defense_bonus').notNull().default(0),
+    /** Miscellaneous attack contact bonus */
+    attackContactBonus: integer('attack_contact_bonus').notNull().default(0),
+    /** Miscellaneous attack distance bonus */
+    attackDistanceBonus: integer('attack_distance_bonus').notNull().default(0),
+    /** Miscellaneous attack magique bonus */
+    attackMagiqueBonus: integer('attack_magique_bonus').notNull().default(0),
 
     /** Raw die rolls for HP gained at each level >= 2 (CON mod is computed live). Length = level - 1. */
     hpLevelGains: jsonb('hp_level_gains').notNull().default([]),

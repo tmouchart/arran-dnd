@@ -63,6 +63,9 @@ router.post('/', async (req, res) => {
     mpMax: number
     defense: number
     initiativeBonus: number
+    attackContactBonus: number
+    attackDistanceBonus: number
+    attackMagiqueBonus: number
     str: number; dex: number; con: number; int: number; wis: number; cha: number
     skills: SkillRow[]
     weapons: WeaponRow[]
@@ -132,6 +135,9 @@ router.put('/:id', async (req, res) => {
     mpMax: number
     defense: number
     initiativeBonus: number
+    attackContactBonus: number
+    attackDistanceBonus: number
+    attackMagiqueBonus: number
     str: number; dex: number; con: number; int: number; wis: number; cha: number
     skills: SkillRow[]
     weapons: WeaponRow[]

@@ -30,6 +30,9 @@ export interface ServerCharacter {
   armorId: string | null | undefined
   shieldId: string | null | undefined
   defenseBonus: number | undefined
+  attackContactBonus: number | undefined
+  attackDistanceBonus: number | undefined
+  attackMagiqueBonus: number | undefined
   hpLevelGains: number[] | undefined
   items: Character['items'] | undefined
   goldCoins: number | undefined

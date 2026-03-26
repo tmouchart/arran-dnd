@@ -56,8 +56,7 @@ function toCharacter(s: ServerCharacter): Character {
     mpCurrent: loadCurrentMp(s.mpMax),
     mpMax: s.mpMax,
     defense: s.defense,
-    // CO / Terres d’Arran: initiative score equals DEX value (see creation-personnage.md)
-    initiativeBonus: s.dex,
+    initiativeBonus: s.initiativeBonus ?? 0,
     skills: s.skills,
     weapons: Array.isArray(s.weapons) ? s.weapons : [],
     martialFormations: Array.isArray(s.martialFormations)
@@ -68,6 +67,9 @@ function toCharacter(s: ServerCharacter): Character {
     armorId: s.armorId ?? '',
     shieldId: s.shieldId ?? '',
     defenseBonus: s.defenseBonus ?? 0,
+    attackContactBonus: s.attackContactBonus ?? 0,
+    attackDistanceBonus: s.attackDistanceBonus ?? 0,
+    attackMagiqueBonus: s.attackMagiqueBonus ?? 0,
     hpLevelGains: Array.isArray(s.hpLevelGains) ? (s.hpLevelGains as number[]) : [],
     items: Array.isArray(s.items) ? s.items : [],
     goldCoins: s.goldCoins ?? 0,
@@ -90,7 +92,7 @@ function toServerPayload(c: Character): Omit<ServerCharacter, 'id' | 'userId' | 
     hpCurrent: c.hpCurrent,
     mpMax: c.mpMax,
     defense: c.defense,
-    initiativeBonus: c.abilities.dexterity,
+    initiativeBonus: c.initiativeBonus,
     str: c.abilities.strength,
     dex: c.abilities.dexterity,
     con: c.abilities.constitution,
@@ -105,6 +107,9 @@ function toServerPayload(c: Character): Omit<ServerCharacter, 'id' | 'userId' | 
     armorId: c.armorId || null,
     shieldId: c.shieldId || null,
     defenseBonus: c.defenseBonus,
+    attackContactBonus: c.attackContactBonus,
+    attackDistanceBonus: c.attackDistanceBonus,
+    attackMagiqueBonus: c.attackMagiqueBonus,
     hpLevelGains: c.hpLevelGains,
     items: c.items,
     goldCoins: c.goldCoins,
@@ -130,7 +135,7 @@ export function createDefaultCharacter(): Character {
     mpCurrent: 0,
     mpMax: 0,
     defense: 12,
-    initiativeBonus: 10,
+    initiativeBonus: 0,
     skills: [],
     martialFormations: [],
     weapons: [],
@@ -139,6 +144,9 @@ export function createDefaultCharacter(): Character {
     armorId: '',
     shieldId: '',
     defenseBonus: 0,
+    attackContactBonus: 0,
+    attackDistanceBonus: 0,
+    attackMagiqueBonus: 0,
     hpLevelGains: [],
     items: [],
     goldCoins: 0,
@@ -153,13 +161,6 @@ export function createDefaultCharacter(): Character {
 const character = ref<Character>(createDefaultCharacter())
 const serverId = ref<number | null>(null)
 
-
-watch(
-  () => character.value.abilities.dexterity,
-  (dex) => {
-    character.value.initiativeBonus = dex
-  },
-)
 
 /** Computed DEF = 10 + mod DEX (si armure non encombrante) + bonus armure + bonus bouclier + bonus divers */
 export const computedDef = computed(() => {
@@ -242,7 +243,7 @@ export const computedInitiative = computed(() => {
   const c = character.value
   const armor = c.armorId ? ARMORS_BY_ID[c.armorId] : null
   const shield = c.shieldId ? SHIELDS_BY_ID[c.shieldId] : null
-  return c.abilities.dexterity - (armor?.defBonus ?? 0) - (shield?.defBonus ?? 0)
+  return c.abilities.dexterity - (armor?.defBonus ?? 0) - (shield?.defBonus ?? 0) + (c.initiativeBonus ?? 0)
 })
 
 /** PC max = 2 + Mod. CHA + (aventuriers : +2). */
@@ -272,7 +273,7 @@ export const computedAttackContact = computed(() => {
   const c = character.value
   const forMod = Math.floor((c.abilities.strength - 10) / 2)
   const bonus = familyAttackBonus(inferProfileFamily(c.paths))
-  return c.level + forMod + bonus.contact
+  return c.level + forMod + bonus.contact + (c.attackContactBonus ?? 0)
 })
 
 /**
@@ -285,7 +286,7 @@ export const computedAttackDistance = computed(() => {
   const shield = c.shieldId ? SHIELDS_BY_ID[c.shieldId] : null
   const equipPenalty = Math.floor(((armor?.defBonus ?? 0) + (shield?.defBonus ?? 0)) / 2)
   const bonus = familyAttackBonus(inferProfileFamily(c.paths))
-  return c.level + dexMod + bonus.distance - equipPenalty
+  return c.level + dexMod + bonus.distance - equipPenalty + (c.attackDistanceBonus ?? 0)
 })
 
 /**
@@ -298,7 +299,7 @@ export const computedAttackMagique = computed(() => {
   const shield = c.shieldId ? SHIELDS_BY_ID[c.shieldId] : null
   const equipPenalty = (armor?.defBonus ?? 0) + (shield?.defBonus ?? 0)
   const bonus = familyAttackBonus(inferProfileFamily(c.paths))
-  return c.level + intMod + bonus.magique - equipPenalty
+  return c.level + intMod + bonus.magique - equipPenalty + (c.attackMagiqueBonus ?? 0)
 })
 
 // Sync computed HP → character.hpMax

@@ -81,6 +81,12 @@ export interface Character {
   shieldId: string
   /** Bonus de DEF divers (capacités, magie, situations…) saisi manuellement */
   defenseBonus: number
+  /** Bonus divers d'attaque au contact */
+  attackContactBonus: number
+  /** Bonus divers d'attaque à distance */
+  attackDistanceBonus: number
+  /** Bonus divers d'attaque magique */
+  attackMagiqueBonus: number
   /** Raw die rolls for HP gained at each level >= 2. Length = level - 1. CON mod is computed live. */
   hpLevelGains: number[]
   /** Inventory items. */

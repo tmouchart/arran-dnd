@@ -84,6 +84,11 @@ const defDexTooltip = computed(() => {
               <span class="def-chip-value">+{{ familyBonusContact }}</span>
             </div>
           </template>
+          <span class="def-op">+</span>
+          <label class="def-chip def-chip--editable" title="Bonus divers (capacités, magie…)">
+            <span class="def-chip-label">Bonus</span>
+            <input v-model.number="character.attackContactBonus" type="number" class="def-bonus-input" placeholder="0" />
+          </label>
         </div>
       </div>
 
@@ -119,6 +124,11 @@ const defDexTooltip = computed(() => {
               <span class="def-chip-value">{{ armorPenaltyDistance }}</span>
             </div>
           </template>
+          <span class="def-op">+</span>
+          <label class="def-chip def-chip--editable" title="Bonus divers (capacités, magie…)">
+            <span class="def-chip-label">Bonus</span>
+            <input v-model.number="character.attackDistanceBonus" type="number" class="def-bonus-input" placeholder="0" />
+          </label>
         </div>
       </div>
 
@@ -154,6 +164,11 @@ const defDexTooltip = computed(() => {
               <span class="def-chip-value">{{ armorPenaltyMagique }}</span>
             </div>
           </template>
+          <span class="def-op">+</span>
+          <label class="def-chip def-chip--editable" title="Bonus divers (capacités, magie…)">
+            <span class="def-chip-label">Bonus</span>
+            <input v-model.number="character.attackMagiqueBonus" type="number" class="def-bonus-input" placeholder="0" />
+          </label>
         </div>
       </div>
 
@@ -220,6 +235,11 @@ const defDexTooltip = computed(() => {
               <span class="def-chip-value">{{ shield.defBonus }}</span>
             </div>
           </template>
+          <span class="def-op">+</span>
+          <label class="def-chip def-chip--editable" title="Bonus divers (capacités, magie…)">
+            <span class="def-chip-label">Bonus</span>
+            <input v-model.number="character.initiativeBonus" type="number" class="def-bonus-input" placeholder="0" />
+          </label>
         </div>
       </div>
 
