@@ -200,8 +200,8 @@ si une capacité limitée est répétée sur une même cible durant un même com
 
 Quand une attaque réussit :
 1. lancer le dé de dommages de l’arme ou du sort,
-2. ajouter un modificateur de dommages selon le type :
-FOR au contact, INT ou SAG pour la magie,
+2. ajouter le **modificateur** de la caractéristique correspondante (pas la valeur brute !) :
+Mod. de FOR au contact, Mod. d'INT ou de SAG pour la magie (rappel : Mod. = (score − 10) ÷ 2, arrondi inf.),
 3. soustraire aux PV de la cible.
 
 En réussite critique : les DM sont doublés.
