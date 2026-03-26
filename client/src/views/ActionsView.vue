@@ -602,10 +602,8 @@ function confirmerRepos() {
           @click="rollAbility(ab.key)"
         >
           <span class="ch-ab-label">{{ ab.label }}</span>
-          <div class="ch-ab-row">
-            <span class="ch-ab-score">{{ character.abilities[ab.key] }}</span>
-            <span class="ch-ab-mod" :class="abilityModifier(character.abilities[ab.key]) > 0 ? 'mod-pos' : abilityModifier(character.abilities[ab.key]) < 0 ? 'mod-neg' : 'mod-zero'">({{ modDisplay(character.abilities[ab.key]) }})</span>
-          </div>
+          <span class="ch-ab-mod" :class="abilityModifier(character.abilities[ab.key]) > 0 ? 'mod-pos' : abilityModifier(character.abilities[ab.key]) < 0 ? 'mod-neg' : 'mod-zero'">{{ modDisplay(character.abilities[ab.key]) }}</span>
+          <span class="ch-ab-score">{{ character.abilities[ab.key] }}</span>
         </div>
       </div>
       <div v-if="lastRolledAbilityKey && abilityRolls[lastRolledAbilityKey]" class="ability-roll-zone">
@@ -1311,25 +1309,19 @@ function confirmerRepos() {
   color: var(--muted);
 }
 
-.ch-ab-row {
-  display: flex;
-  align-items: baseline;
-  gap: 0.2rem;
+.ch-ab-mod {
+  font-size: 1.1rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
 }
 
 .ch-ab-score {
-  font-size: 1.05rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.1;
-  color: var(--fg);
-}
-
-.ch-ab-mod {
-  font-size: 0.72rem;
+  font-size: 0.65rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: var(--muted);
+  line-height: 1;
 }
 
 .mod-pos { color: #3a8a4a; }
