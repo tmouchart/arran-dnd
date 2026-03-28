@@ -577,7 +577,7 @@ function clearChat() {
 
 @media (max-width: 600px) {
   .content {
-    font-size: 14px;
+    font-size: 15px;
   }
 }
 </style>
