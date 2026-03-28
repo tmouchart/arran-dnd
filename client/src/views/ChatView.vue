@@ -74,6 +74,7 @@ const TOPIC_LABELS: Record<string, string> = {
 };
 
 function toolUseLabel(entry: ToolUseEntry): string {
+  if (entry.label) return entry.label;
   if (entry.tool === "load_knowledge" && entry.topic) {
     return `Consulté les astres : ${TOPIC_LABELS[entry.topic] ?? entry.topic}`;
   }

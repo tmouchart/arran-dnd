@@ -114,5 +114,32 @@ export const geminiTool: GeminiTool = {
         required: ["changes"],
       },
     },
+    {
+      name: "get_journal",
+      description:
+        "Lit le journal de la compagnie (récit des aventures) ainsi que la liste des pages wiki disponibles (id + titre). " +
+        "Utilise cet outil quand un joueur pose des questions sur leurs aventures passées, sessions précédentes, événements vécus, ou le récit de la campagne. " +
+        "Si une page semble pertinente, enchaîne avec get_page pour en lire le détail.",
+      parameters: {
+        type: Type.OBJECT,
+        properties: {},
+      },
+    },
+    {
+      name: "get_page",
+      description:
+        "Lit le contenu complet d'une page wiki par son identifiant. " +
+        "Utilise cet outil après get_journal pour lire le détail d'une page dont le titre semble pertinent.",
+      parameters: {
+        type: Type.OBJECT,
+        properties: {
+          id: {
+            type: Type.INTEGER,
+            description: "Identifiant de la page à lire.",
+          },
+        },
+        required: ["id"],
+      },
+    },
   ],
 };

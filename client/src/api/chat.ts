@@ -3,6 +3,7 @@ export type ChatRole = 'user' | 'assistant'
 export interface ToolUseEntry {
   tool: string
   topic?: string
+  label?: string
 }
 
 export interface ChatMessage {
@@ -80,8 +81,8 @@ export async function streamChat(
     }
     if (eventName === 'tool_use') {
       try {
-        const parsed = JSON.parse(eventData) as { topic?: string }
-        options.onToolUse?.({ tool: 'load_knowledge', topic: parsed.topic })
+        const parsed = JSON.parse(eventData) as ToolUseEntry
+        options.onToolUse?.(parsed)
       } catch {
         // ignore malformed event
       }

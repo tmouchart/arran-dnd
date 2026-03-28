@@ -21,9 +21,9 @@ import {
   TOPIC_NAMES,
   type TopicName,
 } from "./knowledge/tools.js";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "./db/index.js";
-import { characters } from "./db/schema.js";
+import { characters, journalCompagnie, journalPages } from "./db/schema.js";
 
 const app = express();
 app.use(cors({ origin: true, credentials: true }));
@@ -93,7 +93,15 @@ Tu t'adresses aux joueurs et au meneur en français, toujours en restant en pers
 ↩️ Annulation (undo) :
 - Si un previousCharacter est présent dans le contexte du personnage, cela signifie qu'une modification a été faite lors de cette conversation.
 - Si l'utilisateur demande d'annuler ("annule", "undo", "remets comme avant"...), demande confirmation puis appelle edit_character avec les valeurs du previousCharacter.
-- Ne propose l'annulation que si previousCharacter est présent dans le contexte.`;
+- Ne propose l'annulation que si previousCharacter est présent dans le contexte.
+
+📜 Journal de compagnie (outils get_journal, get_page) :
+- Tu as accès au journal de la compagnie et aux pages wiki créées par les joueurs.
+- get_journal retourne le journal de bord ET la liste des pages wiki (id, titre, date). C'est ton point d'entrée. Les pages sont triées par date.
+- get_page retourne le contenu complet d'une page wiki par son id. Utilise-le après get_journal si une page semble pertinente.
+- PROACTIVITÉ : dès qu'un joueur pose une question liée à leurs aventures, sessions passées, PNJ rencontrés, lieux visités, événements vécus, ou tout sujet narratif de la campagne → appelle immédiatement get_journal SANS demander confirmation. Va chercher l'information d'abord, réponds ensuite.
+- RÉSUMÉ D'AVENTURES : si on te demande de raconter ou résumer les aventures, appelle get_journal puis enchaîne avec get_page sur les pages les plus récentes pour construire un récit complet. Ne te limite pas au journal — lis aussi les pages.
+- Ne demande pas "veux-tu que je consulte le journal ?" — fais-le directement.`;
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 type SseEvent = "delta" | "done" | "error" | "tool_use" | "character_updated";
@@ -296,6 +304,16 @@ function buildPreviousCharacterSection(prev: CharacterPayload): string {
   return `\n\n⚠️ Modification récente (annulable) :\nValeurs avant modification — ${parts.join(", ")}`;
 }
 
+async function charNameByUserId(userId: number | null): Promise<string | null> {
+  if (userId == null) return null;
+  const [char] = await db
+    .select({ name: characters.name })
+    .from(characters)
+    .where(and(eq(characters.userId, userId), eq(characters.isActive, true)))
+    .limit(1);
+  return char?.name ?? null;
+}
+
 app.post("/api/chat", requireAuth, async (req, res) => {
   try {
     const chatUser = (req as AuthRequest).username;
@@ -342,183 +360,176 @@ app.post("/api/chat", requireAuth, async (req, res) => {
       let calledTopic: TopicName | null = null;
       let geminiTotalTokens = 0;
 
-      // Turn 1 — streaming: text is emitted live, tool call detected at the end
-      const turn1AllParts: GeminiPart[] = [];
-      let turn1LastUsage: { promptTokenCount?: number; candidatesTokenCount?: number; totalTokenCount?: number } | undefined;
+      const MAX_TOOL_TURNS = 5;
 
-      const turn1Stream = await geminiClient.models.generateContentStream({
-        model: GEMINI_MODEL,
-        contents,
-        config: {
-          systemInstruction: system,
-          tools: [geminiTool],
-          maxOutputTokens: MAX_OUTPUT_TOKENS,
-          thinkingConfig: { thinkingBudget: 0 },
-        },
-      });
+      for (let turn = 0; turn < MAX_TOOL_TURNS; turn++) {
+        const allParts: GeminiPart[] = [];
+        let lastUsage: { promptTokenCount?: number; candidatesTokenCount?: number; totalTokenCount?: number } | undefined;
 
-      for await (const chunk of turn1Stream) {
-        if (closed) break;
-        if (chunk.usageMetadata) turn1LastUsage = chunk.usageMetadata;
-        const parts = (chunk.candidates?.[0]?.content?.parts ?? []) as GeminiPart[];
-        turn1AllParts.push(...parts);
-        const text = typeof chunk.text === "string" ? chunk.text : "";
-        if (text) writeSse(res, "delta", { text });
-      }
+        const stream = await geminiClient.models.generateContentStream({
+          model: GEMINI_MODEL,
+          contents,
+          config: {
+            systemInstruction: system,
+            tools: [geminiTool],
+            maxOutputTokens: MAX_OUTPUT_TOKENS,
+            thinkingConfig: { thinkingBudget: 0 },
+          },
+        });
 
-      logTokens("gemini turn1", {
-        input: turn1LastUsage?.promptTokenCount,
-        output: turn1LastUsage?.candidatesTokenCount,
-        total: turn1LastUsage?.totalTokenCount,
-      });
-      geminiTotalTokens += turn1LastUsage?.totalTokenCount ?? 0;
+        for await (const chunk of stream) {
+          if (closed) break;
+          if (chunk.usageMetadata) lastUsage = chunk.usageMetadata;
+          const parts = (chunk.candidates?.[0]?.content?.parts ?? []) as GeminiPart[];
+          allParts.push(...parts);
+          const text = typeof chunk.text === "string" ? chunk.text : "";
+          if (text) writeSse(res, "delta", { text });
+        }
 
-      const funcCall = turn1AllParts.find((p) => p.functionCall != null);
-      const funcName = funcCall
-        ? (funcCall.functionCall as { name?: string }).name
-        : null;
+        logTokens(`gemini turn${turn + 1}`, {
+          input: lastUsage?.promptTokenCount,
+          output: lastUsage?.candidatesTokenCount,
+          total: lastUsage?.totalTokenCount,
+        });
+        geminiTotalTokens += lastUsage?.totalTokenCount ?? 0;
 
-      if (funcName === "load_knowledge") {
-        const fc = funcCall!.functionCall as { args?: { topic?: string } };
-        const rawTopic = fc.args?.topic ?? "";
-        if ((TOPIC_NAMES as readonly string[]).includes(rawTopic)) {
+        // Check for tool call
+        const funcCall = allParts.find((p) => p.functionCall != null);
+        if (!funcCall || closed) {
+          if (!funcCall) console.log(`[chat] No tool call on turn ${turn + 1} — done (gemini)`);
+          break;
+        }
+
+        const funcName = (funcCall.functionCall as { name?: string }).name ?? "";
+        const funcArgs = (funcCall.functionCall as { args?: Record<string, unknown> }).args ?? {};
+        console.log(`[chat] Tool call on turn ${turn + 1}: ${funcName} (gemini)`);
+
+        // Execute tool and get result
+        let toolResult: string | null = null;
+
+        if (funcName === "load_knowledge") {
+          const rawTopic = (funcArgs.topic as string) ?? "";
+          if (!(TOPIC_NAMES as readonly string[]).includes(rawTopic)) {
+            console.error(`[knowledge] load_knowledge ignored unknown topic: "${rawTopic}"`);
+            writeSse(res, "error", {
+              error: "Le serveur ne reconnaît pas ce sujet de règles. Recharge la page et réessaie.",
+            });
+            res.end();
+            return;
+          }
           calledTopic = rawTopic as TopicName;
-        }
-        if (!calledTopic && !closed) {
-          console.error(`[knowledge] load_knowledge ignored unknown topic: "${rawTopic}"`);
-          writeSse(res, "error", {
-            error: "Le serveur ne reconnaît pas ce sujet de règles. Recharge la page et réessaie.",
-          });
-          res.end();
-          return;
-        }
-      }
+          writeSse(res, "tool_use", { tool: "load_knowledge", topic: calledTopic });
+          try {
+            toolResult = await loadTopic(calledTopic);
+            console.log(`[knowledge] Loaded topic: "${calledTopic}"`);
+          } catch {
+            console.error(`[knowledge] Failed to load topic: "${calledTopic}"`);
+            writeSse(res, "error", { error: "Impossible de charger le sujet demandé." });
+            res.end();
+            return;
+          }
+        } else if (funcName === "edit_character") {
+          const rawChanges = (funcArgs.changes as Record<string, unknown>) ?? {};
+          const safeChanges = sanitizeChanges(rawChanges);
 
-      if (calledTopic && !closed) {
-        console.log(`[knowledge] AI requested topic: "${calledTopic}" (gemini)`);
-        writeSse(res, "tool_use", { topic: calledTopic });
+          if (Object.keys(safeChanges).length === 0) {
+            writeSse(res, "error", { error: "La fiche n'a pas pu être modifiée : aucun champ valide." });
+            res.end();
+            return;
+          }
 
-        let knowledgeText: string;
-        try {
-          knowledgeText = await loadTopic(calledTopic);
-          console.log(`[knowledge] Loaded topic: "${calledTopic}"`);
-        } catch {
-          console.error(`[knowledge] Failed to load topic: "${calledTopic}"`);
-          writeSse(res, "error", { error: "Impossible de charger le sujet demandé." });
-          res.end();
-          return;
+          const charId = Number(character?.id);
+          if (!Number.isFinite(charId) || charId <= 0) {
+            writeSse(res, "error", { error: "Identifiant de personnage invalide." });
+            res.end();
+            return;
+          }
+
+          const [oldRow] = await db.select().from(characters).where(eq(characters.id, charId));
+          if (!oldRow) {
+            writeSse(res, "error", { error: "Personnage introuvable." });
+            res.end();
+            return;
+          }
+
+          const [updatedRow] = await db
+            .update(characters)
+            .set({ ...safeChanges, updatedAt: new Date() })
+            .where(eq(characters.id, charId))
+            .returning();
+
+          console.log(`[edit_character] Updated character ${charId}:`, safeChanges);
+          writeSse(res, "character_updated", { character: updatedRow, previousCharacter: oldRow });
+          toolResult = `Modification appliquée : ${JSON.stringify(safeChanges)}`;
+        } else if (funcName === "get_journal") {
+          const [row] = await db.select().from(journalCompagnie).where(eq(journalCompagnie.id, 1));
+          const journalContent = row?.content ?? "";
+          const journalEditedBy = await charNameByUserId(row?.updatedByUserId ?? null);
+          const pages = await db
+            .select({ id: journalPages.id, title: journalPages.title, updatedAt: journalPages.updatedAt, updatedByUserId: journalPages.updatedByUserId })
+            .from(journalPages)
+            .orderBy(journalPages.updatedAt);
+
+          let result = "## Journal de bord\n";
+          if (journalEditedBy) result += `Dernière modification par : ${journalEditedBy}\n`;
+          result += "\n";
+          if (journalContent) {
+            result += journalContent.length > 8000 ? journalContent.slice(0, 8000) + "\n\n[…contenu tronqué]" : journalContent;
+          } else {
+            result += "Le journal de compagnie est vide.";
+          }
+          result += "\n\n## Pages wiki disponibles\n\n";
+          if (pages.length === 0) {
+            result += "Aucune page wiki n'a été créée.";
+          } else {
+            const pageLines = await Promise.all(pages.map(async (p) => {
+              const editedBy = await charNameByUserId(p.updatedByUserId);
+              const byStr = editedBy ? ` — par ${editedBy}` : "";
+              return `- [${p.id}] ${p.title} (${p.updatedAt.toLocaleDateString("fr-FR")}${byStr})`;
+            }));
+            result += pageLines.join("\n");
+          }
+
+          toolResult = result;
+          console.log(`[journal] Loaded company journal (${journalContent.length} chars) + ${pages.length} pages`);
+          console.log(`[journal] Journal content:\n${toolResult}`);
+          writeSse(res, "tool_use", { tool: "get_journal", label: "Lecture du journal" });
+        } else if (funcName === "get_page") {
+          const pageId = Number(funcArgs.id);
+          if (!Number.isFinite(pageId) || pageId <= 0) {
+            toolResult = "Identifiant de page invalide.";
+          } else {
+            const [page] = await db.select().from(journalPages).where(eq(journalPages.id, pageId));
+            if (!page) {
+              toolResult = `Aucune page trouvée avec l'id ${pageId}.`;
+            } else {
+              const editedBy = await charNameByUserId(page.updatedByUserId);
+              const content = page.content ?? "";
+              const truncated = content.length > 8000 ? content.slice(0, 8000) + "\n\n[…contenu tronqué]" : content;
+              const byLine = editedBy ? `\nDernière modification par : ${editedBy}\n` : "";
+              toolResult = `# ${page.title}${byLine}\n${truncated}`;
+            }
+            console.log(`[journal] Loaded page ${funcArgs.id}`);
+            console.log(`[journal] Page content:\n${toolResult}`);
+            writeSse(res, "tool_use", { tool: "get_page", label: `Lecture de la page : ${page?.title ?? pageId}` });
+          }
+        } else {
+          console.error(`[chat] Unknown tool call: "${funcName}"`);
+          toolResult = `Outil inconnu : ${funcName}`;
         }
 
+        // Append tool call + result to contents and loop
         contents = [
           ...contents,
           {
             role: "model",
-            parts: [{ functionCall: { name: "load_knowledge", args: { topic: calledTopic } } }],
+            parts: [{ functionCall: { name: funcName, args: funcArgs } }],
           },
           {
             role: "user",
-            parts: [{ functionResponse: { name: "load_knowledge", response: { content: knowledgeText } } }],
+            parts: [{ functionResponse: { name: funcName, response: { content: toolResult } } }],
           },
         ];
-
-        // Turn 2 — streaming final answer
-        let lastUsage: { promptTokenCount?: number; candidatesTokenCount?: number; totalTokenCount?: number } | undefined;
-        const stream2 = await geminiClient.models.generateContentStream({
-          model: GEMINI_MODEL,
-          contents,
-          config: {
-            systemInstruction: system,
-            tools: [geminiTool],
-            maxOutputTokens: MAX_OUTPUT_TOKENS,
-            thinkingConfig: { thinkingBudget: 0 },
-          },
-        });
-
-        for await (const chunk of stream2) {
-          if (closed) break;
-          if (chunk.usageMetadata) lastUsage = chunk.usageMetadata;
-          const text = typeof chunk.text === "string" ? chunk.text : "";
-          if (text) writeSse(res, "delta", { text });
-        }
-        logTokens("gemini turn2", {
-          input: lastUsage?.promptTokenCount,
-          output: lastUsage?.candidatesTokenCount,
-          total: lastUsage?.totalTokenCount,
-        });
-        geminiTotalTokens += lastUsage?.totalTokenCount ?? 0;
-      } else if (funcName === "edit_character" && !closed) {
-        const fc = funcCall!.functionCall as { args?: { changes?: Record<string, unknown> } };
-        const rawChanges = fc.args?.changes ?? {};
-        const safeChanges = sanitizeChanges(rawChanges);
-
-        if (Object.keys(safeChanges).length === 0) {
-          writeSse(res, "error", { error: "La fiche n'a pas pu être modifiée : aucun champ valide." });
-          res.end();
-          return;
-        }
-
-        const charId = Number(character?.id);
-        if (!Number.isFinite(charId) || charId <= 0) {
-          writeSse(res, "error", { error: "Identifiant de personnage invalide." });
-          res.end();
-          return;
-        }
-
-        const [oldRow] = await db.select().from(characters).where(eq(characters.id, charId));
-        if (!oldRow) {
-          writeSse(res, "error", { error: "Personnage introuvable." });
-          res.end();
-          return;
-        }
-
-        const [updatedRow] = await db
-          .update(characters)
-          .set({ ...safeChanges, updatedAt: new Date() })
-          .where(eq(characters.id, charId))
-          .returning();
-
-        console.log(`[edit_character] Updated character ${charId}:`, safeChanges);
-        writeSse(res, "character_updated", { character: updatedRow, previousCharacter: oldRow });
-
-        contents = [
-          ...contents,
-          {
-            role: "model",
-            parts: [{ functionCall: { name: "edit_character", args: { changes: safeChanges } } }],
-          },
-          {
-            role: "user",
-            parts: [{ functionResponse: { name: "edit_character", response: { content: `Modification appliquée : ${JSON.stringify(safeChanges)}` } } }],
-          },
-        ];
-
-        // Turn 2 — streaming confirmation
-        let lastUsage: { promptTokenCount?: number; candidatesTokenCount?: number; totalTokenCount?: number } | undefined;
-        const stream2 = await geminiClient.models.generateContentStream({
-          model: GEMINI_MODEL,
-          contents,
-          config: {
-            systemInstruction: system,
-            tools: [geminiTool],
-            maxOutputTokens: MAX_OUTPUT_TOKENS,
-            thinkingConfig: { thinkingBudget: 0 },
-          },
-        });
-
-        for await (const chunk of stream2) {
-          if (closed) break;
-          if (chunk.usageMetadata) lastUsage = chunk.usageMetadata;
-          const text = typeof chunk.text === "string" ? chunk.text : "";
-          if (text) writeSse(res, "delta", { text });
-        }
-        logTokens("gemini turn2 (edit)", {
-          input: lastUsage?.promptTokenCount,
-          output: lastUsage?.candidatesTokenCount,
-          total: lastUsage?.totalTokenCount,
-        });
-        geminiTotalTokens += lastUsage?.totalTokenCount ?? 0;
-      } else {
-        console.log("[knowledge] No tool call — answering from core index (gemini)");
       }
 
       console.log(`[chat] user=${chatUser} tokens=${geminiTotalTokens} topic=${calledTopic ?? 'none'}`);
