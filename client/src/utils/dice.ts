@@ -11,7 +11,7 @@ export function rollDie(sides: number): number {
 
 /** Parse "2d6" → { count: 2, sides: 6 }. Returns null if unrecognised. */
 export function parseDiceNotation(notation: string): { count: number; sides: number } | null {
-  const m = notation.trim().match(/^(\d+)d(\d+)$/i)
+  const m = notation.trim().replace(/^\(|\)$/g, '').match(/^(\d+)d(\d+)$/i)
   if (!m) return null
   return { count: parseInt(m[1], 10), sides: parseInt(m[2], 10) }
 }

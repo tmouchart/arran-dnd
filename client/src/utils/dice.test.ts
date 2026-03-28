@@ -35,6 +35,10 @@ describe('parseDiceNotation', () => {
   it('returns null for plain number "42"', () => {
     expect(parseDiceNotation('42')).toBeNull()
   })
+
+  it('parses parenthesised notation "(1d4)" (temporary damage)', () => {
+    expect(parseDiceNotation('(1d4)')).toEqual({ count: 1, sides: 4 })
+  })
 })
 
 // ── rollDie ──────────────────────────────────────────────────────────────────
