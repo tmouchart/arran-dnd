@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from "vue-router";
-import { Users, Handbag, UserCircle, ClipboardPen, BookText } from "lucide-vue-next";
-import { user } from "./composables/useAuth";
+import { Users, Handbag, UserCircle, ClipboardPen, BookText, Loader2 } from "lucide-vue-next";
+import { user, authReady } from "./composables/useAuth";
 
 // Apply saved theme on boot
 type Theme = "light" | "dark";
@@ -14,7 +14,11 @@ document.documentElement.dataset.theme = savedTheme;
 </script>
 
 <template>
-  <div class="app-shell">
+  <div v-if="!authReady" class="boot-screen">
+    <Loader2 :size="36" class="boot-spinner" />
+    <p class="boot-text">Chargement en cours</p>
+  </div>
+  <div v-else class="app-shell">
     <header class="top-nav">
       <RouterLink to="/personnage" class="brand">Terres d'Arran</RouterLink>
       <div class="top-nav-actions">
@@ -45,6 +49,31 @@ document.documentElement.dataset.theme = savedTheme;
 </template>
 
 <style scoped>
+.boot-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  background: var(--surface);
+  color: var(--muted);
+}
+
+.boot-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.boot-text {
+  font-family: var(--title-font);
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+}
+
 .app-shell {
   min-height: 100vh;
   display: flex;
