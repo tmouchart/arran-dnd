@@ -28,9 +28,9 @@ const family = computed(() => inferProfileFamily(props.character.paths));
 const dieMax = computed(() => FAMILY_DIE_MAX[family.value]);
 const conMod = computed(() => Math.floor((props.character.abilities.constitution - 10) / 2));
 
-// HP gain: rolled die + conMod
-const hpRoll = ref(dieMax.value);
-const hpGain = computed(() => hpRoll.value + conMod.value);
+// HP gain: rolled die + conMod (null = not yet rolled)
+const hpRoll = ref<number | null>(null);
+const hpGain = computed(() => (hpRoll.value ?? 0) + conMod.value);
 
 // Attack bonuses at current level (before level up)
 const atkContactBefore = computed(() => computedAttackContact.value);
@@ -54,9 +54,20 @@ function rollHp() {
   hpRoll.value = Math.ceil(Math.random() * dieMax.value);
 }
 
+function onHpInput(event: Event) {
+  const raw = (event.target as HTMLInputElement).value;
+  if (raw === "") {
+    hpRoll.value = null;
+    return;
+  }
+  const val = parseInt(raw);
+  if (!isNaN(val)) {
+    hpRoll.value = Math.max(1, Math.min(dieMax.value, val));
+  }
+}
+
 function openRecap() {
-  // Auto-roll HP when entering recap
-  rollHp();
+  hpRoll.value = null;
   step.value = "recap";
 }
 
@@ -71,7 +82,7 @@ function accept() {
   while (c.hpLevelGains.length < needed) {
     c.hpLevelGains.push(dieMax.value);
   }
-  c.hpLevelGains[needed - 1] = hpRoll.value;
+  c.hpLevelGains[needed - 1] = hpRoll.value!;
   // 3. Restore PC to new max
   const newPcMax = 2 + Math.floor((c.abilities.charisma - 10) / 2) + (family.value === "aventuriers" ? 2 : 0);
   c.pcCurrent = newPcMax;
@@ -123,11 +134,24 @@ const conSign = computed(() => (conMod.value >= 0 ? "+" : ""));
               <div class="gain-info">
                 <span class="gain-label">Points de vie max</span>
                 <span class="gain-value">
-                  +{{ hpGain }} (1d{{ dieMax }}
-                  <button class="inline-dice-btn" @click="rollHp" :title="`Relancer (1–${dieMax})`">
-                    <Dices :size="13" />
-                  </button>
-                  = {{ hpRoll }}{{ conSign }}{{ conMod }} CON)
+                  <template v-if="hpRoll != null">+{{ hpGain }}</template>
+                  <template v-else>—</template>
+                  <span class="hp-detail">
+                    (1d{{ dieMax }} =
+                    <input
+                      type="number"
+                      class="hp-roll-input"
+                      :min="1"
+                      :max="dieMax"
+                      :value="hpRoll ?? ''"
+                      :placeholder="`1–${dieMax}`"
+                      @input="onHpInput($event)"
+                    />
+                    <button class="inline-dice-btn" @click="rollHp" :title="`Lancer le dé (1–${dieMax})`">
+                      <Dices :size="14" />
+                    </button>
+                    {{ conSign }}{{ conMod }} CON)
+                  </span>
                 </span>
               </div>
             </div>
@@ -191,7 +215,7 @@ const conSign = computed(() => (conMod.value >= 0 ? "+" : ""));
 
           </div>
           <div class="modal-footer">
-            <button class="btn btn-accept" @click="accept">
+            <button class="btn btn-accept" :disabled="hpRoll == null" @click="accept">
               ✦ Accepter la montée en niveau ✦
             </button>
           </div>
@@ -361,21 +385,52 @@ const conSign = computed(() => (conMod.value >= 0 ? "+" : ""));
   font-size: 0.75rem;
 }
 
+.hp-detail {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.hp-roll-input {
+  width: 2.8rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 0.15rem 0.2rem;
+}
+
+.hp-roll-input:focus {
+  outline: 2px solid var(--accent);
+  border-color: var(--accent);
+}
+
+/* Hide number spinners */
+.hp-roll-input::-webkit-inner-spin-button,
+.hp-roll-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.hp-roll-input { -moz-appearance: textfield; }
+
 .inline-dice-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border: none;
-  background: none;
-  color: var(--muted);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--accent-strong);
   cursor: pointer;
-  padding: 0;
-  transition: color 0.12s;
-  vertical-align: middle;
+  padding: 0.2rem;
+  border-radius: 5px;
+  transition: background 0.12s, color 0.12s;
 }
 
 .inline-dice-btn:hover {
-  color: var(--accent-strong);
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
 /* ── Footer ── */
@@ -405,6 +460,12 @@ const conSign = computed(() => (conMod.value >= 0 ? "+" : ""));
 
 .btn-accept:active {
   transform: translateY(0);
+}
+
+.btn-accept:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
 }
 
 /* ── Shared buttons ── */

@@ -105,7 +105,7 @@ const mpIsMystique = computed(() => props.family === "mystiques");
       :level="character.level"
       :family="family"
       :con-mod="abilityModifier(character.abilities.constitution)"
-      :hp-level-gains="character.hpLevelGains"
+      v-model:hp-level-gains="character.hpLevelGains"
     />
 
     <!-- PC + DV -->

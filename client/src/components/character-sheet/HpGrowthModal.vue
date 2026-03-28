@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { X } from "lucide-vue-next";
+import { X, Dices } from "lucide-vue-next";
 import type { VoieFamily } from "../../data/voies";
 import { FAMILY_DIE_MAX } from "../../composables/useCharacter";
 
@@ -14,6 +14,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   "update:show": [value: boolean];
+  "update:hpLevelGains": [value: number[]];
 }>();
 
 const dieMax = computed(() => FAMILY_DIE_MAX[props.family]);
@@ -40,6 +41,17 @@ function rollAt(levelIndex: number): number {
 
 function gainAt(levelIndex: number): number {
   return rollAt(levelIndex) + props.conMod;
+}
+
+function setRoll(levelIndex: number, value: number) {
+  const clamped = Math.max(1, Math.min(dieMax.value, value));
+  const copy = [...props.hpLevelGains];
+  copy[levelIndex] = clamped;
+  emit("update:hpLevelGains", copy);
+}
+
+function rollDie(levelIndex: number) {
+  setRoll(levelIndex, Math.ceil(Math.random() * dieMax.value));
 }
 
 function close() {
@@ -81,7 +93,17 @@ function close() {
             >
               <span class="lvl-badge">Niv. {{ i + 1 }}</span>
               <span class="lvl-desc">Jet</span>
-              <span class="lvl-roll fixed">{{ rollAt(i - 1) }}</span>
+              <input
+                type="number"
+                class="lvl-roll-input"
+                :min="1"
+                :max="dieMax"
+                :value="rollAt(i - 1)"
+                @input="setRoll(i - 1, parseInt(($event.target as HTMLInputElement).value) || 1)"
+              />
+              <button class="dice-btn" @click="rollDie(i - 1)" :title="`Lancer 1d${dieMax}`">
+                <Dices :size="14" />
+              </button>
               <span class="lvl-sep">+</span>
               <span class="lvl-con">CON {{ conSign }}{{ conMod }}</span>
               <span class="lvl-sep">=</span>
@@ -230,21 +252,30 @@ function close() {
   border-color: var(--accent);
 }
 
+/* Hide number spinners */
+.lvl-roll-input::-webkit-inner-spin-button,
+.lvl-roll-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.lvl-roll-input { -moz-appearance: textfield; }
+
 .dice-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
-  background: none;
-  color: var(--muted);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--accent-strong);
   cursor: pointer;
-  padding: 0.15rem;
-  transition: color 0.15s;
+  padding: 0.2rem;
+  border-radius: 5px;
+  transition: background 0.15s, color 0.15s;
   flex-shrink: 0;
 }
 
 .dice-btn:hover {
-  color: var(--accent-strong);
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
 .lvl-sep {
