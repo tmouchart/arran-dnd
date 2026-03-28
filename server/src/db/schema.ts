@@ -8,6 +8,7 @@ import {
   text,
   timestamp,
   uniqueIndex,
+  varchar,
 } from 'drizzle-orm/pg-core'
 
 export const users = pgTable('user', {
@@ -25,6 +26,7 @@ export const users = pgTable('user', {
 export const journalCompagnie = pgTable('journal_compagnie', {
   id: integer('id').primaryKey().default(1),
   content: text('content').notNull().default(''),
+  updatedByUserId: integer('updated_by_user_id').references(() => users.id),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })
 
@@ -105,6 +107,16 @@ export const characters = pgTable(
     uniqueIndex('one_active_per_user').on(table.userId).where(sql`${table.isActive} = true`),
   ],
 )
+
+export const journalPages = pgTable('journal_pages', {
+  id: serial('id').primaryKey(),
+  title: varchar('title', { length: 255 }).notNull(),
+  content: text('content').notNull().default(''),
+  createdByUserId: integer('created_by_user_id').notNull().references(() => users.id),
+  updatedByUserId: integer('updated_by_user_id').references(() => users.id),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
 
 export type UserRow = typeof users.$inferSelect
 export type CharacterRow = typeof characters.$inferSelect

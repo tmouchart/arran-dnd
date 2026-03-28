@@ -10,6 +10,7 @@ import JetsView from '../views/JetsView.vue'
 import InventaireView from '../views/InventaireView.vue'
 import OptionsView from '../views/OptionsView.vue'
 import JournalView from '../views/JournalView.vue'
+import JournalPageView from '../views/JournalPageView.vue'
 import { authReady, user, initAuth } from '../composables/useAuth'
 
 export const router = createRouter({
@@ -24,6 +25,7 @@ export const router = createRouter({
     { path: '/inventaire', name: 'inventaire', component: InventaireView },
     { path: '/jets', name: 'jets', component: JetsView },
     { path: '/journal', name: 'journal', component: JournalView },
+    { path: '/journal/:id', name: 'journal-page', component: JournalPageView },
     { path: '/sessions', name: 'sessions', component: SessionListView },
     { path: '/sessions/:id', name: 'session', component: SessionView },
     { path: '/options', name: 'options', component: OptionsView },

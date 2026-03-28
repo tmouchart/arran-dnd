@@ -11,6 +11,7 @@ const props = defineProps<{
   autofocus?: boolean
   autocomplete?: string
   disabled?: boolean
+  readonly?: boolean
   textAlign?: 'left' | 'center'
   id?: string
 }>()
@@ -43,6 +44,7 @@ function onInput(e: Event) {
     :autofocus="autofocus"
     :autocomplete="autocomplete"
     :disabled="disabled"
+    :readonly="readonly"
     :id="id"
     @input="onInput"
   />
