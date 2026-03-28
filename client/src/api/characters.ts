@@ -14,6 +14,7 @@ export interface ServerCharacter {
   hpMax: number
   hpCurrent: number
   mpMax: number
+  mpCurrent: number | undefined
   defense: number
   initiativeBonus: number
   str: number

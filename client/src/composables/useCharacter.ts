@@ -53,7 +53,10 @@ function toCharacter(s: ServerCharacter): Character {
         ? Math.max(0, Math.min(s.hpCurrent, s.hpMax))
         : loadCurrentHp(s.hpMax),
     hpMax: s.hpMax,
-    mpCurrent: loadCurrentMp(s.mpMax),
+    mpCurrent:
+      typeof s.mpCurrent === 'number' && Number.isFinite(s.mpCurrent)
+        ? Math.max(0, Math.min(s.mpCurrent, s.mpMax))
+        : loadCurrentMp(s.mpMax),
     mpMax: s.mpMax,
     defense: s.defense,
     initiativeBonus: s.initiativeBonus ?? 0,
@@ -91,6 +94,7 @@ function toServerPayload(c: Character): Omit<ServerCharacter, 'id' | 'userId' | 
     hpMax: c.hpMax,
     hpCurrent: c.hpCurrent,
     mpMax: c.mpMax,
+    mpCurrent: c.mpCurrent,
     defense: c.defense,
     initiativeBonus: c.initiativeBonus,
     str: c.abilities.strength,
