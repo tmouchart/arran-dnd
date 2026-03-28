@@ -193,7 +193,7 @@ const weaponBubbles = computed(() => {
     const total = incompetent ? baseBonus - 3 : baseBonus;
     return {
       w,
-      hitDisplay: `d20 ${total >= 0 ? "+" : ""}${total} (vs DEF de la cible)`,
+      hitDisplay: `d20 ${total >= 0 ? "+" : ""}${total} (vs DEF)`,
       damageDisplay: formatWeaponDamage(
         w.damageDice,
         w.damageAbility,
