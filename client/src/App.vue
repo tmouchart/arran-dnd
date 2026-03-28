@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from "vue-router";
-import { Users, Handbag, UserCircle, ClipboardPen, BookText, Loader2 } from "lucide-vue-next";
+import { UserCircle, Loader2 } from "lucide-vue-next";
 import { user, authReady } from "./composables/useAuth";
 
 // Apply saved theme on boot
@@ -23,19 +23,33 @@ document.documentElement.dataset.theme = savedTheme;
       <RouterLink to="/personnage" class="brand">Terres d'Arran</RouterLink>
       <div class="top-nav-actions">
         <nav class="nav-links">
-          <RouterLink to="/personnage" class="nav-link" title="Personnage"><ClipboardPen :size="18" /></RouterLink>
-          <RouterLink to="/actions" class="nav-link" title="Mes actions">⚡</RouterLink>
-          <RouterLink to="/inventaire" class="nav-link" title="Inventaire"><Handbag :size="18" /></RouterLink>
-          <RouterLink to="/chat" class="nav-link" title="Isilwen">🔮</RouterLink>
-          <RouterLink to="/jets" class="nav-link" title="Historique des jets">🎲</RouterLink>
-          <RouterLink to="/journal" class="nav-link" title="Journal"><BookText :size="18" /></RouterLink>
-          <RouterLink to="/sessions" class="nav-link" title="Sessions de jeu">
-            <Users :size="18" />
+          <RouterLink to="/personnage" class="nav-link" title="Personnage"
+            >📝</RouterLink
+          >
+          <RouterLink to="/actions" class="nav-link" title="Mes actions"
+            >⚡</RouterLink
+          >
+          <RouterLink to="/inventaire" class="nav-link" title="Inventaire"
+            >👜</RouterLink
+          >
+          <RouterLink to="/chat" class="nav-link" title="Isilwen"
+            >🔮</RouterLink
+          >
+          <RouterLink to="/journal" class="nav-link" title="Journal"
+            >📖</RouterLink
+          >
+          <RouterLink to="/sessions" class="nav-link" title="Sessions de jeu"
+            >⚔️
           </RouterLink>
         </nav>
         <RouterLink v-if="user" to="/options" class="nav-user" title="Options">
           <div class="nav-avatar">
-            <img v-if="user.avatarUrl" :src="user.avatarUrl" alt="Avatar" class="nav-avatar-img" />
+            <img
+              v-if="user.avatarUrl"
+              :src="user.avatarUrl"
+              alt="Avatar"
+              class="nav-avatar-img"
+            />
             <UserCircle v-else :size="22" />
           </div>
           <span class="nav-username">{{ user.username }}</span>
@@ -65,7 +79,9 @@ document.documentElement.dataset.theme = savedTheme;
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .boot-text {

@@ -340,6 +340,16 @@ onMounted(load);
       </AppEmptyState>
     </AppCard>
 
+    <!-- ── Historique des jets ────────────────────────────────────────────── -->
+    <AppCard title="Historique des jets">
+      <div class="option-row">
+        <span class="option-label">🎲 Voir tous vos jets de dés</span>
+        <AppButton size="small" @click="router.push('/jets')">
+          Ouvrir
+        </AppButton>
+      </div>
+    </AppCard>
+
     <!-- ── Compte ─────────────────────────────────────────────────────────── -->
     <AppCard title="Compte">
       <div class="option-row">
