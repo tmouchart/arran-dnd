@@ -573,4 +573,10 @@ function clearChat() {
     gap: 0.75rem;
   }
 }
+
+@media (max-width: 600px) {
+  .content {
+    font-size: 14px;
+  }
+}
 </style>
