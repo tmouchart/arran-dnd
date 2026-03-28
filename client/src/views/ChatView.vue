@@ -2,8 +2,8 @@
 import { ref, nextTick, onMounted, onUnmounted } from "vue";
 import MarkdownIt from "markdown-it";
 import DOMPurify from "dompurify";
-import { streamChat, type ChatMessage } from "../api/chat";
-import { SendHorizonal, SquarePen } from "lucide-vue-next";
+import { streamChat, type ChatMessage, type ToolUseEntry } from "../api/chat";
+import { SendHorizonal, SquarePen, Sparkles } from "lucide-vue-next";
 import AppIconBtn from "../components/ui/AppIconBtn.vue";
 import { useCharacter, loadCharacter } from "../composables/useCharacter";
 import {
@@ -56,6 +56,32 @@ function flushTypewriterQueue() {
 onUnmounted(() => {
   stopTypewriter();
 });
+
+const TOPIC_LABELS: Record<string, string> = {
+  "creation-personnage": "Création de personnage",
+  combat: "Combat",
+  equipement: "Équipement",
+  magie: "Magie",
+  "monde-arran": "Monde d'Arran",
+  "monde-lore-chroniques": "Chroniques",
+  "monde-lore-peuples-elfes": "Peuples elfes",
+  "monde-lore-peuples-nains-humains": "Peuples nains & humains",
+  "monde-lore-peuples-autres": "Autres peuples",
+  races: "Races",
+  "voies-de-profil": "Voies de profil",
+  "voies-de-prestige": "Voies de prestige",
+  bestiaire: "Bestiaire",
+};
+
+function toolUseLabel(entry: ToolUseEntry): string {
+  if (entry.tool === "load_knowledge" && entry.topic) {
+    return `Consulté les astres : ${TOPIC_LABELS[entry.topic] ?? entry.topic}`;
+  }
+  if (entry.tool === "edit_character") {
+    return "Modifié la fiche du personnage";
+  }
+  return entry.tool;
+}
 
 const { character, loadError } = useCharacter();
 const undoSnapshot = ref<Record<string, unknown> | null>(null);
@@ -118,6 +144,13 @@ async function submit() {
             typewriterQueue.value.push(char);
           }
         },
+        onToolUse: (entry) => {
+          const last = messages.value[messages.value.length - 1];
+          if (last && last.role === "assistant") {
+            if (!last.toolUses) last.toolUses = [];
+            last.toolUses.push(entry);
+          }
+        },
         onError: (msg) => {
           flushTypewriterQueue();
           error.value = msg;
@@ -125,6 +158,11 @@ async function submit() {
         onCharacterUpdated: (row, previous) => {
           undoSnapshot.value = previous;
           loadCharacter((row as { id?: number }).id);
+          const last = messages.value[messages.value.length - 1];
+          if (last && last.role === "assistant") {
+            if (!last.toolUses) last.toolUses = [];
+            last.toolUses.push({ tool: "edit_character" });
+          }
         },
       },
       character.value.id
@@ -170,7 +208,12 @@ function clearChat() {
           <span class="chat-title-short">🔮 Isilwen</span>
           <span class="chat-title-full">🔮 Isilwen, miroir astral</span>
         </h1>
-        <AppIconBtn :size="34" title="Nouvelle conversation" class="new-chat-btn" @click="clearChat">
+        <AppIconBtn
+          :size="34"
+          title="Nouvelle conversation"
+          class="new-chat-btn"
+          @click="clearChat"
+        >
           <SquarePen :size="18" />
         </AppIconBtn>
       </div>
@@ -198,6 +241,12 @@ function clearChat() {
               : "Vous"
             : "Isilwen"
         }}</span>
+        <div v-if="m.toolUses?.length" class="tool-chips">
+          <span v-for="(tu, j) in m.toolUses" :key="j" class="tool-chip">
+            <Sparkles :size="13" class="tool-chip-icon" />
+            {{ toolUseLabel(tu) }}
+          </span>
+        </div>
         <div
           v-if="m.role === 'assistant'"
           class="content assistant-content"
@@ -406,6 +455,31 @@ function clearChat() {
   background: color-mix(in srgb, var(--surface) 70%, black 12%);
   border-radius: 4px;
   padding: 0.08rem 0.25rem;
+}
+
+.tool-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.45rem;
+}
+
+.tool-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--brand-strong) 80%, var(--muted));
+  background: color-mix(in srgb, var(--brand) 10%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--brand) 25%, var(--border));
+}
+
+.tool-chip-icon {
+  flex-shrink: 0;
+  opacity: 0.7;
 }
 
 .error {

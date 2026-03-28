@@ -1,8 +1,14 @@
 export type ChatRole = 'user' | 'assistant'
 
+export interface ToolUseEntry {
+  tool: string
+  topic?: string
+}
+
 export interface ChatMessage {
   role: ChatRole
   content: string
+  toolUses?: ToolUseEntry[]
 }
 
 interface StreamDonePayload {
@@ -18,6 +24,7 @@ export interface StreamChatOptions {
   onDelta: (textDelta: string) => void
   onDone?: (meta: StreamDonePayload) => void
   onError?: (message: string) => void
+  onToolUse?: (entry: ToolUseEntry) => void
   onCharacterUpdated?: (character: Record<string, unknown>, previousCharacter: Record<string, unknown>) => void
 }
 
@@ -68,6 +75,15 @@ export async function streamChat(
         options.onDone?.(parsed)
       } catch {
         // Ignore malformed done event
+      }
+      return
+    }
+    if (eventName === 'tool_use') {
+      try {
+        const parsed = JSON.parse(eventData) as { topic?: string }
+        options.onToolUse?.({ tool: 'load_knowledge', topic: parsed.topic })
+      } catch {
+        // ignore malformed event
       }
       return
     }
