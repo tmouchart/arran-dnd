@@ -38,7 +38,7 @@ router.post('/login', async (req, res) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: 365 * 24 * 60 * 60 * 1000,
   })
   console.log(`[auth] login: user=${user.username}`)
   res.json({ user: { id: user.id, username: user.username, avatarUrl: user.avatarUrl ?? null } })
@@ -69,7 +69,7 @@ router.post('/register', async (req, res) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: 365 * 24 * 60 * 60 * 1000,
   })
   console.log(`[auth] register: user=${newUser.username}`)
   res.status(201).json({ user: { id: newUser.id, username: newUser.username } })

@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken'
 const secret = process.env.JWT_SECRET!
 
 export function signToken(userId: number, username: string): string {
-  return jwt.sign({ sub: userId, username }, secret, { expiresIn: '7d' })
+  return jwt.sign({ sub: userId, username }, secret, { expiresIn: '365d' })
 }
 
 export function verifyToken(token: string): { sub: number; username: string } {
