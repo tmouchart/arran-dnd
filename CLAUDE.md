@@ -118,17 +118,28 @@ We are building a tool people use to *have fun*. Every design decision should re
 
 ## UI Components
 
-All shared UI primitives live in `client/src/components/ui/`. **Always use these components** when writing new code — never redefine their patterns inline.
+All shared UI primitives live in `client/src/components/ui/`. **Always use these components** when writing new code — never use raw HTML elements with manual styling for inputs, buttons, or other primitives that have a component equivalent.
+
+If a new recurring UI pattern emerges (e.g. select, textarea, modal) that doesn't have a component yet, **create a new `App*` component** in `client/src/components/ui/` rather than styling raw elements inline.
+
+### Component catalog
 
 | Component | Usage |
 |---|---|
+| `AppInput` | All `<input>` fields (text, number, password). Fixed `font-size: 0.92rem` for consistent height. Props: `modelValue`, `type`, `placeholder`, `min`, `max`, `step`, `required`, `autofocus`, `autocomplete`, `disabled`, `textAlign` (`left`/`center`), `id`. Emits numbers automatically for `type="number"`. Layout sizing (width, flex) is controlled by the parent via `class`. |
+| `AppButton` | All text buttons. Props: `variant` (`ghost` (default), `primary`, `danger`), `size` (`normal`/`small`), `type` (`button`/`submit`), `disabled`, `block` (full-width). Uses global `.btn` styles. |
+| `AppIconBtn` | 40×40 px icon-only button. Variants: `ghost` (default), `primary`, `danger`. Use `size` prop to override dimensions. |
 | `AppPageHead` | Every page header with an `<h1>`. Slot `#actions` for buttons on the right. |
 | `AppCard` | Any bordered surface card. Use `title` prop for a simple heading, `#titleActions` slot for buttons next to the title, or place a manual `.card-head` div in the default slot for complex headers. |
 | `AppBadge` | Colored pill badges. Variants: `attaque`, `limitée`, `gratuite`, `info`, `pm`, `active`. |
 | `AppEmptyState` | Loading / empty / error feedback. Variants: `loading`, `empty` (default), `error`. Slot `#actions` for retry buttons. |
-| `AppIconBtn` | 40×40 px icon-only button. Variants: `ghost` (default), `primary`, `danger`. Use `size` prop to override dimensions. |
 
-Do **not** re-create `.page-head`, `.card`, `.badge`, `.empty-state`, or `.icon-btn` patterns in scoped styles. Extend these components instead.
+### Rules
+
+- **Never** use `<input class="input">` — use `<AppInput>` instead.
+- **Never** use `<button class="btn ...">Text</button>` — use `<AppButton>` instead. Exception: highly specialized buttons (`.hp-btn`, `.dice-btn`, `.mode-tab`, etc.) with unique visual treatment.
+- **Never** redefine `.btn` or `.input` styles in scoped CSS. If a variant is missing, extend the component.
+- `<select>` and `<textarea>` still use `class="input"` from `style.css` — these don't have components yet.
 
 ## Code Quality
 

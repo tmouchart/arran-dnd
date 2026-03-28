@@ -165,7 +165,8 @@ select:focus-visible {
   outline-offset: 1px;
 }
 
-/* Text fields — shared (character sheet, sessions, etc.) */
+/* Text fields — shared base for selects, textareas, readonly displays.
+   For <input> elements, prefer AppInput component instead. */
 .input {
   min-height: 42px;
   padding: 0.5rem 0.64rem;
@@ -174,5 +175,5 @@ select:focus-visible {
   background: var(--surface-2);
   color: var(--text);
   font-family: inherit;
-  font-size: inherit;
+  font-size: 0.92rem;
 }
