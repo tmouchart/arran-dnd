@@ -4,8 +4,9 @@ import { Swords, ChevronDown, ChevronUp, CirclePlus, CircleMinus, Scroll, Dices,
 import AppPageHead from "../components/ui/AppPageHead.vue";
 import AppBadge from "../components/ui/AppBadge.vue";
 import AppEmptyState from "../components/ui/AppEmptyState.vue";
+import AppButton from "../components/ui/AppButton.vue";
 import PassifsCard from "../components/character-sheet/PassifsCard.vue";
-import { useCharacter, loadCharacter } from "../composables/useCharacter";
+import { useCharacter, loadCharacter, PR_MAX } from "../composables/useCharacter";
 import { VOIES_BY_ID, type VoieFamily } from "../data/voies";
 import { PEUPLE_VOIES_BY_ID } from "../data/peuples";
 import { MYSTIC_TALENTS_BY_ID, isMysticTalentId } from "../data/mysticTalents";
@@ -567,6 +568,14 @@ function confirmerRepos() {
   reposResult.value = { roll, conMod, level: c.level, total: gain, hpBefore, hpAfter: c.hpCurrent }
   showReposConfirm.value = false
 }
+
+function gainPr() {
+  if (character.value.prCurrent < PR_MAX) character.value.prCurrent += 1
+}
+
+function losePr() {
+  if (character.value.prCurrent > 0) character.value.prCurrent -= 1
+}
 </script>
 
 <template>
@@ -621,7 +630,7 @@ function confirmerRepos() {
           <span class="ch-sec-label">PC</span>
           <span class="ch-sec-value">{{ character.pcCurrent }}<span class="ch-sec-max">/{{ computedPcMax }}</span></span>
         </div>
-        <button type="button" class="ch-sec-chip ch-sec-chip--pr" :disabled="character.prCurrent <= 0" @click="showReposConfirm = true; reposResult = null">
+        <button type="button" class="ch-sec-chip ch-sec-chip--pr" @click="showReposConfirm = true; reposResult = null">
           <span class="ch-sec-label">PR</span>
           <span class="ch-sec-value-row">
             <span class="ch-sec-value">{{ character.prCurrent }}<span class="ch-sec-max">/5</span></span>
@@ -678,7 +687,7 @@ function confirmerRepos() {
     <AppEmptyState v-else-if="loadError" variant="error">
       <p>{{ loadError }}</p>
       <template #actions>
-        <button type="button" class="btn ghost small" @click="retryLoad">Réessayer</button>
+        <AppButton size="small" @click="retryLoad">Réessayer</AppButton>
       </template>
     </AppEmptyState>
 
@@ -1107,15 +1116,47 @@ function confirmerRepos() {
       </template>
     </div>
 
-    <!-- Confirmation repos -->
+    <!-- Modal PR -->
     <Teleport to="body">
       <div v-if="showReposConfirm" class="modal-backdrop" @click.self="showReposConfirm = false">
         <div class="modal-box">
-          <p class="modal-question">Voulez-vous vous reposer ?</p>
+          <p class="modal-question">Points de récupération</p>
+
+          <!-- PR dots -->
+          <div class="pr-dots-modal">
+            <div
+              v-for="i in PR_MAX"
+              :key="i"
+              class="pr-dot-modal"
+              :class="{ used: i > character.prCurrent }"
+            />
+          </div>
+          <p class="pr-count-label">{{ character.prCurrent }} / {{ PR_MAX }}</p>
+
+          <!-- Rest button -->
+          <button
+            class="btn-modal btn-modal--primary btn-modal--rest"
+            :disabled="character.prCurrent <= 0"
+            @click="confirmerRepos"
+          >
+            <Bandage :size="16" />
+            Se reposer
+          </button>
           <p class="modal-hint">Dépense 1 PR — regagne 1d{{ computedHpDv }} + Mod. CON + Niv.</p>
+
+          <!-- +/- PR manual -->
+          <div class="pr-manual-row">
+            <button class="btn-modal btn-modal--round" :disabled="character.prCurrent <= 0" @click="losePr">
+              <CircleMinus :size="20" />
+            </button>
+            <span class="pr-manual-label">Ajuster les PR</span>
+            <button class="btn-modal btn-modal--round" :disabled="character.prCurrent >= PR_MAX" @click="gainPr">
+              <CirclePlus :size="20" />
+            </button>
+          </div>
+
           <div class="modal-actions">
-            <button class="btn-modal btn-modal--primary" @click="confirmerRepos">Oui</button>
-            <button class="btn-modal btn-modal--ghost" @click="showReposConfirm = false">Non</button>
+            <button class="btn-modal btn-modal--ghost" @click="showReposConfirm = false">Fermer</button>
           </div>
         </div>
       </div>
@@ -1297,13 +1338,9 @@ function confirmerRepos() {
   text-align: center;
   font: inherit;
 }
-.ch-sec-chip--pr:not(:disabled):hover {
+.ch-sec-chip--pr:hover {
   border-color: #3a8a4a;
   background: color-mix(in srgb, #3a8a4a 10%, var(--surface));
-}
-.ch-sec-chip--pr:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
 }
 
 /* ── Modals repos ── */
@@ -1395,6 +1432,85 @@ function confirmerRepos() {
   border: 1px solid var(--border);
 }
 .btn-modal--ghost:hover { color: var(--text); }
+
+.btn-modal--rest {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  justify-content: center;
+}
+.btn-modal--rest:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-modal--round {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn-modal--round:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-2));
+}
+.btn-modal--round:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.pr-dots-modal {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.pr-dot-modal {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2.5px solid var(--accent, #7c5cbf);
+  background: color-mix(in srgb, var(--accent, #7c5cbf) 35%, var(--surface-2));
+  transition: background 0.2s, border-color 0.2s, opacity 0.2s;
+}
+
+.pr-dot-modal.used {
+  background: var(--surface-2);
+  border-color: var(--border);
+  opacity: 0.4;
+}
+
+.pr-count-label {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.pr-manual-row {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+  width: 100%;
+  justify-content: center;
+}
+
+.pr-manual-label {
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-weight: 500;
+}
 
 .ch-abilities {
   display: grid;
