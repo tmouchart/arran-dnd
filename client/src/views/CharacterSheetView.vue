@@ -2,6 +2,7 @@
 import { useRoute } from "vue-router";
 import AppPageHead from "../components/ui/AppPageHead.vue";
 import AppEmptyState from "../components/ui/AppEmptyState.vue";
+import AppButton from "../components/ui/AppButton.vue";
 import { useCharacter, loadCharacter } from "../composables/useCharacter";
 import { inferProfileFamily } from "../utils/inferProfileFamily";
 import { computed, ref } from "vue";
@@ -53,7 +54,7 @@ const TABS: { id: TabId; label: string; icon: string }[] = [
     <AppEmptyState v-else-if="loadError" variant="error">
       <p>{{ loadError }}</p>
       <template #actions>
-        <button type="button" class="btn ghost small" @click="retryLoadSheet">Réessayer</button>
+        <AppButton size="small" @click="retryLoadSheet">Réessayer</AppButton>
       </template>
     </AppEmptyState>
 

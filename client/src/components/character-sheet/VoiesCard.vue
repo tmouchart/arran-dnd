@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import AppCard from "../ui/AppCard.vue";
+import AppButton from "../ui/AppButton.vue";
 import VoiePickerModal from "./VoiePickerModal.vue";
 import { VOIES, VOIES_BY_ID, FAMILY_LABELS, FAMILY_ORDER, type Voie, type VoieFamily } from "../../data/voies";
 import { PEUPLE_VOIES_BY_ID, type PeupleVoie } from "../../data/peuples";
@@ -141,12 +142,11 @@ function addPath(voie: Voie) {
           {{ freePaths.length }} / {{ MAX_FREE_PATHS }} voies
         </span>
       </div>
-      <button
+      <AppButton
         v-if="canAddPath"
-        type="button"
-        class="btn ghost small"
+        size="small"
         @click="showPicker = true"
-      >+ Ajouter</button>
+      >+ Ajouter</AppButton>
     </div>
 
     <ul v-if="character.paths.length" class="voie-list">

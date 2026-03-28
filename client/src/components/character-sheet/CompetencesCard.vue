@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppCard from '../ui/AppCard.vue'
+import AppInput from '../ui/AppInput.vue'
 import AppIconBtn from '../ui/AppIconBtn.vue'
 import { Plus, Trash2 } from 'lucide-vue-next'
 import type { Character, CharacterAbilities } from '../../types/character'
@@ -46,11 +47,10 @@ function setAbility(i: number, val: string) {
 
     <ul v-if="character.competences.length" class="comp-list">
       <li v-for="(comp, i) in character.competences" :key="comp.id" class="comp-row">
-        <input
+        <AppInput
           v-model="comp.name"
-          type="text"
-          class="input comp-name"
           placeholder="Nom"
+          class="comp-name"
         />
         <select
           class="input comp-ability"
@@ -61,10 +61,11 @@ function setAbility(i: number, val: string) {
             {{ opt.label }}
           </option>
         </select>
-        <input
-          v-model.number="comp.bonus"
+        <AppInput
+          v-model="comp.bonus"
           type="number"
-          class="input comp-bonus"
+          class="comp-bonus"
+          text-align="center"
           placeholder="+0"
         />
         <AppIconBtn variant="ghost" :size="32" title="Supprimer" @click="removeCompetence(i)">

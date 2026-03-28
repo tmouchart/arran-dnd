@@ -13,6 +13,7 @@ import { inferProfileFamily } from "../utils/inferProfileFamily";
 import AppPageHead from "../components/ui/AppPageHead.vue";
 import AppBadge from "../components/ui/AppBadge.vue";
 import AppEmptyState from "../components/ui/AppEmptyState.vue";
+import AppButton from "../components/ui/AppButton.vue";
 
 const router = useRouter();
 const characters = ref<ServerCharacter[]>([]);
@@ -94,14 +95,13 @@ function listMetaLine(c: ServerCharacter): string {
     <AppPageHead>
       Personnages
       <template #actions>
-        <button
-          type="button"
-          class="btn ghost small"
+        <AppButton
+          size="small"
           :disabled="creating"
           @click="handleCreate"
         >
           {{ creating ? "…" : "+ Créer" }}
-        </button>
+        </AppButton>
       </template>
     </AppPageHead>
 
@@ -110,7 +110,7 @@ function listMetaLine(c: ServerCharacter): string {
     <AppEmptyState v-else-if="listError" variant="error">
       <p>{{ listError }}</p>
       <template #actions>
-        <button type="button" class="btn ghost small" @click="load">Réessayer</button>
+        <AppButton size="small" @click="load">Réessayer</AppButton>
       </template>
     </AppEmptyState>
 

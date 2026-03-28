@@ -25,6 +25,7 @@ import AppCard from "../components/ui/AppCard.vue";
 import AppBadge from "../components/ui/AppBadge.vue";
 import AppEmptyState from "../components/ui/AppEmptyState.vue";
 import AppIconBtn from "../components/ui/AppIconBtn.vue";
+import AppButton from "../components/ui/AppButton.vue";
 
 const router = useRouter();
 
@@ -276,14 +277,13 @@ onMounted(load);
     <!-- ── Personnages ────────────────────────────────────────────────────── -->
     <AppCard title="Personnages">
       <template #titleActions>
-        <button
-          type="button"
-          class="btn ghost small"
+        <AppButton
+          size="small"
           :disabled="creating"
           @click="handleCreate"
         >
           {{ creating ? "…" : "+ Créer" }}
-        </button>
+        </AppButton>
       </template>
 
       <AppEmptyState v-if="loading" variant="loading">Chargement…</AppEmptyState>
@@ -291,7 +291,7 @@ onMounted(load);
       <AppEmptyState v-else-if="listError" variant="error">
         <p>{{ listError }}</p>
         <template #actions>
-          <button type="button" class="btn ghost small" @click="load">Réessayer</button>
+          <AppButton size="small" @click="load">Réessayer</AppButton>
         </template>
       </AppEmptyState>
 
@@ -347,9 +347,9 @@ onMounted(load);
           <LogOut :size="16" />
           Se déconnecter
         </span>
-        <button type="button" class="btn danger small" @click="handleLogout">
+        <AppButton variant="danger" size="small" @click="handleLogout">
           Déconnexion
-        </button>
+        </AppButton>
       </div>
     </AppCard>
   </div>

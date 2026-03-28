@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import AppCard from "../ui/AppCard.vue";
+import AppInput from "../ui/AppInput.vue";
+import AppButton from "../ui/AppButton.vue";
 import { WEAPONS_CATALOG } from "../../data/weaponsCatalog";
 import { MARTIAL_WEAPON_CATEGORIES } from "../../data/martialWeaponCategories";
 import type { Character, WeaponRow } from "../../types/character";
@@ -76,13 +78,13 @@ function setDamageAbilityFromSelect(w: WeaponRow, v: string) {
             <option v-for="w in g.weapons" :key="w.id" :value="w.id">{{ w.name }}</option>
           </optgroup>
         </select>
-        <button type="button" class="btn ghost small" @click="addCustomWeapon">+ Perso</button>
+        <AppButton size="small" @click="addCustomWeapon">+ Perso</AppButton>
       </div>
     </div>
 
     <ul v-if="character.weapons.length" class="weapon-sheet-list">
       <li v-for="(w, wi) in character.weapons" :key="w.id" class="weapon-sheet-card">
-        <input v-model="w.name" type="text" class="input" placeholder="Nom de l'arme" />
+        <AppInput v-model="w.name" placeholder="Nom de l'arme" />
         <div class="grid-2 tight">
           <label class="field">
             <span>Type</span>
@@ -101,7 +103,7 @@ function setDamageAbilityFromSelect(w: WeaponRow, v: string) {
         <div class="grid-2 tight">
           <label class="field">
             <span>Dés de dégâts</span>
-            <input v-model="w.damageDice" type="text" class="input" placeholder="1d8" />
+            <AppInput v-model="w.damageDice" placeholder="1d8" />
           </label>
           <label class="field">
             <span>Mod. dégâts</span>
@@ -119,22 +121,21 @@ function setDamageAbilityFromSelect(w: WeaponRow, v: string) {
         <div class="grid-2 tight">
           <label class="field">
             <span>Portée (m)</span>
-            <input
-              :value="w.rangeMeters ?? ''"
+            <AppInput
+              :model-value="w.rangeMeters ?? ''"
               type="number"
-              min="0"
-              step="1"
-              class="input"
+              :min="0"
+              :step="1"
               placeholder="—"
-              @input="w.rangeMeters = ($event.target as HTMLInputElement).value === '' ? null : Number(($event.target as HTMLInputElement).value)"
+              @update:model-value="(v: string | number) => w.rangeMeters = v === '' ? null : Number(v)"
             />
           </label>
           <label class="field">
             <span>Notes</span>
-            <input v-model="w.notes" type="text" class="input" placeholder="Optionnel" />
+            <AppInput v-model="w.notes" placeholder="Optionnel" />
           </label>
         </div>
-        <button type="button" class="btn ghost small" @click="removeWeapon(wi)">Retirer</button>
+        <AppButton size="small" @click="removeWeapon(wi)">Retirer</AppButton>
       </li>
     </ul>
     <p v-else class="muted">Aucune arme listée.</p>
@@ -195,5 +196,4 @@ function setDamageAbilityFromSelect(w: WeaponRow, v: string) {
 }
 
 .muted { color: var(--muted); font-size: 0.9rem; margin: 0; }
-.btn.small { min-height: 38px; padding: 0.3rem 0.58rem; font-size: 0.82rem; }
 </style>

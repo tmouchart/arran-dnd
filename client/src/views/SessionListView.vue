@@ -6,6 +6,8 @@ import { fetchSessions, createSession, joinSession, type SessionSummary } from '
 import { useCharacter } from '../composables/useCharacter'
 import AppPageHead from '../components/ui/AppPageHead.vue'
 import AppIconBtn from '../components/ui/AppIconBtn.vue'
+import AppInput from '../components/ui/AppInput.vue'
+import AppButton from '../components/ui/AppButton.vue'
 import AppEmptyState from '../components/ui/AppEmptyState.vue'
 
 const router = useRouter()
@@ -62,14 +64,14 @@ async function handleJoin(id: string) {
     </AppPageHead>
 
     <form v-if="showCreate" class="create-form" @submit.prevent="handleCreate">
-      <input
+      <AppInput
         v-model="newName"
-        class="input create-session-name"
+        class="create-session-name"
         placeholder="Nom de la session"
-        required
-        autofocus
+        :required="true"
+        :autofocus="true"
       />
-      <button type="submit" class="btn primary">Créer</button>
+      <AppButton type="submit" variant="primary">Créer</AppButton>
       <p v-if="createError" class="form-error">{{ createError }}</p>
     </form>
 

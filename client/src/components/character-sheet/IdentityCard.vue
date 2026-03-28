@@ -2,6 +2,7 @@
 import { computed, ref, watch } from "vue";
 import { Pencil, PencilOff, TrendingUp } from "lucide-vue-next";
 import AppCard from "../ui/AppCard.vue";
+import AppInput from "../ui/AppInput.vue";
 import LevelUpModal from "./LevelUpModal.vue";
 import { PEUPLES, PEUPLES_BY_ID, PEUPLE_VOIES_BY_ID } from "../../data/peuples";
 import { FAMILY_LABELS, VOIES_BY_ID } from "../../data/voies";
@@ -124,12 +125,12 @@ function onProfileSelect(value: string) {
     <div class="grid-2">
       <label class="field">
         <span>Nom</span>
-        <input v-model="character.name" type="text" class="input" />
+        <AppInput v-model="character.name" />
       </label>
       <div class="field">
         <span>Niveau</span>
         <div class="level-row">
-          <input v-model.number="character.level" type="number" min="1" class="input narrow" />
+          <AppInput v-model="character.level" type="number" :min="1" class="narrow" />
           <button type="button" class="levelup-btn" title="Monter en niveau" @click="showLevelUp = true">
             <TrendingUp :size="15" />
           </button>
@@ -177,7 +178,7 @@ function onProfileSelect(value: string) {
           </p>
         </template>
         <template v-else>
-          <input v-model="character.profile" type="text" class="input" placeholder="Saisir un profil" />
+          <AppInput v-model="character.profile" placeholder="Saisir un profil" />
         </template>
       </div>
 
@@ -268,7 +269,7 @@ function onProfileSelect(value: string) {
   cursor: default;
 }
 
-.input.narrow {
+.narrow {
   max-width: 6rem;
 }
 

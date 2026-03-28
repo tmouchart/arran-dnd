@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { X, GripVertical, Dices, Shuffle } from 'lucide-vue-next'
+import AppButton from '../ui/AppButton.vue'
 import type { Character, CharacterAbilities } from '../../types/character'
 import { getRacialMods, ABILITY_LABELS, type AbilityMods } from '../../data/racialAbilityMods'
 
@@ -262,8 +263,8 @@ watch(() => props.show, (shown) => {
 
         <!-- Footer -->
         <div class="modal-footer">
-          <button class="btn ghost" @click="close">Annuler</button>
-          <button class="btn primary" @click="confirm">Confirmer</button>
+          <AppButton @click="close">Annuler</AppButton>
+          <AppButton variant="primary" @click="confirm">Confirmer</AppButton>
         </div>
       </div>
     </div>

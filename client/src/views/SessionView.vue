@@ -7,6 +7,8 @@ import { user } from '../composables/useAuth'
 import { patchCharacterHp } from '../api/characters'
 import { MONSTERS_CATALOG, type Monster } from '../data/monstersCatalog'
 import { findCatalogMonster, filterCatalog } from '../utils/monsterSession'
+import AppInput from '../components/ui/AppInput.vue'
+import AppButton from '../components/ui/AppButton.vue'
 import MonsterDetailModal from '../components/session/MonsterDetailModal.vue'
 import type { SessionParticipant, SessionMonster } from '../api/sessions'
 
@@ -213,15 +215,16 @@ async function adjustMyHp(p: SessionParticipant, delta: number) {
       <section v-if="!isGm" class="own-initiative">
         <label class="field-label">Mon initiative</label>
         <div class="own-initiative-row">
-          <input
-            v-model.number="myInitiative"
+          <AppInput
+            v-model="myInitiative"
             type="number"
-            class="input session-num-input"
+            class="session-num-input"
+            text-align="center"
             placeholder="—"
-            min="-10"
-            max="100"
+            :min="-10"
+            :max="100"
           />
-          <button class="btn primary" @click="handleSetInitiative">OK</button>
+          <AppButton variant="primary" @click="handleSetInitiative">OK</AppButton>
         </div>
       </section>
 
@@ -234,23 +237,25 @@ async function adjustMyHp(p: SessionParticipant, delta: number) {
           <div v-for="m in session.monsters" :key="m.id" class="monster-row">
             <span class="monster-name clickable" @click="openMonsterDetail(m)">{{ m.name }}</span>
             <div class="monster-controls">
-              <input
+              <AppInput
                 type="number"
-                class="input session-num-input"
-                :value="m.hpCurrent"
+                class="session-num-input"
+                text-align="center"
+                :model-value="m.hpCurrent"
                 :max="m.hpMax"
-                min="0"
+                :min="0"
                 title="PV actuels"
-                @change="(e) => handleMonsterHp(m.id, e)"
+                @change="(e: Event) => handleMonsterHp(m.id, e)"
               />
               <span class="hp-max-label">/ {{ m.hpMax }}</span>
-              <input
+              <AppInput
                 type="number"
-                class="input session-init-input"
-                :value="m.initiative"
+                class="session-init-input"
+                text-align="center"
+                :model-value="m.initiative"
                 placeholder="Init"
                 title="Initiative"
-                @change="(e) => handleMonsterInitiative(m.id, e)"
+                @change="(e: Event) => handleMonsterInitiative(m.id, e)"
               />
               <button
                 class="btn ghost icon-btn btn-danger"
@@ -274,11 +279,11 @@ async function adjustMyHp(p: SessionParticipant, delta: number) {
             Ajouter depuis le catalogue
           </button>
           <div v-if="showCatalogPicker" class="catalog-dropdown">
-            <input
+            <AppInput
               v-model="catalogSearch"
-              class="input catalog-search"
+              class="catalog-search"
               placeholder="Rechercher un monstre…"
-              autofocus
+              :autofocus="true"
             />
             <ul class="catalog-list">
               <li
@@ -299,24 +304,26 @@ async function adjustMyHp(p: SessionParticipant, delta: number) {
 
         <!-- Formulaire ajout monstre -->
         <form class="add-monster-form" @submit.prevent="handleAddMonster">
-          <input
+          <AppInput
             v-model="monsterName"
-            class="input add-monster-name"
+            class="add-monster-name"
             placeholder="Nom du monstre"
-            required
+            :required="true"
           />
-          <input
-            v-model.number="monsterHpMax"
+          <AppInput
+            v-model="monsterHpMax"
             type="number"
-            class="input session-num-input"
+            class="session-num-input"
+            text-align="center"
             placeholder="PV max"
-            min="1"
-            required
+            :min="1"
+            :required="true"
           />
-          <input
-            v-model.number="monsterInitiative"
+          <AppInput
+            v-model="monsterInitiative"
             type="number"
-            class="input session-init-input"
+            class="session-init-input"
+            text-align="center"
             placeholder="Init"
           />
           <button type="submit" class="btn primary icon-btn" title="Ajouter">
@@ -588,15 +595,11 @@ async function adjustMyHp(p: SessionParticipant, delta: number) {
 .session-num-input {
   width: 4.5rem;
   flex-shrink: 0;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
 }
 
 .session-init-input {
   width: 4rem;
   flex-shrink: 0;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
 }
 
 /* ── Monster section ── */
@@ -777,7 +780,6 @@ async function adjustMyHp(p: SessionParticipant, delta: number) {
   border-bottom: 1px solid var(--border);
   border-radius: 0;
   padding: 0.65rem 0.8rem;
-  font-size: 0.88rem;
 }
 
 .catalog-list {

@@ -4,6 +4,8 @@ import { useRouter, useRoute } from "vue-router";
 import { login } from "../composables/useAuth";
 import { register as apiRegister } from "../api/auth";
 import { user } from "../composables/useAuth";
+import AppInput from "../components/ui/AppInput.vue";
+import AppButton from "../components/ui/AppButton.vue";
 
 const router = useRouter();
 const route = useRoute();
@@ -116,43 +118,39 @@ async function submit() {
 
       <form class="login-form" @submit.prevent="submit">
         <label class="field-label" for="username">Identifiant</label>
-        <input
+        <AppInput
           id="username"
           v-model="username"
-          type="text"
-          class="field-input"
           autocomplete="username"
-          required
+          :required="true"
         />
 
         <label class="field-label" for="password">Mot de passe</label>
-        <input
+        <AppInput
           id="password"
           v-model="password"
           type="password"
-          class="field-input"
           :autocomplete="mode === 'register' ? 'new-password' : 'current-password'"
-          required
+          :required="true"
         />
 
         <template v-if="mode === 'register'">
           <label class="field-label" for="password-confirm">Confirmer le mot de passe</label>
-          <input
+          <AppInput
             id="password-confirm"
             v-model="passwordConfirm"
             type="password"
-            class="field-input"
             autocomplete="new-password"
-            required
+            :required="true"
           />
         </template>
 
         <p v-if="error" class="login-error">{{ error }}</p>
 
-        <button type="submit" class="btn primary login-btn" :disabled="loading">
+        <AppButton type="submit" variant="primary" block :disabled="loading" class="login-btn">
           <template v-if="loading">{{ mode === 'register' ? 'Création…' : 'Connexion…' }}</template>
           <template v-else>{{ mode === 'register' ? 'Créer mon compte' : 'Se connecter' }}</template>
-        </button>
+        </AppButton>
       </form>
       <div class="oauth-divider"><span>ou</span></div>
 
@@ -235,21 +233,6 @@ async function submit() {
   margin-top: 0.6rem;
 }
 
-.field-input {
-  width: 100%;
-  padding: 0.55rem 0.75rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface-2);
-  color: var(--text);
-  font-size: 0.95rem;
-  transition: border-color 140ms;
-}
-
-.field-input:focus {
-  outline: none;
-  border-color: var(--accent);
-}
 
 .login-error {
   color: var(--danger);
