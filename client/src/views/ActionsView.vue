@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, reactive, watch } from "vue";
-import { Swords, ChevronDown, ChevronUp, CirclePlus, CircleMinus, Scroll, Dices, Sparkles, RefreshCw, Bandage } from "lucide-vue-next";
+import { Swords, ChevronDown, ChevronUp, CirclePlus, CircleMinus, Scroll, Dices, Sparkles, RefreshCw, Bandage, Shield } from "lucide-vue-next";
 import AppPageHead from "../components/ui/AppPageHead.vue";
 import AppBadge from "../components/ui/AppBadge.vue";
 import AppEmptyState from "../components/ui/AppEmptyState.vue";
@@ -227,6 +227,7 @@ function modDisplay(score: number): string {
 
 const competencesOpen = ref(false);
 const manoeuversOpen = ref(false);
+const defensiveOpen = ref(false);
 const diversOpen = ref(false);
 
 interface Manoeuvre {
@@ -1061,6 +1062,44 @@ function losePr() {
         </template>
       </div>
 
+      <!-- Actions défensives collapsibles -->
+      <div
+        class="action-bubble defensive-group"
+        :class="{ 'defensive-group--open': defensiveOpen }"
+        @click.self="defensiveOpen = !defensiveOpen"
+      >
+        <div class="action-header defensive-header" @click="defensiveOpen = !defensiveOpen">
+          <Shield :size="15" class="defensive-icon" />
+          <span class="action-name">Actions défensives</span>
+          <span class="defensive-count">2</span>
+          <ChevronUp v-if="defensiveOpen" :size="16" class="defensive-chevron" />
+          <ChevronDown v-else :size="16" class="defensive-chevron" />
+        </div>
+        <p v-if="!defensiveOpen" class="action-description defensive-hint">
+          Défense simple, défense totale.
+        </p>
+        <template v-if="defensiveOpen">
+          <div class="defensive-list">
+            <div class="action-bubble defensive-bubble" @click.stop>
+              <div class="action-header">
+                <span class="action-name">Défense simple</span>
+                <AppBadge variant="attaque">Attaque</AppBadge>
+              </div>
+              <p class="action-description">Sacrifier une attaque pour gagner +2 en DEF jusqu'au prochain tour.</p>
+              <div class="defensive-def-bonus">DEF {{ computedDef }} → {{ computedDef + 2 }}</div>
+            </div>
+            <div class="action-bubble defensive-bubble" @click.stop>
+              <div class="action-header">
+                <span class="action-name">Défense totale</span>
+                <AppBadge variant="limitée">Limitée</AppBadge>
+              </div>
+              <p class="action-description">Ne faire que se défendre ; +4 en DEF jusqu'au prochain tour.</p>
+              <div class="defensive-def-bonus">DEF {{ computedDef }} → {{ computedDef + 4 }}</div>
+            </div>
+          </div>
+        </template>
+      </div>
+
       <!-- Divers collapsibles -->
       <div
         class="action-bubble divers-group"
@@ -1884,6 +1923,79 @@ function losePr() {
   color: color-mix(in srgb, var(--muted) 80%, #e67e22);
 }
 
+/* ── Defensive group ────────────────────────────────────────────────────── */
+
+.defensive-group {
+  cursor: pointer;
+  border-color: color-mix(in srgb, #3498db 35%, var(--border));
+  background: color-mix(in srgb, #3498db 5%, var(--surface-2));
+}
+
+.defensive-group--open {
+  cursor: default;
+}
+
+.defensive-header {
+  cursor: pointer;
+  user-select: none;
+}
+
+.defensive-icon {
+  color: #3498db;
+  flex-shrink: 0;
+}
+
+.defensive-count {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 0.1em 0.55em;
+  border-radius: 999px;
+}
+
+.defensive-chevron {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.defensive-hint {
+  font-style: italic;
+}
+
+.defensive-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.25rem;
+}
+
+.defensive-bubble {
+  background: var(--surface);
+  border-color: color-mix(in srgb, #3498db 20%, var(--border));
+  cursor: default;
+  padding: 0.75rem 0.9rem 0.65rem;
+}
+
+.defensive-bubble:hover {
+  border-color: color-mix(in srgb, #3498db 50%, var(--border));
+}
+
+.defensive-def-bonus {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #3498db;
+  background: color-mix(in srgb, #3498db 10%, var(--surface));
+  border: 1px solid color-mix(in srgb, #3498db 25%, var(--border));
+  border-radius: 0.5rem;
+  padding: 0.25rem 0.6rem;
+  margin-top: 0.2rem;
+}
+
 /* ── Divers group ───────────────────────────────────────────────────────── */
 
 .divers-group {
@@ -1957,6 +2069,7 @@ function losePr() {
   .passifs-in-actions,
   .competences-group,
   .manoeuvres-group,
+  .defensive-group,
   .divers-group {
     grid-column: 1 / -1;
   }
