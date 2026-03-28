@@ -1,7 +1,7 @@
 import "./loadEnv.js";
 import { getDatabaseUrl } from "./db/databaseUrl.js";
 import { runMigrations } from "./db/runMigrations.js";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 import { GoogleGenAI } from "@google/genai";
@@ -14,7 +14,7 @@ import sessionsRouter from "./routes/sessions.js";
 import journalRouter from "./routes/journal.js";
 import { requireAuth, type AuthRequest } from "./auth/middleware.js";
 import { loadCoreIndex, loadTopic } from "./knowledge/loadKnowledge.js";
-import { CLIENT_DIST } from "./paths.js";
+import { CLIENT_DIST, REPO_ROOT } from "./paths.js";
 import {
   anthropicTool,
   geminiTool,
@@ -23,7 +23,7 @@ import {
 } from "./knowledge/tools.js";
 import { and, eq } from "drizzle-orm";
 import { db } from "./db/index.js";
-import { characters, journalCompagnie, journalPages } from "./db/schema.js";
+import { characters, generatedImages, journalCompagnie, journalPages } from "./db/schema.js";
 
 const app = express();
 app.use(cors({ origin: true, credentials: true }));
@@ -45,10 +45,71 @@ app.use("/api/characters", charactersRouter);
 app.use("/api/sessions", sessionsRouter);
 app.use("/api/journal", journalRouter);
 
+// Serve generated images from database (auth-protected, owner only)
+app.get("/api/images/:id", requireAuth, async (req, res) => {
+  const id = Number(req.params.id);
+  const userId = (req as AuthRequest).userId;
+  if (!Number.isFinite(id) || id <= 0) {
+    res.status(400).json({ error: "Invalid image ID" });
+    return;
+  }
+  const [row] = await db
+    .select({ data: generatedImages.data, mimeType: generatedImages.mimeType, userId: generatedImages.userId })
+    .from(generatedImages)
+    .where(and(eq(generatedImages.id, id), eq(generatedImages.userId, userId)));
+  if (!row) {
+    res.status(404).json({ error: "Image not found" });
+    return;
+  }
+  const buffer = Buffer.from(row.data, "base64");
+  res.setHeader("Content-Type", row.mimeType);
+  res.setHeader("Cache-Control", "private, max-age=604800, immutable");
+  res.setHeader("Content-Length", buffer.length);
+  res.end(buffer);
+});
+
+// List generated images for current user (metadata only, no binary data)
+app.get("/api/images", requireAuth, async (req, res) => {
+  const userId = (req as AuthRequest).userId;
+  const rows = await db
+    .select({
+      id: generatedImages.id,
+      prompt: generatedImages.prompt,
+      mimeType: generatedImages.mimeType,
+      createdAt: generatedImages.createdAt,
+    })
+    .from(generatedImages)
+    .where(eq(generatedImages.userId, userId))
+    .orderBy(generatedImages.createdAt);
+  res.json(rows.map((r) => ({
+    id: r.id,
+    url: `/api/images/${r.id}`,
+    prompt: r.prompt,
+    mimeType: r.mimeType,
+    createdAt: r.createdAt,
+  })));
+});
+
 const AI_PROVIDER = process.env.AI_PROVIDER ?? "gemini";
 const ANTHROPIC_MODEL =
   process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-20250514";
 const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+/** Available image generation models (best first). Override with GEMINI_IMAGE_MODEL env var. */
+const GEMINI_IMAGE_MODELS = [
+  "gemini-3.1-flash-image-preview", // Nano Banana 2 — best quality/price, up to 4K
+  "nano-banana-pro-preview",        // Gemini 3 Pro Image — highest quality, ~$0.13/img
+  "gemini-3-pro-image-preview",     // Gemini 3 Pro Image (alias)
+  "gemini-2.5-flash-image",         // Nano Banana 1 — deprecated oct 2026
+] as const;
+const GEMINI_IMAGE_MODEL = process.env.GEMINI_IMAGE_MODEL ?? GEMINI_IMAGE_MODELS[0];
+
+// Load style reference image for image generation (mood board collage)
+const STYLE_REF_PATH = join(REPO_ROOT, "example-images", "style-reference.jpg");
+const styleRefBase64 = existsSync(STYLE_REF_PATH)
+  ? readFileSync(STYLE_REF_PATH).toString("base64")
+  : null;
+if (styleRefBase64) console.log("[image] Style reference loaded from style-reference.jpg");
+
 const MAX_OUTPUT_TOKENS = Number(process.env.MAX_OUTPUT_TOKENS ?? 8192);
 const anthropicClient = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -101,10 +162,19 @@ Tu t'adresses aux joueurs et au meneur en français, toujours en restant en pers
 - get_page retourne le contenu complet d'une page wiki par son id. Utilise-le après get_journal si une page semble pertinente.
 - PROACTIVITÉ : dès qu'un joueur pose une question liée à leurs aventures, sessions passées, PNJ rencontrés, lieux visités, événements vécus, ou tout sujet narratif de la campagne → appelle immédiatement get_journal SANS demander confirmation. Va chercher l'information d'abord, réponds ensuite.
 - RÉSUMÉ D'AVENTURES : si on te demande de raconter ou résumer les aventures, appelle get_journal puis enchaîne avec get_page sur les pages les plus récentes pour construire un récit complet. Ne te limite pas au journal — lis aussi les pages.
-- Ne demande pas "veux-tu que je consulte le journal ?" — fais-le directement.`;
+- Ne demande pas "veux-tu que je consulte le journal ?" — fais-le directement.
+
+🎨 Illustration (generate_image) :
+- Tu peux générer des illustrations (scènes, portraits, cartes, objets) avec l'outil generate_image.
+- Utilise-le quand le joueur demande une image, ou quand une description de scène ou de personnage bénéficierait d'une illustration.
+- Le prompt DOIT être en anglais, détaillé, style "medieval high fantasy, painterly, warm tones".
+- Inclus toujours le contexte du monde d'Arran dans le prompt (elfes, nains, cristaux, forêts anciennes, etc.).
+- Après génération, continue ta réponse normalement — l'image s'affiche automatiquement dans le chat.
+- N'utilise PAS cet outil pour les questions de règles, de mécanique ou de statistiques.
+- Limite : maximum 1 image par réponse sauf demande explicite du joueur.`;
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
-type SseEvent = "delta" | "done" | "error" | "tool_use" | "character_updated";
+type SseEvent = "delta" | "done" | "error" | "tool_use" | "character_updated" | "image";
 
 function writeSse(res: express.Response, event: SseEvent, data: unknown): void {
   res.write(`event: ${event}\n`);
@@ -317,6 +387,7 @@ async function charNameByUserId(userId: number | null): Promise<string | null> {
 app.post("/api/chat", requireAuth, async (req, res) => {
   try {
     const chatUser = (req as AuthRequest).username;
+    const chatUserId = (req as AuthRequest).userId;
     const body = req.body as { messages?: ChatMessage[]; character?: CharacterPayload; previousCharacter?: CharacterPayload };
     const messages = body.messages;
     if (!Array.isArray(messages) || messages.length === 0) {
@@ -512,6 +583,63 @@ app.post("/api/chat", requireAuth, async (req, res) => {
             console.log(`[journal] Loaded page ${funcArgs.id}`);
             console.log(`[journal] Page content:\n${toolResult}`);
             writeSse(res, "tool_use", { tool: "get_page", label: `Lecture de la page : ${page?.title ?? pageId}` });
+          }
+        } else if (funcName === "generate_image") {
+          const imagePrompt = (funcArgs.prompt as string) ?? "";
+          writeSse(res, "tool_use", { tool: "generate_image", label: "Génération d'une illustration…" });
+
+          try {
+            const imageParts: Array<Record<string, unknown>> = [];
+            if (styleRefBase64) {
+              imageParts.push({
+                inlineData: { mimeType: "image/jpeg", data: styleRefBase64 },
+              });
+              imageParts.push({
+                text: "Generate an image in the exact same artistic style as this reference (European fantasy comic book / bande dessinée). Match the color palette, ink linework, and painterly rendering. Subject: " + imagePrompt,
+              });
+            } else {
+              imageParts.push({ text: imagePrompt });
+            }
+
+            const imageResponse = await geminiClient!.models.generateContent({
+              model: GEMINI_IMAGE_MODEL,
+              contents: [{ role: "user", parts: imageParts }],
+              config: {
+                responseModalities: ["Text", "Image"],
+              },
+            });
+
+            const parts = imageResponse.candidates?.[0]?.content?.parts ?? [];
+            const imagePart = parts.find(
+              (p) => (p.inlineData as { mimeType?: string } | undefined)?.mimeType?.startsWith("image/")
+            );
+
+            const inlineData = imagePart?.inlineData as
+              | { mimeType: string; data: string }
+              | undefined;
+
+            if (inlineData) {
+              const [inserted] = await db
+                .insert(generatedImages)
+                .values({
+                  userId: chatUserId,
+                  data: inlineData.data,
+                  mimeType: inlineData.mimeType,
+                  prompt: imagePrompt,
+                })
+                .returning({ id: generatedImages.id });
+
+              const imageUrl = `/api/images/${inserted.id}`;
+              writeSse(res, "image", { url: imageUrl, alt: imagePrompt });
+              toolResult = "Image générée avec succès. L'image est affichée dans le chat. Continue ta réponse normalement sans re-décrire l'image en détail.";
+              console.log(`[generate_image] Saved image ${inserted.id} for prompt: "${imagePrompt.slice(0, 80)}…"`);
+            } else {
+              toolResult = "La génération d'image a échoué — aucune image retournée par le modèle.";
+              console.error("[generate_image] No image part in response");
+            }
+          } catch (err) {
+            console.error("[generate_image] Error:", err);
+            toolResult = "Erreur lors de la génération de l'image. Réessaie plus tard.";
           }
         } else {
           console.error(`[chat] Unknown tool call: "${funcName}"`);

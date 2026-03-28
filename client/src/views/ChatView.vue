@@ -3,8 +3,9 @@ import { ref, nextTick, onMounted, onUnmounted } from "vue";
 import MarkdownIt from "markdown-it";
 import DOMPurify from "dompurify";
 import { streamChat, type ChatMessage, type ToolUseEntry } from "../api/chat";
-import { SendHorizonal, SquarePen, Sparkles } from "lucide-vue-next";
+import { SendHorizonal, SquarePen, Sparkles, Download, X } from "lucide-vue-next";
 import AppIconBtn from "../components/ui/AppIconBtn.vue";
+import AppEmptyState from "../components/ui/AppEmptyState.vue";
 import { useCharacter, loadCharacter } from "../composables/useCharacter";
 import {
   loadChatMessages,
@@ -156,6 +157,14 @@ async function submit() {
           flushTypewriterQueue();
           error.value = msg;
         },
+        onImage: (url, alt) => {
+          const last = messages.value[messages.value.length - 1];
+          if (last && last.role === "assistant") {
+            if (!last.images) last.images = [];
+            last.images.push({ url, alt });
+            scrollToBottom();
+          }
+        },
         onCharacterUpdated: (row, previous) => {
           undoSnapshot.value = previous;
           loadCharacter((row as { id?: number }).id);
@@ -199,6 +208,67 @@ function clearChat() {
   error.value = null;
   undoSnapshot.value = null;
 }
+
+// ── Tab system ────────────────────────────────────────────────────────────────
+type Tab = "chat" | "images";
+const activeTab = ref<Tab>("chat");
+
+// ── Image gallery ─────────────────────────────────────────────────────────────
+interface GalleryImage {
+  id: number;
+  url: string;
+  prompt: string;
+  createdAt: string;
+}
+
+const galleryImages = ref<GalleryImage[]>([]);
+const galleryLoading = ref(false);
+
+async function loadGallery() {
+  galleryLoading.value = true;
+  try {
+    const res = await fetch("/api/images", { credentials: "include" });
+    if (res.ok) {
+      galleryImages.value = (await res.json()) as GalleryImage[];
+    }
+  } catch {
+    // ignore
+  }
+  galleryLoading.value = false;
+}
+
+function switchTab(tab: Tab) {
+  activeTab.value = tab;
+  if (tab === "images" && galleryImages.value.length === 0) {
+    loadGallery();
+  }
+}
+
+// ── Image modal ───────────────────────────────────────────────────────────────
+const modalImage = ref<{ url: string; alt: string } | null>(null);
+
+function openImageModal(url: string, alt: string) {
+  modalImage.value = { url, alt };
+}
+
+function closeImageModal() {
+  modalImage.value = null;
+}
+
+async function downloadImage() {
+  if (!modalImage.value) return;
+  try {
+    const res = await fetch(modalImage.value.url, { credentials: "include" });
+    const blob = await res.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `isilwen-${Date.now()}.png`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  } catch {
+    // ignore
+  }
+}
 </script>
 
 <template>
@@ -210,6 +280,7 @@ function clearChat() {
           <span class="chat-title-full">🔮 Isilwen, miroir astral</span>
         </h1>
         <AppIconBtn
+          v-if="activeTab === 'chat'"
           :size="34"
           title="Nouvelle conversation"
           class="new-chat-btn"
@@ -218,11 +289,16 @@ function clearChat() {
           <SquarePen :size="18" />
         </AppIconBtn>
       </div>
+      <nav class="isilwen-tabs">
+        <button class="isilwen-tab" :class="{ active: activeTab === 'chat' }" @click="switchTab('chat')">💬 Chat</button>
+        <button class="isilwen-tab" :class="{ active: activeTab === 'images' }" @click="switchTab('images')">🎨 Images</button>
+      </nav>
     </header>
 
     <p v-if="loadError" class="error" role="alert">{{ loadError }}</p>
 
-    <div ref="threadEl" class="thread" role="log">
+    <!-- Chat tab -->
+    <div v-show="activeTab === 'chat'" ref="threadEl" class="thread" role="log">
       <p v-if="messages.length === 0" class="empty">
         Je suis Isilwen : le miroir ne montre rien sans une question posée avec
         intention. Héros des Terres d’Arran, qu’aimerais-tu éclaircir — une
@@ -248,6 +324,17 @@ function clearChat() {
             {{ toolUseLabel(tu) }}
           </span>
         </div>
+        <div v-if="m.images?.length" class="message-images">
+          <img
+            v-for="(img, k) in m.images"
+            :key="k"
+            :src="img.url"
+            :alt="img.alt"
+            class="generated-image"
+            loading="lazy"
+            @click="openImageModal(img.url, img.alt)"
+          />
+        </div>
         <div
           v-if="m.role === 'assistant'"
           class="content assistant-content"
@@ -257,9 +344,9 @@ function clearChat() {
       </article>
     </div>
 
-    <p v-if="error" class="error" role="alert">{{ error }}</p>
+    <p v-if="error && activeTab === 'chat'" class="error" role="alert">{{ error }}</p>
 
-    <form class="composer" @submit.prevent="submit">
+    <form v-show="activeTab === 'chat'" class="composer" @submit.prevent="submit">
       <textarea
         ref="textareaEl"
         v-model="input"
@@ -285,6 +372,42 @@ function clearChat() {
         </button>
       </div>
     </form>
+
+    <!-- Images tab -->
+    <div v-if="activeTab === 'images'" class="gallery-container">
+      <AppEmptyState v-if="galleryLoading" variant="loading">Chargement…</AppEmptyState>
+      <div v-else-if="galleryImages.length === 0" class="gallery-empty">
+        Aucune image générée pour le moment. Demande à Isilwen d'illustrer une scène !
+      </div>
+      <div v-else class="gallery-grid">
+        <div
+          v-for="img in galleryImages"
+          :key="img.id"
+          class="gallery-card"
+          @click="openImageModal(img.url, img.prompt)"
+        >
+          <img :src="img.url" :alt="img.prompt" class="gallery-thumb" loading="lazy" />
+          <p class="gallery-prompt">{{ img.prompt }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Image modal -->
+    <Teleport to="body">
+      <div v-if="modalImage" class="img-modal-backdrop" @click.self="closeImageModal">
+        <div class="img-modal-box">
+          <div class="img-modal-toolbar">
+            <button type="button" class="img-modal-btn" title="Enregistrer" @click="downloadImage">
+              <Download :size="18" />
+            </button>
+            <button type="button" class="img-modal-btn" title="Fermer" @click="closeImageModal">
+              <X :size="18" />
+            </button>
+          </div>
+          <img :src="modalImage.url" :alt="modalImage.alt" class="img-modal-full" />
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -483,6 +606,17 @@ function clearChat() {
   opacity: 0.7;
 }
 
+.message-images {
+  margin: 0.4rem 0;
+}
+
+.generated-image {
+  max-width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  display: block;
+}
+
 .error {
   color: var(--danger);
   font-size: 0.92rem;
@@ -579,5 +713,146 @@ function clearChat() {
   .content {
     font-size: 15px;
   }
+}
+
+/* ── Tabs ──────────────────────────────────────────────────────────────────── */
+
+.isilwen-tabs {
+  display: flex;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+}
+
+.isilwen-tab {
+  padding: 0.35rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 120ms, color 120ms, border-color 120ms;
+}
+
+.isilwen-tab:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.isilwen-tab.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* ── Gallery ───────────────────────────────────────────────────────────────── */
+
+.gallery-container {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0.5rem 0;
+}
+
+.gallery-empty {
+  color: var(--muted);
+  font-style: italic;
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
+.gallery-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 150ms, box-shadow 150ms;
+}
+
+.gallery-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.gallery-thumb {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
+}
+
+.gallery-prompt {
+  padding: 0.4rem 0.55rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+  line-height: 1.3;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Image modal ───────────────────────────────────────────────────────────── */
+
+.img-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.img-modal-box {
+  max-width: min(90vw, 800px);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.img-modal-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.img-modal-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  cursor: pointer;
+  transition: background 120ms;
+}
+
+.img-modal-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.img-modal-full {
+  max-width: 100%;
+  max-height: calc(90vh - 3rem);
+  border-radius: 10px;
+  object-fit: contain;
+}
+
+.generated-image {
+  cursor: pointer;
 }
 </style>

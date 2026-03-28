@@ -6,10 +6,16 @@ export interface ToolUseEntry {
   label?: string
 }
 
+export interface ChatImage {
+  url: string
+  alt: string
+}
+
 export interface ChatMessage {
   role: ChatRole
   content: string
   toolUses?: ToolUseEntry[]
+  images?: ChatImage[]
 }
 
 interface StreamDonePayload {
@@ -27,6 +33,7 @@ export interface StreamChatOptions {
   onError?: (message: string) => void
   onToolUse?: (entry: ToolUseEntry) => void
   onCharacterUpdated?: (character: Record<string, unknown>, previousCharacter: Record<string, unknown>) => void
+  onImage?: (url: string, alt: string) => void
 }
 
 export async function streamChat(
@@ -96,6 +103,17 @@ export async function streamChat(
         }
         if (parsed.character) {
           options.onCharacterUpdated?.(parsed.character, parsed.previousCharacter ?? {})
+        }
+      } catch {
+        // ignore malformed event
+      }
+      return
+    }
+    if (eventName === 'image') {
+      try {
+        const parsed = JSON.parse(eventData) as { url?: string; alt?: string }
+        if (parsed.url) {
+          options.onImage?.(parsed.url, parsed.alt ?? '')
         }
       } catch {
         // ignore malformed event

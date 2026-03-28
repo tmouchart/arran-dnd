@@ -118,6 +118,15 @@ export const journalPages = pgTable('journal_pages', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })
 
+export const generatedImages = pgTable('generated_images', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  data: text('data').notNull(),
+  mimeType: text('mime_type').notNull(),
+  prompt: text('prompt').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
 export type UserRow = typeof users.$inferSelect
 export type CharacterRow = typeof characters.$inferSelect
 export type CharacterInsert = typeof characters.$inferInsert

@@ -141,5 +141,24 @@ export const geminiTool: GeminiTool = {
         required: ["id"],
       },
     },
+    {
+      name: "generate_image",
+      description:
+        "Génère une illustration (scène, portrait, carte, objet) en rapport avec les Terres d'Arran. " +
+        "Utilise cet outil quand le joueur demande une illustration ou quand une description visuelle enrichirait la conversation. " +
+        "Ne l'utilise PAS pour les questions de règles ou de mécanique.",
+      parameters: {
+        type: Type.OBJECT,
+        properties: {
+          prompt: {
+            type: Type.STRING,
+            description:
+              "Description détaillée de l'image à générer, en anglais, style medieval fantasy. " +
+              "Inclure : sujet, cadrage, ambiance, palette de couleurs, style artistique.",
+          },
+        },
+        required: ["prompt"],
+      },
+    },
   ],
 };
