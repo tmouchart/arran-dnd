@@ -700,12 +700,31 @@ app.post("/api/chat", requireAuth, async (req, res) => {
 
 // Production: Vite build + Vue Router (history) fallback — register after /api routes
 if (existsSync(CLIENT_DIST)) {
-  app.use(express.static(CLIENT_DIST));
+  // Hashed assets (JS/CSS) — immutable, long cache
+  app.use(
+    "/assets",
+    express.static(join(CLIENT_DIST, "assets"), {
+      maxAge: "1y",
+      immutable: true,
+    })
+  );
+  // Everything else (index.html, sw.js, manifest) — always revalidate
+  app.use(
+    express.static(CLIENT_DIST, {
+      maxAge: 0,
+      setHeaders(res, filePath) {
+        if (filePath.endsWith(".html") || filePath.endsWith("sw.js")) {
+          res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        }
+      },
+    })
+  );
   app.use((req, res, next) => {
     if (req.method !== "GET" || req.path.startsWith("/api")) {
       next();
       return;
     }
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.sendFile(join(CLIENT_DIST, "index.html"), (err) => {
       if (err) next(err);
     });
