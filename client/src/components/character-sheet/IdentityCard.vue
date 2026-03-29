@@ -27,7 +27,9 @@ const portraitInput = ref<HTMLInputElement | null>(null);
 const portraitUploading = ref(false);
 
 const portraitUrl = computed(() =>
-  props.character.portraitImageId ? `/api/images/${props.character.portraitImageId}` : null
+  props.character.portraitImageId
+    ? `/api/images/${props.character.portraitImageId}`
+    : null,
 );
 
 function triggerPortraitPick() {
@@ -83,8 +85,8 @@ const availableCultures = computed(() => {
   return peuple ? peuple.voiesCulturelles : [];
 });
 
-const selectedCultureId = computed(() =>
-  props.character.paths.find((p) => p.kind === "culturelle")?.id ?? "",
+const selectedCultureId = computed(
+  () => props.character.paths.find((p) => p.kind === "culturelle")?.id ?? "",
 );
 
 function applyPeupleUserChange(newPeople: string) {
@@ -92,11 +94,18 @@ function applyPeupleUserChange(newPeople: string) {
   if (newPeople === c.people) return;
   c.people = newPeople;
   c.profile = "";
-  c.paths = c.paths.filter((p) => p.kind !== "peuple" && p.kind !== "culturelle");
+  c.paths = c.paths.filter(
+    (p) => p.kind !== "peuple" && p.kind !== "culturelle",
+  );
   const peuple = PEUPLES_BY_ID[newPeople];
   if (peuple) {
     c.paths.unshift(
-      ...peuple.voiesDePeuple.map((v) => ({ id: v.id, name: v.name, rank: 0, kind: "peuple" as const })),
+      ...peuple.voiesDePeuple.map((v) => ({
+        id: v.id,
+        name: v.name,
+        rank: 0,
+        kind: "peuple" as const,
+      })),
     );
   }
 }
@@ -107,7 +116,10 @@ function selectCulture(id: string) {
   if (!id) return;
   const voie = PEUPLE_VOIES_BY_ID[id];
   if (!voie) return;
-  const lastPeupleIdx = c.paths.reduce((last, p, i) => (p.kind === "peuple" ? i : last), -1);
+  const lastPeupleIdx = c.paths.reduce(
+    (last, p, i) => (p.kind === "peuple" ? i : last),
+    -1,
+  );
   c.paths.splice(lastPeupleIdx + 1, 0, {
     id: voie.id,
     name: voie.name,
@@ -135,7 +147,9 @@ const profileSelectValue = computed(() => props.character.profile);
 
 /** Remove profile-applied voies (those without kind, added by previous profile). */
 function clearProfileVoies() {
-  props.character.paths = props.character.paths.filter((p) => p.kind !== undefined);
+  props.character.paths = props.character.paths.filter(
+    (p) => p.kind !== undefined,
+  );
 }
 
 function applyProfile(entry: ProfileEntry) {
@@ -171,30 +185,59 @@ function onProfileSelect(value: string) {
 
 <template>
   <AppCard title="Identité" class="identity">
-    <input ref="portraitInput" type="file" accept="image/*" hidden @change="handlePortraitChange" />
+    <input
+      ref="portraitInput"
+      type="file"
+      accept="image/*"
+      hidden
+      @change="handlePortraitChange"
+    />
     <div class="identity-top">
-      <div class="identity-top-fields">
-        <label class="field field-name">
-          <span>Nom</span>
-          <AppInput v-model="character.name" />
-        </label>
-        <div class="field field-level">
-          <span>Niveau</span>
-          <div class="level-row">
-            <AppInput v-model="character.level" type="number" :min="1" class="narrow" />
-            <button type="button" class="levelup-btn" title="Monter en niveau" @click="showLevelUp = true">
-              <TrendingUp :size="15" />
-            </button>
-          </div>
+      <label class="field field-name">
+        <span>Nom</span>
+        <AppInput v-model="character.name" />
+      </label>
+      <div class="field field-level">
+        <span>Niveau</span>
+        <div class="level-row">
+          <AppInput
+            v-model="character.level"
+            type="number"
+            :min="1"
+            class="narrow"
+          />
+          <button
+            type="button"
+            class="levelup-btn"
+            title="Monter en niveau"
+            @click="showLevelUp = true"
+          >
+            <TrendingUp :size="15" />
+          </button>
         </div>
       </div>
       <div class="portrait-wrapper">
-        <div class="portrait" :class="{ 'portrait--empty': !portraitUrl }" @click="triggerPortraitPick">
-          <img v-if="portraitUrl" :src="portraitUrl" alt="Portrait" class="portrait-img" />
-          <Upload v-else :size="20" class="portrait-placeholder" />
+        <div
+          class="portrait"
+          :class="{ 'portrait--empty': !portraitUrl }"
+          @click="triggerPortraitPick"
+        >
+          <img
+            v-if="portraitUrl"
+            :src="portraitUrl"
+            alt="Portrait"
+            class="portrait-img"
+          />
+          <Upload v-else :size="24" class="portrait-placeholder" />
           <div v-if="portraitUploading" class="portrait-loading">…</div>
         </div>
-        <button v-if="portraitUrl" type="button" class="portrait-remove-btn" title="Supprimer" @click="removePortrait">
+        <button
+          v-if="portraitUrl"
+          type="button"
+          class="portrait-remove-btn"
+          title="Supprimer"
+          @click="removePortrait"
+        >
           <Trash2 :size="11" />
         </button>
       </div>
@@ -205,10 +248,14 @@ function onProfileSelect(value: string) {
         <select
           class="input select"
           :value="character.people"
-          @change="applyPeupleUserChange(($event.target as HTMLSelectElement).value)"
+          @change="
+            applyPeupleUserChange(($event.target as HTMLSelectElement).value)
+          "
         >
           <option value="">— Choisir —</option>
-          <option v-for="p in PEUPLES" :key="p.id" :value="p.id">{{ p.name }}</option>
+          <option v-for="p in PEUPLES" :key="p.id" :value="p.id">
+            {{ p.name }}
+          </option>
         </select>
       </div>
       <div v-if="availableCultures.length" class="field">
@@ -219,7 +266,9 @@ function onProfileSelect(value: string) {
           @change="selectCulture(($event.target as HTMLSelectElement).value)"
         >
           <option value="">— Choisir —</option>
-          <option v-for="c in availableCultures" :key="c.id" :value="c.id">{{ c.name }}</option>
+          <option v-for="c in availableCultures" :key="c.id" :value="c.id">
+            {{ c.name }}
+          </option>
         </select>
       </div>
 
@@ -230,11 +279,19 @@ function onProfileSelect(value: string) {
           <select
             class="input select"
             :value="profileSelectValue"
-            @change="onProfileSelect(($event.target as HTMLSelectElement).value)"
+            @change="
+              onProfileSelect(($event.target as HTMLSelectElement).value)
+            "
           >
             <option value="">— Choisir —</option>
-            <optgroup v-for="g in profileGroups" :key="g.family" :label="g.label">
-              <option v-for="p in g.profiles" :key="p.id" :value="p.name">{{ p.name }}</option>
+            <optgroup
+              v-for="g in profileGroups"
+              :key="g.family"
+              :label="g.label"
+            >
+              <option v-for="p in g.profiles" :key="p.id" :value="p.name">
+                {{ p.name }}
+              </option>
             </optgroup>
           </select>
           <p v-if="character.profile" class="profile-hint">
@@ -242,13 +299,19 @@ function onProfileSelect(value: string) {
           </p>
         </template>
         <template v-else>
-          <AppInput v-model="character.profile" placeholder="Saisir un profil" />
+          <AppInput
+            v-model="character.profile"
+            placeholder="Saisir un profil"
+          />
         </template>
       </div>
 
       <div class="field">
         <span>Famille du profil</span>
-        <div class="field-readonly input" :class="'family-' + inferredProfileFamily">
+        <div
+          class="field-readonly input"
+          :class="'family-' + inferredProfileFamily"
+        >
           {{ FAMILY_LABELS[inferredProfileFamily] }}
         </div>
       </div>
@@ -256,7 +319,9 @@ function onProfileSelect(value: string) {
         <span>Talent magique</span>
         <select v-model="character.mysticTalent" class="input select">
           <option value="">— Choisir —</option>
-          <option v-for="t in MYSTIC_TALENTS" :key="t.id" :value="t.id">{{ t.name }}</option>
+          <option v-for="t in MYSTIC_TALENTS" :key="t.id" :value="t.id">
+            {{ t.name }}
+          </option>
         </select>
       </div>
 
@@ -268,7 +333,9 @@ function onProfileSelect(value: string) {
             type="button"
             class="histoire-expand-btn"
             :aria-expanded="histoireVisible"
-            :aria-label="histoireVisible ? 'Cacher l\'histoire' : 'Afficher l\'histoire'"
+            :aria-label="
+              histoireVisible ? 'Cacher l\'histoire' : 'Afficher l\'histoire'
+            "
             :title="histoireVisible ? 'Cacher' : 'Afficher'"
             @click="histoireVisible = !histoireVisible"
           >
@@ -284,7 +351,12 @@ function onProfileSelect(value: string) {
           placeholder="L'histoire de ton personnage…"
         />
         <p v-else class="histoire-hidden-hint">
-          {{ character.histoire ? character.histoire.slice(0, 60) + (character.histoire.length > 60 ? '…' : '') : 'Aucune histoire renseignée.' }}
+          {{
+            character.histoire
+              ? character.histoire.slice(0, 60) +
+                (character.histoire.length > 60 ? "…" : "")
+              : "Aucune histoire renseignée."
+          }}
         </p>
       </div>
     </div>
@@ -300,20 +372,12 @@ function onProfileSelect(value: string) {
 <style scoped>
 .identity-top {
   display: flex;
-  align-items: flex-start;
+  align-items: flex-end;
   gap: 0.75rem;
   margin-bottom: 0.65rem;
 }
 
-.identity-top-fields {
-  flex: 1;
-  display: flex;
-  gap: 0.65rem;
-  min-width: 0;
-}
-
 .field-name {
-  flex: 1;
   min-width: 0;
 }
 
@@ -324,12 +388,13 @@ function onProfileSelect(value: string) {
 .portrait-wrapper {
   position: relative;
   flex-shrink: 0;
+  margin-left: auto;
 }
 
 .portrait {
-  width: 72px;
-  height: 72px;
-  border-radius: 10px;
+  width: 96px;
+  height: 96px;
+  border-radius: 12px;
   border: 2px solid var(--border);
   overflow: hidden;
   cursor: pointer;
@@ -380,7 +445,9 @@ function onProfileSelect(value: string) {
   align-items: center;
   justify-content: center;
   padding: 0;
-  transition: background 120ms, border-color 120ms;
+  transition:
+    background 120ms,
+    border-color 120ms;
 }
 
 .portrait-remove-btn:hover {
@@ -446,7 +513,10 @@ function onProfileSelect(value: string) {
   background: color-mix(in srgb, var(--accent) 12%, transparent);
   color: var(--accent-strong);
   cursor: pointer;
-  transition: background 120ms ease, color 120ms ease, transform 100ms ease;
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    transform 100ms ease;
 }
 
 .levelup-btn:hover {
@@ -505,7 +575,10 @@ function onProfileSelect(value: string) {
   background: var(--surface-2);
   color: var(--muted);
   cursor: pointer;
-  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease;
 }
 
 .histoire-expand-btn:hover {
@@ -532,11 +605,27 @@ function onProfileSelect(value: string) {
   font-size: inherit;
 }
 
-.family-combattants { background: color-mix(in srgb, var(--brand) 16%, transparent); color: var(--brand-strong); }
-.family-aventuriers { background: color-mix(in srgb, #3a8a4a 14%, transparent); color: #2a6a38; }
-.family-mystiques { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent-strong); }
-.family-prestige { background: color-mix(in srgb, #8a6a20 14%, transparent); color: #5c4510; }
+.family-combattants {
+  background: color-mix(in srgb, var(--brand) 16%, transparent);
+  color: var(--brand-strong);
+}
+.family-aventuriers {
+  background: color-mix(in srgb, #3a8a4a 14%, transparent);
+  color: #2a6a38;
+}
+.family-mystiques {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent-strong);
+}
+.family-prestige {
+  background: color-mix(in srgb, #8a6a20 14%, transparent);
+  color: #5c4510;
+}
 
-:root[data-theme="dark"] .family-aventuriers { color: #7bcf8a; }
-:root[data-theme="dark"] .family-prestige { color: #d4a843; }
+:root[data-theme="dark"] .family-aventuriers {
+  color: #7bcf8a;
+}
+:root[data-theme="dark"] .family-prestige {
+  color: #d4a843;
+}
 </style>
