@@ -3,7 +3,6 @@ import { computed, ref, watch } from "vue";
 import { Pencil, PencilOff, TrendingUp, Upload, Trash2 } from "lucide-vue-next";
 import AppCard from "../ui/AppCard.vue";
 import AppInput from "../ui/AppInput.vue";
-import AppIconBtn from "../ui/AppIconBtn.vue";
 import LevelUpModal from "./LevelUpModal.vue";
 import { PEUPLES, PEUPLES_BY_ID, PEUPLE_VOIES_BY_ID } from "../../data/peuples";
 import { FAMILY_LABELS, VOIES_BY_ID } from "../../data/voies";

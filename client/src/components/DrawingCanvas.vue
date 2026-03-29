@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onBeforeUnmount, nextTick } from "vue";
-import { Eraser, Undo2, Minus, Circle, Maximize, Minimize, Pen } from "lucide-vue-next";
+import { Eraser, Undo2, Maximize, Minimize, Pen } from "lucide-vue-next";
 import type { Stroke } from "../api/journal";
 
 const props = defineProps<{
