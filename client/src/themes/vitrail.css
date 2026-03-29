@@ -1,0 +1,303 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   VITRAIL — Stained Glass Cathedral Theme
+   Applied via [data-style="vitrail"] on <html>
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Light: Frosted glass over bright sky ── */
+:root[data-style="vitrail"] {
+  font-family: 'Alegreya', 'Iowan Old Style', Georgia, serif;
+  --title-font: 'Cinzel Decorative', 'Iowan Old Style', Georgia, serif;
+
+  --bg: #e8eaf4;
+  --bg-alt: #dde0f0;
+  --surface: rgba(255, 255, 255, 0.72);
+  --surface-2: rgba(240, 242, 250, 0.8);
+  --surface-3: rgba(225, 228, 240, 0.85);
+  --text: #1a1a2e;
+  --muted: #4a4a6a;
+  --border: #6a6a8a;
+  --border-strong: #3a3a5a;
+  --accent: #2546a8;
+  --accent-strong: #1a3380;
+  --accent-soft: rgba(37, 70, 168, 0.12);
+  --brand: #9b1b30;
+  --brand-strong: #7a1525;
+  --danger: #9b1b30;
+
+  --glass-blur: blur(12px);
+  --lead-border: 2px solid var(--border-strong);
+  --lead-border-light: 2px solid var(--border);
+  --glow-accent: 0 0 18px rgba(37, 70, 168, 0.25);
+  --glow-brand: 0 0 18px rgba(155, 27, 48, 0.25);
+  --shadow-soft: 0 4px 16px rgba(30, 30, 60, 0.08), 0 0 0 1px rgba(58, 58, 90, 0.06);
+  --shadow-card: 0 6px 24px rgba(37, 70, 168, 0.1), 0 0 0 1px rgba(58, 58, 90, 0.08);
+}
+
+/* ── Dark: Cathedral at night ── */
+:root[data-style="vitrail"][data-theme="dark"] {
+  --bg: #0a0a1a;
+  --bg-alt: #0e0e24;
+  --surface: rgba(30, 30, 50, 0.85);
+  --surface-2: rgba(40, 40, 65, 0.8);
+  --surface-3: rgba(50, 50, 80, 0.75);
+  --text: #e0e0f0;
+  --muted: #8a8aaa;
+  --border: #4a4a6a;
+  --border-strong: #6a6aaa;
+  --accent: #4a7aee;
+  --accent-strong: #6a9aff;
+  --accent-soft: rgba(74, 122, 238, 0.15);
+  --brand: #e03050;
+  --brand-strong: #f04060;
+  --danger: #e03050;
+
+  --glow-accent: 0 0 22px rgba(74, 122, 238, 0.3);
+  --glow-brand: 0 0 22px rgba(224, 48, 80, 0.3);
+  --shadow-soft: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(106, 106, 170, 0.1);
+  --shadow-card: 0 6px 24px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(106, 106, 170, 0.12);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   BODY — Animated stained-glass light
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@keyframes vitrail-light {
+  0%   { background-position: 0% 50%, 100% 0%, 50% 50%; }
+  25%  { background-position: 50% 0%, 0% 100%, 80% 20%; }
+  50%  { background-position: 100% 50%, 50% 50%, 20% 80%; }
+  75%  { background-position: 50% 100%, 100% 0%, 60% 40%; }
+  100% { background-position: 0% 50%, 100% 0%, 50% 50%; }
+}
+
+[data-style="vitrail"]:not([data-theme="dark"]) body {
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 20%, rgba(37, 70, 168, 0.08), transparent 60%),
+    radial-gradient(ellipse 50% 60% at 80% 80%, rgba(155, 27, 48, 0.06), transparent 55%),
+    radial-gradient(ellipse 45% 45% at 50% 50%, rgba(26, 107, 74, 0.05), transparent 50%);
+  background-size: 200% 200%, 200% 200%, 200% 200%;
+  background-color: var(--bg);
+  animation: vitrail-light 25s ease-in-out infinite;
+}
+
+[data-style="vitrail"][data-theme="dark"] body {
+  background:
+    radial-gradient(ellipse 55% 50% at 15% 15%, rgba(74, 122, 238, 0.1), transparent 55%),
+    radial-gradient(ellipse 50% 55% at 85% 85%, rgba(224, 48, 80, 0.07), transparent 50%),
+    radial-gradient(ellipse 40% 40% at 50% 50%, rgba(61, 220, 132, 0.05), transparent 45%);
+  background-size: 200% 200%, 200% 200%, 200% 200%;
+  background-color: var(--bg);
+  animation: vitrail-light 30s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   BUTTONS — Jewel-tone glass with glow
+   ═══════════════════════════════════════════════════════════════════════ */
+
+html[data-style="vitrail"] .btn {
+  border: var(--lead-border-light);
+  border-radius: 10px;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+
+html[data-style="vitrail"] .btn.primary {
+  border: 2px solid color-mix(in srgb, var(--brand-strong) 70%, black);
+  color: #f0e0e4;
+}
+
+html[data-style="vitrail"] .btn.primary:hover:not(:disabled) {
+  box-shadow: var(--glow-brand), var(--shadow-soft);
+}
+
+html[data-style="vitrail"] .btn.ghost {
+  border: var(--lead-border-light);
+}
+
+html[data-style="vitrail"] .btn.ghost:hover {
+  box-shadow: var(--glow-accent);
+}
+
+html[data-style="vitrail"] .btn.danger.ghost:hover {
+  box-shadow: var(--glow-brand);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   INPUTS — Frosted glass fields
+   ═══════════════════════════════════════════════════════════════════════ */
+
+html[data-style="vitrail"] input:focus-visible,
+html[data-style="vitrail"] textarea:focus-visible,
+html[data-style="vitrail"] select:focus-visible {
+  box-shadow: var(--glow-accent);
+}
+
+html[data-style="vitrail"] .input {
+  border: var(--lead-border-light);
+  border-radius: 8px;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+
+html[data-style="vitrail"] .input:focus {
+  border-color: var(--accent);
+  box-shadow: var(--glow-accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   CARD — Glass panels with lead borders
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@keyframes vitrail-reveal {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+html[data-style="vitrail"] .card {
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--lead-border);
+  border-radius: 12px;
+  animation: vitrail-reveal 0.4s ease-out both;
+  transition: box-shadow 300ms ease, border-color 200ms ease;
+}
+
+html[data-style="vitrail"] .card:hover {
+  box-shadow: var(--shadow-card), var(--glow-accent);
+}
+
+html[data-style="vitrail"] .card-head h2 {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.92rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ICON BUTTON — Rose window medallion
+   ═══════════════════════════════════════════════════════════════════════ */
+
+html[data-style="vitrail"] .icon-btn {
+  border-radius: 50%;
+  border: var(--lead-border-light);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+
+html[data-style="vitrail"] .icon-btn:hover:not(:disabled) {
+  box-shadow: var(--glow-accent);
+  border-color: var(--accent);
+}
+
+html[data-style="vitrail"] .icon-btn.primary {
+  background: linear-gradient(180deg, var(--brand), var(--brand-strong));
+  border-color: var(--brand-strong);
+  color: #f0e0e4;
+}
+
+html[data-style="vitrail"] .icon-btn.primary:hover:not(:disabled) {
+  box-shadow: var(--glow-brand);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   BADGE — Jewel-tone glass
+   ═══════════════════════════════════════════════════════════════════════ */
+
+html[data-style="vitrail"] .badge {
+  border-radius: 6px;
+  border-width: 1.5px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+html[data-style="vitrail"] .badge-attaque {
+  background: rgba(212, 147, 13, 0.18);
+  color: #d4930d;
+  border-color: rgba(212, 147, 13, 0.45);
+  box-shadow: inset 0 0 8px rgba(212, 147, 13, 0.12);
+}
+
+html[data-style="vitrail"] .badge-limitée {
+  background: rgba(120, 40, 180, 0.15);
+  color: #8e44ad;
+  border-color: rgba(142, 68, 173, 0.4);
+  box-shadow: inset 0 0 8px rgba(142, 68, 173, 0.1);
+}
+
+html[data-style="vitrail"] .badge-gratuite {
+  background: rgba(26, 107, 74, 0.15);
+  color: #1a6b4a;
+  border-color: rgba(26, 107, 74, 0.4);
+  box-shadow: inset 0 0 8px rgba(26, 107, 74, 0.1);
+}
+
+html[data-style="vitrail"] .badge-pm {
+  background: rgba(37, 70, 168, 0.15);
+  color: var(--accent);
+  border-color: rgba(37, 70, 168, 0.35);
+  box-shadow: inset 0 0 8px rgba(37, 70, 168, 0.1);
+}
+
+html[data-style="vitrail"] .badge-active {
+  background: rgba(26, 107, 74, 0.15);
+  color: #1a6b4a;
+  border-color: rgba(26, 107, 74, 0.4);
+  box-shadow: inset 0 0 8px rgba(26, 107, 74, 0.1);
+}
+
+html[data-style="vitrail"] .badge-info {
+  background: color-mix(in srgb, var(--muted) 12%, transparent);
+  border-color: color-mix(in srgb, var(--muted) 30%, transparent);
+}
+
+/* Dark overrides */
+html[data-style="vitrail"][data-theme="dark"] .badge-limitée {
+  color: #c084fc;
+  border-color: rgba(192, 132, 252, 0.4);
+  background: rgba(192, 132, 252, 0.12);
+}
+
+html[data-style="vitrail"][data-theme="dark"] .badge-attaque {
+  color: #f0b840;
+  border-color: rgba(240, 184, 64, 0.4);
+  background: rgba(240, 184, 64, 0.12);
+}
+
+html[data-style="vitrail"][data-theme="dark"] .badge-pm {
+  color: var(--accent);
+  border-color: rgba(74, 122, 238, 0.35);
+  background: rgba(74, 122, 238, 0.12);
+}
+
+html[data-style="vitrail"][data-theme="dark"] .badge-active {
+  background: rgba(61, 220, 132, 0.12);
+  color: #4ade80;
+  border-color: rgba(61, 220, 132, 0.35);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   PAGE HEAD — Gothic tracery accent
+   ═══════════════════════════════════════════════════════════════════════ */
+
+html[data-style="vitrail"] .page-head {
+  padding-bottom: 0.6rem;
+  border-bottom: 2px solid var(--border);
+  position: relative;
+}
+
+html[data-style="vitrail"] .page-head::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--brand), transparent);
+  border-radius: 2px;
+}
+
+html[data-style="vitrail"] .page-head-title {
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: clamp(1rem, 4vw, 1.6rem);
+}

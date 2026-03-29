@@ -8,6 +8,7 @@ import {
   UserCircle,
   Trash2,
   Upload,
+  Palette,
 } from "lucide-vue-next";
 import { user, logout } from "../composables/useAuth";
 import { updateMe } from "../api/auth";
@@ -52,6 +53,31 @@ function toggleTheme() {
 const themeLabel = computed(() =>
   theme.value === "dark" ? "Passer en mode clair" : "Passer en mode sombre",
 );
+
+// ─── Style (artistic theme) ──────────────────────────────────────────────────
+type AppStyle = "" | "grimoire" | "vitrail" | "carte-du-monde";
+const STYLE_KEY = "arran-style";
+
+const styleOptions: { value: AppStyle; label: string; desc: string }[] = [
+  { value: "", label: "Classique", desc: "Le style par défaut" },
+  { value: "grimoire", label: "Grimoire Vivant", desc: "Spellbook enchante" },
+  { value: "vitrail", label: "Vitrail", desc: "Cathedrale de verre" },
+  { value: "carte-du-monde", label: "Carte du Monde", desc: "Table de guerre" },
+];
+
+const currentStyle = ref<AppStyle>(
+  (document.documentElement.dataset.style as AppStyle) ?? "",
+);
+
+function applyStyle(next: AppStyle) {
+  currentStyle.value = next;
+  if (next) {
+    document.documentElement.dataset.style = next;
+  } else {
+    delete document.documentElement.dataset.style;
+  }
+  localStorage.setItem(STYLE_KEY, next);
+}
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 const avatarInput = ref<HTMLInputElement | null>(null);
@@ -271,6 +297,26 @@ onMounted(load);
             <span class="toggle-thumb" />
           </span>
         </button>
+      </div>
+
+      <div class="style-section">
+        <span class="option-label style-section-label">
+          <Palette :size="16" />
+          Style artistique
+        </span>
+        <div class="style-grid">
+          <button
+            v-for="opt in styleOptions"
+            :key="opt.value"
+            type="button"
+            class="style-card"
+            :class="{ active: currentStyle === opt.value, [opt.value || 'default']: true }"
+            @click="applyStyle(opt.value)"
+          >
+            <span class="style-card-name">{{ opt.label }}</span>
+            <span class="style-card-desc">{{ opt.desc }}</span>
+          </button>
+        </div>
       </div>
     </AppCard>
 
@@ -556,6 +602,76 @@ onMounted(load);
 .toggle-track.dark .toggle-thumb {
   transform: translateX(20px);
 }
+
+/* ── Style selector ──────────────────────────────────────────────────────── */
+.style-section {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
+}
+
+.style-section-label {
+  margin-bottom: 0.6rem;
+}
+
+.style-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.style-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.7rem 0.5rem;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: var(--surface-2);
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 200ms ease,
+    transform 120ms ease;
+  text-align: center;
+}
+
+.style-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.style-card.active {
+  border-color: var(--accent-strong);
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 1px var(--accent), 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.style-card-name {
+  font-family: var(--title-font);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.style-card-desc {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+/* Color swatches per style card */
+.style-card.default { border-top: 3px solid #68492e; }
+.style-card.grimoire { border-top: 3px solid #c9943e; }
+.style-card.vitrail { border-top: 3px solid #2546a8; }
+.style-card.carte-du-monde { border-top: 3px solid #b8860b; }
+
+.style-card.active.default { border-top-color: #68492e; }
+.style-card.active.grimoire { border-top-color: #c9943e; }
+.style-card.active.vitrail { border-top-color: #2546a8; }
+.style-card.active.carte-du-monde { border-top-color: #b8860b; }
 
 /* ── Characters ───────────────────────────────────────────────────────────── */
 .char-list {

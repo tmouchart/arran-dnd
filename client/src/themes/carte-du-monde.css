@@ -1,0 +1,363 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   CARTE DU MONDE — Adventurer's War Table Theme
+   Applied via [data-style="carte-du-monde"] on <html>
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Light: Cartographer's desk in daylight ── */
+:root[data-style="carte-du-monde"] {
+  font-family: 'Lora', 'Iowan Old Style', Georgia, serif;
+  --title-font: 'Pirata One', 'Georgia', serif;
+
+  --bg: #f2e8d5;
+  --bg-alt: #e8dcc4;
+  --surface: #faf4e8;
+  --surface-2: #f0e6d2;
+  --surface-3: #e5d9c2;
+  --text: #1c2841;
+  --muted: #4a5568;
+  --border: #b8960b;
+  --border-strong: #8a7010;
+  --accent: #b8860b;
+  --accent-strong: #8a6508;
+  --accent-soft: rgba(184, 134, 11, 0.12);
+  --brand: #8b0000;
+  --brand-strong: #6a0000;
+  --danger: #8b0000;
+
+  --brass-gradient: linear-gradient(180deg, #d4a820 0%, #b8960b 40%, #8a6508 100%);
+  --brass-gradient-hover: linear-gradient(180deg, #e8c040 0%, #d4a820 40%, #b8960b 100%);
+  --brass-text: #1c2841;
+  --wax-seal: #8b0000;
+  --wax-seal-strong: #6a0000;
+
+  --shadow-soft: 0 4px 12px rgba(28, 20, 8, 0.12);
+  --shadow-card:
+    0 2px 4px rgba(28, 20, 8, 0.08),
+    0 8px 24px rgba(28, 20, 8, 0.14),
+    0 1px 0 rgba(255, 255, 255, 0.5) inset;
+}
+
+/* ── Dark: Late-night tavern planning ── */
+:root[data-style="carte-du-monde"][data-theme="dark"] {
+  --bg: #110e08;
+  --bg-alt: #0d0a06;
+  --surface: #1e1a12;
+  --surface-2: #282218;
+  --surface-3: #322a1e;
+  --text: #e8dcc4;
+  --muted: #9a8a70;
+  --border: #5a4e30;
+  --border-strong: #7a6a42;
+  --accent: #d4a820;
+  --accent-strong: #e8c040;
+  --accent-soft: rgba(212, 168, 32, 0.15);
+  --brand: #c03030;
+  --brand-strong: #e04040;
+  --danger: #c03030;
+
+  --brass-gradient: linear-gradient(180deg, #7a6a42 0%, #5a4e30 40%, #3a3218 100%);
+  --brass-gradient-hover: linear-gradient(180deg, #9a8a5a 0%, #7a6a42 40%, #5a4e30 100%);
+  --brass-text: #e8dcc4;
+  --wax-seal: #c03030;
+  --wax-seal-strong: #a02020;
+
+  --shadow-soft: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-card:
+    0 2px 6px rgba(0, 0, 0, 0.3),
+    0 10px 28px rgba(0, 0, 0, 0.45),
+    0 1px 0 rgba(255, 255, 255, 0.04) inset;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   BODY — Wood grain texture
+   ═══════════════════════════════════════════════════════════════════════ */
+
+[data-style="carte-du-monde"]:not([data-theme="dark"]) body {
+  background:
+    repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(139, 90, 43, 0.03) 40px, rgba(139, 90, 43, 0.03) 42px),
+    repeating-linear-gradient(87deg, transparent, transparent 80px, rgba(139, 90, 43, 0.025) 80px, rgba(139, 90, 43, 0.025) 81px),
+    radial-gradient(circle at 10% 0%, rgba(255, 230, 180, 0.3), transparent 45%),
+    linear-gradient(180deg, var(--bg), var(--bg-alt));
+}
+
+[data-style="carte-du-monde"][data-theme="dark"] body {
+  background:
+    repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(90, 70, 40, 0.06) 40px, rgba(90, 70, 40, 0.06) 42px),
+    repeating-linear-gradient(87deg, transparent, transparent 80px, rgba(90, 70, 40, 0.04) 80px, rgba(90, 70, 40, 0.04) 81px),
+    radial-gradient(circle at 18% 3%, rgba(212, 168, 32, 0.06), transparent 34%),
+    linear-gradient(180deg, var(--bg), var(--bg-alt));
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   BUTTONS — Embossed brass instrument style
+   ═══════════════════════════════════════════════════════════════════════ */
+
+html[data-style="carte-du-monde"] .btn {
+  border-radius: 8px;
+}
+
+html[data-style="carte-du-monde"] .btn:active:not(:disabled) {
+  transform: translateY(1px) scale(0.98);
+}
+
+html[data-style="carte-du-monde"] .btn.primary {
+  background: var(--brass-gradient);
+  color: var(--brass-text);
+  border: 1px solid var(--accent-strong);
+  box-shadow:
+    var(--shadow-soft),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+html[data-style="carte-du-monde"] .btn.primary:hover:not(:disabled) {
+  background: var(--brass-gradient-hover);
+  box-shadow:
+    0 6px 20px rgba(184, 134, 11, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+}
+
+html[data-style="carte-du-monde"] .btn.primary:active:not(:disabled) {
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.25),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.1);
+}
+
+html[data-style="carte-du-monde"] .btn.ghost {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+html[data-style="carte-du-monde"] .btn.ghost:hover:not(:disabled) {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 2px 8px rgba(184, 134, 11, 0.15);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   INPUTS — Parchment inset
+   ═══════════════════════════════════════════════════════════════════════ */
+
+html[data-style="carte-du-monde"] .input {
+  border-radius: 8px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   CARD — Pinned documents with rotation + thumbtack
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@keyframes carte-cardDrop {
+  0%   { opacity: 0; transform: translateY(-18px); }
+  60%  { opacity: 1; transform: translateY(3px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes carte-waxStamp {
+  0%   { transform: scale(0.3); opacity: 0; }
+  70%  { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+html[data-style="carte-du-monde"] .card {
+  border-color: var(--border);
+  border-radius: 4px;
+  animation: carte-cardDrop 0.4s ease-out both;
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, transparent 40%, rgba(0, 0, 0, 0.03) 100%);
+}
+
+/* Brass pin / thumbtack at top center */
+html[data-style="carte-du-monde"] .card::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 12px;
+  background: radial-gradient(circle at 40% 35%, #d4a820 0%, #b8960b 50%, #8a6508 100%);
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+  z-index: 1;
+}
+
+/* Subtle rotation for pinned-document feel */
+html[data-style="carte-du-monde"] .card:nth-child(3n+1) {
+  transform: rotate(0.4deg);
+}
+html[data-style="carte-du-monde"] .card:nth-child(3n+2) {
+  transform: rotate(-0.3deg);
+}
+html[data-style="carte-du-monde"] .card:nth-child(3n) {
+  transform: rotate(0.6deg);
+}
+
+html[data-style="carte-du-monde"] .card:hover {
+  transform: rotate(0deg);
+  transition: transform 200ms ease;
+}
+
+/* Wax seal on card headers */
+html[data-style="carte-du-monde"] .card-head {
+  position: relative;
+}
+
+html[data-style="carte-du-monde"] .card-head::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
+  background: radial-gradient(circle at 40% 35%,
+    color-mix(in srgb, var(--wax-seal) 80%, #ff6060) 0%,
+    var(--wax-seal) 60%,
+    var(--wax-seal-strong) 100%
+  );
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  animation: carte-waxStamp 0.3s ease-out 0.3s both;
+  flex-shrink: 0;
+}
+
+html[data-style="carte-du-monde"] .card-head h2 {
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  font-size: 1.08rem;
+}
+
+html[data-style="carte-du-monde"][data-theme="dark"] .card {
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, transparent 40%, rgba(0, 0, 0, 0.06) 100%);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ICON BUTTON — Brass instrument
+   ═══════════════════════════════════════════════════════════════════════ */
+
+html[data-style="carte-du-monde"] .icon-btn {
+  border-radius: 50%;
+}
+
+html[data-style="carte-du-monde"] .icon-btn.primary {
+  background: var(--brass-gradient);
+  color: var(--brass-text);
+  border: 1px solid var(--accent-strong);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+    0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+html[data-style="carte-du-monde"] .icon-btn.primary:hover:not(:disabled) {
+  background: var(--brass-gradient-hover);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+    0 4px 12px rgba(184, 134, 11, 0.3);
+}
+
+html[data-style="carte-du-monde"] .icon-btn.ghost {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+html[data-style="carte-du-monde"] .icon-btn.ghost:hover:not(:disabled) {
+  box-shadow: 0 2px 8px rgba(184, 134, 11, 0.2);
+}
+
+html[data-style="carte-du-monde"] .icon-btn:active:not(:disabled) {
+  transform: translateY(1px) scale(0.95);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   BADGE — Stamped leather / wax seal
+   ═══════════════════════════════════════════════════════════════════════ */
+
+html[data-style="carte-du-monde"] .badge {
+  border-radius: 3px;
+  letter-spacing: 0.06em;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+html[data-style="carte-du-monde"] .badge-limitée {
+  background: linear-gradient(180deg, #6a2f80, #5a2570);
+  color: #e8d0f0;
+  border-color: #4a1a60;
+}
+
+html[data-style="carte-du-monde"] .badge-attaque {
+  background: linear-gradient(180deg, #c06a18, #a05510);
+  color: #fff0d8;
+  border-color: #8a4a0a;
+}
+
+html[data-style="carte-du-monde"] .badge-gratuite {
+  background: linear-gradient(180deg, #2a7a40, #1a6030);
+  color: #d8f0e0;
+  border-color: #105020;
+}
+
+html[data-style="carte-du-monde"] .badge-pm {
+  background: linear-gradient(180deg, #2a5a8a, #1a4870);
+  color: #d0e8ff;
+  border-color: #0a3860;
+}
+
+html[data-style="carte-du-monde"] .badge-active {
+  background: linear-gradient(180deg, #1a6a30, #105520);
+  color: #c8f0d0;
+  border-color: #084018;
+}
+
+html[data-style="carte-du-monde"] .badge-info {
+  background: var(--surface-3);
+  color: var(--muted);
+  border-color: var(--border);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   PAGE HEAD — Map cartouche with compass diamond
+   ═══════════════════════════════════════════════════════════════════════ */
+
+html[data-style="carte-du-monde"] .page-head {
+  position: relative;
+  padding-bottom: 0.5rem;
+}
+
+/* Brass ornament underline */
+html[data-style="carte-du-monde"] .page-head::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, var(--accent) 15%, var(--accent-strong) 50%, var(--accent) 85%, transparent 100%);
+  opacity: 0.6;
+}
+
+html[data-style="carte-du-monde"] .page-head-title {
+  font-size: clamp(1.25rem, 5vw, 2.2rem);
+  letter-spacing: 0.03em;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+html[data-style="carte-du-monde"][data-theme="dark"] .page-head-title {
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* Compass diamond before title */
+html[data-style="carte-du-monde"] .page-head-title::before {
+  content: '\2756';
+  font-size: 0.6em;
+  color: var(--accent);
+  opacity: 0.7;
+}

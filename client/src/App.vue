@@ -4,14 +4,20 @@ import { UserCircle, Loader2, ScrollText, Swords, Backpack, BookOpenText, Sword 
 import CrystalBall from "./components/icons/CrystalBall.vue";
 import { user, authReady } from "./composables/useAuth";
 
-// Apply saved theme on boot
+// Apply saved theme + style on boot
 type Theme = "light" | "dark";
 const STORAGE_KEY = "arran-theme";
+const STYLE_KEY = "arran-style";
 const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
 const savedTheme =
   (localStorage.getItem(STORAGE_KEY) as Theme | null) ??
   (prefersDark ? "dark" : "light");
 document.documentElement.dataset.theme = savedTheme;
+
+const savedStyle = localStorage.getItem(STYLE_KEY) ?? "";
+if (savedStyle) {
+  document.documentElement.dataset.style = savedStyle;
+}
 </script>
 
 <template>
