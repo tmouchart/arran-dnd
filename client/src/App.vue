@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from "vue-router";
-import { UserCircle, Loader2 } from "lucide-vue-next";
+import { UserCircle, Loader2, ScrollText, Swords, Backpack, BookOpenText, Sword } from "lucide-vue-next";
+import CrystalBall from "./components/icons/CrystalBall.vue";
 import { user, authReady } from "./composables/useAuth";
 
 // Apply saved theme on boot
@@ -24,23 +25,23 @@ document.documentElement.dataset.theme = savedTheme;
       <div class="top-nav-actions">
         <nav class="nav-links">
           <RouterLink to="/personnage" class="nav-link" title="Personnage"
-            >📝</RouterLink
-          >
+            ><ScrollText :size="20"
+          /></RouterLink>
           <RouterLink to="/actions" class="nav-link" title="Mes actions"
-            >⚡</RouterLink
-          >
+            ><Swords :size="20"
+          /></RouterLink>
           <RouterLink to="/inventaire" class="nav-link" title="Inventaire"
-            >👜</RouterLink
-          >
+            ><Backpack :size="20"
+          /></RouterLink>
           <RouterLink to="/chat" class="nav-link" title="Isilwen"
-            >🔮</RouterLink
-          >
+            ><CrystalBall :size="20"
+          /></RouterLink>
           <RouterLink to="/journal" class="nav-link" title="Journal"
-            >📖</RouterLink
-          >
+            ><BookOpenText :size="20"
+          /></RouterLink>
           <RouterLink to="/sessions" class="nav-link" title="Sessions de jeu"
-            >⚔️
-          </RouterLink>
+            ><Sword :size="20"
+          /></RouterLink>
         </nav>
         <RouterLink v-if="user" to="/options" class="nav-user" title="Options">
           <div class="nav-avatar">

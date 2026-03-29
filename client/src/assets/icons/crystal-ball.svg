@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Sphère -->
+  <circle cx="12" cy="10.5" r="7.5"/>
+  <!-- Reflet -->
+  <path d="M9 7.5c1.2-1.5 3-2.2 4.5-1.5" opacity="0.5"/>
+  <!-- Socle bas -->
+  <path d="M7.5 20h9"/>
+  <!-- Pieds du socle -->
+  <path d="M9 18c-.8 0-1.5.9-1.5 2"/>
+  <path d="M15 18c.8 0 1.5.9 1.5 2"/>
+  <!-- Connexion sphère-socle -->
+  <path d="M9.5 17.5c1.5.7 3.5.7 5 0"/>
+</svg>
