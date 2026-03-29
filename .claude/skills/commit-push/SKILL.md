@@ -18,5 +18,8 @@ Follow the git commit protocol below, then push to remote.
      - Follows the repo's existing style (conventional commits if used)
      - Focuses on *why*, not just *what*
    - Commit using a HEREDOC to preserve formatting
-5. Run `git push` once all commits are done.
-6. Confirm with the list of commit SHAs created.
+5. Run `npm run lint` (or the project's lint command) and check for errors.
+   - If there are lint errors, fix them and amend the relevant commit (or create a fixup commit).
+   - Repeat until lint passes cleanly.
+6. Run `git push` once all commits are done and lint is clean.
+7. Confirm with the list of commit SHAs created.
