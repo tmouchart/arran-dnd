@@ -589,11 +589,38 @@ app.post("/api/chat", requireAuth, async (req, res) => {
           writeSse(res, "tool_use", { tool: "generate_image", label: "Génération d'une illustration…" });
 
           try {
+            // Load character portrait if available (to use as visual reference)
+            let portraitBase64: string | null = null;
+            let portraitMimeType: string | null = null;
+            const portraitId = character ? (character as Record<string, unknown>).portraitImageId : null;
+            if (typeof portraitId === "number" && portraitId > 0) {
+              const [portraitRow] = await db
+                .select({ data: generatedImages.data, mimeType: generatedImages.mimeType })
+                .from(generatedImages)
+                .where(eq(generatedImages.id, portraitId));
+              if (portraitRow) {
+                portraitBase64 = portraitRow.data;
+                portraitMimeType = portraitRow.mimeType;
+              }
+            }
+
             const imageParts: Array<Record<string, unknown>> = [];
             if (styleRefBase64) {
               imageParts.push({
                 inlineData: { mimeType: "image/jpeg", data: styleRefBase64 },
               });
+            }
+            if (portraitBase64 && portraitMimeType) {
+              imageParts.push({
+                inlineData: { mimeType: portraitMimeType, data: portraitBase64 },
+              });
+              imageParts.push({
+                text: (styleRefBase64
+                  ? "Generate an image in the exact same artistic style as the first reference image (European fantasy comic book / bande dessinée). Match the color palette, ink linework, and painterly rendering. The second image is the character's portrait — use it as a visual reference for the character's appearance (face, hair, build, clothing). Subject: "
+                  : "The attached image is the character's portrait — use it as a visual reference for the character's appearance (face, hair, build, clothing). Subject: "
+                ) + imagePrompt,
+              });
+            } else if (styleRefBase64) {
               imageParts.push({
                 text: "Generate an image in the exact same artistic style as this reference (European fantasy comic book / bande dessinée). Match the color palette, ink linework, and painterly rendering. Subject: " + imagePrompt,
               });
