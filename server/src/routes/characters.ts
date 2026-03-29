@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm'
 import { Router } from 'express'
 import { db } from '../db/index.js'
-import { characters } from '../db/schema.js'
+import { characters, generatedImages } from '../db/schema.js'
 import { requireAuth, type AuthRequest } from '../auth/middleware.js'
 
 function username(req: unknown): string {
@@ -254,6 +254,61 @@ router.post('/:id/activate', async (req, res) => {
   })
 
   if (!res.headersSent) res.json({ ok: true })
+})
+
+// Upload character portrait image
+router.post('/:id/portrait', requireAuth, async (req, res) => {
+  const userId = (req as AuthRequest).userId
+  const charId = Number(req.params.id)
+  const { data, mimeType } = req.body as { data?: string; mimeType?: string }
+
+  if (!data || !mimeType?.startsWith('image/')) {
+    res.status(400).json({ error: 'data (base64) et mimeType requis' })
+    return
+  }
+
+  // Verify character belongs to user
+  const [char] = await db.select({ id: characters.id }).from(characters)
+    .where(and(eq(characters.id, charId), eq(characters.userId, userId)))
+  if (!char) {
+    res.status(404).json({ error: 'Personnage introuvable' })
+    return
+  }
+
+  // Insert image in DB
+  const [inserted] = await db.insert(generatedImages).values({
+    userId,
+    data,
+    mimeType,
+    prompt: 'portrait',
+  }).returning({ id: generatedImages.id })
+
+  // Link to character
+  await db.update(characters)
+    .set({ portraitImageId: inserted.id, updatedAt: new Date() })
+    .where(eq(characters.id, charId))
+
+  console.log(`[portrait] Uploaded portrait ${inserted.id} for character ${charId}`)
+  res.json({ portraitImageId: inserted.id })
+})
+
+// Delete character portrait
+router.delete('/:id/portrait', requireAuth, async (req, res) => {
+  const userId = (req as AuthRequest).userId
+  const charId = Number(req.params.id)
+
+  const [char] = await db.select({ portraitImageId: characters.portraitImageId }).from(characters)
+    .where(and(eq(characters.id, charId), eq(characters.userId, userId)))
+  if (!char) {
+    res.status(404).json({ error: 'Personnage introuvable' })
+    return
+  }
+
+  await db.update(characters)
+    .set({ portraitImageId: null, updatedAt: new Date() })
+    .where(eq(characters.id, charId))
+
+  res.json({ ok: true })
 })
 
 export default router

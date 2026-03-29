@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { Pencil, PencilOff, TrendingUp } from "lucide-vue-next";
+import { Pencil, PencilOff, TrendingUp, Upload, Trash2 } from "lucide-vue-next";
 import AppCard from "../ui/AppCard.vue";
 import AppInput from "../ui/AppInput.vue";
+import AppIconBtn from "../ui/AppIconBtn.vue";
 import LevelUpModal from "./LevelUpModal.vue";
 import { PEUPLES, PEUPLES_BY_ID, PEUPLE_VOIES_BY_ID } from "../../data/peuples";
 import { FAMILY_LABELS, VOIES_BY_ID } from "../../data/voies";
@@ -20,6 +21,54 @@ const props = defineProps<{ character: Character }>();
 
 const histoireVisible = ref(false);
 const showLevelUp = ref(false);
+
+// ── Portrait ──────────────────────────────────────────────────────────────────
+const portraitInput = ref<HTMLInputElement | null>(null);
+const portraitUploading = ref(false);
+
+const portraitUrl = computed(() =>
+  props.character.portraitImageId ? `/api/images/${props.character.portraitImageId}` : null
+);
+
+function triggerPortraitPick() {
+  portraitInput.value?.click();
+}
+
+async function handlePortraitChange(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0];
+  if (!file || !file.type.startsWith("image/")) return;
+  portraitUploading.value = true;
+  try {
+    const reader = new FileReader();
+    const base64: string = await new Promise((resolve, reject) => {
+      reader.onload = () => resolve((reader.result as string).split(",")[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    const res = await fetch(`/api/characters/${props.character.id}/portrait`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ data: base64, mimeType: file.type }),
+    });
+    if (res.ok) {
+      const { portraitImageId } = await res.json();
+      props.character.portraitImageId = portraitImageId;
+    }
+  } catch {
+    // ignore
+  }
+  portraitUploading.value = false;
+  if (portraitInput.value) portraitInput.value.value = "";
+}
+
+async function removePortrait() {
+  await fetch(`/api/characters/${props.character.id}/portrait`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  props.character.portraitImageId = null;
+}
 
 const inferredProfileFamily = computed(() =>
   inferProfileFamily(props.character.paths),
@@ -122,20 +171,35 @@ function onProfileSelect(value: string) {
 
 <template>
   <AppCard title="Identité" class="identity">
-    <div class="grid-2">
-      <label class="field">
-        <span>Nom</span>
-        <AppInput v-model="character.name" />
-      </label>
-      <div class="field">
-        <span>Niveau</span>
-        <div class="level-row">
-          <AppInput v-model="character.level" type="number" :min="1" class="narrow" />
-          <button type="button" class="levelup-btn" title="Monter en niveau" @click="showLevelUp = true">
-            <TrendingUp :size="15" />
-          </button>
+    <input ref="portraitInput" type="file" accept="image/*" hidden @change="handlePortraitChange" />
+    <div class="identity-top">
+      <div class="identity-top-fields">
+        <label class="field field-name">
+          <span>Nom</span>
+          <AppInput v-model="character.name" />
+        </label>
+        <div class="field field-level">
+          <span>Niveau</span>
+          <div class="level-row">
+            <AppInput v-model="character.level" type="number" :min="1" class="narrow" />
+            <button type="button" class="levelup-btn" title="Monter en niveau" @click="showLevelUp = true">
+              <TrendingUp :size="15" />
+            </button>
+          </div>
         </div>
       </div>
+      <div class="portrait-wrapper">
+        <div class="portrait" :class="{ 'portrait--empty': !portraitUrl }" @click="triggerPortraitPick">
+          <img v-if="portraitUrl" :src="portraitUrl" alt="Portrait" class="portrait-img" />
+          <Upload v-else :size="20" class="portrait-placeholder" />
+          <div v-if="portraitUploading" class="portrait-loading">…</div>
+        </div>
+        <button v-if="portraitUrl" type="button" class="portrait-remove-btn" title="Supprimer" @click="removePortrait">
+          <Trash2 :size="11" />
+        </button>
+      </div>
+    </div>
+    <div class="grid-2">
       <div class="field">
         <span>Peuple</span>
         <select
@@ -234,6 +298,97 @@ function onProfileSelect(value: string) {
 </template>
 
 <style scoped>
+.identity-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
+}
+
+.identity-top-fields {
+  flex: 1;
+  display: flex;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.field-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.field-level {
+  flex-shrink: 0;
+}
+
+.portrait-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.portrait {
+  width: 72px;
+  height: 72px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  transition: border-color 150ms;
+}
+
+.portrait:hover {
+  border-color: var(--accent);
+}
+
+.portrait--empty {
+  border-style: dashed;
+}
+
+.portrait-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.portrait-placeholder {
+  color: var(--muted);
+  opacity: 0.5;
+}
+
+.portrait-loading {
+  position: absolute;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.portrait-remove-btn {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--danger);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 120ms, border-color 120ms;
+}
+
+.portrait-remove-btn:hover {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
 .grid-2 {
   display: grid;
   grid-template-columns: 1fr;

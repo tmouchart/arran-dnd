@@ -81,6 +81,7 @@ function toCharacter(s: ServerCharacter): Character {
     pcCurrent: typeof s.pcCurrent === 'number' ? s.pcCurrent : 0,
     prCurrent: typeof s.prCurrent === 'number' ? s.prCurrent : 5,
     competences: Array.isArray(s.competences) ? s.competences : [],
+    portraitImageId: s.portraitImageId ?? null,
   }
 }
 
@@ -122,6 +123,7 @@ function toServerPayload(c: Character): Omit<ServerCharacter, 'id' | 'userId' | 
     pcCurrent: c.pcCurrent,
     prCurrent: c.prCurrent,
     competences: c.competences,
+    portraitImageId: c.portraitImageId,
   }
 }
 
@@ -159,6 +161,7 @@ export function createDefaultCharacter(): Character {
     pcCurrent: 0,
     prCurrent: 5,
     competences: [],
+    portraitImageId: null,
   }
 }
 

@@ -42,6 +42,7 @@ export interface ServerCharacter {
   pcCurrent: number | undefined
   prCurrent: number | undefined
   competences: Character['competences'] | undefined
+  portraitImageId: number | null | undefined
 }
 
 export async function fetchCharacter(id: number): Promise<ServerCharacter> {

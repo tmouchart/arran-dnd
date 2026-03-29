@@ -99,6 +99,8 @@ export const characters = pgTable(
 
     /** Custom rollable competences: [{ id, name, ability, bonus }] */
     competences: jsonb('competences').notNull().default([]),
+    /** ID of the portrait image in generated_images table */
+    portraitImageId: integer('portrait_image_id').references(() => generatedImages.id),
 
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

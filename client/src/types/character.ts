@@ -103,4 +103,6 @@ export interface Character {
   prCurrent: number
   /** Custom rollable competences (nom + carac + bonus). */
   competences: CompetenceRow[]
+  /** ID of portrait image in generated_images table. */
+  portraitImageId: number | null
 }
