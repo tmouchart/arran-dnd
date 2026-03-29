@@ -63,9 +63,20 @@ export async function unlockCompagnie(): Promise<void> {
 
 // ── Pages ────────────────────────────────────────────────────────────────────
 
+export type JournalPageType = 'text' | 'drawing'
+
+export interface Stroke {
+  id: string
+  points: { x: number; y: number }[]
+  color: string
+  width: number
+  eraser: boolean
+}
+
 export interface JournalPageSummary {
   id: number
   title: string
+  type: JournalPageType
   createdByUserId: number
   createdByCharacterName: string
   updatedAt: string
@@ -74,6 +85,7 @@ export interface JournalPageSummary {
 export interface JournalPage {
   id: number
   title: string
+  type: JournalPageType
   content: string
   createdByUserId: number
   updatedByUserId: number | null
@@ -87,11 +99,11 @@ export async function fetchPages(): Promise<JournalPageSummary[]> {
   return apiFetch('/api/journal/pages')
 }
 
-export async function createPage(title: string, content?: string): Promise<JournalPage> {
+export async function createPage(title: string, content?: string, type?: JournalPageType): Promise<JournalPage> {
   return apiFetch('/api/journal/pages', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title, content }),
+    body: JSON.stringify({ title, content, type }),
   })
 }
 

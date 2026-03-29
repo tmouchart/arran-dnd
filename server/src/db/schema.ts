@@ -113,6 +113,7 @@ export const characters = pgTable(
 export const journalPages = pgTable('journal_pages', {
   id: serial('id').primaryKey(),
   title: varchar('title', { length: 255 }).notNull(),
+  type: varchar('type', { length: 20 }).notNull().default('text'),
   content: text('content').notNull().default(''),
   createdByUserId: integer('created_by_user_id').notNull().references(() => users.id),
   updatedByUserId: integer('updated_by_user_id').references(() => users.id),

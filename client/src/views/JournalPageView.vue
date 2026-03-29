@@ -7,7 +7,8 @@ import AppButton from "../components/ui/AppButton.vue";
 import AppInput from "../components/ui/AppInput.vue";
 import AppIconBtn from "../components/ui/AppIconBtn.vue";
 import AppEmptyState from "../components/ui/AppEmptyState.vue";
-import { fetchPage, savePage, deletePage, type JournalPage } from "../api/journal";
+import DrawingCanvas from "../components/DrawingCanvas.vue";
+import { fetchPage, savePage, deletePage, type JournalPage, type Stroke } from "../api/journal";
 import { useJournalLock } from "../composables/useJournalLock";
 import { relativeTime } from "../utils/relativeTime";
 
@@ -42,7 +43,21 @@ const {
 
 // SSE content updates
 watch(sseContent, (v) => {
-  if (v && !isLockedByMe.value) content.value = v;
+  if (!v) return;
+  if (isDrawing.value) {
+    // Merge remote strokes into local strokes
+    try {
+      const remote: Stroke[] = JSON.parse(v);
+      const local: Stroke[] = content.value ? JSON.parse(content.value) : [];
+      const localIds = new Set(local.map((s) => s.id));
+      const merged = [...local, ...remote.filter((s) => !localIds.has(s.id))];
+      if (merged.length !== local.length) {
+        content.value = JSON.stringify(merged);
+      }
+    } catch { /* ignore malformed */ }
+  } else {
+    if (!isLockedByMe.value) content.value = v;
+  }
 });
 
 function scheduleSave() {
@@ -59,11 +74,16 @@ function scheduleSave() {
   }, 800);
 }
 
-watch(content, () => { if (!loading.value && isLockedByMe.value) scheduleSave(); });
+// For text pages: save only when holding lock. For drawings: save freely.
+watch(content, () => {
+  if (!loading.value && (isDrawing.value || isLockedByMe.value)) scheduleSave();
+});
 watch(title, () => { if (!loading.value && isLockedByMe.value) scheduleSave(); });
 
 let acquiring = false;
 async function onFocus() {
+  // No lock needed for drawing pages
+  if (isDrawing.value) return;
   if (blurTimeout) { clearTimeout(blurTimeout); blurTimeout = null; }
   if (isLockedByMe.value || isLockedByOther.value || acquiring) return;
   acquiring = true;
@@ -83,6 +103,23 @@ function onBlur() {
     }
     await release();
   }, 200);
+}
+
+// ── Drawing support ─────────────────────────────────────────────────────────
+
+const isDrawing = computed(() => page.value?.type === "drawing");
+
+const drawingStrokes = computed<Stroke[]>(() => {
+  if (!isDrawing.value || !content.value) return [];
+  try {
+    return JSON.parse(content.value);
+  } catch {
+    return [];
+  }
+});
+
+function onStrokesUpdate(strokes: Stroke[]) {
+  content.value = JSON.stringify(strokes);
 }
 
 const showDeleteConfirm = ref(false);
@@ -123,7 +160,7 @@ onMounted(load);
 </script>
 
 <template>
-  <div class="page-view">
+  <div class="page-view" :class="{ 'page-view--drawing': isDrawing }">
     <AppPageHead>
       <AppIconBtn variant="ghost" :size="34" title="Retour" @click="router.push({ name: 'journal' })">
         <ArrowLeft :size="18" />
@@ -160,7 +197,17 @@ onMounted(load);
     <AppEmptyState v-else-if="error" variant="error">{{ error }}</AppEmptyState>
 
     <div v-else class="editor-wrapper">
+      <!-- Drawing page -->
+      <DrawingCanvas
+        v-if="isDrawing"
+        :strokes="drawingStrokes"
+        :readonly="isLockedByOther"
+        @update:strokes="onStrokesUpdate"
+        @focus="onFocus"
+      />
+      <!-- Text page -->
       <textarea
+        v-else
         v-model="content"
         class="journal-editor"
         :class="{ 'journal-editor--readonly': isLockedByOther }"
@@ -197,6 +244,19 @@ onMounted(load);
   display: flex;
   flex-direction: column;
   height: calc(100vh - 4rem);
+}
+
+.page-view--drawing {
+  max-width: none;
+  margin: -1rem -0.78rem -1.5rem;
+  height: calc(100vh - 4rem + 1rem + 1.5rem);
+}
+
+@media (min-width: 740px) {
+  .page-view--drawing {
+    margin: -1.25rem -1rem -2rem;
+    height: calc(100vh - 4rem + 1.25rem + 2rem);
+  }
 }
 
 .title-input {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import { BookText, Lock, Users, FileText, Pencil, BookPlus, Plus } from "lucide-vue-next";
+import { BookText, Lock, Users, FileText, Pencil, BookPlus, Plus, PenLine } from "lucide-vue-next";
 import AppPageHead from "../components/ui/AppPageHead.vue";
 import AppButton from "../components/ui/AppButton.vue";
 import AppInput from "../components/ui/AppInput.vue";
@@ -14,6 +14,7 @@ import {
   fetchPages,
   createPage,
   type JournalPageSummary,
+  type JournalPageType,
 } from "../api/journal";
 import { useJournalLock } from "../composables/useJournalLock";
 import { relativeTime } from "../utils/relativeTime";
@@ -152,14 +153,16 @@ function openPage(id: number) {
 
 const showNewPage = ref(false);
 const newPageTitle = ref("");
+const newPageType = ref<JournalPageType>("text");
 const creatingPage = ref(false);
 
 async function handleCreatePage() {
   if (!newPageTitle.value.trim()) return;
   creatingPage.value = true;
   try {
-    const page = await createPage(newPageTitle.value.trim());
+    const page = await createPage(newPageTitle.value.trim(), undefined, newPageType.value);
     newPageTitle.value = "";
+    newPageType.value = "text";
     showNewPage.value = false;
     router.push({ name: "journal-page", params: { id: page.id } });
   } catch {
@@ -305,6 +308,14 @@ onMounted(load);
 
         <!-- New page inline form -->
         <form v-if="showNewPage" class="new-page-form" @submit.prevent="handleCreatePage">
+          <div class="type-toggle">
+            <button type="button" class="type-btn" :class="{ active: newPageType === 'text' }" @click="newPageType = 'text'">
+              <FileText :size="15" /> Texte
+            </button>
+            <button type="button" class="type-btn" :class="{ active: newPageType === 'drawing' }" @click="newPageType = 'drawing'">
+              <PenLine :size="15" /> Dessin
+            </button>
+          </div>
           <AppInput
             v-model="newPageTitle"
             placeholder="Titre de la page"
@@ -319,6 +330,10 @@ onMounted(load);
         <AppEmptyState v-if="pagesLoading" variant="loading">Chargement…</AppEmptyState>
         <ul v-else-if="pages.length" class="pages-list">
           <li v-for="page in pages" :key="page.id" class="page-item" @click="openPage(page.id)">
+            <span class="page-type-icon">
+              <PenLine v-if="page.type === 'drawing'" :size="16" />
+              <FileText v-else :size="16" />
+            </span>
             <div class="page-info">
               <span class="page-title">{{ page.title }}</span>
               <span class="page-meta">
@@ -466,6 +481,38 @@ onMounted(load);
   align-items: center;
   gap: 0.5rem;
   padding-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.type-toggle {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.type-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 120ms, color 120ms, border-color 120ms;
+}
+
+.type-btn:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.type-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
 }
 
 .new-page-input {
@@ -481,9 +528,17 @@ onMounted(load);
   gap: 0.25rem;
 }
 
+.page-type-icon {
+  color: var(--muted);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
 .page-item {
   display: flex;
   align-items: center;
+  gap: 0.6rem;
   padding: 0.7rem 0.9rem;
   border-radius: 12px;
   border: 1px solid var(--border);

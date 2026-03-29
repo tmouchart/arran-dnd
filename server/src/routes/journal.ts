@@ -129,6 +129,7 @@ router.get('/pages', async (_req, res) => {
     .select({
       id: journalPages.id,
       title: journalPages.title,
+      type: journalPages.type,
       createdByUserId: journalPages.createdByUserId,
       updatedAt: journalPages.updatedAt,
     })
@@ -146,9 +147,14 @@ router.get('/pages', async (_req, res) => {
 
 router.post('/pages', async (req, res) => {
   const { userId } = auth(req)
-  const { title, content } = req.body as { title: string; content?: string }
+  const { title, content, type } = req.body as { title: string; content?: string; type?: string }
+  if (type && type !== 'text' && type !== 'drawing') {
+    res.status(400).json({ error: 'Type invalide (text ou drawing).' })
+    return
+  }
   const [page] = await db.insert(journalPages).values({
     title,
+    type: type === 'drawing' ? 'drawing' : 'text',
     content: content ?? '',
     createdByUserId: userId,
     updatedByUserId: userId,
@@ -173,10 +179,15 @@ router.put('/pages/:id', async (req, res) => {
   const { userId } = auth(req)
   const id = Number(req.params.id)
   const resourceKey = `page:${id}`
-  if (!holdsLock(resourceKey, userId)) {
+
+  // Drawing pages don't require locks (collaborative drawing)
+  const [pageRow] = await db.select({ type: journalPages.type }).from(journalPages).where(eq(journalPages.id, id))
+  if (!pageRow) { res.status(404).json({ error: 'Page introuvable' }); return }
+  if (pageRow.type !== 'drawing' && !holdsLock(resourceKey, userId)) {
     res.status(423).json({ error: 'Vous ne détenez pas le verrou.' })
     return
   }
+
   const { title, content } = req.body as { title?: string; content?: string }
   const updates: Record<string, unknown> = { updatedByUserId: userId, updatedAt: new Date() }
   if (title !== undefined) updates.title = title
