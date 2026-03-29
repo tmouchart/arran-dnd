@@ -371,12 +371,14 @@ function onProfileSelect(value: string) {
 <style scoped>
 .identity-top {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-end;
   gap: 0.75rem;
   margin-bottom: 0.65rem;
 }
 
 .field-name {
+  flex: 1 1 100%;
   min-width: 0;
 }
 
@@ -388,6 +390,12 @@ function onProfileSelect(value: string) {
   position: relative;
   flex-shrink: 0;
   margin-left: auto;
+}
+
+@media (min-width: 520px) {
+  .field-name {
+    flex: 1 1 0;
+  }
 }
 
 .portrait {
