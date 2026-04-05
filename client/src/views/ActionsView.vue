@@ -1283,8 +1283,8 @@ function losePr() {
 @media (max-width: 400px) {
   .ch-res-label {
     display: none;
+    min-width: 1.6rem;
   }
-  min-width: 1.6rem;
 }
 
 .ch-stepper {
