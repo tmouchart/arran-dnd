@@ -60,7 +60,8 @@ const classes = computed(() => [
 
 /* ── Full mode ── */
 .page-layout--full {
-  height: calc(100dvh - var(--nav-height, 3.6rem));
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -87,8 +88,5 @@ const classes = computed(() => [
     padding: 1.25rem 1rem 2rem;
   }
 
-  .page-layout--full {
-    height: calc(100dvh - var(--nav-height, 3.85rem));
-  }
 }
 </style>

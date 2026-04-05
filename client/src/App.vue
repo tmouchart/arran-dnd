@@ -101,8 +101,7 @@ if (savedStyle) {
 
 /* Combat banner */
 .combat-banner {
-  position: sticky;
-  top: var(--nav-height);
+  flex-shrink: 0;
   z-index: 9;
   display: flex;
   align-items: center;
@@ -138,9 +137,10 @@ if (savedStyle) {
 
 .app-shell {
   --nav-height: 3.6rem;
-  min-height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 @media (min-width: 740px) {
@@ -150,8 +150,7 @@ if (savedStyle) {
 }
 
 .top-nav {
-  position: sticky;
-  top: 0;
+  flex-shrink: 0;
   z-index: 10;
   display: flex;
   flex-direction: row;
@@ -299,6 +298,7 @@ if (savedStyle) {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  overflow-y: auto;
 }
 
 @media (min-width: 740px) {
