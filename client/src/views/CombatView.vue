@@ -14,11 +14,14 @@ import {
   Zap,
   CheckCheck,
   LayoutList,
+  Dices,
+  Shield,
 } from "lucide-vue-next";
 import { useCombat } from "../composables/useCombat";
 import { user } from "../composables/useAuth";
 import { MONSTERS_CATALOG, type Monster } from "../data/monstersCatalog";
 import { filterCatalog, formatMod } from "../utils/monsterSession";
+import { rollDie, rollDiceNotation } from "../utils/dice";
 import AppPageLayout from "../components/ui/AppPageLayout.vue";
 import AppPageHead from "../components/ui/AppPageHead.vue";
 import AppIconBtn from "../components/ui/AppIconBtn.vue";
@@ -40,7 +43,6 @@ const {
   error,
   isGm,
   isMyTurn,
-  myParticipant,
   connect,
   disconnect,
   nextTurn,
@@ -113,6 +115,62 @@ function adjustHp(p: CombatParticipant, delta: number) {
 function canAdjustHp(p: CombatParticipant): boolean {
   if (p.kind === "monster") return isGm.value;
   return p.userId === user.value?.id;
+}
+
+// ── Monster attack rolls ──────────────────────────────────────────────────
+interface MonsterAttackRoll {
+  attackDie: number
+  attackBonus: number
+  attackTotal: number
+  fixedDamage: number | null
+  damageRolls: number[]
+  damageModifier: number
+  damageTotal: number
+}
+
+const monsterRolls = ref<Record<string, MonsterAttackRoll>>({});
+
+function parseDamage(damage: string): { notation: string | null; modifier: number; fixed: number | null } {
+  const m = damage.trim().match(/^(\d+d\d+)\s*([+-]\s*\d+)?$/i);
+  if (!m) {
+    const n = parseInt(damage.trim(), 10);
+    if (!isNaN(n)) return { notation: null, modifier: 0, fixed: n };
+    return { notation: null, modifier: 0, fixed: 0 };
+  }
+  const mod = m[2] ? parseInt(m[2].replace(/\s/g, ""), 10) : 0;
+  return { notation: m[1], modifier: mod, fixed: null };
+}
+
+function rollMonsterAttack(participantId: number, atkIndex: number, bonus: number, damage: string) {
+  const key = `${participantId}-${atkIndex}`;
+  const attackDie = rollDie(20);
+  const { notation, modifier, fixed } = parseDamage(damage);
+  if (fixed !== null) {
+    monsterRolls.value[key] = {
+      attackDie,
+      attackBonus: bonus,
+      attackTotal: attackDie + bonus,
+      fixedDamage: fixed,
+      damageRolls: [],
+      damageModifier: 0,
+      damageTotal: fixed,
+    };
+  } else {
+    const dmg = rollDiceNotation(notation!, modifier);
+    monsterRolls.value[key] = {
+      attackDie,
+      attackBonus: bonus,
+      attackTotal: attackDie + bonus,
+      fixedDamage: null,
+      damageRolls: dmg.rolls,
+      damageModifier: dmg.modifier,
+      damageTotal: dmg.total,
+    };
+  }
+}
+
+function signedNum(n: number): string {
+  return n >= 0 ? `+${n}` : String(n);
 }
 
 async function handleAddFromCatalog(m: Monster) {
@@ -244,9 +302,10 @@ function goBack() {
                 <span class="card-name">{{ p.name }}</span>
               </div>
               <div class="card-right">
-                <span v-if="isGm || p.kind === 'player'" class="card-init">{{
+                <span v-if="isGm || p.kind === 'player'" class="card-init"><Zap :size="13" /> {{
                   p.initiative
                 }}</span>
+                <span v-if="p.def && (isGm || p.kind === 'player')" class="card-def"><Shield :size="13" /> {{ p.def }}</span>
                 <!-- Inline HP controls (GM monsters) -->
                 <template v-if="canAdjustHp(p) && p.hpCurrent !== null && p.hpMax !== null">
                   <div class="card-hp-inline" @click.stop>
@@ -303,17 +362,47 @@ function goBack() {
               >
                 <span class="detail-heading">Attaques</span>
                 <div
-                  v-for="(atk, i) in p.attacks as {
+                  v-for="(atk, ai) in p.attacks as {
                     name: string;
                     bonus: number;
                     damage: string;
                     range?: number;
                   }[]"
-                  :key="i"
+                  :key="ai"
                   class="detail-atk"
                 >
-                  {{ atk.name }} {{ formatMod(atk.bonus) }} · {{ atk.damage
-                  }}{{ atk.range ? ` · ${atk.range}m` : "" }}
+                  <div class="detail-atk-row">
+                    <span>{{ atk.name }} {{ formatMod(atk.bonus) }} · {{ atk.damage
+                    }}{{ atk.range ? ` · ${atk.range}m` : "" }}</span>
+                    <button class="roll-atk-btn" title="Lancer les dés" @click.stop="rollMonsterAttack(p.id, ai, atk.bonus, atk.damage)">
+                      <Dices :size="14" />
+                    </button>
+                  </div>
+                  <div
+                    v-if="monsterRolls[`${p.id}-${ai}`]"
+                    class="monster-roll-result"
+                    :class="{
+                      'monster-roll-result--fumble': monsterRolls[`${p.id}-${ai}`].attackDie === 1,
+                      'monster-roll-result--critical': monsterRolls[`${p.id}-${ai}`].attackDie === 20,
+                    }"
+                  >
+                    <span class="monster-roll-atk">
+                      Att : <strong>{{ monsterRolls[`${p.id}-${ai}`].attackTotal }}</strong>
+                      <span class="monster-roll-detail">({{ monsterRolls[`${p.id}-${ai}`].attackDie }} {{ signedNum(monsterRolls[`${p.id}-${ai}`].attackBonus) }})</span>
+                    </span>
+                    <span v-if="monsterRolls[`${p.id}-${ai}`].attackDie === 1" class="monster-roll-crit">Échec critique</span>
+                    <template v-else-if="monsterRolls[`${p.id}-${ai}`].attackDie === 20">
+                      <span class="monster-roll-crit">Critique !</span>
+                      <span class="monster-roll-dmg">
+                        Dég : <strong>{{ monsterRolls[`${p.id}-${ai}`].fixedDamage !== null ? monsterRolls[`${p.id}-${ai}`].fixedDamage : monsterRolls[`${p.id}-${ai}`].damageTotal * 2 }}</strong>
+                        <span v-if="monsterRolls[`${p.id}-${ai}`].fixedDamage === null" class="monster-roll-detail">({{ monsterRolls[`${p.id}-${ai}`].damageRolls.join('+') }}{{ monsterRolls[`${p.id}-${ai}`].damageModifier !== 0 ? ' ' + signedNum(monsterRolls[`${p.id}-${ai}`].damageModifier) : '' }} ×2)</span>
+                      </span>
+                    </template>
+                    <span v-else class="monster-roll-dmg">
+                      Dég : <strong>{{ monsterRolls[`${p.id}-${ai}`].damageTotal }}</strong>
+                      <span v-if="monsterRolls[`${p.id}-${ai}`].fixedDamage === null" class="monster-roll-detail">({{ monsterRolls[`${p.id}-${ai}`].damageRolls.join('+') }}{{ monsterRolls[`${p.id}-${ai}`].damageModifier !== 0 ? ' ' + signedNum(monsterRolls[`${p.id}-${ai}`].damageModifier) : '' }})</span>
+                    </span>
+                  </div>
                 </div>
               </div>
               <div
@@ -336,57 +425,6 @@ function goBack() {
           </div>
         </div>
 
-        <!-- My stats panel (player only, timeline tab) -->
-        <div
-          v-if="
-            activeTab === 'timeline' &&
-            myParticipant &&
-            myParticipant.hpCurrent !== null
-          "
-          class="my-stats-panel"
-        >
-          <div class="my-stats-header">
-            <span class="my-stats-name">{{ myParticipant.name }}</span>
-            <AppButton
-              size="small"
-              variant="ghost"
-              @click="activeTab = 'actions'"
-            >
-              <Zap :size="14" />
-              Mes actions
-            </AppButton>
-          </div>
-          <div class="my-stats-row">
-            <div class="my-stat">
-              <span class="stat-label">PV</span>
-              {{ myParticipant.hpCurrent }}/{{ myParticipant.hpMax }}
-            </div>
-            <div class="my-stat">
-              <span class="stat-label">DEF</span> {{ myParticipant.def }}
-            </div>
-            <div class="my-stat">
-              <span class="stat-label">Init</span>
-              {{ myParticipant.initiative }}
-            </div>
-          </div>
-          <div class="my-hp-controls">
-            <button class="hp-btn" @click="adjustHp(myParticipant, -5)">
-              -5
-            </button>
-            <button class="hp-btn" @click="adjustHp(myParticipant, -1)">
-              -1
-            </button>
-            <span class="hp-display"
-              >{{ myParticipant.hpCurrent }} / {{ myParticipant.hpMax }}</span
-            >
-            <button class="hp-btn" @click="adjustHp(myParticipant, 1)">
-              +1
-            </button>
-            <button class="hp-btn" @click="adjustHp(myParticipant, 5)">
-              +5
-            </button>
-          </div>
-        </div>
       </template>
     </div>
 
@@ -404,7 +442,7 @@ function goBack() {
         >
           <Zap v-if="activeTab === 'timeline'" :size="14" />
           <LayoutList v-else :size="14" />
-          {{ activeTab === "timeline" ? "Actions" : "Combat" }}
+          {{ activeTab === "timeline" ? "Mes actions" : "Combat" }}
         </AppButton>
       </div>
       <div class="footer-center">
@@ -662,15 +700,26 @@ function goBack() {
 }
 
 .card-init {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
   font-size: 0.75rem;
-  color: var(--muted);
+  color: #d4ac0d;
+  font-weight: 600;
+}
+.card-def {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  font-size: 0.75rem;
+  color: #3b82f6;
   font-weight: 600;
 }
 
 .card-hp {
   font-size: 0.82rem;
   font-weight: 700;
-  color: var(--text);
+  color: #c0392b;
 }
 
 .card-hp-inline {
@@ -770,12 +819,91 @@ function goBack() {
 }
 .detail-atk {
   color: var(--muted);
-  padding-bottom: 0.25rem;
+  padding-bottom: 0.35rem;
   border-bottom: 1px dashed color-mix(in srgb, var(--border) 50%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 .detail-atk:last-child {
   border-bottom: none;
   padding-bottom: 0;
+}
+.detail-atk-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+.roll-atk-btn {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  background: var(--surface);
+  color: var(--accent-strong);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.roll-atk-btn:active {
+  background: var(--accent-soft);
+}
+
+.monster-roll-result {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.6rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+  font-size: 0.78rem;
+}
+.monster-roll-atk,
+.monster-roll-dmg {
+  display: flex;
+  align-items: baseline;
+  gap: 0.2rem;
+  color: var(--text);
+}
+.monster-roll-atk strong,
+.monster-roll-dmg strong {
+  font-size: 0.9rem;
+  color: var(--accent-strong);
+}
+.monster-roll-detail {
+  font-size: 0.7rem;
+  color: var(--muted);
+  font-family: var(--mono-font, monospace);
+}
+.monster-roll-crit {
+  width: 100%;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.monster-roll-result--fumble {
+  background: color-mix(in srgb, #c95f56 10%, var(--surface));
+  border-color: #c95f56;
+}
+.monster-roll-result--fumble .monster-roll-atk,
+.monster-roll-result--fumble .monster-roll-atk strong,
+.monster-roll-result--fumble .monster-roll-crit {
+  color: #c95f56;
+}
+.monster-roll-result--critical {
+  background: color-mix(in srgb, #d4ac0d 10%, var(--surface));
+  border-color: #d4ac0d;
+}
+.monster-roll-result--critical .monster-roll-atk,
+.monster-roll-result--critical .monster-roll-atk strong,
+.monster-roll-result--critical .monster-roll-crit {
+  color: #c8950a;
 }
 .detail-ability {
   color: var(--muted);
@@ -788,55 +916,6 @@ function goBack() {
   padding-bottom: 0;
 }
 
-/* My stats panel — fixed at bottom, above footer */
-.my-stats-panel {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 1rem;
-  padding: 0.75rem 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  flex-shrink: 0;
-  margin-bottom: 8px;
-}
-
-.my-stats-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.my-stats-name {
-  font-weight: 700;
-  font-size: 0.95rem;
-  color: var(--text);
-}
-
-.my-stats-row {
-  display: flex;
-  gap: 1rem;
-}
-
-.my-stat {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text);
-}
-
-.stat-label {
-  font-size: 0.72rem;
-  color: var(--muted);
-  text-transform: uppercase;
-  margin-right: 0.2rem;
-}
-
-.my-hp-controls {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.3rem;
-}
 
 /* Footer — full width, content centered */
 .combat-footer {
