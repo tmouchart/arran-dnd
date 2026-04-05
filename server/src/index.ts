@@ -704,10 +704,13 @@ app.post("/api/chat", requireAuth, async (req, res) => {
               const rowById = new Map(rows.map((r) => [r.id, r]));
               for (const [name, imgId] of portraitIds) {
                 const row = rowById.get(imgId);
-                if (row) portraits.push({ name, data: row.data, mimeType: row.mimeType });
+                if (row) {
+                  portraits.push({ name, data: row.data, mimeType: row.mimeType });
+                  const sizeKb = Math.round((row.data.length * 3) / 4 / 1024);
+                  console.log(`[generate_image] Personnage chargé ${name} (${sizeKb} KB)`);
+                }
               }
             }
-            console.log(`[generate_image] Portraits: ${portraits.length > 0 ? portraits.map((p) => p.name).join(", ") : "none"}`);
 
             // Build image parts: style ref first, then portraits, then prompt
             const imageParts: Array<Record<string, unknown>> = [];
