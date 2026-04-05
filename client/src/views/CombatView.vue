@@ -6,6 +6,7 @@ import {
   ChevronRight,
   ChevronLeft,
   Plus,
+  Minus,
   X,
   Heart,
   HeartCrack,
@@ -74,15 +75,6 @@ const timelineRef = ref<HTMLElement | null>(null);
 watch(
   () => combat.value?.currentTurnIndex,
   async () => {
-    // Auto-expand monster panel for GM on their turn
-    if (isGm.value && combat.value) {
-      const current = combat.value.participants[combat.value.currentTurnIndex];
-      if (current?.kind === "monster") {
-        expandedId.value = current.id;
-      } else {
-        expandedId.value = null;
-      }
-    }
     await nextTick();
     const active = timelineRef.value?.querySelector(".participant-card.active");
     active?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -255,8 +247,16 @@ function goBack() {
                 <span v-if="isGm || p.kind === 'player'" class="card-init">{{
                   p.initiative
                 }}</span>
-                <!-- HP display -->
-                <template v-if="p.hpCurrent !== null && p.hpMax !== null">
+                <!-- Inline HP controls (GM monsters) -->
+                <template v-if="canAdjustHp(p) && p.hpCurrent !== null && p.hpMax !== null">
+                  <div class="card-hp-inline" @click.stop>
+                    <button class="hp-btn-sm" @click="adjustHp(p, -1)"><Minus :size="12" /></button>
+                    <span class="card-hp">{{ p.hpCurrent }}/{{ p.hpMax }}</span>
+                    <button class="hp-btn-sm" @click="adjustHp(p, 1)"><Plus :size="12" /></button>
+                  </div>
+                </template>
+                <!-- HP display (read-only) -->
+                <template v-else-if="p.hpCurrent !== null && p.hpMax !== null">
                   <span class="card-hp">{{ p.hpCurrent }}/{{ p.hpMax }}</span>
                 </template>
                 <template v-else-if="p.hpStatus">
@@ -671,6 +671,30 @@ function goBack() {
   font-size: 0.82rem;
   font-weight: 700;
   color: var(--text);
+}
+
+.card-hp-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.hp-btn-sm {
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.hp-btn-sm:active {
+  background: var(--accent-soft);
 }
 
 /* Expanded HP controls */
