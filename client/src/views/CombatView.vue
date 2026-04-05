@@ -7,11 +7,9 @@ import {
   ChevronLeft,
   Plus,
   X,
-  Search,
   Heart,
   HeartCrack,
   Skull,
-  Swords,
   Zap,
   CheckCheck,
   LayoutList,
@@ -40,7 +38,6 @@ const {
   connecting,
   error,
   isGm,
-  currentParticipant,
   isMyTurn,
   myParticipant,
   connect,
@@ -61,11 +58,6 @@ const expandedId = ref<number | null>(null);
 
 // Monster detail bottom sheet
 const monsterSheetId = ref<number | null>(null);
-const monsterSheet = computed(
-  () =>
-    combat.value?.participants.find((p) => p.id === monsterSheetId.value) ??
-    null,
-);
 
 // Add monster bottom sheet
 const showAddMonster = ref(false);
@@ -85,6 +77,15 @@ const timelineRef = ref<HTMLElement | null>(null);
 watch(
   () => combat.value?.currentTurnIndex,
   async () => {
+    // Auto-expand monster panel for GM on their turn
+    if (isGm.value && combat.value) {
+      const current = combat.value.participants[combat.value.currentTurnIndex];
+      if (current?.kind === "monster") {
+        expandedId.value = current.id;
+      } else {
+        expandedId.value = null;
+      }
+    }
     await nextTick();
     const active = timelineRef.value?.querySelector(".participant-card.active");
     active?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -736,7 +737,9 @@ function goBack() {
 .detail-section {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 0.35rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--border);
 }
 .detail-heading {
   font-weight: 700;
@@ -746,10 +749,22 @@ function goBack() {
 }
 .detail-atk {
   color: var(--muted);
+  padding-bottom: 0.25rem;
+  border-bottom: 1px dashed color-mix(in srgb, var(--border) 50%, transparent);
+}
+.detail-atk:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
 }
 .detail-ability {
   color: var(--muted);
   line-height: 1.3;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px dashed color-mix(in srgb, var(--border) 50%, transparent);
+}
+.detail-ability:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
 }
 
 /* My stats panel — fixed at bottom, above footer */

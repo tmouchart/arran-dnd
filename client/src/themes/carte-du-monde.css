@@ -6,7 +6,7 @@
 /* ── Light: Cartographer's desk in daylight ── */
 :root[data-style="carte-du-monde"] {
   font-family: 'Lora', 'Iowan Old Style', Georgia, serif;
-  --title-font: 'Pirata One', 'Georgia', serif;
+  --title-font: 'Cormorant Garamond', 'Georgia', serif;
 
   --bg: #f2e8d5;
   --bg-alt: #e8dcc4;

@@ -1,4 +1,4 @@
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { user } from './useAuth'
 import * as api from '../api/combats'
 import type { CombatState, CombatParticipant } from '../api/combats'

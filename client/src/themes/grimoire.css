@@ -6,7 +6,7 @@
 /* ── Light variables ── */
 :root[data-style="grimoire"] {
   font-family: 'Cormorant Garamond', 'Iowan Old Style', Georgia, serif;
-  --title-font: 'Uncial Antiqua', 'Iowan Old Style', Georgia, serif;
+  --title-font: 'Cinzel Decorative', 'Georgia', serif;
 
   --bg: #f0e6d0;
   --bg-alt: #e8dcc4;
