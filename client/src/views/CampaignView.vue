@@ -50,9 +50,6 @@ function viewCharacter(memberId: number) {
   router.push(`/campagnes/${campaign.value.id}/personnage/${memberId}`)
 }
 
-function avatarUrl(url: string | null): string {
-  return url || ''
-}
 </script>
 
 <template>

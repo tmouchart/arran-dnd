@@ -41,7 +41,7 @@ onMounted(async () => {
   try {
     const raw = await fetchMemberCharacter(campaignId, targetUserId)
     character.value = toCharacter(raw)
-    portraitDataUrl.value = (raw as Record<string, unknown>).portraitDataUrl as string | null
+    portraitDataUrl.value = (raw as unknown as Record<string, unknown>).portraitDataUrl as string | null
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Erreur'
   } finally {
