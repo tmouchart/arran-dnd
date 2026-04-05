@@ -56,9 +56,6 @@ const activeTab = ref<CombatTab>("timeline");
 // Expanded card (click to toggle)
 const expandedId = ref<number | null>(null);
 
-// Monster detail bottom sheet
-const monsterSheetId = ref<number | null>(null);
-
 // Add monster bottom sheet
 const showAddMonster = ref(false);
 const monsterSearchQuery = ref("");
