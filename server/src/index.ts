@@ -681,6 +681,7 @@ app.post("/api/chat", requireAuth, async (req, res) => {
           }
         } else if (funcName === "generate_image") {
           const imagePrompt = (funcArgs.prompt as string) ?? "";
+          console.log(`[generate_image] Prompt requested:\n${imagePrompt}`);
           writeSse(res, "tool_use", { tool: "generate_image", label: "Génération d'une illustration…" });
 
           try {
@@ -799,7 +800,7 @@ app.post("/api/chat", requireAuth, async (req, res) => {
                   },
                 };
                 toolResult = buildCharacterSection(charPayload);
-                console.log(`[get_character] Loaded character "${char.name}" (id=${char.id})`);
+                console.log(`[get_character] Loaded character "${char.name}" (id=${char.id})\n${toolResult}`);
 
                 // Load portrait if available
                 if (char.portraitImageId) {
