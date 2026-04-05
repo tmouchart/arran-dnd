@@ -755,7 +755,7 @@ app.post("/api/chat", requireAuth, async (req, res) => {
               const imageUrl = `/api/images/${inserted.id}`;
               writeSse(res, "image", { url: imageUrl, alt: imagePrompt });
               toolResult = "Image générée avec succès. L'image est affichée dans le chat. Continue ta réponse normalement sans re-décrire l'image en détail.";
-              console.log(`[generate_image] Saved image ${inserted.id} for prompt: "${imagePrompt.slice(0, 80)}…"`);
+              console.log(`[generate_image] Done — saved image ${inserted.id} (${inlineData.mimeType})\n  Prompt: ${imagePrompt}`);
             } else {
               toolResult = "La génération d'image a échoué — aucune image retournée par le modèle.";
               console.error("[generate_image] No image part in response");
