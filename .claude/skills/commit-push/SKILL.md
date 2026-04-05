@@ -21,5 +21,8 @@ Follow the git commit protocol below, then push to remote.
 5. Run `npm run build` and check for errors.
    - If there are build errors (TypeScript, unused imports, etc.), fix them and create a fixup commit.
    - Repeat until the build passes cleanly.
-6. Run `git push` once all commits are done and lint is clean.
-7. Confirm with the list of commit SHAs created.
+6. Run `npm test` and check for failures.
+   - If tests fail, fix the issues and create a fixup commit.
+   - Repeat until all tests pass.
+7. Run `git push` once all commits are done, build passes, and tests are green.
+8. Confirm with the list of commit SHAs created.
