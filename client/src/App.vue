@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from "vue-router";
-import { UserCircle, Loader2, ScrollText, Swords, Backpack, BookOpenText, Sword } from "lucide-vue-next";
+import { UserCircle, Loader2, ScrollText, Swords, Backpack, BookOpenText, Map } from "lucide-vue-next";
 import CrystalBall from "./components/icons/CrystalBall.vue";
 import { user, authReady } from "./composables/useAuth";
 
@@ -45,8 +45,8 @@ if (savedStyle) {
           <RouterLink to="/journal" class="nav-link" title="Journal"
             ><BookOpenText :size="20"
           /></RouterLink>
-          <RouterLink to="/sessions" class="nav-link" title="Sessions de jeu"
-            ><Sword :size="20"
+          <RouterLink to="/campagnes" class="nav-link" title="Campagnes"
+            ><Map :size="20"
           /></RouterLink>
         </nav>
         <RouterLink v-if="user" to="/options" class="nav-user" title="Options">

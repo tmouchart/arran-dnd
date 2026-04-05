@@ -130,6 +130,33 @@ export const generatedImages = pgTable('generated_images', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 })
 
+export const campaigns = pgTable('campaign', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 100 }).notNull(),
+  gmUserId: integer('gm_user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export const campaignMembers = pgTable(
+  'campaign_member',
+  {
+    id: serial('id').primaryKey(),
+    campaignId: integer('campaign_id')
+      .notNull()
+      .references(() => campaigns.id, { onDelete: 'cascade' }),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    characterId: integer('character_id').references(() => characters.id, { onDelete: 'set null' }),
+    joinedAt: timestamp('joined_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex('unique_campaign_member').on(table.campaignId, table.userId)],
+)
+
 export type UserRow = typeof users.$inferSelect
 export type CharacterRow = typeof characters.$inferSelect
 export type CharacterInsert = typeof characters.$inferInsert
+export type CampaignRow = typeof campaigns.$inferSelect
+export type CampaignMemberRow = typeof campaignMembers.$inferSelect

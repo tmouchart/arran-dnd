@@ -16,7 +16,7 @@ import {
 } from "../../data/profilesCatalog";
 import type { Character } from "../../types/character";
 
-const props = defineProps<{ character: Character }>();
+const props = defineProps<{ character: Character; portraitOverrideUrl?: string | null }>();
 
 const histoireVisible = ref(false);
 const showLevelUp = ref(false);
@@ -26,9 +26,10 @@ const portraitInput = ref<HTMLInputElement | null>(null);
 const portraitUploading = ref(false);
 
 const portraitUrl = computed(() =>
-  props.character.portraitImageId
-    ? `/api/images/${props.character.portraitImageId}`
-    : null,
+  props.portraitOverrideUrl
+    ?? (props.character.portraitImageId
+      ? `/api/images/${props.character.portraitImageId}`
+      : null),
 );
 
 function triggerPortraitPick() {

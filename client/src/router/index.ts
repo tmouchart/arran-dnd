@@ -11,6 +11,9 @@ import InventaireView from '../views/InventaireView.vue'
 import OptionsView from '../views/OptionsView.vue'
 import JournalView from '../views/JournalView.vue'
 import JournalPageView from '../views/JournalPageView.vue'
+import CampaignListView from '../views/CampaignListView.vue'
+import CampaignView from '../views/CampaignView.vue'
+import CampaignCharacterView from '../views/CampaignCharacterView.vue'
 import { authReady, user, initAuth } from '../composables/useAuth'
 
 export const router = createRouter({
@@ -26,6 +29,9 @@ export const router = createRouter({
     { path: '/jets', name: 'jets', component: JetsView },
     { path: '/journal', name: 'journal', component: JournalView },
     { path: '/journal/:id', name: 'journal-page', component: JournalPageView },
+    { path: '/campagnes', name: 'campaigns', component: CampaignListView },
+    { path: '/campagnes/:id', name: 'campaign', component: CampaignView },
+    { path: '/campagnes/:campaignId/personnage/:userId', name: 'campaign-character', component: CampaignCharacterView },
     { path: '/sessions', name: 'sessions', component: SessionListView },
     { path: '/sessions/:id', name: 'session', component: SessionView },
     { path: '/options', name: 'options', component: OptionsView },

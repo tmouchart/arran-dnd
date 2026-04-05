@@ -32,7 +32,7 @@ function loadCurrentMp(mpMax: number): number {
   return Number.isFinite(v) && v >= 0 ? v : mpMax
 }
 
-function toCharacter(s: ServerCharacter): Character {
+export function toCharacter(s: ServerCharacter): Character {
   return {
     id: String(s.id),
     name: s.name,
