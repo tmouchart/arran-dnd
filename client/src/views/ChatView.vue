@@ -3,7 +3,8 @@ import { ref, nextTick, onMounted, onUnmounted } from "vue";
 import MarkdownIt from "markdown-it";
 import DOMPurify from "dompurify";
 import { streamChat, type ChatMessage, type ToolUseEntry } from "../api/chat";
-import { SendHorizonal, SquarePen, Sparkles, Download, X } from "lucide-vue-next";
+import { SendHorizonal, SquarePen, Sparkles, Download, X, Volume2, Loader, Mic } from "lucide-vue-next";
+import { fetchTts } from "../api/tts";
 import AppIconBtn from "../components/ui/AppIconBtn.vue";
 import AppEmptyState from "../components/ui/AppEmptyState.vue";
 import { useCharacter, loadCharacter } from "../composables/useCharacter";
@@ -190,6 +191,14 @@ async function submit() {
       }, 50);
     });
     flushTypewriterQueue();
+
+    // Auto-voice: read the response aloud when enabled
+    if (autoVoice.value) {
+      const lastMsg = messages.value[messages.value.length - 1];
+      if (lastMsg?.role === "assistant" && lastMsg.content.trim()) {
+        playTts(lastMsg.content, messages.value.length - 1);
+      }
+    }
   } catch (e) {
     flushTypewriterQueue();
     if (!error.value) {
@@ -253,6 +262,125 @@ function openImageModal(url: string, alt: string) {
 
 function closeImageModal() {
   modalImage.value = null;
+}
+
+// ── Text-to-Speech ───────────────────────────────────────────────────────────
+const autoVoice = ref(false);
+const ttsLoadingIndex = ref<number | null>(null);
+let currentAudio: HTMLAudioElement | null = null;
+let currentAudioUrl: string | null = null;
+const playingIndex = ref<number | null>(null);
+
+function toggleAutoVoice() {
+  autoVoice.value = !autoVoice.value;
+}
+
+function stopCurrentAudio() {
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio = null;
+  }
+  if (currentAudioUrl) {
+    URL.revokeObjectURL(currentAudioUrl);
+    currentAudioUrl = null;
+  }
+  playingIndex.value = null;
+}
+
+async function playTts(text: string, index: number) {
+  // If already playing this message, stop it
+  if (playingIndex.value === index) {
+    stopCurrentAudio();
+    return;
+  }
+
+  stopCurrentAudio();
+  ttsLoadingIndex.value = index;
+
+  try {
+    const url = await fetchTts(text);
+    currentAudioUrl = url;
+    currentAudio = new Audio(url);
+    playingIndex.value = index;
+    ttsLoadingIndex.value = null;
+
+    currentAudio.addEventListener("ended", () => {
+      stopCurrentAudio();
+    });
+
+    await currentAudio.play();
+  } catch (e) {
+    console.error("[tts]", e);
+    ttsLoadingIndex.value = null;
+    stopCurrentAudio();
+  }
+}
+
+onUnmounted(() => {
+  stopCurrentAudio();
+  stopListening();
+});
+
+// ── Speech-to-Text (voice input) ────────────────────────────────────────────
+const SpeechRecognition =
+  (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+const sttSupported = !!SpeechRecognition;
+const listening = ref(false);
+let recognition: any = null;
+
+function toggleListening() {
+  if (listening.value) {
+    stopListening();
+  } else {
+    startListening();
+  }
+}
+
+function startListening() {
+  if (!SpeechRecognition || listening.value) return;
+
+  recognition = new SpeechRecognition();
+  recognition.lang = "fr-FR";
+  recognition.continuous = true;
+  recognition.interimResults = true;
+
+  let finalTranscript = "";
+
+  recognition.onresult = (event: any) => {
+    let interim = "";
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const transcript = event.results[i][0].transcript;
+      if (event.results[i].isFinal) {
+        finalTranscript += transcript;
+      } else {
+        interim += transcript;
+      }
+    }
+    // Show live transcription in the textarea
+    input.value = finalTranscript + interim;
+  };
+
+  recognition.onend = () => {
+    listening.value = false;
+    recognition = null;
+  };
+
+  recognition.onerror = (event: any) => {
+    console.error("[stt]", event.error);
+    listening.value = false;
+    recognition = null;
+  };
+
+  recognition.start();
+  listening.value = true;
+}
+
+function stopListening() {
+  if (recognition) {
+    recognition.stop();
+    recognition = null;
+  }
+  listening.value = false;
 }
 
 async function downloadImage() {
@@ -340,6 +468,16 @@ async function downloadImage() {
           class="content assistant-content"
           v-html="renderAssistantContent(m.content)"
         />
+        <button
+          v-if="m.role === 'assistant' && m.content.trim()"
+          class="tts-btn"
+          :title="playingIndex === i ? 'Arrêter' : 'Écouter'"
+          :disabled="ttsLoadingIndex === i"
+          @click="playTts(m.content, i)"
+        >
+          <Loader v-if="ttsLoadingIndex === i" :size="14" class="tts-spinner" />
+          <Volume2 v-else :size="14" :class="{ 'tts-playing': playingIndex === i }" />
+        </button>
         <div v-else class="content user-content">{{ m.content }}</div>
       </article>
     </div>
@@ -357,19 +495,42 @@ async function downloadImage() {
         @keydown.enter.exact.prevent="submit"
       />
       <div class="composer-footer">
-        <div v-if="character.id" class="character-chip">
-          <span class="chip-icon">⚔️</span>
-          <span class="chip-name">{{ character.name }}</span>
+        <div class="composer-left">
+          <div v-if="character.id" class="character-chip">
+            <span class="chip-icon">⚔️</span>
+            <span class="chip-name">{{ character.name }}</span>
+          </div>
+          <button
+            type="button"
+            class="voice-toggle-btn"
+            :class="{ active: autoVoice }"
+            :title="autoVoice ? 'Désactiver la voix auto' : 'Activer la voix auto'"
+            @click="toggleAutoVoice"
+          >
+            <Volume2 :size="15" />
+          </button>
         </div>
-        <div v-else class="chip-placeholder" />
-        <button
-          type="submit"
-          class="send-icon-btn"
-          :disabled="loading || !input.trim()"
-          :title="loading ? 'Envoi…' : 'Envoyer'"
-        >
-          <SendHorizonal :size="20" aria-hidden="true" />
-        </button>
+        <div class="composer-right">
+          <button
+            v-if="sttSupported"
+            type="button"
+            class="mic-btn"
+            :class="{ recording: listening }"
+            :title="listening ? 'Arrêter l\'écoute' : 'Dicter un message'"
+            :disabled="loading"
+            @click="toggleListening"
+          >
+            <Mic :size="20" aria-hidden="true" />
+          </button>
+          <button
+            type="submit"
+            class="send-icon-btn"
+            :disabled="loading || !input.trim()"
+            :title="loading ? 'Envoi…' : 'Envoyer'"
+          >
+            <SendHorizonal :size="20" aria-hidden="true" />
+          </button>
+        </div>
       </div>
     </form>
 
@@ -854,5 +1015,121 @@ async function downloadImage() {
 
 .generated-image {
   cursor: pointer;
+}
+
+/* ── TTS ──────────────────────────────────────────────────────────────────── */
+
+.composer-left {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.voice-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  opacity: 0.55;
+  cursor: pointer;
+  transition: color 150ms, opacity 150ms, border-color 150ms, background 150ms;
+}
+
+.voice-toggle-btn:hover {
+  opacity: 0.85;
+}
+
+.voice-toggle-btn.active {
+  opacity: 1;
+  color: var(--brand-strong);
+  border-color: var(--brand);
+  background: color-mix(in srgb, var(--brand) 15%, var(--surface-2));
+}
+
+.composer-right {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.mic-btn {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 150ms, border-color 150ms, background 150ms, box-shadow 150ms;
+}
+
+.mic-btn:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.mic-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.mic-btn.recording {
+  color: #fff;
+  background: var(--danger);
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 30%, transparent);
+  animation: mic-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes mic-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 30%, transparent); }
+  50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--danger) 15%, transparent); }
+}
+
+.tts-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  margin-top: 0.35rem;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 120ms, border-color 120ms, background 120ms;
+}
+
+.tts-btn:hover:not(:disabled) {
+  color: var(--brand-strong);
+  border-color: var(--brand);
+  background: color-mix(in srgb, var(--brand) 10%, var(--surface-2));
+}
+
+.tts-btn:disabled {
+  cursor: wait;
+}
+
+.tts-playing {
+  color: var(--brand-strong);
+}
+
+@keyframes tts-spin {
+  to { transform: rotate(360deg); }
+}
+
+.tts-spinner {
+  animation: tts-spin 1s linear infinite;
 }
 </style>

@@ -13,6 +13,7 @@ import charactersRouter from "./routes/characters.js";
 import sessionsRouter from "./routes/sessions.js";
 import journalRouter from "./routes/journal.js";
 import campaignsRouter from "./routes/campaigns.js";
+import ttsRouter from "./routes/tts.js";
 import { requireAuth, type AuthRequest } from "./auth/middleware.js";
 import { loadCoreIndex, loadTopic } from "./knowledge/loadKnowledge.js";
 import { CLIENT_DIST, REPO_ROOT } from "./paths.js";
@@ -46,6 +47,7 @@ app.use("/api/characters", charactersRouter);
 app.use("/api/sessions", sessionsRouter);
 app.use("/api/journal", journalRouter);
 app.use("/api/campaigns", campaignsRouter);
+app.use("/api/tts", ttsRouter);
 
 // Serve generated images from database (auth-protected, owner only)
 app.get("/api/images/:id", requireAuth, async (req, res) => {
