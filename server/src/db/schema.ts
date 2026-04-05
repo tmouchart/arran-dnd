@@ -195,7 +195,7 @@ export const combats = pgTable('combat', {
   campaignId: integer('campaign_id')
     .notNull()
     .references(() => campaigns.id, { onDelete: 'cascade' }),
-  encounterId: integer('encounter_id').references(() => encounterTemplates.id),
+  encounterId: integer('encounter_id').references(() => encounterTemplates.id, { onDelete: 'set null' }),
   name: varchar('name', { length: 200 }).notNull(),
   status: varchar('status', { length: 20 }).notNull().default('active'),
   currentTurnIndex: integer('current_turn_index').notNull().default(0),
