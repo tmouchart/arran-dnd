@@ -101,6 +101,9 @@ if (savedStyle) {
 
 /* Combat banner */
 .combat-banner {
+  position: sticky;
+  top: var(--nav-height);
+  z-index: 9;
   display: flex;
   align-items: center;
   gap: 0.5rem;
