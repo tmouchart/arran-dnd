@@ -164,6 +164,10 @@ Any new feature that contains non-trivial logic (game mechanics, calculations, s
 - Test pure functions first; for Vue composables, mutate `character.value` directly and read computed `.value`
 - Use `/write-tests` to generate tests interactively
 
+## Plans
+
+All implementation plans must be saved as Markdown files in the `plans/` directory at the project root. Use numbered prefixes for ordering (e.g., `01-campagnes.md`, `02-rencontres.md`). Always write the plan to this directory — never only in `.claude/plans/`.
+
 ## Project Skills
 
 These skills are available via `/skill-name`. They are **not** auto-injected into context — invoke them explicitly.
