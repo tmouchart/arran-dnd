@@ -30,7 +30,7 @@ import { campaigns, campaignMembers, characters, generatedImages, journalCompagn
 
 const app = express();
 app.use(cors({ origin: true, credentials: true }));
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: "5mb" }));
 app.use(cookieParser());
 
 // Request logging
@@ -174,6 +174,7 @@ Tu t'adresses aux joueurs et au meneur en français, toujours en restant en pers
 - Tu peux générer des illustrations (scènes, portraits, cartes, objets) avec l'outil generate_image.
 - Utilise-le quand le joueur demande une image, ou quand une description de scène ou de personnage bénéficierait d'une illustration.
 - Le prompt DOIT être en anglais, détaillé, style "medieval high fantasy, painterly, warm tones".
+- IMPORTANT : l'image générée doit TOUJOURS être une illustration plein cadre. Jamais une page de livre, jamais un cadre blanc autour, jamais un format "photo d'un livre". Ajoute "full frame illustration, no borders, no book page, no white margins" à chaque prompt.
 - Inclus toujours le contexte du monde d'Arran dans le prompt (elfes, nains, cristaux, forêts anciennes, etc.).
 - Après génération, continue ta réponse normalement — l'image s'affiche automatiquement dans le chat.
 - N'utilise PAS cet outil pour les questions de règles, de mécanique ou de statistiques.
@@ -182,7 +183,8 @@ Tu t'adresses aux joueurs et au meneur en français, toujours en restant en pers
 👥 Compagnons de campagne (get_character) :
 - La liste de tes compagnons de campagne est dans le contexte ci-dessous.
 - get_character te donne la fiche complète d'un compagnon (profil, stats, voies, compétences, portrait).
-- RÈGLE ABSOLUE : avant de générer une image représentant un ou plusieurs personnages joueurs, appelle TOUJOURS get_character sur chaque personnage concerné pour obtenir son portrait et son apparence. Ne génère JAMAIS une image d'un personnage sans avoir d'abord consulté sa fiche.
+- RÈGLE ABSOLUE : avant de générer une image représentant un ou plusieurs personnages joueurs, appelle TOUJOURS get_character sur chaque personnage concerné DANS LE MÊME MESSAGE, même si tu l'as déjà appelé dans un message précédent. Le portrait image n'est transmis au générateur que s'il est récupéré dans le même tour. Ne génère JAMAIS une image d'un personnage sans avoir d'abord consulté sa fiche dans ce même tour.
+- RÈGLE ABSOLUE : quand tu as besoin de connaître l'apparence physique d'un compagnon (pour le décrire, générer une image, ou toute autre raison), appelle get_character pour consulter son portrait. Ne demande JAMAIS au joueur de décrire un compagnon dont tu peux consulter la fiche.
 - Utilise get_character de façon proactive quand un joueur pose une question sur un compagnon.`;
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
@@ -709,13 +711,13 @@ app.post("/api/chat", requireAuth, async (req, res) => {
               });
               imageParts.push({
                 text: (styleRefBase64
-                  ? "Generate an image in the exact same artistic style as the first reference image (European fantasy comic book / bande dessinée). Match the color palette, ink linework, and painterly rendering. The second image is the character's portrait — use it as a visual reference for the character's appearance (face, hair, build, clothing). Subject: "
-                  : "The attached image is the character's portrait — use it as a visual reference for the character's appearance (face, hair, build, clothing). Subject: "
+                  ? "Generate a full-frame illustration in the exact same artistic style as the first reference image (European fantasy comic art). Match the color palette, ink linework, and painterly rendering. The second image is the character's portrait — use it as a visual reference for the character's appearance (face, hair, build, clothing). IMPORTANT: full bleed illustration filling the entire frame, no borders, no book pages, no white margins, no photo of a page. Subject: "
+                  : "The attached image is the character's portrait — use it as a visual reference for the character's appearance (face, hair, build, clothing). IMPORTANT: full bleed illustration filling the entire frame, no borders, no book pages, no white margins. Subject: "
                 ) + imagePrompt,
               });
             } else if (styleRefBase64) {
               imageParts.push({
-                text: "Generate an image in the exact same artistic style as this reference (European fantasy comic book / bande dessinée). Match the color palette, ink linework, and painterly rendering. Subject: " + imagePrompt,
+                text: "Generate a full-frame illustration in the exact same artistic style as this reference (European fantasy comic art). Match the color palette, ink linework, and painterly rendering. IMPORTANT: full bleed illustration filling the entire frame, no borders, no book pages, no white margins, no photo of a page. Subject: " + imagePrompt,
               });
             } else {
               imageParts.push({ text: imagePrompt });
