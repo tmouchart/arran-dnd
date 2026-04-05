@@ -1,7 +1,7 @@
 import { and, eq, sql } from 'drizzle-orm'
 import { Router } from 'express'
 import { db } from '../db/index.js'
-import { campaigns, campaignMembers, characters, users, generatedImages } from '../db/schema.js'
+import { campaigns, campaignMembers, characters, users, generatedImages, encounterTemplates, encounterMonsters } from '../db/schema.js'
 import { requireAuth, type AuthRequest } from '../auth/middleware.js'
 
 const router = Router()
@@ -264,6 +264,313 @@ router.get('/:id/members/:userId/character', async (req, res) => {
   }
 
   res.json({ ...character, portraitDataUrl })
+})
+
+// ── Helper: verify GM ownership ─────────────────────────────────────────────
+async function verifyGm(campaignId: number, userId: number) {
+  const [campaign] = await db
+    .select({ gmUserId: campaigns.gmUserId })
+    .from(campaigns)
+    .where(eq(campaigns.id, campaignId))
+  if (!campaign) return 'not_found' as const
+  if (campaign.gmUserId !== userId) return 'forbidden' as const
+  return 'ok' as const
+}
+
+// ── Encounter Templates ─────────────────────────────────────────────────────
+
+// GET /api/campaigns/:id/encounters — liste les rencontres
+router.get('/:id/encounters', async (req, res) => {
+  const userId = (req as unknown as AuthRequest).userId
+  const campaignId = Number(req.params.id)
+
+  const check = await verifyGm(campaignId, userId)
+  if (check === 'not_found') { res.status(404).json({ error: 'Campagne introuvable' }); return }
+  if (check === 'forbidden') { res.status(403).json({ error: 'Réservé au MJ' }); return }
+
+  const rows = await db
+    .select({
+      id: encounterTemplates.id,
+      name: encounterTemplates.name,
+      description: encounterTemplates.description,
+      createdAt: encounterTemplates.createdAt,
+    })
+    .from(encounterTemplates)
+    .where(eq(encounterTemplates.campaignId, campaignId))
+
+  // Count monsters per encounter
+  const counts = await db
+    .select({
+      encounterId: encounterMonsters.encounterId,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(encounterMonsters)
+    .groupBy(encounterMonsters.encounterId)
+
+  const countMap = new Map(counts.map((r) => [r.encounterId, r.count]))
+
+  res.json(rows.map((r) => ({ ...r, monsterCount: countMap.get(r.id) ?? 0 })))
+})
+
+// POST /api/campaigns/:id/encounters — créer une rencontre
+router.post('/:id/encounters', async (req, res) => {
+  const userId = (req as unknown as AuthRequest).userId
+  const campaignId = Number(req.params.id)
+
+  const check = await verifyGm(campaignId, userId)
+  if (check === 'not_found') { res.status(404).json({ error: 'Campagne introuvable' }); return }
+  if (check === 'forbidden') { res.status(403).json({ error: 'Réservé au MJ' }); return }
+
+  const { name, description } = req.body as { name?: string; description?: string }
+  if (!name?.trim()) { res.status(400).json({ error: 'Le nom est requis' }); return }
+
+  const [row] = await db
+    .insert(encounterTemplates)
+    .values({ campaignId, name: name.trim(), description: description?.trim() || null })
+    .returning()
+
+  res.status(201).json(row)
+})
+
+// GET /api/campaigns/:id/encounters/:eid — détail d'une rencontre
+router.get('/:id/encounters/:eid', async (req, res) => {
+  const userId = (req as unknown as AuthRequest).userId
+  const campaignId = Number(req.params.id)
+  const eid = Number(req.params.eid)
+
+  const check = await verifyGm(campaignId, userId)
+  if (check === 'not_found') { res.status(404).json({ error: 'Campagne introuvable' }); return }
+  if (check === 'forbidden') { res.status(403).json({ error: 'Réservé au MJ' }); return }
+
+  const [encounter] = await db
+    .select()
+    .from(encounterTemplates)
+    .where(and(eq(encounterTemplates.id, eid), eq(encounterTemplates.campaignId, campaignId)))
+  if (!encounter) { res.status(404).json({ error: 'Rencontre introuvable' }); return }
+
+  const monsters = await db
+    .select()
+    .from(encounterMonsters)
+    .where(eq(encounterMonsters.encounterId, eid))
+
+  res.json({ ...encounter, monsters })
+})
+
+// PUT /api/campaigns/:id/encounters/:eid — modifier nom/description
+router.put('/:id/encounters/:eid', async (req, res) => {
+  const userId = (req as unknown as AuthRequest).userId
+  const campaignId = Number(req.params.id)
+  const eid = Number(req.params.eid)
+
+  const check = await verifyGm(campaignId, userId)
+  if (check === 'not_found') { res.status(404).json({ error: 'Campagne introuvable' }); return }
+  if (check === 'forbidden') { res.status(403).json({ error: 'Réservé au MJ' }); return }
+
+  const { name, description } = req.body as { name?: string; description?: string }
+
+  const [row] = await db
+    .update(encounterTemplates)
+    .set({
+      ...(name !== undefined ? { name: name.trim() } : {}),
+      ...(description !== undefined ? { description: description.trim() || null } : {}),
+    })
+    .where(and(eq(encounterTemplates.id, eid), eq(encounterTemplates.campaignId, campaignId)))
+    .returning()
+
+  if (!row) { res.status(404).json({ error: 'Rencontre introuvable' }); return }
+  res.json(row)
+})
+
+// DELETE /api/campaigns/:id/encounters/:eid — supprimer une rencontre
+router.delete('/:id/encounters/:eid', async (req, res) => {
+  const userId = (req as unknown as AuthRequest).userId
+  const campaignId = Number(req.params.id)
+  const eid = Number(req.params.eid)
+
+  const check = await verifyGm(campaignId, userId)
+  if (check === 'not_found') { res.status(404).json({ error: 'Campagne introuvable' }); return }
+  if (check === 'forbidden') { res.status(403).json({ error: 'Réservé au MJ' }); return }
+
+  const [row] = await db
+    .delete(encounterTemplates)
+    .where(and(eq(encounterTemplates.id, eid), eq(encounterTemplates.campaignId, campaignId)))
+    .returning({ id: encounterTemplates.id })
+
+  if (!row) { res.status(404).json({ error: 'Rencontre introuvable' }); return }
+  res.json({ ok: true })
+})
+
+// ── Encounter Monsters ──────────────────────────────────────────────────────
+
+// POST /api/campaigns/:id/encounters/:eid/monsters — ajouter un monstre
+router.post('/:id/encounters/:eid/monsters', async (req, res) => {
+  const userId = (req as unknown as AuthRequest).userId
+  const campaignId = Number(req.params.id)
+  const eid = Number(req.params.eid)
+
+  const check = await verifyGm(campaignId, userId)
+  if (check === 'not_found') { res.status(404).json({ error: 'Campagne introuvable' }); return }
+  if (check === 'forbidden') { res.status(403).json({ error: 'Réservé au MJ' }); return }
+
+  // Verify encounter belongs to campaign
+  const [enc] = await db
+    .select({ id: encounterTemplates.id })
+    .from(encounterTemplates)
+    .where(and(eq(encounterTemplates.id, eid), eq(encounterTemplates.campaignId, campaignId)))
+  if (!enc) { res.status(404).json({ error: 'Rencontre introuvable' }); return }
+
+  const body = req.body as Record<string, unknown>
+
+  const [row] = await db
+    .insert(encounterMonsters)
+    .values({
+      encounterId: eid,
+      name: String(body.name ?? 'Monstre'),
+      nc: Number(body.nc ?? 0),
+      size: String(body.size ?? 'moyenne'),
+      def: Number(body.def ?? 10),
+      pv: Number(body.pv ?? 1),
+      init: Number(body.init ?? 0),
+      rd: body.rd ? String(body.rd) : null,
+      statFor: Number(body.statFor ?? 0),
+      statDex: Number(body.statDex ?? 0),
+      statCon: Number(body.statCon ?? 0),
+      statInt: Number(body.statInt ?? 0),
+      statSag: Number(body.statSag ?? 0),
+      statCha: Number(body.statCha ?? 0),
+      attacks: body.attacks ?? [],
+      abilities: body.abilities ?? [],
+      description: body.description ? String(body.description) : null,
+    })
+    .returning()
+
+  res.status(201).json(row)
+})
+
+// POST /api/campaigns/:id/encounters/:eid/monsters/:mid/duplicate — dupliquer
+router.post('/:id/encounters/:eid/monsters/:mid/duplicate', async (req, res) => {
+  const userId = (req as unknown as AuthRequest).userId
+  const campaignId = Number(req.params.id)
+  const eid = Number(req.params.eid)
+  const mid = Number(req.params.mid)
+
+  const check = await verifyGm(campaignId, userId)
+  if (check === 'not_found') { res.status(404).json({ error: 'Campagne introuvable' }); return }
+  if (check === 'forbidden') { res.status(403).json({ error: 'Réservé au MJ' }); return }
+
+  // Get the monster to duplicate
+  const [source] = await db.select().from(encounterMonsters).where(eq(encounterMonsters.id, mid))
+  if (!source || source.encounterId !== eid) {
+    res.status(404).json({ error: 'Monstre introuvable' }); return
+  }
+
+  // Get all monsters in this encounter to determine numbering
+  const allMonsters = await db
+    .select({ id: encounterMonsters.id, name: encounterMonsters.name })
+    .from(encounterMonsters)
+    .where(eq(encounterMonsters.encounterId, eid))
+
+  // Strip trailing number from source name to get base name
+  const baseNameMatch = source.name.match(/^(.+?)\s*\d*$/)
+  const baseName = baseNameMatch ? baseNameMatch[1].trim() : source.name
+
+  // Find existing numbered copies
+  const regex = new RegExp(`^${baseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*(\\d+)?$`)
+  const existingNumbers = allMonsters
+    .filter((m) => regex.test(m.name))
+    .map((m) => {
+      const match = m.name.match(regex)
+      return match?.[1] ? Number(match[1]) : 0
+    })
+
+  const nextNumber = Math.max(...existingNumbers, 0) + 1
+
+  // If source has no number yet and this is the first duplicate, rename it to 1
+  const sourceHasNumber = /\d+$/.test(source.name)
+  if (!sourceHasNumber && nextNumber === 1) {
+    await db
+      .update(encounterMonsters)
+      .set({ name: `${baseName} 1` })
+      .where(eq(encounterMonsters.id, mid))
+  }
+
+  const duplicateNumber = sourceHasNumber ? nextNumber : nextNumber + 1
+
+  // Create the copy
+  const { id: _id, ...sourceData } = source
+  const [newRow] = await db
+    .insert(encounterMonsters)
+    .values({
+      ...sourceData,
+      name: `${baseName} ${duplicateNumber}`,
+    })
+    .returning()
+
+  // Return all monsters so client can update the full list (source may have been renamed)
+  const updatedMonsters = await db
+    .select()
+    .from(encounterMonsters)
+    .where(eq(encounterMonsters.encounterId, eid))
+
+  res.status(201).json(updatedMonsters)
+})
+
+// PUT /api/campaigns/:id/encounters/:eid/monsters/:mid — modifier un monstre
+router.put('/:id/encounters/:eid/monsters/:mid', async (req, res) => {
+  const userId = (req as unknown as AuthRequest).userId
+  const campaignId = Number(req.params.id)
+  const mid = Number(req.params.mid)
+
+  const check = await verifyGm(campaignId, userId)
+  if (check === 'not_found') { res.status(404).json({ error: 'Campagne introuvable' }); return }
+  if (check === 'forbidden') { res.status(403).json({ error: 'Réservé au MJ' }); return }
+
+  const body = req.body as Record<string, unknown>
+
+  const [row] = await db
+    .update(encounterMonsters)
+    .set({
+      ...(body.name !== undefined ? { name: String(body.name) } : {}),
+      ...(body.nc !== undefined ? { nc: Number(body.nc) } : {}),
+      ...(body.size !== undefined ? { size: String(body.size) } : {}),
+      ...(body.def !== undefined ? { def: Number(body.def) } : {}),
+      ...(body.pv !== undefined ? { pv: Number(body.pv) } : {}),
+      ...(body.init !== undefined ? { init: Number(body.init) } : {}),
+      ...(body.rd !== undefined ? { rd: body.rd ? String(body.rd) : null } : {}),
+      ...(body.statFor !== undefined ? { statFor: Number(body.statFor) } : {}),
+      ...(body.statDex !== undefined ? { statDex: Number(body.statDex) } : {}),
+      ...(body.statCon !== undefined ? { statCon: Number(body.statCon) } : {}),
+      ...(body.statInt !== undefined ? { statInt: Number(body.statInt) } : {}),
+      ...(body.statSag !== undefined ? { statSag: Number(body.statSag) } : {}),
+      ...(body.statCha !== undefined ? { statCha: Number(body.statCha) } : {}),
+      ...(body.attacks !== undefined ? { attacks: body.attacks } : {}),
+      ...(body.abilities !== undefined ? { abilities: body.abilities } : {}),
+      ...(body.description !== undefined ? { description: body.description ? String(body.description) : null } : {}),
+    })
+    .where(eq(encounterMonsters.id, mid))
+    .returning()
+
+  if (!row) { res.status(404).json({ error: 'Monstre introuvable' }); return }
+  res.json(row)
+})
+
+// DELETE /api/campaigns/:id/encounters/:eid/monsters/:mid — supprimer un monstre
+router.delete('/:id/encounters/:eid/monsters/:mid', async (req, res) => {
+  const userId = (req as unknown as AuthRequest).userId
+  const campaignId = Number(req.params.id)
+  const mid = Number(req.params.mid)
+
+  const check = await verifyGm(campaignId, userId)
+  if (check === 'not_found') { res.status(404).json({ error: 'Campagne introuvable' }); return }
+  if (check === 'forbidden') { res.status(403).json({ error: 'Réservé au MJ' }); return }
+
+  const [row] = await db
+    .delete(encounterMonsters)
+    .where(eq(encounterMonsters.id, mid))
+    .returning({ id: encounterMonsters.id })
+
+  if (!row) { res.status(404).json({ error: 'Monstre introuvable' }); return }
+  res.json({ ok: true })
 })
 
 export default router

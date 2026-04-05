@@ -4,6 +4,7 @@ import {
   integer,
   jsonb,
   pgTable,
+  real,
   serial,
   text,
   timestamp,
@@ -154,6 +155,39 @@ export const campaignMembers = pgTable(
   },
   (table) => [uniqueIndex('unique_campaign_member').on(table.campaignId, table.userId)],
 )
+
+export const encounterTemplates = pgTable('encounter_template', {
+  id: serial('id').primaryKey(),
+  campaignId: integer('campaign_id')
+    .notNull()
+    .references(() => campaigns.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 200 }).notNull(),
+  description: text('description'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export const encounterMonsters = pgTable('encounter_monster', {
+  id: serial('id').primaryKey(),
+  encounterId: integer('encounter_id')
+    .notNull()
+    .references(() => encounterTemplates.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  nc: real('nc').notNull().default(0),
+  size: text('size').notNull().default('moyenne'),
+  def: integer('def').notNull().default(10),
+  pv: integer('pv').notNull().default(1),
+  init: integer('init').notNull().default(0),
+  rd: text('rd'),
+  statFor: integer('stat_for').notNull().default(0),
+  statDex: integer('stat_dex').notNull().default(0),
+  statCon: integer('stat_con').notNull().default(0),
+  statInt: integer('stat_int').notNull().default(0),
+  statSag: integer('stat_sag').notNull().default(0),
+  statCha: integer('stat_cha').notNull().default(0),
+  attacks: jsonb('attacks').notNull().default([]),
+  abilities: jsonb('abilities').notNull().default([]),
+  description: text('description'),
+})
 
 export type UserRow = typeof users.$inferSelect
 export type CharacterRow = typeof characters.$inferSelect

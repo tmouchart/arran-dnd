@@ -14,6 +14,7 @@ import JournalPageView from '../views/JournalPageView.vue'
 import CampaignListView from '../views/CampaignListView.vue'
 import CampaignView from '../views/CampaignView.vue'
 import CampaignCharacterView from '../views/CampaignCharacterView.vue'
+import EncounterEditView from '../views/EncounterEditView.vue'
 import { authReady, user, initAuth } from '../composables/useAuth'
 
 export const router = createRouter({
@@ -32,6 +33,7 @@ export const router = createRouter({
     { path: '/campagnes', name: 'campaigns', component: CampaignListView },
     { path: '/campagnes/:id', name: 'campaign', component: CampaignView },
     { path: '/campagnes/:campaignId/personnage/:userId', name: 'campaign-character', component: CampaignCharacterView },
+    { path: '/campagnes/:id/rencontres/:eid', name: 'encounter-edit', component: EncounterEditView },
     { path: '/sessions', name: 'sessions', component: SessionListView },
     { path: '/sessions/:id', name: 'session', component: SessionView },
     { path: '/options', name: 'options', component: OptionsView },
