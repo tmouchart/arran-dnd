@@ -17,6 +17,7 @@ const input = ref("");
 const messages = ref<ChatMessage[]>(loadChatMessages());
 useChatPersistence(messages);
 const loading = ref(false);
+const generatingImage = ref(false);
 const error = ref<string | null>(null);
 const threadEl = ref<HTMLElement | null>(null);
 const textareaEl = ref<HTMLTextAreaElement | null>(null);
@@ -156,6 +157,7 @@ async function submit() {
           }
         },
         onToolUse: (entry) => {
+          if (entry.tool === "generate_image") generatingImage.value = true;
           const last = messages.value[messages.value.length - 1];
           if (last && last.role === "assistant") {
             if (!last.toolUses) last.toolUses = [];
@@ -167,6 +169,7 @@ async function submit() {
           error.value = msg;
         },
         onImage: (url, alt) => {
+          generatingImage.value = false;
           const last = messages.value[messages.value.length - 1];
           if (last && last.role === "assistant") {
             if (!last.images) last.images = [];
@@ -213,6 +216,7 @@ async function submit() {
     input.value = text;
   } finally {
     loading.value = false;
+    generatingImage.value = false;
     nextTick(() => textareaEl.value?.focus());
   }
 }
@@ -310,11 +314,10 @@ function startListening() {
   recognition.continuous = true;
   recognition.interimResults = true;
 
-  let finalTranscript = "";
-
   recognition.onresult = (event: any) => {
+    let finalTranscript = "";
     let interim = "";
-    for (let i = event.resultIndex; i < event.results.length; i++) {
+    for (let i = 0; i < event.results.length; i++) {
       const transcript = event.results[i][0].transcript;
       if (event.results[i].isFinal) {
         finalTranscript += transcript;
@@ -413,17 +416,6 @@ async function downloadImage() {
             {{ toolUseLabel(tu) }}
           </span>
         </div>
-        <div v-if="m.images?.length" class="message-images">
-          <img
-            v-for="(img, k) in m.images"
-            :key="k"
-            :src="img.url"
-            :alt="img.alt"
-            class="generated-image"
-            loading="lazy"
-            @click="openImageModal(img.url, img.alt)"
-          />
-        </div>
         <div
           v-if="m.role === 'assistant'"
           class="content assistant-content"
@@ -440,6 +432,23 @@ async function downloadImage() {
           <Volume2 v-else :size="14" :class="{ 'tts-playing': playingIndex === i }" />
         </button>
         <div v-else class="content user-content">{{ m.content }}</div>
+        <div v-if="generatingImage && i === messages.length - 1 && m.role === 'assistant'" class="tool-chips">
+          <span class="tool-chip">
+            <Loader :size="13" class="tool-chip-icon spin" />
+            Création de l'illustration…
+          </span>
+        </div>
+        <div v-if="m.images?.length" class="message-images">
+          <img
+            v-for="(img, k) in m.images"
+            :key="k"
+            :src="img.url"
+            :alt="img.alt"
+            class="generated-image"
+            loading="lazy"
+            @click="openImageModal(img.url, img.alt)"
+          />
+        </div>
       </article>
     </div>
 
@@ -720,6 +729,14 @@ async function downloadImage() {
   flex-shrink: 0;
   opacity: 0.7;
 }
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 
 .message-images {
   margin: 0.4rem 0;
