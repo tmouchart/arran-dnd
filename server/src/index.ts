@@ -232,7 +232,7 @@ function logTokens(
 
 type CharacterPayload = Record<string, unknown>;
 
-function buildCharacterSection(c: CharacterPayload): string {
+function buildCharacterSection(c: CharacterPayload, isActive = false): string {
   const name = c.name ?? "Inconnu";
   const people = c.people ?? "";
   const profile = c.profile ?? "";
@@ -353,15 +353,18 @@ function buildCharacterSection(c: CharacterPayload): string {
     .filter(Boolean)
     .join("\n");
 
-  return `## Personnage actif
+  const header = isActive ? "## Personnage actif" : `## Fiche de ${name}`;
+  const footer = isActive
+    ? "\n\n👤 Adresse-toi toujours à ce personnage par son prénom. Adapte tes réponses à sa race, son profil, son histoire (si fournie), ses armes et ses capacités."
+    : "";
 
-Tu t'adresses à **${name}**${people ? `, ${people}` : ""}${profile ? `, profil ${profile}` : ""}, niveau ${level}.
+  return `${header}
+
+${isActive ? `Tu t'adresses à **${name}**` : `**${name}**`}${people ? `, ${people}` : ""}${profile ? `, profil ${profile}` : ""}, niveau ${level}.
 Stats : FOR ${str} (${fmtMod(str)}) / DEX ${dex} (${fmtMod(dex)}) / CON ${con} (${fmtMod(con)}) / INT ${int_} (${fmtMod(int_)}) / SAG ${wis} (${fmtMod(wis)}) / CHA ${cha} (${fmtMod(cha)})
 ${pvPmLine} | Défense ${defense}${extraBlocks ? `\n${extraBlocks}` : ""}
 Voies : ${pathsStr}
-Compétences : ${skillsStr}${histoireBlock}
-
-👤 Adresse-toi toujours à ce personnage par son prénom. Adapte tes réponses à sa race, son profil, son histoire (si fournie), ses armes et ses capacités.`;
+Compétences : ${skillsStr}${histoireBlock}${footer}`;
 }
 
 type GeminiPart = Record<string, unknown>;
@@ -492,7 +495,7 @@ app.post("/api/chat", requireAuth, async (req, res) => {
     const character = body.character ?? null;
     const previousCharacter = body.previousCharacter ?? null;
     const index = await loadCoreIndex();
-    const characterSection = character ? `\n\n${buildCharacterSection(character)}` : "";
+    const characterSection = character ? `\n\n${buildCharacterSection(character, true)}` : "";
     const previousSection = character && previousCharacter ? buildPreviousCharacterSection(previousCharacter) : "";
     const party = await fetchPartyContext(chatUserId);
     const activeCharId = character ? Number(character.id) : null;
