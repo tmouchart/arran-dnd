@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, reactive, watch } from "vue";
 import { Swords, ChevronDown, ChevronUp, CirclePlus, CircleMinus, Scroll, Dices, Sparkles, RefreshCw, Bandage, Shield } from "lucide-vue-next";
+import AppPageLayout from "../components/ui/AppPageLayout.vue";
 import AppPageHead from "../components/ui/AppPageHead.vue";
 import AppBadge from "../components/ui/AppBadge.vue";
 import AppEmptyState from "../components/ui/AppEmptyState.vue";
@@ -20,6 +21,8 @@ import { MARTIAL_WEAPON_CATEGORY_BY_ID } from "../data/martialWeaponCategories";
 import { useRollHistory } from "../composables/useRollHistory";
 import { useDualWield, type SingleHandRoll } from "../composables/useDualWield";
 import AgonieModal from "../components/AgonieModal.vue";
+
+const props = withDefaults(defineProps<{ embedded?: boolean }>(), { embedded: false });
 
 const { character, loading, loadError, computedAttackContact, computedAttackDistance, computedAttackMagique, computedHp, computedMp, computedDef, computedInitiative, computedPcMax, computedHpDv, computedHpConMod, abilityModifier } = useCharacter();
 const { addRoll } = useRollHistory();
@@ -580,7 +583,17 @@ function losePr() {
 </script>
 
 <template>
-  <div class="actions-page">
+  <component :is="embedded ? 'div' : AppPageLayout" :class="{ 'actions-embedded': embedded }">
+    <template v-if="!embedded" #top-bar>
+      <AppPageHead>
+        <Swords :size="22" />
+        Mes actions
+        <template #actions>
+          <RouterLink to="/personnage" class="btn ghost small">← Fiche</RouterLink>
+        </template>
+      </AppPageHead>
+    </template>
+
     <AgonieModal
       v-if="showAgonie"
       :character-name="character.name"
@@ -588,14 +601,6 @@ function losePr() {
       @death="onDeath"
       @close="showAgonie = false"
     />
-
-    <AppPageHead>
-      <Swords :size="22" />
-      Mes actions
-      <template #actions>
-        <RouterLink to="/personnage" class="btn ghost small">← Fiche</RouterLink>
-      </template>
-    </AppPageHead>
 
     <div v-if="character.id" class="combat-header">
       <!-- PV / PM -->
@@ -1218,17 +1223,13 @@ function losePr() {
       </div>
     </Teleport>
 
-  </div>
+  </component>
 </template>
 
 <style scoped>
-.actions-page {
-  max-width: 680px;
-  margin: 0 auto;
-}
 
 
-.actions-page :deep(a.btn) {
+:deep(a.btn) {
   text-decoration: none;
 }
 
@@ -1277,6 +1278,12 @@ function losePr() {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--muted);
+}
+
+@media (max-width: 400px) {
+  .ch-res-label {
+    display: none;
+  }
   min-width: 1.6rem;
 }
 
@@ -1322,6 +1329,12 @@ function losePr() {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 0.35rem;
+}
+
+@media (max-width: 400px) {
+  .ch-secondary {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .ch-sec-chip {

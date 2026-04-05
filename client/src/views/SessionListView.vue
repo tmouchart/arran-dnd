@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { Plus, LogIn, Users } from 'lucide-vue-next'
 import { fetchSessions, createSession, joinSession, type SessionSummary } from '../api/sessions'
 import { useCharacter } from '../composables/useCharacter'
+import AppPageLayout from '../components/ui/AppPageLayout.vue'
 import AppPageHead from '../components/ui/AppPageHead.vue'
 import AppIconBtn from '../components/ui/AppIconBtn.vue'
 import AppInput from '../components/ui/AppInput.vue'
@@ -52,8 +53,9 @@ async function handleJoin(id: string) {
 </script>
 
 <template>
-  <div class="session-list-page">
-    <AppPageHead>
+  <AppPageLayout>
+    <template #top-bar>
+      <AppPageHead>
       <Users :size="22" />
       Sessions de jeu
       <template #actions>
@@ -62,6 +64,7 @@ async function handleJoin(id: string) {
         </AppIconBtn>
       </template>
     </AppPageHead>
+    </template>
 
     <form v-if="showCreate" class="create-form" @submit.prevent="handleCreate">
       <AppInput
@@ -94,19 +97,10 @@ async function handleJoin(id: string) {
         </AppIconBtn>
       </div>
     </div>
-  </div>
+  </AppPageLayout>
 </template>
 
 <style scoped>
-.session-list-page {
-  max-width: 520px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-
 .create-form {
   display: flex;
   flex-wrap: wrap;

@@ -21,6 +21,7 @@ import {
 } from "../api/characters";
 import { MYSTIC_TALENTS_BY_ID, isMysticTalentId } from "../data/mysticTalents";
 import { inferProfileFamily } from "../utils/inferProfileFamily";
+import AppPageLayout from "../components/ui/AppPageLayout.vue";
 import AppPageHead from "../components/ui/AppPageHead.vue";
 import AppCard from "../components/ui/AppCard.vue";
 import AppBadge from "../components/ui/AppBadge.vue";
@@ -226,8 +227,10 @@ onMounted(load);
 </script>
 
 <template>
-  <div class="page options-page">
-    <AppPageHead>Options</AppPageHead>
+  <AppPageLayout>
+    <template #top-bar>
+      <AppPageHead>Options</AppPageHead>
+    </template>
 
     <!-- ── Profil ─────────────────────────────────────────────────────────── -->
     <AppCard title="Profil">
@@ -408,18 +411,10 @@ onMounted(load);
         </AppButton>
       </div>
     </AppCard>
-  </div>
+  </AppPageLayout>
 </template>
 
 <style scoped>
-.options-page {
-  max-width: 36rem;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
 /* ── Profil ──────────────────────────────────────────────────────────────── */
 .profile-section {
   display: flex;

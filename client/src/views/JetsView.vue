@@ -1,18 +1,14 @@
 <script setup lang="ts">
+import AppPageLayout from '../components/ui/AppPageLayout.vue'
 import AppPageHead from '../components/ui/AppPageHead.vue'
 import RollHistoryPanel from '../components/RollHistoryPanel.vue'
 </script>
 
 <template>
-  <div class="jets-page">
-    <AppPageHead>🎲 Historique des jets</AppPageHead>
+  <AppPageLayout>
+    <template #top-bar>
+      <AppPageHead>🎲 Historique des jets</AppPageHead>
+    </template>
     <RollHistoryPanel :always-open="true" />
-  </div>
+  </AppPageLayout>
 </template>
-
-<style scoped>
-.jets-page {
-  max-width: 680px;
-  margin: 0 auto;
-}
-</style>

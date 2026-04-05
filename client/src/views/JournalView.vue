@@ -2,6 +2,7 @@
 import { ref, watch, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { BookText, Lock, Users, FileText, Pencil, BookPlus, Plus, PenLine } from "lucide-vue-next";
+import AppPageLayout from "../components/ui/AppPageLayout.vue";
 import AppPageHead from "../components/ui/AppPageHead.vue";
 import AppButton from "../components/ui/AppButton.vue";
 import AppInput from "../components/ui/AppInput.vue";
@@ -203,27 +204,29 @@ onMounted(load);
 </script>
 
 <template>
-  <div class="journal-page">
-    <AppPageHead>
-      <BookText :size="22" />
-      Journal
-      <template #actions>
-        <!-- Save status for active tab -->
-        <template v-if="activeTab === 'compagnie'">
-          <span v-if="compagnieSaveStatus === 'saving'" class="save-indicator saving">Sauvegarde…</span>
-          <span v-else-if="compagnieSaveStatus === 'saved'" class="save-indicator saved">Sauvegardé ✓</span>
-          <span v-else-if="compagnieSaveStatus === 'error'" class="save-indicator error">Erreur</span>
-          <span v-else-if="compagnieLastEditedBy && compagnieUpdatedAt" class="last-edit-info">
-            par {{ compagnieLastEditedBy }} · {{ relativeTime(compagnieUpdatedAt) }}
-          </span>
+  <AppPageLayout mode="full" width="wide">
+    <template #top-bar>
+      <AppPageHead>
+        <BookText :size="22" />
+        Journal
+        <template #actions>
+          <!-- Save status for active tab -->
+          <template v-if="activeTab === 'compagnie'">
+            <span v-if="compagnieSaveStatus === 'saving'" class="save-indicator saving">Sauvegarde…</span>
+            <span v-else-if="compagnieSaveStatus === 'saved'" class="save-indicator saved">Sauvegardé ✓</span>
+            <span v-else-if="compagnieSaveStatus === 'error'" class="save-indicator error">Erreur</span>
+            <span v-else-if="compagnieLastEditedBy && compagnieUpdatedAt" class="last-edit-info">
+              par {{ compagnieLastEditedBy }} · {{ relativeTime(compagnieUpdatedAt) }}
+            </span>
+          </template>
+          <template v-if="activeTab === 'perso'">
+            <span v-if="persoSaveStatus === 'saving'" class="save-indicator saving">Sauvegarde…</span>
+            <span v-else-if="persoSaveStatus === 'saved'" class="save-indicator saved">Sauvegardé ✓</span>
+            <span v-else-if="persoSaveStatus === 'error'" class="save-indicator error">Erreur</span>
+          </template>
         </template>
-        <template v-if="activeTab === 'perso'">
-          <span v-if="persoSaveStatus === 'saving'" class="save-indicator saving">Sauvegarde…</span>
-          <span v-else-if="persoSaveStatus === 'saved'" class="save-indicator saved">Sauvegardé ✓</span>
-          <span v-else-if="persoSaveStatus === 'error'" class="save-indicator error">Erreur</span>
-        </template>
-      </template>
-    </AppPageHead>
+      </AppPageHead>
+    </template>
 
     <AppEmptyState v-if="loading" variant="loading">Chargement…</AppEmptyState>
     <AppEmptyState v-else-if="error" variant="error">{{ error }}</AppEmptyState>
@@ -232,15 +235,15 @@ onMounted(load);
       <nav class="tab-bar">
         <button class="tab-btn" :class="{ active: activeTab === 'compagnie' }" @click="activeTab = 'compagnie'">
           <Users :size="15" />
-          Journal de bord
+          <span class="tab-text">Journal de bord</span>
         </button>
         <button class="tab-btn" :class="{ active: activeTab === 'pages' }" @click="activeTab = 'pages'">
           <FileText :size="15" />
-          Pages
+          <span class="tab-text">Pages</span>
         </button>
         <button class="tab-btn" :class="{ active: activeTab === 'perso' }" @click="activeTab = 'perso'">
           <Lock :size="15" />
-          Notes perso
+          <span class="tab-text">Notes perso</span>
         </button>
       </nav>
 
@@ -355,17 +358,10 @@ onMounted(load);
         />
       </div>
     </template>
-  </div>
+  </AppPageLayout>
 </template>
 
 <style scoped>
-.journal-page {
-  max-width: 760px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  height: calc(100vh - 4rem);
-}
 
 .tab-bar {
   display: flex;
@@ -398,6 +394,16 @@ onMounted(load);
   background: var(--accent);
   color: #fff;
   border-color: var(--accent);
+}
+
+.tab-text {
+  display: none;
+}
+
+@media (min-width: 500px) {
+  .tab-text {
+    display: inline;
+  }
 }
 
 .tab-content {

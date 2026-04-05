@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { ArrowLeft, Pencil, Trash2 } from "lucide-vue-next";
+import { ArrowLeft, Pencil, Trash2, Maximize, Minimize } from "lucide-vue-next";
+import AppPageLayout from "../components/ui/AppPageLayout.vue";
 import AppPageHead from "../components/ui/AppPageHead.vue";
 import AppButton from "../components/ui/AppButton.vue";
 import AppInput from "../components/ui/AppInput.vue";
@@ -24,6 +25,9 @@ const updatedAt = ref<string | null>(null);
 const loading = ref(true);
 const error = ref<string | null>(null);
 const saveStatus = ref<"idle" | "saving" | "saved" | "error">("idle");
+const editingTitle = ref(false);
+const titleInputRef = ref<InstanceType<typeof AppInput> | null>(null);
+const canvasRef = ref<InstanceType<typeof DrawingCanvas> | null>(null);
 let debounce: ReturnType<typeof setTimeout> | null = null;
 
 const {
@@ -160,19 +164,33 @@ onMounted(load);
 </script>
 
 <template>
-  <div class="page-view" :class="{ 'page-view--drawing': isDrawing }">
-    <AppPageHead>
+  <AppPageLayout mode="full" width="wide" :class="{ 'page-view--drawing': isDrawing }">
+    <template #top-bar>
+      <AppPageHead>
       <AppIconBtn variant="ghost" :size="34" title="Retour" @click="router.push({ name: 'journal' })">
         <ArrowLeft :size="18" />
       </AppIconBtn>
-      <AppInput
-        v-model="title"
-        class="title-input"
-        :readonly="isLockedByOther"
-        placeholder="Titre de la page"
-        @focus="onFocus"
-        @blur="onBlur"
-      />
+      <template v-if="editingTitle">
+        <AppInput
+          ref="titleInputRef"
+          v-model="title"
+          class="title-input"
+          placeholder="Titre de la page"
+          @focus="onFocus"
+          @blur="editingTitle = false; onBlur()"
+          @keydown.enter.prevent="editingTitle = false"
+        />
+      </template>
+      <template v-else>
+        <span class="title-text">{{ title || 'Sans titre' }}</span>
+        <AppIconBtn v-if="!isLockedByOther" variant="ghost" :size="28" title="Renommer" @click="editingTitle = true; $nextTick(() => (titleInputRef as any)?.$el?.querySelector?.('input')?.focus())">
+          <Pencil :size="14" />
+        </AppIconBtn>
+        <AppIconBtn v-if="isDrawing" variant="ghost" :size="28" :title="canvasRef?.isFullscreen ? 'Réduire' : 'Plein écran'" @click="canvasRef?.toggleFullscreen()">
+          <Minimize v-if="canvasRef?.isFullscreen" :size="14" />
+          <Maximize v-else :size="14" />
+        </AppIconBtn>
+      </template>
 
       <template #actions>
         <span v-if="saveStatus === 'saving'" class="save-indicator saving">Sauvegarde…</span>
@@ -192,6 +210,7 @@ onMounted(load);
         </AppIconBtn>
       </template>
     </AppPageHead>
+    </template>
 
     <AppEmptyState v-if="loading" variant="loading">Chargement…</AppEmptyState>
     <AppEmptyState v-else-if="error" variant="error">{{ error }}</AppEmptyState>
@@ -199,6 +218,7 @@ onMounted(load);
     <div v-else class="editor-wrapper">
       <!-- Drawing page -->
       <DrawingCanvas
+        ref="canvasRef"
         v-if="isDrawing"
         :strokes="drawingStrokes"
         :readonly="isLockedByOther"
@@ -234,29 +254,22 @@ onMounted(load);
         </div>
       </div>
     </Teleport>
-  </div>
+  </AppPageLayout>
 </template>
 
 <style scoped>
-.page-view {
-  max-width: 760px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  height: calc(100vh - 4rem);
-}
-
 .page-view--drawing {
-  max-width: none;
-  margin: -1rem -0.78rem -1.5rem;
-  height: calc(100vh - 4rem + 1rem + 1.5rem);
+  max-width: none !important;
+  padding: 0 !important;
 }
 
-@media (min-width: 740px) {
-  .page-view--drawing {
-    margin: -1.25rem -1rem -2rem;
-    height: calc(100vh - 4rem + 1.25rem + 2rem);
-  }
+.title-text {
+  font-weight: 700;
+  font-size: 1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .title-input {

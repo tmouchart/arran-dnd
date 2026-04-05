@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onBeforeUnmount, nextTick } from "vue";
-import { Eraser, Undo2, Maximize, Minimize, Pen } from "lucide-vue-next";
+import { Eraser, Undo2, Pen, Hand, ZoomIn, ZoomOut } from "lucide-vue-next";
 import type { Stroke } from "../api/journal";
 
 const props = defineProps<{
@@ -20,17 +20,26 @@ const wrapperRef = ref<HTMLDivElement | null>(null);
 const currentStrokes = ref<Stroke[]>([...props.strokes]);
 const activeStroke = ref<Stroke | null>(null);
 const selectedColor = ref("#1a1a1a");
-const brushWidth = ref(3); // default = S
-const isEraser = ref(false);
+const brushWidth = ref(3);
+const activeTool = ref<"pen" | "eraser" | "hand">("pen");
 const isFullscreen = ref(false);
 
+// Popups
+const showColorPicker = ref(false);
+const showSizePicker = ref(false);
+
+// Zoom & pan
+const zoom = ref(1);
+const panX = ref(0);
+const panY = ref(0);
+const isPanning = ref(false);
+let panStart = { x: 0, y: 0 };
+let panStartOffset = { x: 0, y: 0 };
+let rafId: number | null = null;
+
 const COLORS = [
-  "#1a1a1a", // noir
-  "#c0392b", // rouge
-  "#2471a3", // bleu
-  "#27ae60", // vert
-  "#8e5b2a", // marron
-  "#e67e22", // orange
+  "#1a1a1a", "#c0392b", "#2471a3",
+  "#27ae60", "#8e5b2a", "#e67e22",
 ];
 
 const WIDTHS = [
@@ -38,7 +47,6 @@ const WIDTHS = [
   { value: 6, label: "M" },
   { value: 12, label: "L" },
   { value: 22, label: "XL" },
-  { value: 36, label: "XXL" },
 ];
 
 // ── Canvas rendering ────────────────────────────────────────────────────────
@@ -57,8 +65,6 @@ function resizeCanvas() {
   canvas.height = rect.height * dpr;
   canvas.style.width = `${rect.width}px`;
   canvas.style.height = `${rect.height}px`;
-  const ctx = getCtx();
-  if (ctx) ctx.scale(dpr, dpr);
   redrawAll();
 }
 
@@ -71,24 +77,28 @@ function redrawAll() {
   const w = canvas.width / dpr;
   const h = canvas.height / dpr;
 
-  // White background
-  ctx.save();
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.globalCompositeOperation = "source-over";
+  // Reset transform & clear
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Apply zoom + pan
+  const z = zoom.value;
+  ctx.setTransform(dpr * z, 0, 0, dpr * z, panX.value * dpr, panY.value * dpr);
+
+  // White background (fill the visible area)
   ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, w, h);
+  ctx.fillRect(-panX.value / z, -panY.value / z, w / z, h / z);
 
   for (const stroke of currentStrokes.value) {
     drawStroke(ctx, stroke, w, h);
   }
-  ctx.restore();
 }
 
 function drawStroke(
   ctx: CanvasRenderingContext2D,
   stroke: Stroke,
   w: number,
-  h: number
+  h: number,
 ) {
   if (stroke.points.length < 2) return;
   ctx.save();
@@ -108,7 +118,6 @@ function drawStroke(
   const p0 = stroke.points[0];
   ctx.moveTo(p0.x * w, p0.y * h);
 
-  // Use quadratic curves for smoothness
   for (let i = 1; i < stroke.points.length - 1; i++) {
     const curr = stroke.points[i];
     const next = stroke.points[i + 1];
@@ -117,52 +126,91 @@ function drawStroke(
     ctx.quadraticCurveTo(curr.x * w, curr.y * h, mx, my);
   }
 
-  // Last point
   const last = stroke.points[stroke.points.length - 1];
   ctx.lineTo(last.x * w, last.y * h);
   ctx.stroke();
   ctx.restore();
 }
 
-// ── Pointer handling ────────────────────────────────────────────────────────
+// ── Coordinate conversion (screen → world) ─────────────────────────────────
 
 function getCanvasPoint(e: PointerEvent): { x: number; y: number } | null {
   const canvas = canvasRef.value;
   if (!canvas) return null;
   const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.width / dpr;
+  const h = canvas.height / dpr;
+
+  // Screen pixel relative to canvas element
+  const sx = e.clientX - rect.left;
+  const sy = e.clientY - rect.top;
+
+  // Convert to world coordinates accounting for zoom + pan
+  const worldX = (sx - panX.value) / zoom.value;
+  const worldY = (sy - panY.value) / zoom.value;
+
   return {
-    x: (e.clientX - rect.left) / rect.width,
-    y: (e.clientY - rect.top) / rect.height,
+    x: worldX / w,
+    y: worldY / h,
   };
 }
+
+// ── Pointer handling ────────────────────────────────────────────────────────
 
 function onPointerDown(e: PointerEvent) {
   if (props.readonly) return;
   const canvas = canvasRef.value;
   if (!canvas) return;
   canvas.setPointerCapture(e.pointerId);
-  emit("focus");
 
+  // Close popups on canvas interaction
+  showColorPicker.value = false;
+  showSizePicker.value = false;
+
+  if (activeTool.value === "hand") {
+    isPanning.value = true;
+    panStart = { x: e.clientX, y: e.clientY };
+    panStartOffset = { x: panX.value, y: panY.value };
+    return;
+  }
+
+  emit("focus");
   const pt = getCanvasPoint(e);
   if (!pt) return;
 
+  const isEraser = activeTool.value === "eraser";
   activeStroke.value = {
     id: crypto.randomUUID(),
     points: [pt],
-    color: isEraser.value ? "#000" : selectedColor.value,
-    width: isEraser.value ? Math.max(brushWidth.value * 2.5, 15) : brushWidth.value,
-    eraser: isEraser.value,
+    color: isEraser ? "#000" : selectedColor.value,
+    width: isEraser ? Math.max(brushWidth.value * 2.5, 15) : brushWidth.value,
+    eraser: isEraser,
   };
 }
 
 let lastPoint: { x: number; y: number } | null = null;
 
+function scheduleRedraw() {
+  if (rafId !== null) return;
+  rafId = requestAnimationFrame(() => {
+    rafId = null;
+    redrawAll();
+  });
+}
+
 function onPointerMove(e: PointerEvent) {
+  if (isPanning.value) {
+    panX.value = panStartOffset.x + (e.clientX - panStart.x);
+    panY.value = panStartOffset.y + (e.clientY - panStart.y);
+    scheduleRedraw();
+    return;
+  }
+
   if (!activeStroke.value) return;
   const pt = getCanvasPoint(e);
   if (!pt) return;
 
-  // Skip if too close to last point (perf optimization)
   if (lastPoint) {
     const dx = pt.x - lastPoint.x;
     const dy = pt.y - lastPoint.y;
@@ -172,17 +220,17 @@ function onPointerMove(e: PointerEvent) {
 
   activeStroke.value.points.push(pt);
 
-  // Draw incrementally for real-time feedback
   const ctx = getCtx();
   const canvas = canvasRef.value;
   if (!ctx || !canvas) return;
   const dpr = window.devicePixelRatio || 1;
   const w = canvas.width / dpr;
   const h = canvas.height / dpr;
+  const z = zoom.value;
   const points = activeStroke.value.points;
 
   ctx.save();
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.setTransform(dpr * z, 0, 0, dpr * z, panX.value * dpr, panY.value * dpr);
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
   ctx.lineWidth = activeStroke.value.width;
@@ -205,7 +253,7 @@ function onPointerMove(e: PointerEvent) {
       curr.x * w,
       curr.y * h,
       ((curr.x + next.x) / 2) * w,
-      ((curr.y + next.y) / 2) * h
+      ((curr.y + next.y) / 2) * h,
     );
     ctx.stroke();
   } else if (points.length === 2) {
@@ -220,6 +268,11 @@ function onPointerMove(e: PointerEvent) {
 }
 
 function onPointerUp() {
+  if (isPanning.value) {
+    isPanning.value = false;
+    return;
+  }
+
   if (!activeStroke.value) return;
   lastPoint = null;
 
@@ -228,7 +281,43 @@ function onPointerUp() {
     emit("update:strokes", [...currentStrokes.value]);
   }
   activeStroke.value = null;
-  // Full redraw for clean rendering
+  redrawAll();
+}
+
+// ── Zoom ────────────────────────────────────────────────────────────────────
+
+const MIN_ZOOM = 0.1;
+const MAX_ZOOM = 4;
+
+function zoomIn() {
+  zoom.value = Math.min(MAX_ZOOM, +(zoom.value + 0.1).toFixed(2));
+  redrawAll();
+}
+
+function zoomOut() {
+  zoom.value = Math.max(MIN_ZOOM, +(zoom.value - 0.1).toFixed(2));
+  redrawAll();
+}
+
+function onWheel(e: WheelEvent) {
+  e.preventDefault();
+  const canvas = canvasRef.value;
+  if (!canvas) return;
+  const rect = canvas.getBoundingClientRect();
+
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  const oldZoom = zoom.value;
+  // Pinch-to-zoom sends smaller deltas, regular wheel sends larger
+  const step = e.ctrlKey ? 0.05 : 0.1;
+  const delta = e.deltaY > 0 ? -step : step;
+  const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, +(oldZoom + delta).toFixed(2)));
+
+  // Zoom toward mouse position
+  panX.value = mx - (mx - panX.value) * (newZoom / oldZoom);
+  panY.value = my - (my - panY.value) * (newZoom / oldZoom);
+  zoom.value = newZoom;
   redrawAll();
 }
 
@@ -236,11 +325,13 @@ function onPointerUp() {
 
 function selectColor(color: string) {
   selectedColor.value = color;
-  isEraser.value = false;
+  activeTool.value = "pen";
+  showColorPicker.value = false;
 }
 
-function toggleEraser() {
-  isEraser.value = !isEraser.value;
+function selectWidth(w: number) {
+  brushWidth.value = w;
+  showSizePicker.value = false;
 }
 
 function undo() {
@@ -255,6 +346,23 @@ function toggleFullscreen() {
   nextTick(() => resizeCanvas());
 }
 
+function togglePopup(which: "color" | "size") {
+  if (which === "color") {
+    showColorPicker.value = !showColorPicker.value;
+    showSizePicker.value = false;
+  } else {
+    showSizePicker.value = !showSizePicker.value;
+    showColorPicker.value = false;
+  }
+}
+
+function closePopups() {
+  showColorPicker.value = false;
+  showSizePicker.value = false;
+}
+
+defineExpose({ toggleFullscreen, isFullscreen });
+
 // ── Lifecycle ───────────────────────────────────────────────────────────────
 
 let resizeObserver: ResizeObserver | null = null;
@@ -264,17 +372,20 @@ watch(
   (newStrokes) => {
     currentStrokes.value = [...newStrokes];
     redrawAll();
-  }
+  },
 );
 
 onMounted(() => {
   resizeCanvas();
   resizeObserver = new ResizeObserver(() => resizeCanvas());
   if (wrapperRef.value) resizeObserver.observe(wrapperRef.value);
+  // Non-passive wheel listener for pinch-to-zoom
+  canvasRef.value?.addEventListener("wheel", onWheel, { passive: false });
 });
 
 onBeforeUnmount(() => {
   resizeObserver?.disconnect();
+  canvasRef.value?.removeEventListener("wheel", onWheel);
 });
 </script>
 
@@ -282,62 +393,130 @@ onBeforeUnmount(() => {
   <div
     ref="wrapperRef"
     class="drawing-wrapper"
-    :class="{ 'drawing-wrapper--fullscreen': isFullscreen, 'drawing-wrapper--readonly': readonly }"
+    :class="{
+      'drawing-wrapper--fullscreen': isFullscreen,
+      'drawing-wrapper--readonly': readonly,
+    }"
   >
     <!-- Toolbar -->
     <div class="drawing-toolbar">
-      <div class="toolbar-group colors">
+      <!-- Color picker -->
+      <div class="toolbar-popup-anchor">
         <button
-          v-for="color in COLORS"
-          :key="color"
-          class="color-btn"
-          :class="{ active: selectedColor === color && !isEraser }"
-          :style="{ '--swatch': color }"
-          @click="selectColor(color)"
-        />
-      </div>
-
-      <div class="toolbar-sep" />
-
-      <div class="toolbar-group widths">
-        <button
-          v-for="w in WIDTHS"
-          :key="w.value"
-          class="width-btn"
-          :class="{ active: brushWidth === w.value }"
-          :title="w.label"
-          @click="brushWidth = w.value"
+          class="tool-btn"
+          title="Couleur"
+          @click="togglePopup('color')"
         >
-          <span class="width-dot" :style="{ width: Math.min(w.value, 16) + 'px', height: Math.min(w.value, 16) + 'px' }" />
+          <span class="color-swatch" :style="{ background: selectedColor }" />
         </button>
+        <div v-if="showColorPicker" class="popup color-popup">
+          <button
+            v-for="color in COLORS"
+            :key="color"
+            class="color-btn"
+            :class="{ active: selectedColor === color }"
+            :style="{ '--swatch': color }"
+            @click="selectColor(color)"
+          />
+        </div>
+      </div>
+
+      <!-- Size picker -->
+      <div class="toolbar-popup-anchor">
+        <button
+          class="tool-btn"
+          title="Taille"
+          @click="togglePopup('size')"
+        >
+          <span
+            class="width-dot"
+            :style="{
+              width: Math.min(brushWidth, 16) + 'px',
+              height: Math.min(brushWidth, 16) + 'px',
+            }"
+          />
+        </button>
+        <div v-if="showSizePicker" class="popup size-popup">
+          <button
+            v-for="w in WIDTHS"
+            :key="w.value"
+            class="size-option"
+            :class="{ active: brushWidth === w.value }"
+            @click="selectWidth(w.value)"
+          >
+            <span
+              class="width-dot"
+              :style="{
+                width: Math.min(w.value, 16) + 'px',
+                height: Math.min(w.value, 16) + 'px',
+              }"
+            />
+            <span class="size-label">{{ w.label }}</span>
+          </button>
+        </div>
       </div>
 
       <div class="toolbar-sep" />
 
-      <div class="toolbar-group tools">
-        <button class="tool-btn" :class="{ active: !isEraser }" title="Crayon" @click="isEraser = false">
-          <Pen :size="18" />
-        </button>
-        <button class="tool-btn" :class="{ active: isEraser }" title="Gomme" @click="toggleEraser">
-          <Eraser :size="18" />
-        </button>
-        <button class="tool-btn" title="Annuler" :disabled="currentStrokes.length === 0" @click="undo">
-          <Undo2 :size="18" />
-        </button>
-      </div>
-
-      <div class="toolbar-sep" />
-
-      <button class="tool-btn" :title="isFullscreen ? 'Réduire' : 'Plein écran'" @click="toggleFullscreen">
-        <Minimize v-if="isFullscreen" :size="18" />
-        <Maximize v-else :size="18" />
+      <!-- Tools: pen / eraser / hand -->
+      <button
+        class="tool-btn"
+        :class="{ active: activeTool === 'pen' }"
+        title="Crayon"
+        @click="activeTool = 'pen'; closePopups()"
+      >
+        <Pen :size="18" />
       </button>
+      <button
+        class="tool-btn"
+        :class="{ active: activeTool === 'eraser' }"
+        title="Gomme"
+        @click="activeTool = 'eraser'; closePopups()"
+      >
+        <Eraser :size="18" />
+      </button>
+      <button
+        class="tool-btn"
+        :class="{ active: activeTool === 'hand' }"
+        title="Déplacer"
+        @click="activeTool = 'hand'; closePopups()"
+      >
+        <Hand :size="18" />
+      </button>
+
+      <div class="toolbar-sep" />
+
+      <!-- Undo -->
+      <button
+        class="tool-btn"
+        title="Annuler"
+        :disabled="currentStrokes.length === 0"
+        @click="undo"
+      >
+        <Undo2 :size="18" />
+      </button>
+
+      <!-- Zoom -->
+      <button class="tool-btn" title="Dézoomer" :disabled="zoom <= 0.5" @click="zoomOut">
+        <ZoomOut :size="18" />
+      </button>
+      <span v-if="zoom !== 1" class="zoom-label">{{ Math.round(zoom * 100) }}%</span>
+      <button class="tool-btn" title="Zoomer" :disabled="zoom >= 4" @click="zoomIn">
+        <ZoomIn :size="18" />
+      </button>
+
     </div>
 
     <!-- Canvas -->
     <canvas
       ref="canvasRef"
       class="drawing-canvas"
+      :class="{
+        'cursor-crosshair': activeTool === 'pen',
+        'cursor-eraser': activeTool === 'eraser',
+        'cursor-grab': activeTool === 'hand' && !isPanning,
+        'cursor-grabbing': isPanning,
+      }"
       @pointerdown="onPointerDown"
       @pointermove="onPointerMove"
       @pointerup="onPointerUp"
@@ -381,19 +560,11 @@ onBeforeUnmount(() => {
 .drawing-toolbar {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.45rem 0.6rem;
+  gap: 0.3rem;
+  padding: 0.35rem 0.5rem;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.toolbar-group {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
 }
 
 .toolbar-sep {
@@ -403,61 +574,11 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
 }
 
-/* Colors */
-.color-btn {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  border: 2px solid transparent;
-  background: var(--swatch);
-  cursor: pointer;
-  padding: 0;
-  transition: border-color 120ms, transform 120ms;
-  flex-shrink: 0;
-}
+/* ── Tool buttons ── */
 
-.color-btn:hover {
-  transform: scale(1.15);
-}
-
-.color-btn.active {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
-}
-
-/* Widths */
-.width-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  border: 1px solid transparent;
-  background: transparent;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  transition: background 120ms, border-color 120ms;
-}
-
-.width-btn:hover {
-  background: color-mix(in srgb, var(--text) 8%, transparent);
-}
-
-.width-btn.active {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
-}
-
-.width-dot {
-  border-radius: 50%;
-  background: var(--text);
-}
-
-/* Tools */
 .tool-btn {
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   border-radius: 8px;
   border: 1px solid transparent;
   background: transparent;
@@ -468,6 +589,7 @@ onBeforeUnmount(() => {
   padding: 0;
   color: var(--text);
   transition: background 120ms, border-color 120ms, color 120ms;
+  flex-shrink: 0;
 }
 
 .tool-btn:hover {
@@ -485,14 +607,129 @@ onBeforeUnmount(() => {
   cursor: default;
 }
 
+/* ── Color swatch (in toolbar button) ── */
+
+.color-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--text) 25%, transparent);
+}
+
+/* ── Width dot ── */
+
+.width-dot {
+  border-radius: 50%;
+  background: var(--text);
+  display: block;
+}
+
+/* ── Popup anchor ── */
+
+.toolbar-popup-anchor {
+  position: relative;
+}
+
+.popup {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+  padding: 0.45rem;
+}
+
+/* ── Color popup ── */
+
+.color-popup {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.3rem;
+  min-width: 100px;
+}
+
+.color-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background: var(--swatch);
+  cursor: pointer;
+  padding: 0;
+  transition: border-color 120ms, transform 120ms;
+}
+
+.color-btn:hover {
+  transform: scale(1.15);
+}
+
+.color-btn.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+}
+
+/* ── Size popup ── */
+
+.size-popup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 80px;
+}
+
+.size-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition: background 120ms, border-color 120ms;
+}
+
+.size-option:hover {
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+}
+
+.size-option.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.size-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* ── Zoom label ── */
+
+.zoom-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  min-width: 2.2rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
 /* ── Canvas ── */
 
 .drawing-canvas {
   flex: 1;
   display: block;
   touch-action: none;
-  cursor: crosshair;
 }
+
+.cursor-crosshair { cursor: crosshair; }
+.cursor-eraser { cursor: cell; }
+.cursor-grab { cursor: grab; }
+.cursor-grabbing { cursor: grabbing; }
 
 /* ── Readonly overlay ── */
 

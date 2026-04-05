@@ -129,13 +129,16 @@ If a new recurring UI pattern emerges (e.g. select, textarea, modal) that doesn'
 | `AppInput` | All `<input>` fields (text, number, password). Fixed `font-size: 0.92rem` for consistent height. Props: `modelValue`, `type`, `placeholder`, `min`, `max`, `step`, `required`, `autofocus`, `autocomplete`, `disabled`, `textAlign` (`left`/`center`), `id`. Emits numbers automatically for `type="number"`. Layout sizing (width, flex) is controlled by the parent via `class`. |
 | `AppButton` | All text buttons. Props: `variant` (`ghost` (default), `primary`, `danger`), `size` (`normal`/`small`), `type` (`button`/`submit`), `disabled`, `block` (full-width). Uses global `.btn` styles. |
 | `AppIconBtn` | 40×40 px icon-only button. Variants: `ghost` (default), `primary`, `danger`. Use `size` prop to override dimensions. |
-| `AppPageHead` | Every page header with an `<h1>`. Slot `#actions` for buttons on the right. |
+| `AppPageLayout` | **Every page wrapper.** Provides consistent layout with 3 slots: `#top-bar` (header), default (main content), `#bottom-bar` (optional footer). Props: `mode` (`scroll` (default) / `full` — full-height viewport), `width` (`default` (640px) / `wide` (800px)). All views except LoginView must use this. |
+| `AppPageHead` | Every page header with an `<h1>`. Slot `#actions` for buttons on the right. Goes inside `AppPageLayout`'s `#top-bar` slot. |
 | `AppCard` | Any bordered surface card. Use `title` prop for a simple heading, `#titleActions` slot for buttons next to the title, or place a manual `.card-head` div in the default slot for complex headers. |
 | `AppBadge` | Colored pill badges. Variants: `attaque`, `limitée`, `gratuite`, `info`, `pm`, `active`. |
 | `AppEmptyState` | Loading / empty / error feedback. Variants: `loading`, `empty` (default), `error`. Slot `#actions` for retry buttons. |
 
 ### Rules
 
+- **Never** create a new view without wrapping it in `<AppPageLayout>`. Place `<AppPageHead>` in the `#top-bar` slot.
+- **Never** set `max-width`, `margin: 0 auto`, or `height: calc(100vh - ...)` in a view's scoped CSS — `AppPageLayout` handles this.
 - **Never** use `<input class="input">` — use `<AppInput>` instead.
 - **Never** use `<button class="btn ...">Text</button>` — use `<AppButton>` instead. Exception: highly specialized buttons (`.hp-btn`, `.dice-btn`, `.mode-tab`, etc.) with unique visual treatment.
 - **Never** redefine `.btn` or `.input` styles in scoped CSS. If a variant is missing, extend the component.
@@ -179,6 +182,23 @@ These skills are available via `/skill-name`. They are **not** auto-injected int
 | `/write-tests` | After writing non-trivial logic | Generate Vitest unit tests for the current feature |
 | `/quick-start` | New developer onboarding | Step-by-step guide to run the project locally |
 | `/db-prod` | Production database access | Connect and query the production PostgreSQL database |
+
+## Subagents
+
+Specialized agents live in `.claude/agents/`. **Use them proactively** when the task matches — don't wait for the user to ask.
+
+| Agent | When to use |
+|---|---|
+| `game-designer` | Designing, balancing, or evaluating game mechanics, rules, or systems. Use when the user asks about combat pacing, progression balance, new RPG mechanics, etc. |
+| `ux-designer` | Designing new UI features, improving layouts, choosing interaction patterns, evaluating mobile UX. Use **before implementing** any significant UI change to get a concrete design proposal. |
+| `wild-card` | Brainstorming bold/creative ideas, rethinking features, finding the "fun factor". Use when the user asks "what should we build next?", "this feels bland", or when a plan feels too conventional. **Not** for implementation details. |
+| `playtester` | Getting real user feedback on the app. Uses Chrome MCP to navigate and interact with the running app as a real player would. Use **after implementing** a feature to catch UX issues, friction points, and missing affordances. |
+
+### Rules
+- **Before a significant UI feature**: use `ux-designer` to propose the design, then implement.
+- **After implementing a feature**: consider using `playtester` to validate the result.
+- **When exploring ideas or priorities**: use `wild-card` for creative input, `game-design-expert` for mechanics.
+- Agents can be launched in parallel when their tasks are independent.
 
 ## Database Migrations
 

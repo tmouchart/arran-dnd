@@ -7,6 +7,7 @@ import { user } from '../composables/useAuth'
 import { patchCharacterHp } from '../api/characters'
 import { MONSTERS_CATALOG, type Monster } from '../data/monstersCatalog'
 import { findCatalogMonster, filterCatalog } from '../utils/monsterSession'
+import AppPageLayout from '../components/ui/AppPageLayout.vue'
 import AppInput from '../components/ui/AppInput.vue'
 import AppButton from '../components/ui/AppButton.vue'
 import MonsterDetailModal from '../components/session/MonsterDetailModal.vue'
@@ -118,18 +119,18 @@ async function adjustMyHp(p: SessionParticipant, delta: number) {
 </script>
 
 <template>
-  <div class="session-page">
-
-    <!-- Header ---------------------------------------------------------------->
-    <header class="session-header">
-      <div class="session-header-left">
-        <h1 class="session-title">{{ session?.name ?? '…' }}</h1>
-        <span v-if="isGm" class="badge badge-gm">MJ</span>
-      </div>
-      <button class="btn ghost icon-btn" title="Quitter la session" @click="handleLeave">
-        <DoorOpen :size="18" />
-      </button>
-    </header>
+  <AppPageLayout>
+    <template #top-bar>
+      <header class="session-header">
+        <div class="session-header-left">
+          <h1 class="session-title">{{ session?.name ?? '…' }}</h1>
+          <span v-if="isGm" class="badge badge-gm">MJ</span>
+        </div>
+        <button class="btn ghost icon-btn" title="Quitter la session" @click="handleLeave">
+          <DoorOpen :size="18" />
+        </button>
+      </header>
+    </template>
 
     <!-- Connecting / error ----------------------------------------------------->
     <div v-if="connecting" class="state-msg">Connexion…</div>
@@ -378,17 +379,10 @@ async function adjustMyHp(p: SessionParticipant, delta: number) {
       :is-gm="isGm"
       @close="selectedMonster = null"
     />
-  </div>
+  </AppPageLayout>
 </template>
 
 <style scoped>
-.session-page {
-  max-width: 560px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
 
 /* ── Header ── */
 .session-header {

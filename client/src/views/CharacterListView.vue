@@ -10,6 +10,7 @@ import {
 } from "../api/characters";
 import { MYSTIC_TALENTS_BY_ID, isMysticTalentId } from "../data/mysticTalents";
 import { inferProfileFamily } from "../utils/inferProfileFamily";
+import AppPageLayout from "../components/ui/AppPageLayout.vue";
 import AppPageHead from "../components/ui/AppPageHead.vue";
 import AppBadge from "../components/ui/AppBadge.vue";
 import AppEmptyState from "../components/ui/AppEmptyState.vue";
@@ -91,8 +92,9 @@ function listMetaLine(c: ServerCharacter): string {
 </script>
 
 <template>
-  <div class="page list-page">
-    <AppPageHead>
+  <AppPageLayout>
+    <template #top-bar>
+      <AppPageHead>
       Personnages
       <template #actions>
         <AppButton
@@ -104,6 +106,7 @@ function listMetaLine(c: ServerCharacter): string {
         </AppButton>
       </template>
     </AppPageHead>
+    </template>
 
     <AppEmptyState v-if="loading" variant="loading">Chargement…</AppEmptyState>
 
@@ -157,15 +160,10 @@ function listMetaLine(c: ServerCharacter): string {
     <AppEmptyState v-if="!loading && !listError && characters.length === 0">
       Aucun personnage.
     </AppEmptyState>
-  </div>
+  </AppPageLayout>
 </template>
 
 <style scoped>
-.list-page {
-  max-width: 32rem;
-  margin: 0 auto;
-}
-
 .char-list {
   list-style: none;
   margin: 0;

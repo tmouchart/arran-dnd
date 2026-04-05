@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { useRoute } from "vue-router";
+import AppPageLayout from "../components/ui/AppPageLayout.vue";
 import AppPageHead from "../components/ui/AppPageHead.vue";
 import AppEmptyState from "../components/ui/AppEmptyState.vue";
 import AppButton from "../components/ui/AppButton.vue";
 import { useCharacter, loadCharacter } from "../composables/useCharacter";
+import { useSheetEffects } from "../composables/useSheetEffects";
 import { inferProfileFamily } from "../utils/inferProfileFamily";
+import { Skull } from "lucide-vue-next";
 import { computed, ref } from "vue";
 
 import IdentityCard from "../components/character-sheet/IdentityCard.vue";
@@ -20,6 +23,7 @@ import CompetencesCard from "../components/character-sheet/CompetencesCard.vue";
 import { PR_MAX } from "../composables/useCharacter";
 
 const { character, loading, loadError, saveStatus, abilityModifier, computedDef, computedMp, computedHp, computedHpBase, computedHpDv, computedHpConMod, computedHpGrowth, computedDv, computedInitiative, computedPcMax, computedAttackContact, computedAttackDistance, computedAttackMagique } = useCharacter();
+const { sheetClasses } = useSheetEffects(character, computedHp, computedMp, loading);
 const family = computed(() => inferProfileFamily(character.value.paths));
 const route = useRoute();
 
@@ -42,12 +46,17 @@ const TABS: { id: TabId; label: string; icon: string }[] = [
 </script>
 
 <template>
-  <div class="page sheet-page">
-    <AppPageHead>
-      Fiche {{ character.name || "personnage" }}
-    </AppPageHead>
-
-    <p v-if="saveStatus === 'error'" class="save-status error">Erreur de sauvegarde</p>
+  <AppPageLayout :class="sheetClasses">
+    <template #top-bar>
+      <div class="gv-vignette" aria-hidden="true" />
+      <div class="gv-a-terre-banner" aria-live="polite">
+        <Skull :size="14" /> A terre <Skull :size="14" />
+      </div>
+      <AppPageHead>
+        Fiche {{ character.name || "personnage" }}
+      </AppPageHead>
+      <p v-if="saveStatus === 'error'" class="save-status error">Erreur de sauvegarde</p>
+    </template>
 
     <AppEmptyState v-if="loading" variant="loading">Chargement…</AppEmptyState>
 
@@ -118,14 +127,10 @@ const TABS: { id: TabId; label: string; icon: string }[] = [
         <WeaponsCard :character="character" />
       </template>
     </template>
-  </div>
+  </AppPageLayout>
 </template>
 
 <style scoped>
-.sheet-page {
-  max-width: 40rem;
-  margin: 0 auto;
-}
 
 .save-status {
   margin: 0;

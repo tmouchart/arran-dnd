@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted } from "vue";
 import { Handbag } from "lucide-vue-next";
+import AppPageLayout from "../components/ui/AppPageLayout.vue";
 import AppPageHead from "../components/ui/AppPageHead.vue";
 import AppEmptyState from "../components/ui/AppEmptyState.vue";
 import AppInput from "../components/ui/AppInput.vue";
@@ -15,8 +16,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="inventaire-page">
-    <AppPageHead><Handbag :size="22" /> Inventaire</AppPageHead>
+  <AppPageLayout>
+    <template #top-bar>
+      <AppPageHead><Handbag :size="22" /> Inventaire</AppPageHead>
+    </template>
 
     <AppEmptyState v-if="loading" variant="loading">Chargement…</AppEmptyState>
 
@@ -43,15 +46,10 @@ onMounted(() => {
     </template>
 
     <AppEmptyState v-else>Aucun personnage actif.</AppEmptyState>
-  </div>
+  </AppPageLayout>
 </template>
 
 <style scoped>
-.inventaire-page {
-  max-width: 40rem;
-  margin: 0 auto;
-}
-
 .money-row {
   display: flex;
   gap: 0.6rem;

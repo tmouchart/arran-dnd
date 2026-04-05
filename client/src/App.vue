@@ -1,8 +1,17 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from "vue-router";
+import { computed } from "vue";
+import { useRoute } from "vue-router";
 import { UserCircle, Loader2, ScrollText, Swords, Backpack, BookOpenText, Map } from "lucide-vue-next";
 import CrystalBall from "./components/icons/CrystalBall.vue";
 import { user, authReady } from "./composables/useAuth";
+import { useActiveCombat } from "./composables/useActiveCombat";
+
+const route = useRoute();
+const { activeCombat } = useActiveCombat();
+const showCombatBanner = computed(() =>
+  activeCombat.value && !route.path.includes('/combat/'),
+);
 
 // Apply saved theme + style on boot
 type Theme = "light" | "dark";
@@ -63,6 +72,11 @@ if (savedStyle) {
         </RouterLink>
       </div>
     </header>
+    <RouterLink v-if="showCombatBanner" :to="activeCombat!.url" class="combat-banner">
+      <Swords :size="16" class="banner-icon" />
+      <span class="banner-text">Combat en cours</span>
+      <span class="banner-action">Retour &rarr;</span>
+    </RouterLink>
     <main class="main">
       <RouterView />
     </main>
@@ -85,6 +99,28 @@ if (savedStyle) {
   animation: spin 1s linear infinite;
 }
 
+/* Combat banner */
+.combat-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 1rem;
+  background: var(--accent);
+  color: white;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.banner-icon { flex-shrink: 0; }
+.banner-text { flex: 1; }
+
+.banner-action {
+  font-size: 0.78rem;
+  opacity: 0.85;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -98,9 +134,16 @@ if (savedStyle) {
 }
 
 .app-shell {
+  --nav-height: 3.6rem;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+@media (min-width: 740px) {
+  .app-shell {
+    --nav-height: 3.85rem;
+  }
 }
 
 .top-nav {
@@ -250,7 +293,9 @@ if (savedStyle) {
 
 .main {
   flex: 1;
-  padding: 1rem 0.78rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 @media (min-width: 740px) {
@@ -262,8 +307,5 @@ if (savedStyle) {
     gap: 0.7rem;
   }
 
-  .main {
-    padding: 1.25rem 1rem 2rem;
-  }
 }
 </style>

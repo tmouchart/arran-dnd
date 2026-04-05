@@ -14,6 +14,7 @@ import {
 } from '../api/campaigns'
 import { MONSTERS_CATALOG, type Monster } from '../data/monstersCatalog'
 import { filterCatalog, formatMod } from '../utils/monsterSession'
+import AppPageLayout from '../components/ui/AppPageLayout.vue'
 import AppPageHead from '../components/ui/AppPageHead.vue'
 import AppIconBtn from '../components/ui/AppIconBtn.vue'
 import AppInput from '../components/ui/AppInput.vue'
@@ -180,15 +181,17 @@ function goBack() {
 </script>
 
 <template>
-  <div class="encounter-page">
-    <AppPageHead>
-      <template #actions>
-        <AppIconBtn title="Retour" @click="goBack">
-          <ArrowLeft :size="18" />
-        </AppIconBtn>
-      </template>
-      {{ encounter?.name ?? 'Rencontre' }}
-    </AppPageHead>
+  <AppPageLayout>
+    <template #top-bar>
+      <AppPageHead>
+        <template #actions>
+          <AppIconBtn title="Retour" @click="goBack">
+            <ArrowLeft :size="18" />
+          </AppIconBtn>
+        </template>
+        {{ encounter?.name ?? 'Rencontre' }}
+      </AppPageHead>
+    </template>
 
     <AppEmptyState v-if="loading" variant="loading">Chargement…</AppEmptyState>
     <AppEmptyState v-else-if="error" variant="error">{{ error }}</AppEmptyState>
@@ -336,18 +339,10 @@ function goBack() {
         </div>
       </div>
     </template>
-  </div>
+  </AppPageLayout>
 </template>
 
 <style scoped>
-.encounter-page {
-  max-width: 600px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
 .info-fields {
   display: flex;
   flex-direction: column;

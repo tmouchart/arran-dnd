@@ -15,11 +15,11 @@
   --muted: #5a554d;
   --border: #aaa396;
   --border-strong: #756d62;
-  --accent: #4a5b76;
-  --accent-strong: #2f3d56;
-  --accent-soft: rgba(74, 91, 118, 0.13);
-  --brand: #68492e;
-  --brand-strong: #4d3520;
+  --accent: #2d8a5e;
+  --accent-strong: #1e6b46;
+  --accent-soft: rgba(45, 138, 94, 0.13);
+  --brand: #c9943e;
+  --brand-strong: #a67520;
   --danger: #943232;
   --shadow-soft: 0 5px 16px rgba(35, 33, 30, 0.1);
   --shadow-card: 0 8px 22px rgba(35, 33, 30, 0.11);
@@ -39,11 +39,11 @@
   --muted: #b5a88f;
   --border: #4f4737;
   --border-strong: #73664e;
-  --accent: #9eafcc;
-  --accent-strong: #c4d4ef;
-  --accent-soft: rgba(158, 175, 204, 0.18);
-  --brand: #d2a773;
-  --brand-strong: #e7bf8c;
+  --accent: #4db882;
+  --accent-strong: #7ad4a6;
+  --accent-soft: rgba(77, 184, 130, 0.18);
+  --brand: #d4a94e;
+  --brand-strong: #e8c472;
   --danger: #e98e8e;
   --shadow-soft: 0 8px 20px rgba(0, 0, 0, 0.4);
   --shadow-card: 0 10px 26px rgba(0, 0, 0, 0.42);
@@ -177,4 +177,16 @@ select:focus-visible {
   color: var(--text);
   font-family: inherit;
   font-size: 0.92rem;
+}
+
+/* Page padding is now handled by AppPageLayout component.
+   Legacy views that haven't migrated yet still get padding: */
+.main > *:not(.page-layout) {
+  padding: 1rem 0.78rem 1.5rem;
+}
+
+@media (min-width: 740px) {
+  .main > *:not(.page-layout) {
+    padding: 1.25rem 1rem 2rem;
+  }
 }

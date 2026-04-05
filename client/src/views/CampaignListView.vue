@@ -10,6 +10,7 @@ import {
   type CampaignSummary,
 } from '../api/campaigns'
 import { user } from '../composables/useAuth'
+import AppPageLayout from '../components/ui/AppPageLayout.vue'
 import AppPageHead from '../components/ui/AppPageHead.vue'
 import AppIconBtn from '../components/ui/AppIconBtn.vue'
 import AppInput from '../components/ui/AppInput.vue'
@@ -75,8 +76,9 @@ function isGm(c: CampaignSummary) {
 </script>
 
 <template>
-  <div class="campaign-list-page">
-    <AppPageHead>
+  <AppPageLayout>
+    <template #top-bar>
+      <AppPageHead>
       <Map :size="22" />
       Campagnes
       <template #actions>
@@ -85,6 +87,7 @@ function isGm(c: CampaignSummary) {
         </AppIconBtn>
       </template>
     </AppPageHead>
+    </template>
 
     <form v-if="showCreate" class="create-form" @submit.prevent="handleCreate">
       <AppInput
@@ -167,18 +170,10 @@ function isGm(c: CampaignSummary) {
         </div>
       </div>
     </Teleport>
-  </div>
+  </AppPageLayout>
 </template>
 
 <style scoped>
-.campaign-list-page {
-  max-width: 520px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
 .create-form {
   display: flex;
   flex-wrap: wrap;

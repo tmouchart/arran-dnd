@@ -10,6 +10,7 @@ import type { Character } from '../types/character'
 import type { VoieFamily } from '../data/voies'
 import { FAMILY_DIE_MAX, PR_MAX } from '../composables/useCharacter'
 
+import AppPageLayout from '../components/ui/AppPageLayout.vue'
 import AppPageHead from '../components/ui/AppPageHead.vue'
 import AppIconBtn from '../components/ui/AppIconBtn.vue'
 import AppEmptyState from '../components/ui/AppEmptyState.vue'
@@ -170,15 +171,17 @@ const TABS: { id: TabId; label: string; icon: string }[] = [
 </script>
 
 <template>
-  <div class="page sheet-page">
-    <AppPageHead>
-      <template #actions>
-        <AppIconBtn title="Retour à la campagne" @click="router.push(`/campagnes/${campaignId}`)">
-          <ArrowLeft :size="18" />
-        </AppIconBtn>
-      </template>
-      Fiche de {{ character?.name ?? 'personnage' }}
-    </AppPageHead>
+  <AppPageLayout>
+    <template #top-bar>
+      <AppPageHead>
+        <template #actions>
+          <AppIconBtn title="Retour à la campagne" @click="router.push(`/campagnes/${campaignId}`)">
+            <ArrowLeft :size="18" />
+          </AppIconBtn>
+        </template>
+        Fiche de {{ character?.name ?? 'personnage' }}
+      </AppPageHead>
+    </template>
 
     <AppEmptyState v-if="loading" variant="loading">Chargement…</AppEmptyState>
     <AppEmptyState v-else-if="error" variant="error">{{ error }}</AppEmptyState>
@@ -245,15 +248,10 @@ const TABS: { id: TabId; label: string; icon: string }[] = [
         </template>
       </div>
     </template>
-  </div>
+  </AppPageLayout>
 </template>
 
 <style scoped>
-.sheet-page {
-  max-width: 40rem;
-  margin: 0 auto;
-}
-
 .readonly-wrapper {
   pointer-events: none;
   user-select: text;
