@@ -42,6 +42,15 @@ const mpIsMystique = computed(() => props.family === "mystiques");
       <!-- Points de vie -->
       <div class="bar-block">
         <div class="bar-label"><span>Points de vie</span></div>
+        <div class="hp-current-row">
+          <button type="button" class="hp-btn hp-btn--minus" :disabled="character.hpCurrent <= 0" @click="character.hpCurrent = Math.max(0, character.hpCurrent - 1)">-</button>
+          <div class="hp-current-display hp-current-display--hp">
+            <span class="hp-current-value">{{ character.hpCurrent }}</span>
+            <span class="hp-current-sep">/</span>
+            <span class="hp-current-max">{{ computedHp }}</span>
+          </div>
+          <button type="button" class="hp-btn hp-btn--plus" :disabled="character.hpCurrent >= computedHp" @click="character.hpCurrent = Math.min(computedHp, character.hpCurrent + 1)">+</button>
+        </div>
         <div class="def-formula hp-formula">
           <div class="def-chip def-chip--total def-chip--hp" title="PV max calculés">
             <span class="def-chip-label">PV</span>
@@ -74,6 +83,15 @@ const mpIsMystique = computed(() => props.family === "mystiques");
       <!-- Points de mana -->
       <div class="bar-block">
         <div class="bar-label"><span>Points de mana</span></div>
+        <div class="hp-current-row">
+          <button type="button" class="hp-btn hp-btn--minus mp" :disabled="character.mpCurrent <= 0" @click="character.mpCurrent = Math.max(0, character.mpCurrent - 1)">-</button>
+          <div class="hp-current-display hp-current-display--mp">
+            <span class="hp-current-value">{{ character.mpCurrent }}</span>
+            <span class="hp-current-sep">/</span>
+            <span class="hp-current-max">{{ computedMp }}</span>
+          </div>
+          <button type="button" class="hp-btn hp-btn--plus mp" :disabled="character.mpCurrent >= computedMp" @click="character.mpCurrent = Math.min(computedMp, character.mpCurrent + 1)">+</button>
+        </div>
         <div class="def-formula mp-formula">
           <div class="def-chip def-chip--total def-chip--mp" title="PM max calculés">
             <span class="def-chip-label">PM</span>
@@ -237,6 +255,78 @@ const mpIsMystique = computed(() => props.family === "mystiques");
 }
 .def-chip--growth .def-chip-label { pointer-events: none; }
 .def-chip--growth .def-chip-value { color: #c95f56; pointer-events: none; }
+
+/* ── Current HP/MP adjuster ─────────────────────────────────────────── */
+.hp-current-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.45rem;
+}
+
+.hp-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 120ms ease, border-color 120ms ease, transform 100ms ease;
+}
+
+.hp-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.hp-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.hp-btn--minus { border-color: #c95f56; color: #c95f56; }
+.hp-btn--minus:hover:not(:disabled) { background: color-mix(in srgb, #c95f56 14%, var(--surface)); }
+.hp-btn--plus { border-color: #3a8a4a; color: #3a8a4a; }
+.hp-btn--plus:hover:not(:disabled) { background: color-mix(in srgb, #3a8a4a 14%, var(--surface)); }
+
+.hp-btn--minus.mp { border-color: #678fc2; color: #678fc2; }
+.hp-btn--minus.mp:hover:not(:disabled) { background: color-mix(in srgb, #678fc2 14%, var(--surface)); }
+.hp-btn--plus.mp { border-color: #678fc2; color: #678fc2; }
+.hp-btn--plus.mp:hover:not(:disabled) { background: color-mix(in srgb, #678fc2 14%, var(--surface)); }
+
+.hp-current-display {
+  display: flex;
+  align-items: baseline;
+  gap: 0.15rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.hp-current-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: var(--title-font);
+}
+
+.hp-current-sep {
+  font-size: 1rem;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.hp-current-max {
+  font-size: 1rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.hp-current-display--hp .hp-current-value { color: #c95f56; }
+.hp-current-display--mp .hp-current-value { color: #678fc2; }
 
 .hp-formula { margin-top: 0.3rem; }
 

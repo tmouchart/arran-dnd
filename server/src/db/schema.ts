@@ -21,6 +21,7 @@ export const users = pgTable('user', {
   avatarUrl: text('avatar_url'),
   /** Notes personnelles du joueur (privées). */
   notesPerso: text('notes_perso').notNull().default(''),
+  activeCampaignId: integer('active_campaign_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 })
 
@@ -187,6 +188,45 @@ export const encounterMonsters = pgTable('encounter_monster', {
   attacks: jsonb('attacks').notNull().default([]),
   abilities: jsonb('abilities').notNull().default([]),
   description: text('description'),
+})
+
+export const combats = pgTable('combat', {
+  id: serial('id').primaryKey(),
+  campaignId: integer('campaign_id')
+    .notNull()
+    .references(() => campaigns.id, { onDelete: 'cascade' }),
+  encounterId: integer('encounter_id').references(() => encounterTemplates.id),
+  name: varchar('name', { length: 200 }).notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('active'),
+  currentTurnIndex: integer('current_turn_index').notNull().default(0),
+  roundNumber: integer('round_number').notNull().default(1),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  finishedAt: timestamp('finished_at', { withTimezone: true }),
+})
+
+export const combatParticipants = pgTable('combat_participant', {
+  id: serial('id').primaryKey(),
+  combatId: integer('combat_id')
+    .notNull()
+    .references(() => combats.id, { onDelete: 'cascade' }),
+  kind: varchar('kind', { length: 10 }).notNull(), // 'player' | 'monster'
+  userId: integer('user_id').references(() => users.id),
+  name: text('name').notNull(),
+  initiative: integer('initiative').notNull(),
+  hpMax: integer('hp_max').notNull(),
+  hpCurrent: integer('hp_current').notNull(),
+  def: integer('def').notNull().default(10),
+  // Monster-specific fields (nullable for players)
+  nc: real('nc'),
+  statFor: integer('stat_for'),
+  statDex: integer('stat_dex'),
+  statCon: integer('stat_con'),
+  statInt: integer('stat_int'),
+  statSag: integer('stat_sag'),
+  statCha: integer('stat_cha'),
+  attacks: jsonb('attacks'),
+  abilities: jsonb('abilities'),
+  monsterDescription: text('monster_description'),
 })
 
 export type UserRow = typeof users.$inferSelect

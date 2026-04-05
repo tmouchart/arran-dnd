@@ -62,6 +62,9 @@ router.post('/', async (req, res) => {
     .values({ name: name.trim(), gmUserId: userId })
     .returning()
 
+  // Set as active campaign for the GM
+  await db.update(users).set({ activeCampaignId: row.id }).where(eq(users.id, userId))
+
   console.log(`[campaign] created: "${row.name}" by user ${userId}`)
   res.status(201).json(row)
 })
@@ -181,6 +184,9 @@ router.post('/:id/join', async (req, res) => {
     .values({ campaignId: id, userId, characterId: activeChar.id })
     .returning()
 
+  // Set as active campaign
+  await db.update(users).set({ activeCampaignId: id }).where(eq(users.id, userId))
+
   console.log(`[campaign] user ${userId} joined campaign ${id}`)
   res.status(201).json(member)
 })
@@ -199,6 +205,15 @@ router.post('/:id/leave', async (req, res) => {
     res.status(404).json({ error: 'Pas membre de cette campagne' })
     return
   }
+
+  // Update active campaign: pick another membership or clear
+  const [remaining] = await db
+    .select({ campaignId: campaignMembers.campaignId })
+    .from(campaignMembers)
+    .where(eq(campaignMembers.userId, userId))
+    .orderBy(campaignMembers.joinedAt)
+    .limit(1)
+  await db.update(users).set({ activeCampaignId: remaining?.campaignId ?? null }).where(eq(users.id, userId))
 
   console.log(`[campaign] user ${userId} left campaign ${id}`)
   res.json({ ok: true })

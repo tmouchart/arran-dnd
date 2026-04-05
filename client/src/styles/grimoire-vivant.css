@@ -1,0 +1,246 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Le Grimoire Vivant — Visual effects for character sheet state
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Vignette overlay ──────────────────────────────────────────────────── */
+.gv-vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+
+/* HP < 50% — subtle red edges */
+.gv-hp-warn .gv-vignette {
+  background: radial-gradient(
+    ellipse 100% 100% at 50% 50%,
+    transparent 55%,
+    rgba(139, 30, 20, 0.08) 100%
+  );
+  opacity: 1;
+}
+
+/* HP <= 25% — stronger vignette + pulse */
+.gv-hp-critical .gv-vignette {
+  background: radial-gradient(
+    ellipse 100% 100% at 50% 50%,
+    transparent 38%,
+    rgba(139, 30, 20, 0.22) 100%
+  );
+  opacity: 1;
+  animation: gv-vignette-pulse 2.4s ease-in-out infinite;
+}
+
+/* HP = 0 — deep red vignette */
+.gv-hp-dead .gv-vignette {
+  background: radial-gradient(
+    ellipse 100% 100% at 50% 50%,
+    transparent 20%,
+    rgba(120, 15, 10, 0.45) 100%
+  );
+  opacity: 1;
+  animation: gv-vignette-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes gv-vignette-pulse {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 1; }
+}
+
+/* Dark theme adjustments — more saturated to show against dark bg */
+:root[data-theme="dark"] .gv-hp-warn .gv-vignette {
+  background: radial-gradient(
+    ellipse 100% 100% at 50% 50%,
+    transparent 55%,
+    rgba(200, 60, 50, 0.1) 100%
+  );
+}
+
+:root[data-theme="dark"] .gv-hp-critical .gv-vignette {
+  background: radial-gradient(
+    ellipse 100% 100% at 50% 50%,
+    transparent 38%,
+    rgba(200, 60, 50, 0.2) 100%
+  );
+}
+
+:root[data-theme="dark"] .gv-hp-dead .gv-vignette {
+  background: radial-gradient(
+    ellipse 100% 100% at 50% 50%,
+    transparent 20%,
+    rgba(200, 40, 30, 0.4) 100%
+  );
+}
+
+/* Mobile: tighter vignette since viewport is narrower */
+@media (max-width: 520px) {
+  .gv-hp-warn .gv-vignette {
+    background: radial-gradient(
+      ellipse 100% 100% at 50% 50%,
+      transparent 50%,
+      rgba(139, 30, 20, 0.1) 100%
+    );
+  }
+}
+
+/* ── HP = 0: "A terre" state ───────────────────────────────────────────── */
+.gv-hp-dead .card {
+  filter: grayscale(0.85) brightness(0.88);
+  transition: filter 0.8s ease;
+}
+
+/* Keep inputs readable when downed */
+.gv-hp-dead .card input,
+.gv-hp-dead .card select,
+.gv-hp-dead .card textarea {
+  filter: none;
+}
+
+.gv-a-terre-banner {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: var(--title-font);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface-2));
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--border));
+  border-radius: 10px;
+  padding: 0.45rem 1rem;
+  margin-bottom: 0.65rem;
+  animation: gv-banner-fade-in 0.8s ease;
+}
+
+.gv-hp-dead .gv-a-terre-banner {
+  display: flex;
+}
+
+@keyframes gv-banner-fade-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Portrait ring ─────────────────────────────────────────────────────── */
+.gv-hp-warn .portrait {
+  box-shadow: 0 0 0 3px rgba(201, 95, 86, 0.25);
+  transition: box-shadow 0.6s ease;
+}
+
+.gv-hp-critical .portrait {
+  animation: gv-portrait-pulse 2.4s ease-in-out infinite;
+}
+
+.gv-hp-dead .portrait {
+  filter: grayscale(1) brightness(0.75);
+  box-shadow: 0 0 0 3px rgba(100, 20, 20, 0.7);
+}
+
+/* Empty portrait: softer ring */
+.gv-hp-warn .portrait--empty {
+  box-shadow: 0 0 0 3px rgba(201, 95, 86, 0.15);
+}
+
+@keyframes gv-portrait-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 3px rgba(201, 95, 86, 0.55), 0 0 16px rgba(201, 95, 86, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(201, 95, 86, 0.8), 0 0 24px rgba(201, 95, 86, 0.5);
+  }
+}
+
+/* ── MP effects on voie cards ──────────────────────────────────────────── */
+.gv-mp-drained .voie-card {
+  filter: saturate(0.25) brightness(0.95);
+  transition: filter 0.6s ease;
+}
+
+.gv-mp-drained .capacite.unlocked .cap-rank {
+  color: var(--muted) !important;
+}
+
+.gv-mp-drained .capacite.unlocked .cap-name {
+  font-weight: 400 !important;
+}
+
+.gv-mp-drained .capacite.unlocked .cap-desc {
+  color: var(--muted) !important;
+}
+
+/* MP < 25% — flicker on the PM chip */
+.gv-mp-low .def-chip--mp {
+  animation: gv-mp-flicker 3s ease-in-out infinite;
+}
+
+/* Suppress MP flicker when HP is critical (avoid animation overload) */
+.gv-hp-critical .def-chip--mp,
+.gv-hp-dead .def-chip--mp {
+  animation: none;
+}
+
+@keyframes gv-mp-flicker {
+  0%, 100% {
+    border-color: #678fc2;
+    opacity: 1;
+  }
+  50% {
+    border-color: color-mix(in srgb, #678fc2 40%, var(--border));
+    opacity: 0.7;
+  }
+}
+
+/* ── Nat 20 — golden sweep ─────────────────────────────────────────────── */
+.gv-roll-nat20::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    rgba(200, 156, 58, 0.35) 50%,
+    transparent 70%
+  );
+  animation: gv-golden-sweep 1.4s ease-in-out forwards;
+  pointer-events: none;
+  z-index: 50;
+}
+
+@keyframes gv-golden-sweep {
+  0% { transform: translateX(-100%) skewX(-15deg); opacity: 0; }
+  15% { opacity: 0.7; }
+  85% { opacity: 0.7; }
+  100% { transform: translateX(200%) skewX(-15deg); opacity: 0; }
+}
+
+/* ── Nat 1 — shake ─────────────────────────────────────────────────────── */
+.gv-roll-nat1 {
+  animation: gv-fumble-shake 0.6s ease-out forwards;
+}
+
+@keyframes gv-fumble-shake {
+  0%, 100% { transform: translateX(0); }
+  10% { transform: translateX(-6px) rotate(-0.5deg); }
+  20% { transform: translateX(6px) rotate(0.5deg); }
+  30% { transform: translateX(-5px); }
+  40% { transform: translateX(5px); }
+  50% { transform: translateX(-3px); }
+  60% { transform: translateX(3px); }
+  70% { transform: translateX(-2px); }
+  80% { transform: translateX(2px); }
+}
+
+/* ── Accessibility: reduced motion ─────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .gv-roll-nat1 { animation: none; }
+  .gv-roll-nat20::before { animation: none; background: rgba(200, 156, 58, 0.15); }
+  .gv-hp-critical .gv-vignette { animation: none; opacity: 1; }
+  .gv-hp-dead .gv-vignette { animation: none; opacity: 1; }
+  .gv-hp-critical .portrait { animation: none; box-shadow: 0 0 0 3px rgba(201, 95, 86, 0.6); }
+  .gv-mp-low .def-chip--mp { animation: none; }
+}

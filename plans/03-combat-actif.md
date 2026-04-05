@@ -2,12 +2,13 @@
 
 ## Context
 
-Le MJ peut lancer un combat depuis la page campagne. Le combat est persisté en DB (historique). L'initiative des joueurs est calculée automatiquement depuis leur fiche. Les monstres viennent d'une rencontre pré-sauvée (ou combat vide). Une timeline verticale affiche l'ordre des tours. Le MJ et le joueur actif peuvent avancer au tour suivant. Tous les membres de la campagne voient le combat en temps réel via SSE.
+Le MJ peut lancer un combat depuis la page campagne. Le combat est persisté en DB (historique). L'initiative des joueurs est calculée automatiquement depuis leur fiche. Les monstres viennent d'une rencontre pré-sauvée (ou combat vide). Une timeline d'initiative affiche l'ordre des tours. Le MJ et le joueur actif peuvent avancer au tour suivant. Tous les membres de la campagne voient le combat en temps réel via SSE.
 
 ### Principes UX
 - **Temps réel** : chaque action (next-turn, HP, ajout monstre, finish) broadcast via SSE à tous les participants
-- **1 clic** : les actions récurrentes du MJ (avancer le tour, ajuster HP d'un monstre) doivent être accessibles directement depuis la timeline, sans naviguer ailleurs
-- **Navigation fluide** : un joueur peut facilement aller-retour entre le combat et sa fiche de personnage (bouton "Ma fiche" + bouton retour au combat)
+- **1 clic** : les actions récurrentes du MJ (avancer le tour, ajuster HP monstre) directement depuis la timeline, sans naviguer
+- **Tout visible sans naviguer** : le joueur voit sur la même page la timeline, ses HP/stats, et ses actions de combat
+- **Mobile-first** : footer sticky, cartes compressées, bottom sheets
 
 ---
 
@@ -68,15 +69,15 @@ Table unifiée joueurs+monstres pour simplifier le tri par initiative.
 | GET | `/:id/combats` | membre | Liste combats (actifs + historique) |
 | GET | `/:id/combats/:cid` | membre | État du combat (participants triés par initiative) |
 | POST | `/:id/combats/:cid/next-turn` | GM ou joueur actif | Avancer au tour suivant |
-| POST | `/:id/combats/:cid/prev-turn` | GM | Revenir au tour précédent (correction d'erreur) |
-| PATCH | `/:id/combats/:cid/participants/:pid` | voir ci-dessous | Modifier HP d'un participant |
-| POST | `/:id/combats/:cid/monsters` | GM | Ajouter un monstre en cours de combat (renforts) |
+| POST | `/:id/combats/:cid/prev-turn` | GM | Revenir au tour précédent |
+| PATCH | `/:id/combats/:cid/participants/:pid` | voir ci-dessous | Modifier HP |
+| POST | `/:id/combats/:cid/monsters` | GM | Ajouter un monstre (renforts) |
 | POST | `/:id/combats/:cid/finish` | GM | Terminer le combat |
 | GET | `/:id/combats/:cid/events` | membre | SSE stream temps réel |
 
 ### Droits sur PATCH participants/:pid
 - **Monstre** : seul le MJ peut modifier les HP
-- **Joueur** : seul le joueur lui-même peut modifier ses propres HP (pas le MJ)
+- **Joueur** : seul le joueur lui-même peut modifier ses propres HP
 
 ### Logique de création du combat (POST)
 1. Récupérer les membres de la campagne (sauf `excludedUserIds`)
@@ -86,45 +87,34 @@ Table unifiée joueurs+monstres pour simplifier le tri par initiative.
 5. Trier par initiative DESC, stocker `currentTurnIndex = 0`
 6. **Broadcaster via SSE**
 
-### Logique de next-turn (POST)
-1. Vérifier que le requester est GM OU le joueur dont c'est le tour
-2. Incrémenter `currentTurnIndex`
-3. Si dépasse la fin → revenir à 0, incrémenter `roundNumber`
-4. Sauter les participants à 0 HP (monstres morts)
-5. **Broadcaster via SSE**
-
-### Logique de prev-turn (POST) — GM only
-1. Décrémenter `currentTurnIndex`
-2. Si passe en dessous de 0 → aller au dernier, décrémenter `roundNumber` (min 1)
-3. Sauter les participants à 0 HP
-4. **Broadcaster via SSE**
+### Logique de next-turn / prev-turn
+- next : incrémenter index, wrap à 0 + roundNumber++, sauter monstres à 0 HP — **broadcast SSE**
+- prev : décrémenter index, wrap à fin + roundNumber-- (min 1), sauter morts — **broadcast SSE**
 
 ### Logique d'ajout monstre en cours (POST monsters)
-1. Vérifier GM
-2. Body : mêmes champs que encounterMonsters (nom, stats, etc.) — même UX que l'éditeur de rencontre
-3. Insérer en DB dans combatParticipants avec kind='monster'
-4. L'initiative du monstre détermine sa position dans l'ordre
-5. **Broadcaster via SSE**
+- Même format que encounterMonsters (nom, stats complets)
+- Même UX que l'éditeur de rencontre (recherche bestiaire + custom)
+- S'insère dans l'ordre d'initiative — **broadcast SSE**
 
-### SSE — Temps réel sur CHAQUE action
-Suivre le même pattern que `sessions/store.ts` :
+### SSE — Broadcast sur CHAQUE mutation
 - Map<combatId, Set<SseClient>> en mémoire
-- **Chaque mutation** (next-turn, prev-turn, HP change, ajout monstre, finish) **broadcast** le state complet
+- Chaque mutation broadcast le state complet
 - État différent GM vs joueur :
-  - GM voit : HP monstres (valeur exacte), stats, capacités
-  - Joueurs voient : état qualitatif des monstres (Intact/Blessé/Mal en point/Agonisant), pas les HP
+  - GM voit : HP monstres (valeur exacte), stats, capacités, attaques
+  - Joueurs voient : état qualitatif monstres via icônes (voir section UX)
 
 ---
 
 ## 3. Client — API + Composable
 
 ### `client/src/api/combats.ts` (nouveau)
+
 Interfaces :
 - `CombatSummary` : { id, name, status, roundNumber, createdAt, finishedAt }
 - `CombatState` : { id, name, status, roundNumber, currentTurnIndex, participants: CombatParticipant[], campaignId }
 - `CombatParticipant` : { id, kind, userId?, name, initiative, hpMax, hpCurrent, def, nc?, stats?, attacks?, abilities?, monsterDescription?, hpStatus? }
 
-`hpStatus` (joueurs voient ça pour les monstres) : 'intact' | 'blesse' | 'mal_en_point' | 'agonisant' | 'mort'
+`hpStatus` (pour les joueurs, monstres uniquement) : 'intact' | 'blesse' | 'mal_en_point' | 'agonisant' | 'mort'
 
 Fonctions :
 - `fetchCombats(campaignId)`, `fetchCombat(campaignId, cid)`
@@ -135,6 +125,7 @@ Fonctions :
 - `finishCombat(campaignId, cid)`
 
 ### `client/src/composables/useCombat.ts` (nouveau)
+
 Pattern identique à `useSession.ts` :
 - `combat` ref, `connecting`, `error`
 - `connect(campaignId, combatId)` → EventSource SSE
@@ -144,60 +135,149 @@ Pattern identique à `useSession.ts` :
 - `currentParticipant` computed (participants[currentTurnIndex])
 - `isMyTurn` computed (currentParticipant.userId === user.id)
 - `isGm` computed
-- `myParticipant` computed (pour que le joueur accède à ses propres HP)
+- `myParticipant` computed
 
 ---
 
-## 4. Client — Vues
+## 4. Client — UX Design
 
-### Modal de lancement (dans CampaignView)
-- Bouton "Jouer une rencontre" dans l'onglet Rencontres ou en haut de la page campagne
-- Modal avec :
-  - Liste des joueurs de la campagne (tous cochés par défaut), toggle pour exclure
-  - Select de rencontre parmi les rencontres pré-sauvées + option "Combat vide"
-  - Bouton "Lancer le combat"
+### Architecture écran mobile (3 zones fixes)
+
+```
+┌─────────────────────────┐
+│  HEADER (56px)          │
+│  [←] Nom combat   R:3  │
+├─────────────────────────┤
+│                         │
+│   ZONE PRINCIPALE       │  ← scrollable
+│   Timeline (cartes)     │
+│   + panneau joueur      │
+│                         │
+├─────────────────────────┤
+│  FOOTER STICKY (72px)   │
+│  [←Préc] [+]  [SUIVANT]│
+└─────────────────────────┘
+```
+
+### Timeline = cartes empilées (pas de ligne verticale)
+
+- **Carte active** (~90px) : expanded, couleur accent, actions inline visibles
+- **Cartes non-actives** (~52px) : compressées, juste nom + état santé
+- **`scrollIntoView`** automatique sur le participant actif à chaque changement de tour
+
+```
+┌─────────────────────────┐  ← active, expanded
+│ ▶ THORIN       Init 18  │
+│   ██████░░░ 24/30 PV    │
+│   [-5] [-1]   [+1] [+5] │  ← HP inline (joueur: ses propres HP)
+└─────────────────────────┘
+┌─────────────────────────┐  ← compressé, a joué (semi-transparent + ✓)
+│ ✓ Arya   Init 15  ♥    │
+└─────────────────────────┘
+┌─────────────────────────┐  ← compressé, monstre
+│   Gobelin 1  Init 12 💔 │
+└─────────────────────────┘
+┌─────────────────────────┐  ← mort, grisé + barré
+│ ✗ Gobelin 2  Init 9    │
+└─────────────────────────┘
+```
+
+### HP monstres (MJ) — 1 clic depuis la timeline
+
+Quand le MJ voit la timeline, les monstres ont des boutons -/+ directement sur leur carte :
+
+```
+┌─────────────────────────┐  ← monstre actif (MJ view)
+│ ▶ Gobelin Chef  Init 12 │
+│   ██░░░░░ 8/20 PV       │
+│   [-5] [-1]   [+1] [+5] │  ← ajustement HP en 1 clic
+└─────────────────────────┘
+```
+
+Les boutons -/+ sont visibles sur TOUS les monstres (pas seulement l'actif) pour le MJ, même en mode compressé.
+
+### État qualitatif des monstres (vue joueur) — icônes
+
+| État | % PV | Icône Lucide | Couleur |
+|---|---|---|---|
+| Intact | 76-100% | `Heart` | vert |
+| Blessé | 51-75% | `Heart` | orange |
+| Mal en point | 26-50% | `HeartCrack` | rouge |
+| Agonisant | 1-25% | `HeartCrack` | rouge sombre |
+| Mort | 0% | `Skull` | grisé |
+
+### Distinction "a joué / n'a pas joué" ce round
+
+- **A joué** : opacité réduite (0.5) + petite icône `CheckCheck` (12px) en coin
+- **En attente** : apparence normale (opacité 1)
+- **Actif** : fond accent, bordure colorée
+
+### Footer sticky
+
+**MJ :**
+```
+[←Préc]   [+Monstre]   [SUIVANT →]
+ ghost      ghost        primary
+```
+
+**Joueur (pas son tour) :**
+```
+[Ma fiche]              [SUIVANT →]
+ ghost                   disabled
+```
+
+**Joueur (son tour) :**
+```
+[Ma fiche]              [SUIVANT →]
+ ghost                   primary
+```
+
+### Panneau joueur — Tout visible sans naviguer
+
+En dessous de la timeline, le joueur voit un panneau fixe avec :
+- **Ses HP** : barre + boutons -/+ pour modifier ses propres HP
+- **Ses stats clés** : DEF, initiative, attaque contact/distance/magique
+- **Ses actions de combat** : liste des actions disponibles (tirées de la page Actions existante `ActionsView`)
+
+Ce panneau est toujours visible (pas besoin de naviguer vers "Ma fiche").
+
+### Panneau monstre actif (MJ) — Bottom sheet
+
+Tap sur un monstre → bottom sheet slide-up avec :
+- Stats complètes, DEF, NC
+- Liste des attaques (nom, bonus, dégâts)
+- Liste des capacités (nom, description)
+- Boutons HP -/+ rapides
+
+### Ajout de monstre en combat — Bottom sheet
+
+Bouton "+" → bottom sheet avec recherche bestiaire (même UX que l'éditeur de rencontre) :
+- Recherche autocomplete dans MONSTERS_CATALOG
+- Bouton "+" sur chaque résultat → ajoute instantanément
+- Option "Custom" pour créer un monstre vierge
+- **Broadcast SSE** à chaque ajout
+
+### Tap sur carte joueur = expand inline
+
+Tap sur un autre joueur → expand inline (nom complet, PV, stats). Pas de navigation directe pour éviter les taps accidentels. La navigation vers la fiche complète se fait via le bouton "Ma fiche" dans le footer.
+
+---
+
+## 5. Modal de lancement (dans CampaignView)
+
+Bottom sheet (pas un vrai modal) :
+- Liste des joueurs de la campagne (tous cochés par défaut), toggle pour exclure (grisé)
+- Select de rencontre pré-sauvée + option "Combat vide"
+- Bouton "Lancer le combat"
 - Après création → naviguer vers `/campagnes/:id/combat/:cid`
-
-### `CombatView.vue` (nouveau)
-**Route** : `/campagnes/:id/combat/:cid`
-
-Layout :
-- Header avec nom du combat + **round actuel affiché** + bouton retour campagne
-- **Bouton "Ma fiche"** (joueurs) : lien vers `/campagnes/:campaignId/personnage/:userId` pour consulter/modifier sa fiche rapidement. Bouton retour au combat depuis la fiche.
-
-- **Timeline verticale** (ligne du temps) :
-  - Ligne verticale avec des points pour chaque participant
-  - Trié par initiative DESC
-  - À droite de chaque point : nom, initiative, PV (joueurs) ou état qualitatif (monstres vus par joueurs)
-  - Le participant actif est mis en valeur (couleur accent, surbrillance forte)
-  - Distinction visuelle "a déjà joué ce round" (au-dessus du curseur) vs "n'a pas encore joué" (en dessous)
-  - Joueurs : point vert. Monstres : point rouge
-  - Monstres à 0 HP : grisés, barrés, sautés automatiquement
-  - Click sur un joueur → fiche readonly
-  - Click sur un monstre (MJ) → voir les capacités/attaques
-  - **HP monstres ajustables en 1 clic** : boutons -/+ directement sur la ligne du monstre dans la timeline (MJ only)
-
-- **Boutons de tour** :
-  - "Suivant" : visible par le MJ et le joueur actif
-  - "Précédent" : MJ only (pour corriger une erreur)
-
-- **Panneau monstre** (MJ, quand c'est le tour d'un monstre) : affiche les capacités, attaques, stats du monstre actif
-
-- **Ajout de monstre en combat** (MJ only) :
-  - Bouton "+" qui ouvre le même UX que l'éditeur de rencontre (recherche bestiaire + custom)
-  - Le monstre ajouté s'insère dans la timeline à sa position d'initiative
-
-- **HP joueur** : le joueur peut modifier ses propres HP directement (boutons -/+ ou input)
-
-- **Bouton "Terminer le combat"** (MJ only)
 
 ### Onglet "Combat" dans CampaignView
 - Nouveau tab visible par tous (joueurs + MJ) quand un combat actif existe
-- Affiche un lien vers le combat en cours
+- Lien direct vers le combat en cours
 
 ---
 
-## 5. Router
+## 6. Router
 
 **Fichier** : `client/src/router/index.ts`
 
@@ -205,7 +285,7 @@ Ajouter : `{ path: '/campagnes/:id/combat/:cid', name: 'combat', component: Comb
 
 ---
 
-## 6. Fichiers à créer/modifier
+## 7. Fichiers à créer/modifier
 
 ### Créer
 - `server/src/db/migrations/1700000000027_combats.sql`
@@ -218,15 +298,16 @@ Ajouter : `{ path: '/campagnes/:id/combat/:cid', name: 'combat', component: Comb
 ### Modifier
 - `server/src/db/schema.ts` — tables combats + combatParticipants
 - `server/src/index.ts` — monter les routes combats
-- `client/src/views/CampaignView.vue` — modal de lancement + onglet Combat
+- `client/src/views/CampaignView.vue` — bottom sheet lancement + onglet Combat
 - `client/src/router/index.ts` — route combat
 
 ### Réutiliser
 - `server/src/sessions/store.ts` — pattern SSE (writeSse, broadcastToSession)
 - `client/src/composables/useSession.ts` — pattern composable SSE
 - `client/src/utils/monsterSession.ts` — formatMod(), filterCatalog()
-- `client/src/data/armorsCatalog.ts` — ARMORS_BY_ID, SHIELDS_BY_ID pour calcul initiative joueur
-- `client/src/data/monstersCatalog.ts` — pour l'ajout de monstres en combat
+- `client/src/data/armorsCatalog.ts` — ARMORS_BY_ID, SHIELDS_BY_ID pour calcul initiative
+- `client/src/data/monstersCatalog.ts` — pour ajout monstres en combat
+- `client/src/views/ActionsView.vue` — référence pour les actions de combat du joueur
 
 ---
 
@@ -237,8 +318,8 @@ Ajouter : `{ path: '/campagnes/:id/combat/:cid', name: 'combat', component: Comb
 3. **Server routes** : combats.ts (création, next/prev-turn, HP, ajout monstre, finish, SSE)
 4. **Client API** : combats.ts
 5. **Client composable** : useCombat.ts
-6. **CampaignView** : modal de lancement + onglet Combat
-7. **CombatView** : timeline + boutons tour + panneau monstre + ajout monstre + HP joueur
+6. **CampaignView** : bottom sheet lancement + onglet Combat
+7. **CombatView** : timeline cartes + footer sticky + panneau joueur + bottom sheet monstre
 8. **Router** : route
 
 ---
@@ -252,12 +333,12 @@ Ajouter : `{ path: '/campagnes/:id/combat/:cid', name: 'combat', component: Comb
 - Le joueur actif peut aussi cliquer "Suivant"
 - Le bouton "Précédent" (MJ) revient en arrière — broadcast SSE
 - Les monstres à 0 HP sont grisés et sautés
-- Le MJ peut modifier les HP des monstres en 1 clic depuis la timeline — broadcast SSE
+- Le MJ peut modifier les HP des monstres en 1 clic sur la timeline — broadcast SSE
 - Les joueurs peuvent modifier leurs propres HP — broadcast SSE
-- Les joueurs voient l'état qualitatif des monstres (pas les HP exacts)
+- Les joueurs voient l'état qualitatif des monstres (icônes Heart/Skull)
+- Le joueur voit ses stats et actions sans quitter la page combat
 - Le MJ peut ajouter des monstres en cours de combat (renforts) — broadcast SSE
-- Le MJ voit les capacités du monstre actif
-- Un joueur peut naviguer facilement entre combat et sa fiche
+- Le MJ voit les capacités du monstre via bottom sheet
 - Le combat est persisté en DB (visible dans l'historique)
-- Le SSE synchronise TOUTES les mutations en temps réel à tous les participants
+- Le SSE synchronise TOUTES les mutations en temps réel
 - Le MJ peut terminer le combat — broadcast SSE

@@ -13,6 +13,7 @@ import charactersRouter from "./routes/characters.js";
 import sessionsRouter from "./routes/sessions.js";
 import journalRouter from "./routes/journal.js";
 import campaignsRouter from "./routes/campaigns.js";
+import combatsRouter from "./routes/combats.js";
 import ttsRouter from "./routes/tts.js";
 import { requireAuth, type AuthRequest } from "./auth/middleware.js";
 import { loadCoreIndex, loadTopic } from "./knowledge/loadKnowledge.js";
@@ -25,7 +26,7 @@ import {
 } from "./knowledge/tools.js";
 import { and, eq } from "drizzle-orm";
 import { db } from "./db/index.js";
-import { characters, generatedImages, journalCompagnie, journalPages } from "./db/schema.js";
+import { campaigns, campaignMembers, characters, generatedImages, journalCompagnie, journalPages, users } from "./db/schema.js";
 
 const app = express();
 app.use(cors({ origin: true, credentials: true }));
@@ -47,6 +48,7 @@ app.use("/api/characters", charactersRouter);
 app.use("/api/sessions", sessionsRouter);
 app.use("/api/journal", journalRouter);
 app.use("/api/campaigns", campaignsRouter);
+app.use("/api/campaigns", combatsRouter);
 app.use("/api/tts", ttsRouter);
 
 // Serve generated images from database (auth-protected, owner only)
@@ -175,7 +177,13 @@ Tu t'adresses aux joueurs et au meneur en français, toujours en restant en pers
 - Inclus toujours le contexte du monde d'Arran dans le prompt (elfes, nains, cristaux, forêts anciennes, etc.).
 - Après génération, continue ta réponse normalement — l'image s'affiche automatiquement dans le chat.
 - N'utilise PAS cet outil pour les questions de règles, de mécanique ou de statistiques.
-- Limite : maximum 1 image par réponse sauf demande explicite du joueur.`;
+- Limite : maximum 1 image par réponse sauf demande explicite du joueur.
+
+👥 Compagnons de campagne (get_character) :
+- La liste de tes compagnons de campagne est dans le contexte ci-dessous.
+- get_character te donne la fiche complète d'un compagnon (profil, stats, voies, compétences, portrait).
+- RÈGLE ABSOLUE : avant de générer une image représentant un ou plusieurs personnages joueurs, appelle TOUJOURS get_character sur chaque personnage concerné pour obtenir son portrait et son apparence. Ne génère JAMAIS une image d'un personnage sans avoir d'abord consulté sa fiche.
+- Utilise get_character de façon proactive quand un joueur pose une question sur un compagnon.`;
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 type SseEvent = "delta" | "done" | "error" | "tool_use" | "character_updated" | "image";
@@ -378,6 +386,84 @@ function buildPreviousCharacterSection(prev: CharacterPayload): string {
   return `\n\n⚠️ Modification récente (annulable) :\nValeurs avant modification — ${parts.join(", ")}`;
 }
 
+// ── Party context for campaign-aware chat ────────────────────────────────────
+
+type PartyMember = {
+  characterId: number;
+  name: string;
+  people: string;
+  profile: string;
+  culturalPath: string | null;
+  portraitImageId: number | null;
+};
+
+type PartyContext = {
+  campaignName: string;
+  members: PartyMember[];
+};
+
+async function fetchPartyContext(userId: number): Promise<PartyContext | null> {
+  const [user] = await db
+    .select({ activeCampaignId: users.activeCampaignId })
+    .from(users)
+    .where(eq(users.id, userId));
+  if (!user?.activeCampaignId) return null;
+
+  const [campaign] = await db
+    .select({ name: campaigns.name })
+    .from(campaigns)
+    .where(eq(campaigns.id, user.activeCampaignId));
+  if (!campaign) return null;
+
+  const rows = await db
+    .select({
+      characterId: characters.id,
+      name: characters.name,
+      people: characters.people,
+      profile: characters.profile,
+      paths: characters.paths,
+      portraitImageId: characters.portraitImageId,
+    })
+    .from(campaignMembers)
+    .innerJoin(characters, eq(characters.id, campaignMembers.characterId))
+    .where(eq(campaignMembers.campaignId, user.activeCampaignId));
+
+  return {
+    campaignName: campaign.name,
+    members: rows.map((r) => {
+      const paths = (r.paths as Array<{ name: string; rank: number; kind?: string }>) ?? [];
+      const cultural = paths.find((p) => p.kind === "culturelle");
+      return {
+        characterId: r.characterId,
+        name: r.name,
+        people: r.people,
+        profile: r.profile,
+        culturalPath: cultural ? `${cultural.name} (rang ${cultural.rank})` : null,
+        portraitImageId: r.portraitImageId,
+      };
+    }),
+  };
+}
+
+function buildPartySection(party: PartyContext, activeCharId: number | null): string {
+  // Exclude the active character (already in characterSection)
+  const others = party.members.filter((m) => m.characterId !== activeCharId);
+  if (others.length === 0) return "";
+
+  const lines = others.map((m) => {
+    const parts = [m.name];
+    if (m.people) parts.push(m.people);
+    if (m.profile) parts.push(`profil ${m.profile}`);
+    if (m.culturalPath) parts.push(`voie culturelle : ${m.culturalPath}`);
+    return `- ${parts.join(", ")}`;
+  });
+  return (
+    `\n\n## Compagnons de campagne (${party.campaignName})\n\n` +
+    lines.join("\n") +
+    "\n\nPour consulter la fiche complète d'un compagnon (stats, voies, compétences, portrait), utilise l'outil get_character avec son prénom."
+  );
+}
+
 async function charNameByUserId(userId: number | null): Promise<string | null> {
   if (userId == null) return null;
   const [char] = await db
@@ -404,7 +490,10 @@ app.post("/api/chat", requireAuth, async (req, res) => {
     const index = await loadCoreIndex();
     const characterSection = character ? `\n\n${buildCharacterSection(character)}` : "";
     const previousSection = character && previousCharacter ? buildPreviousCharacterSection(previousCharacter) : "";
-    const system = `${SYSTEM_PREAMBLE}${characterSection}${previousSection}\n\n## Index des sujets disponibles\n\n${index}`;
+    const party = await fetchPartyContext(chatUserId);
+    const activeCharId = character ? Number(character.id) : null;
+    const partySection = party ? buildPartySection(party, activeCharId) : "";
+    const system = `${SYSTEM_PREAMBLE}${characterSection}${partySection}${previousSection}\n\n## Index des sujets disponibles\n\n${index}`;
 
     const apiMessages = messages.map((m) => ({
       role: m.role,
@@ -672,6 +761,74 @@ app.post("/api/chat", requireAuth, async (req, res) => {
             console.error("[generate_image] Error:", err);
             toolResult = "Erreur lors de la génération de l'image. Réessaie plus tard.";
           }
+        } else if (funcName === "get_character") {
+          const targetName = (funcArgs.name as string) ?? "";
+          writeSse(res, "tool_use", { tool: "get_character", label: `Consultation de ${targetName}…` });
+
+          let portraitData: { data: string; mimeType: string } | null = null;
+
+          if (!party) {
+            toolResult = "Aucune campagne active — impossible de consulter les compagnons.";
+          } else {
+            const match = party.members.find((m) =>
+              m.name.toLowerCase().includes(targetName.toLowerCase())
+            );
+            if (!match) {
+              toolResult = `Aucun compagnon nommé "${targetName}" dans la campagne.`;
+            } else {
+              const [char] = await db.select().from(characters).where(eq(characters.id, match.characterId));
+              if (!char) {
+                toolResult = "Personnage introuvable en base de données.";
+              } else {
+                // Build character section without inventory
+                const charPayload: CharacterPayload = {
+                  ...char,
+                  items: [],
+                  goldCoins: 0,
+                  silverCoins: 0,
+                  copperCoins: 0,
+                  abilities: {
+                    strength: char.str,
+                    dexterity: char.dex,
+                    constitution: char.con,
+                    intelligence: char.int,
+                    wisdom: char.wis,
+                    charisma: char.cha,
+                  },
+                };
+                toolResult = buildCharacterSection(charPayload);
+                console.log(`[get_character] Loaded character "${char.name}" (id=${char.id})`);
+
+                // Load portrait if available
+                if (char.portraitImageId) {
+                  const [img] = await db
+                    .select({ data: generatedImages.data, mimeType: generatedImages.mimeType })
+                    .from(generatedImages)
+                    .where(eq(generatedImages.id, char.portraitImageId));
+                  if (img) {
+                    portraitData = { data: img.data, mimeType: img.mimeType };
+                  }
+                }
+              }
+            }
+          }
+
+          // Append with portrait inline if available
+          const responseParts: Array<Record<string, unknown>> = [
+            { functionResponse: { name: funcName, response: { content: toolResult } } },
+          ];
+          if (portraitData) {
+            responseParts.push(
+              { inlineData: { mimeType: portraitData.mimeType, data: portraitData.data } },
+              { text: "Ci-dessus le portrait/avatar du personnage. Utilise-le comme référence visuelle si tu dois générer une image le représentant." },
+            );
+          }
+          contents = [
+            ...contents,
+            { role: "model", parts: [{ functionCall: { name: funcName, args: funcArgs } }] },
+            { role: "user", parts: responseParts },
+          ];
+          continue;
         } else {
           console.error(`[chat] Unknown tool call: "${funcName}"`);
           toolResult = `Outil inconnu : ${funcName}`;

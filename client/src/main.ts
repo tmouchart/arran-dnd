@@ -1,5 +1,6 @@
 import { createApp } from 'vue'
 import './style.css'
+import './styles/grimoire-vivant.css'
 import './themes/grimoire.css'
 import './themes/vitrail.css'
 import './themes/carte-du-monde.css'

@@ -160,5 +160,23 @@ export const geminiTool: GeminiTool = {
         required: ["prompt"],
       },
     },
+    {
+      name: "get_character",
+      description:
+        "Récupère la fiche complète d'un compagnon de campagne par son prénom " +
+        "(profil, stats, voies, compétences, portrait). " +
+        "RÈGLE : avant de générer une image représentant un ou plusieurs personnages joueurs, " +
+        "appelle TOUJOURS get_character sur chaque personnage concerné pour obtenir son portrait et son apparence.",
+      parameters: {
+        type: Type.OBJECT,
+        properties: {
+          name: {
+            type: Type.STRING,
+            description: "Le prénom du personnage à consulter (tel qu'affiché dans la liste des compagnons).",
+          },
+        },
+        required: ["name"],
+      },
+    },
   ],
 };
