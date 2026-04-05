@@ -16,7 +16,6 @@ import { MONSTERS_CATALOG, type Monster } from '../data/monstersCatalog'
 import { filterCatalog, formatMod } from '../utils/monsterSession'
 import AppPageHead from '../components/ui/AppPageHead.vue'
 import AppIconBtn from '../components/ui/AppIconBtn.vue'
-import AppButton from '../components/ui/AppButton.vue'
 import AppInput from '../components/ui/AppInput.vue'
 import AppEmptyState from '../components/ui/AppEmptyState.vue'
 import AppCard from '../components/ui/AppCard.vue'
@@ -157,7 +156,7 @@ async function handleDeleteMonster(mid: number) {
 const monsterTimers = new Map<number, ReturnType<typeof setTimeout>>()
 
 function saveMonsterField(monster: EncounterMonster, field: string, value: unknown) {
-  ;(monster as Record<string, unknown>)[field] = value
+  ;(monster as unknown as Record<string, unknown>)[field] = value
 
   const existing = monsterTimers.get(monster.id)
   if (existing) clearTimeout(existing)
