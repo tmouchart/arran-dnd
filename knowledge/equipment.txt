@@ -1,0 +1,394 @@
+Chapitre 6
+Équipement
+156
+Rappel : PJ
+incompétent
+Manier une arme pour
+laquelle on n’est pas
+formé impose un malus
+de -3 au test d’attaque.
+Manier un bouclier ou
+une armure pour lequel
+on n’est pas formé
+impose un malus de -3
+en initiative, en attaque
+et à tous les tests de FOR
+et de DEX.
+Avant de partir en expédition, en voyage
+ou de répondre à une mission pour un
+commanditaire, un personnage doit
+porter une attention toute particulière à la
+préparation de son équipement, ce qui fera bien
+souvent la différence entre un succès flamboyant
+et un échec cuisant.
+L’inventaire peut être agrémenté d’objets dûment achetés auprès d’un respectable marchand,
+de pièces rares obtenues en remerciement d’un
+service rendu ou encore grâce au vol, ou pire:
+au pillage!
+Les devises
+Pratiquement chaque cité-État, Royaume,
+empire ou communauté des Terres d’Arran
+possède ses propres devises. Fort heureusement
+pour les guildes commerçantes, il ne s’agit là
+que d’appellations distinctes relevant toutes
+d’un même système monétaire.
+La grande majorité des biens ou services sont
+monnayés en pièces d’argent (pa) et en pièces
+de cuivre (pc). Les sommes les plus élevées font
+intervenir des pièces d’or (po), une monnaie
+très rare et donc précieuse.
+La conversion est la suivante: 1 po = 10 pa = 100 pc.
+Acheter de l’équipement
+La liste d’équipement qui suit n’est pas exhaustive et le meneur de jeu doit décider ce qui est
+localement disponible et de ce qui ne l’est pas,
+ainsi que des tarifs à appliquer. On n’achète
+pas directement sur cette page, mais en jeu, en
+accord avec le MJ!
+Armes
+Armes de contact
+Armes
+de paysan DM + Mod. Prix
+Bâton1 (1d4) [FOR] -
+Bâton ferré1 1d6 [FOR] 2 pa
+Dague 1d4 [FOR] 3 pa
+Mains nues (1d4) [FOR] -
+Hache
+de bûcheron *1 2d4 [FOR] 10 pa
+Armes de guerre DM + Mod. Prix
+Épée longue 1d8 [FOR] 6 pa
+Hache
+à une main 1d8 [FOR] 6 pa
+Marteau
+de guerre 1d6 [FOR] 4 pa
+Masse d’armes 1d6 [FOR] 4 pa
+Armes de guerre
+lourdes DM + Mod. Prix
+Épée à deux
+mains 1 2d6 [FOR] 10 pa
+Épée bâtarde 1, 3 1d12 [FOR] 9 pa
+Marteau à deux
+mains 1 3d4 [FOR] 12 pa
+Hache à deux
+mains 1 2d6 [FOR] 10 pa
+Armes d’hast DM + Mod. Prix
+Épieu 3 1d6 [FOR] 3 pa
+Lance 1, 3 1d8 [FOR] 6 pa
+Lance
+de cavalerie 1, 3 2d6 [FOR] 12 pa
+Pique 1, 3 1d8 [FOR] 5 pa
+Armes de duel DM + Mod. Prix
+Épée courte 1d6 [FOR] 5 pa
+Main gauche3 1d4 [FOR] 5 pa
+Rapière2 1d6 [FOR] 6 pa
+Les DM indiqués entre parenthèses sont de
+DM temporaires
+157
+Steve VANPARYS - baronbucaille@gmail.com - 202008/254943/666075
+Armes à distance
+Armes de
+paysan
+DM + Mod. Portée Prix
+Fronde 1d4 - 20 m -
+Dague 1d4 - 5 m -
+Armes de
+jet DM + Mod. Portée Prix
+Couteau
+de lancer 5 1d4 [DEX] 10 m 3 pa
+Hachette 5 1d6 [FOR] 5 m 2 pa
+Javelot 5 1d6 [FOR] 20 m 6 pa
+Armes
+d’hast DM + Mod. Portée Prix
+Lance 3 1d8 [FOR] 10 m 3 pa
+Armes de
+trait DM + Mod. Portée Prix
+Arc composite 1, 4 1d6 [FOR] 50 m 15 pa
+Arc court 1 1d6 - 30 m 4 pa
+Arc long 1, 4 1d8 - 50 m 5 pa
+Armes de tir DM + Mod. Portée Prix
+Arbalète de
+poing 6 1d6 - 10 m 8 pa
+Arbalète
+légère 1, 6 2d4 - 30 m 10 pa
+Arbalète
+lourde 1, 7 3d4 - 60 m 12 pa
+Arbalète à
+répétition
+*1, 3
+2d4 - 60 m -
+1
+ Arme tenue à deux mains.
+2
+ Critique sur 19 ou 20.
+3
+ Règles spéciales, voir ci-dessous.
+4
+ Score minimum en FOR requis: 13 pour l’arc
+long, 15 pour le composite.
+5
+ Nécessite une action limitée pour ajouter le
+Mod. de Carac. aux DM.
+6
+ Nécessite une action d’attaque pour être
+rechargée.
+7
+ Nécessite une action limitée pour être
+rechargée.
+* Nécessite une capacité pour être maîtrisée.
+Armes en main
+En combat, dégainer une arme requiert généralement une action de mouvement.
+Un personnage peut utiliser soit une arme à
+une main et un bouclier, soit une arme à deux
+mains, soit deux armes à une main. Il peut aussi
+utiliser une seule arme à une main: c’est souvent
+le cas pour les profils ne maniant ni le bouclier,
+ni les armes à deux mains. Cela lui laisse une
+main libre pour tenir un autre objet, comme
+par exemple une torche!
+Porter deux armes à une main ne permet pas
+pour autant d’attaquer avec les deux armes dans
+le même tour: il faut une formation spéciale
+pour ce style de combat particulier (cf. voie du
+combat à deux armes dans le «Compendium
+des voies»). Cependant, cette seconde arme peut
+être utilisée pour se défendre (dans le cas d’une
+main gauche) ou bien pour porter une attaque à
+distance, avec une arme de jet ou une arme de tir
+légère, sans avoir besoin de consommer d’action
+de mouvement pour changer son équipement.
+158
+Munitions
+Nous vous conseillons de ne pas tenir compte
+des dépenses de munitions, c’est parfois fastidieux et il est souhaitable de ne pas pénaliser
+les profils qui combattent à distance.
+Dans certains cas exceptionnels, cela peut
+cependant faire partie des difficultés inhérentes
+à l’aventure (une exploration de plusieurs
+semaines en terre sauvage par exemple). Si cela
+est nécessaire, considérez que la norme est de 20
+à 50 projectiles de réserve et cinq armes de jet.
+Charger
+des armes à l’avance
+Les joueurs comprendront vite qu’ils ont tout
+intérêt à ce que leurs personnages chargent le
+plus grand nombre d’armes de tir possible avant
+un combat, afin de ne pas avoir à le faire pendant
+celui-ci. Il faudra rapidement poser une limite à
+cette tactique de jeu, sous peine de voir fleurir
+une liste d’armes sans fin.
+Un PJ pourra raisonnablement avoir trois
+armes chargées en même temps, généralement
+deux arbalètes de poing et une arme à deux
+mains (arbalète légère ou lourde). Davantage
+d’armes augmenteraient considérablement le
+risque de perdre la munition ou – pire – de voir
+l’arme s’activer toute seule. Cependant, cette
+préparation ne peut avoir lieu que quelques
+minutes avant utilisation des armes tout au plus,
+sinon le risque de tirer accidentellement est trop
+important! Une heure après la préparation, le
+MJ peut lancer un dé pour chaque arme: sur
+un résultat pair, l’arme se déclenche accidentellement – au meneur de déterminer si elle
+blesse quelqu’un (son porteur éventuellement)
+en fonction de la façon dont l’arme est portée
+et de la scène en cours.
+Règles spéciales
+Arbalète à répétition
+Une arme assez lourde équipée d’un magasin
+de cinq carreaux sur sa partie supérieure. Elle
+ne nécessite pas d’action de rechargement
+contrairement aux autres arbalètes. Après cinq
+tirs, il faut la recharger, ce qui nécessite une
+action limitée.
+Épée bâtarde
+L’épée bâtarde tient son nom de sa construction
+particulière: à mi-chemin entre une épée longue
+et une épée à deux mains. Même s’il ne s’agit
+pas de l’usage le plus répandu, il est possible de
+la manier à une seule main. Ses DM passent
+alors à 1d8.
+Épieu
+L’épieu est une lance courte (1,50 m environ)
+et massive, formidable pour la chasse. Elle offre
+un bonus de +2 en DEF contre les créatures
+seulement dotées d’armes naturelles et inflige
+2d6 DM contre celles qui ne portent pas
+d’armure manufacturée.
+Lance
+La lance est une arme intermédiaire entre un
+épieu et une pique. Prévue pour un usage à deux
+mains, elle est suffisamment légère pour être
+maniée à une seule main, permettant le port
+d’un bouclier par exemple. Ses DM passent alors
+à 1d6. Enfin, il est possible de l’utiliser comme
+une arme de jet mortelle à courte portée, mais
+utilisée dans ces conditions, elle impose un
+malus au test d’attaque à distance de -3.
+Lance de cavalerie
+Conçue pour être utilisée uniquement à cheval,
+la lance de cavalerie mesure environ 3 m de
+long. Il faut prendre de l’élan pour l’utiliser à
+son plein potentiel. L’attaque doit donc avoir
+lieu après un déplacement pour obtenir les DM
+indiqués. Sinon, en combat au contact classique,
+le cavalier se voit infligé une pénalité de -3 en
+attaque et aux DM.
+159
+Steve VANPARYS - baronbucaille@gmail.com - 202008/254943/666075
+Main gauche
+La main gauche ou dague de parade comporte
+une garde en panier très couvrante. Elle offre
+un bonus de +1 en DEF, mais seulement en
+combat au contact.
+Pique
+Une très longue lance de fantassin, destinée à
+recevoir les charges de cavalerie ou à attaquer
+depuis le second rang. La pique double ses
+DM contre une créature de grande taille qui
+vient de réaliser une charge ou une action de
+mouvement pour arriver au contact. Elle permet
+aussi d’attaquer en se tenant derrière un allié
+de taille normale, avec une pénalité de -5. Elle
+inflige également une pénalité de -5 en attaque
+dans toutes les autres conditions.
+Armures
+Armures légères DEF Prix
+Petit bouclier 1 2 pa
+Tissu matelassé 1 2 pa
+Armure de cuir 2 4 pa
+Armure de cuir renforcé 3 8 pa
+Armures lourdes DEF Prix
+Grand bouclier 2 4 pa
+Chemise de mailles 4 15 pa
+Cotte de mailles 5 20 pa
+Demi-plaque1 6 50 pa
+Armure de plaques1, 2 7 200 pa
+1
+ Encombrantes, ces armures annulent le bonus
+de DEX à la DEF.
+2 Fabriquée sur mesure, nécessite la capacité
+Armure lourde (voie du bastion) pour être portée.
+Encombrement
+Les armures peuvent entraver les mouvements
+des personnages et gêner la réalisation de
+certaines actions. Cette contrainte se ressent
+notamment sur les scores d’attaque, l’initiative
+et les tests de DEX selon les règles suivantes:
+• le bonus de DEF des armures est à déduire
+du score d’attaque magique, à l’Init. et aux
+tests de DEX;
+• la moitié du bonus de DEF des armures
+(arrondi à l’inférieur) est à déduire du Modif.
+d’attaque à distance.
+Biens et services
+Matériel Prix
+Briquet à silex 1 pa
+Carquois de 20 flèches 3 pa
+corde 15 m 2 pa
+Couverture 1 pa
+Grappin 2 pa
+Lanterne à cristal1 3 pa
+Matériel d’écriture 5 pa
+Cristal luminescent (6 h) 10 pa
+Sac de chausse-trappe 3 pa
+Torches (3) (1 heure)1 1 pa
+Outils de crochetage2 5 pa
+Rations (1 semaine) 4 pa
+Sac à dos 1 pa
+1
+ Une torche ou une lanterne éclaire dans un
+rayon de 10 mètres.
+2
+ Sans ces outils, une pénalité de -10 est infligée
+aux tests de DEX.
+160
+Montures
+Prix
+Mule ou âne 25 pa
+Poney, cochon 50 pa
+Cheval de selle 100 pa
+Cheval de guerre léger 300 pa
+Carriole 50 pa
+Chariot 90 pa
+Dragon d’Akrähyng 150 po
+161
+Steve VANPARYS - baronbucaille@gmail.com - 202008/254943/666075
+À l’auberge
+Prix
+Cidre, lait (verre) 1 pc
+Cervoise, bière (pinte) 2 pc
+Hydromel, vin (verre) 5 pc
+Grand cru (bouteille) 5-50 pa
+Soupe et pain 1 pc
+Repas avec viande 1 pa
+Bon repas 5 pa
+Banquet 10-100 pa
+Nuit (dortoir) 5-10 pc
+Nuit (chambre de 4) 1-2 pa
+Nuit (chambre individuelle) 2-5 pa
+Nuit (suite) 10-50 pa
+Biens immobiliers
+Ces quelques exemples vous permettront de
+vous faire une idée de la valeur de ce type de
+biens si les personnages veulent investir dans la
+pierre. Bien entendu, ces prix peuvent baisser
+ou augmenter considérablement selon la qualité
+de l’environnement ou le caractère exceptionnel
+du lieu.
+Prix
+Appartement (2 pièces) 250 po
+Masure (3 pièces) 500 po
+Suite (5 pièces) 1 000 po
+Maison (6 pièces) 2 000 po
+Villa luxueuse 10 000 po
+Manoir 20 000 po
+Place forte 60 000 po
+Château 150 000 po
+Palais 300 000 po
+162
+Matériel de soins
+Prix
+Herbes médicinales 5 pa
+Baume de Lyz’rha 60 pa
+Venin d’Arkelle 50 pa
+Élixirs d’Ozar 25 pa
+Herbes médicinales: utilisées avant un repos
+complet de huit heures, ces herbes permettent au
+personnage de regagner 2 PR au lieu d’un seul.
+Baume de Lyz’rha : très rare, ce baume revigorant permet au personnage de récupérer 3 PR
+au lieu d’un seul. Il ne peut être acheté que dans
+les grandes villes commerçantes, ce qui explique
+son prix. Sinon, il est possible de l’obtenir pour
+beaucoup moins cher (la moitié de son prix) à
+l’aide de troc auprès du chaman d’une tribu
+orque ou ogre, à la condition incontournable
+de s’en montrer digne.
+Venin d’Arkelle : préparé dans une petite fiole
+munie d’un aiguillon, le venin peut être inoculé
+au prix d’une action limitée et permet d’utiliser
+et de bénéficier immédiatement des effets d’un
+PR. Cependant, il existe un contrecoup à l’usage
+de cette drogue: le personnage doit réussir un
+test de CON difficulté 10 pour ne pas être
+affaibli pendant une heure à cause de crampes
+musculaires très douloureuse. La difficulté
+augmente de +3 pour chaque nouvelle dose
+reçue dans la journée.
+Élixir d’Ozar: l’élixir d’Ozar est une sorte de
+grog nain qui a rencontré un certain succès dans
+le royaume d’Yrlanie. Consommé au prix d’une
+action de mouvement, il redonne un coup de
+fouet et permet de regagner immédiatement 1
+PR. On ne peut bénéficier de ces effets qu’une
+seule fois par période de six heures.
+Poisons
+Type Virulence Prix
+Feuilles de drogane Affaiblissant 2 6 pa
+Esprit bleu de Thnen Paralysant 0 5 pa
+Racines de chlopsyle Tétanisant 4 25 pa
+Poudre d’ezumelle Aveuglant 3 18 pa
+Spores d’orionum Lent 1 10 pa
+Extrait d’amesyne Lent 5 40 pa
+Venin de namjhoob Rapide 4 40 pa
+Broyat de hula Rapide 5 50 pa
+Essence d’hyokäne Violent 7 65 pa
+Venin d’araignée Violent 2 10 pa

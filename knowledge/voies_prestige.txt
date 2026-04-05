@@ -1,0 +1,1112 @@
+Les voies de prestige
+Les voies de prestige de la
+famille des combattants
+Voie des armes lourdes
+En se spécialisant dans le maniement des armes à
+deux mains, le PJ est capable de tirer le meilleur
+parti de leurs atouts.
+1. Allonge
+Le PJ obtient un bonus de +1 en attaque et +5
+en Init. lorsqu’il utilise une arme à deux mains.
+2. Frappe massive (L)
+Pour une action limitée, le PJ réalise une attaque
+contre une cible. Elle subit 1d6 DM en plus des
+DM classiques de l’attaque et doit réussir un
+test opposé de FOR sous peine d’être renversée.
+3. Tenir à distance (L)
+Lors de ce tour, le PJ réalise une action d’attaque
+et il utilise son allonge pour maintenir ses
+adversaires à distance. Il gagne un bonus de +5
+en DEF contre les attaques de contact.
+4. Attaque à outrance
+Le PJ peut choisir une pénalité en -2 DEF pour
+gagner un bonus de +1d6 aux DM ou un bonus
+de -5 en DEF pour gagner un bonus de +2d6
+aux DM. Ce bonus n’est pas multiplié en cas
+de critique.
+5. Critique destructeur
+Lorsqu’il obtient un critique avec une arme à
+deux mains, le PJ obtient +2d6 aux DM en plus
+des effets du critique.
+Voie de la danse
+de guerre
+Ce style de combat, singulier et fluide, est
+traditionnellement pratiqué par les Sylvains et
+certains combattants orcs.
+1. Pirouette
+Les pas de danse rendent le PJ insaisissable, qui
+gagne +2 en DEF. De plus, il gagne un bonus
+de +5 à tous les tests de danse et d’acrobatie.
+2. Vent des lames
+Le PJ peut utiliser son Mod. de DEX au choix
+en attaque au contact ou aux DM (mais pas les
+deux) au lieu du Mod. de FOR lorsqu’il utilise
+une arme de guerre ou une arme d’hast.
+3. Attaque en mouvement
+À chaque fois qu’il réalise une action limitée, le
+PJ peut en plus se déplacer de 10 mètres avant
+ou après.
+4. Danse de lames (L)
+Au prix d’une action limitée, le PJ entre en transe
+pour le reste du combat. Pendant la Danse des
+lames, il gagne +2 en attaque et en DEF et peut
+réaliser une attaque gratuite supplémentaire en
+utilisant un d12 au lieu du d20 à chaque tour.
+Le personnage peut mettre fin à la transe quand
+il le veut mais ne peut recommencer avant le
+prochain combat. Toutefois, s’il reçoit les DM
+d’une attaque critique, la transe est stoppée net.
+5. Volte-face
+Lors de chaque tour où le PJ attaque une cible
+différente du tour précédent, il obtient un bonus
+de +2 en attaque et de +1d6 aux DM.
+140
+Voie du dogme de pierre
+Fréquemment rencontré au sein des tribus ogres
+et orques, le dogme de pierre rend le combattant
+aussi robuste que la roche.
+1. Indéracinable
+Le PJ ne peut plus être renversé ou projeté
+contre son gré et semble peser plusieurs tonnes!
+De plus, il gagne +1 en DEF et ce bonus passe
+à +2 au rang 3 de la voie.
+2. Sens de la pierre
+Le PJ sent la présence de toutes les créatures en
+contact avec la pierre (le sol ou les murs) dans un
+rayon de 20 mètres. Il peut définir précisément
+leur position, que ce soit dans le noir ou s’il
+s’agit d’adversaires invisibles. Il ne peut plus
+être approché par surprise par un adversaire en
+contact avec le sol.
+3. Frappe de la pierre
+Le PJ donne à ses coups le poids et l’impact du
+roc. Lorsqu’il obtient un résultat de 1 sur le dé
+de DM d’une attaque de contact, ce résultat est
+remplacé par le score maximum possible du dé
+utilisé (par exemple 6 pour un d6).
+4. Attaque pétrifiante (L)
+Sur un test réussi d’attaque au contact à mains
+nues, le PJ pétrifie sa cible. Elle doit réussir un
+test de CON difficulté [10 + rang dans la voie]
+ou être incapable d’agir pendant 1d6 minutes.
+Tant qu’elle est pétrifiée son corps devient
+extrêmement dur et elle retranche 5 points à
+tous les DM subis. Si la victime perd plus de
+5 PV pendant qu’elle est pétrifiée, l’effet prend
+fin. Une créature ne peut être la cible de cette
+capacité qu’une seule fois par combat.
+5. Corps de pierre (L)
+Le PJ donne à son corps la texture de la pierre
+pendant [1d6 + Mod. de SAG] tours. Dans cet
+état, il retranche 5 points à tous les DM subis
+par des armes. Les créatures qui l’attaquent
+avec des armes naturelles subissent 1 point
+DM par attaque et celles qui utilisent des armes
+manufacturées voient leur arme se briser s’ils
+obtiennent un résultat de 1 au dé de DM. Les
+armes traditionnelles ne risquent pas de se briser.
+Voie de l’ordre ailé
+Les ordres ailés sont rares mais prestigieux. Ces
+combattantes et combattants d’élite dominent
+le ciel et ne font qu’un avec leur monture.
+1. Ordre de chevalerie
+Le PJ rejoint un prestigieux ordre ou groupe
+de chevalerie avec le grade d’apprenti. Il reçoit
+une monture volante, des insignes ainsi qu’une
+arme à une main sertie des symboles de son
+ordre. Il fait l’acquisition du rang 5 de la voie du
+combat monté. S’il possède déjà cette capacité,
+ou venait à l’acquérir par la suite, il devient
+un membre gradé de son ordre et obtient un
+bonus de +5 pour tous les tests de persuasion
+et d’intimidation. Ce bonus passe à +10 s’il
+chevauche sa monture volante.
+2. Arme élémentaire (L)
+En fonction de son ordre et de la nature de sa
+monture, le PJ peut nimber son arme d’une aura
+pour [5 + Mod. de SAG] tours. Elle inflige dès
+lors +1d6 DM élémentaires.
+3. Résistance élémentaire
+Le lien qui unit le PJ et sa monture est plus
+fort. Il retranche 5 points à tous les DM de son
+élément subis (donc RD (feu) pour les dragons,
+(foudre) pour les griffons, etc.). Cette réduction
+passe à 10 au rang 5 atteint dans cette voie.
+4. Monture puissante
+La monture du PJ atteint sa pleine maturité et
+augmente ses capacités offensives:
+FOR +7, DEX +2, CON +7, INT -2, SAG +1, CHA
++0, Init. 15, DEF 18, PV 20 + [5 x niveau], attaque
++12, DM 2d6+7.
+5. Souffle élémentaire
+La monture du PJ est désormais capable d’utiliser un souffle élémentaire au prix de son action
+d’attaque. Si elle réussit un test d’attaque, elle
+inflige 4d6 DM élémentaires à sa cible, ainsi
+que 2d6 DM élémentaires à toutes les cibles à
+moins de 3 mètres de sa cible initiale. En cas
+d’échec, l’ensemble des cibles subit seulement
+1d6 DM. Ce souffle a une portée de 40 m. La
+nature de l’élément dépend de la monture (feu
+pour les dragons, glace pour les guivres, etc.).
+Au moment de
+l’acquisition du premier
+rang de cette voie, le
+joueur doit choisir un
+ordre et une monture
+ailée. Ce choix est
+irréversible et indique le
+type d’élément concerné
+par les capacités de la voie.
+Dragon: feu; griffon:
+foudre; aspic : poison.
+141
+Steve VANPARYS - baronbucaille@gmail.com - 202008/254943/666075
+Voie de la purification
+Des forces malfaisantes et corrosives se cachent
+dans les entrailles des Terres d’Arran. Les
+chasseuses et chasseurs de corruption se sont
+fait un devoir de les purifier.
+1. Sentir la corruption (L)
+Le PJ se concentre sur une créature à une portée
+maximale de 30 mètres. Il détecte si celle-ci
+possède des pouvoirs paranormaux (voie de
+mystique ou pouvoirs magiques) s’il réussit
+un test de SAG difficulté 15. Les créatures
+humanoïdes ont droit à un test opposé d’INT
+pour résister à cette divination. Un seul essai
+par créature est possible.
+2. Combattre la corruption
+Le PJ gagne un bonus de +1 en attaque et aux
+DM contre les morts-vivants, les démons et les
+animaux corrompus (ceux qui possèdent des
+pouvoirs paranormaux). Ce bonus passe à +2
+au rang 4 de la voie.
+3. Chasseur de sorcières
+Le PJ gagne +2 en DEF contre toutes les attaques
+magiques et +2 aux DM contre les mystiques.
+4. Frappe préventive
+En plus d’infliger des DM normaux, cette
+attaque oblige la cible à faire un test d’INT
+difficulté 15. En cas d’échec, elle ne peut utiliser
+aucun pouvoir magique ou extraordinaire lors
+de son prochain tour.
+5. Résister à la corruption
+Une fois par combat, le PJ résiste totalement
+à un sort ou un effet magique de son choix.
+De plus, il est immunisé aux effets de corruption : drain, affaiblissement, pourriture,
+empoisonnement ou maladie provoqués par
+les morts-vivants, les démons ou les animaux
+maléfiques ou corrompus.
+Voie de la rage
+ancestrale
+La rage ancestrale est une puissance inouïe et
+violente, pratiquement surnaturelle. Il se murmure que les Nains capables de faire la preuve
+d’une telle puissance seraient des descendants
+d’Yjdad.
+1. Fureur au combat
+Le PJ gagne un bonus de +5 à tous les tests
+d’intimidation et gagne le rang 1 de la voie de
+la férocité. S’il possède déjà cette capacité, ou
+venait à l’acquérir par la suite, il peut ajouter ce
+bonus à sa FOR lors de l’estimation des ennemis
+affectés par le cri tandis que l’action nécessaire
+à son utilisation est réduite d’une catégorie.
+Ainsi, le Cri de guerre ne nécessite plus qu’une
+action de mouvement tandis que le Cri de guerre
+avancé se lance en action gratuite.
+2. Furie du Berserker (L)
+Le PJ gagne le rang 3 de la voie de la férocité.
+S’il possède déjà cette capacité, ou venait à
+l’acquérir par la suite, elle se transforme en
+Furie de Berserker, qui lui donne +3 en attaque
+et +2d6 aux DM pour une pénalité en DEF
+de -6. La difficulté du test de SAG pour sortir
+prématurément de cet état passe à 16.
+3. Étreinte mortelle
+Une fois par combat, le personnage peut se saisir
+d’un adversaire d’une taille inférieure ou égale à
+la sienne et l’écraser entre ses bras puissants. Sur
+un test d’attaque au contact réussi, le PJ inflige
+[2d6 + Mod. de FOR] DM à sa cible (+ son
+éventuel bonus de rage) et l’immobilise entre ses
+bras, causant pour son adversaire une pénalité
+de -5 en DEF. À son tour, la victime peut tenter
+de se libérer avec un test de FOR en opposition;
+en cas d’échec, elle ne peut faire aucune action.
+À chacun des tours suivants, tant que l’étreinte
+est maintenue, le PJ inflige à nouveau des DM
+sans avoir à réaliser son test d’attaque.
+4. Rage froide
+Le PJ est capable de garder toute sa lucidité
+alors qu’il entre en rage ou en furie. Il ne subit
+aucune pénalité de DEF et peut utiliser les armes
+de jet. Il ne peut toutefois pas utiliser d’autre
+arme à distance (arc ou arbalète) ni tenter de
+négocier dans cet état.
+142
+5. Assaut final
+Lorsqu’il est sous les effets de la rage ou de la
+furie depuis au moins trois tours, le joueur
+peut choisir de doubler les DM* d’une attaque,
+ce qui met immédiatement fin à la rage. Le
+personnage ne peut pas à nouveau entrer en
+rage lors du combat.
+* Doubler tous les DM (bonus de rage inclus).
+Le joueur doit annoncer l’utilisation de la
+capacité avant de lancer les dés de DM, mais
+après avoir pris connaissance du résultat du
+test d’attaque.
+Voie du sang draconique
+Il n’est pas donné à tout le monde de pouvoir
+lier son essence avec celle d’un dragon. Les
+rares survivants en ressortent changés à jamais,
+développant d’étranges mutations. Est-ce là le
+destin des Elfes noirs?
+1. Ascendance draconique
+Grâce au sang de dragon qui coule dans ses
+veines, le PJ obtient une réduction de 5 points
+des DM de feu. Cette résistance passe à 10 au
+rang 4 de la voie.
+2. Férocité (L)
+Le PJ voit ses muscles se développer de façon
+spectaculaire pendant [1d6 + Mod. de SAG]
+tours tandis que d’énormes griffes poussent
+subitement au bout de ses doigts. Son score de
+FOR passe à 18 (ou bénéficie d’un bonus de
++2 s’il est déjà égal ou supérieur à cette valeur)
+et il obtient une attaque de contact de griffes
+infligeant [1d6 + Mod. FOR] DM.
+3. Souffle du dragon
+Une fois par combat, par une action d’attaque,
+le PJ peut produire un souffle létal de feu. Ce
+souffle couvre une zone conique d’une portée
+de 5 mètres et d’une largeur de 5 mètres à son
+extrémité infligeant 2d6 DM par rang atteint
+dans cette voie. Les victimes dans le cône d’effet
+peuvent diviser les DM infligés par deux à
+condition de réussir un test de DEX difficulté
+[10 + rang].
+4. Armure naturelle
+Le corps du PJ se renforce et se couvre d’écailles
+lorsqu’il reçoit des blessures graves. Lorsque le
+personnage passe sous la moitié de ses PV, il
+gagne une réduction des DM de 5 points face
+à tous les types de dégâts.
+5. Ailes de dragon (L)
+Une fois par jour, le PJ peut déployer des ailes
+de dragon pendant [1d6 + Mod. de SAG]
+minutes. Ces ailes lui permettent de se déplacer
+en vol à une vitesse de 30 mètres par action de
+mouvement. Faire du surplace est une action
+gratuite. Chaque nouvelle utilisation de cette
+capacité impose la consommation préalable
+de 1 PR.
+Férocité et voie
+du pugilat
+Si le PJ dispose de la voie
+du pugilat, alors les DM
+de sa capacité Poings de
+fer sont augmentés d’une
+catégorie grâce à Férocité
+(jusqu’au maximum de
+1d12 au rang 5 de la voie
+du pugilat, ou 2d6 en cas
+de Poings de fer avancé).
+143
+Steve VANPARYS - baronbucaille@gmail.com - 202008/254943/666075
+Les voies de prestige
+de la famille des aventuriers
+Voie de l’archerie
+arcanique
+Fruit d’un savoir ancestral, l’art de l’archerie
+arcanique n’est pratiquement plus perpétué que
+par les Sylvains et les Elfes blancs de nos jours.
+1. Flèche magique
+Le PJ enchante ses flèches. S’il obtient un
+résultat de 1 sur son dé de DM, il relance le dé
+et garde le second résultat. Les DM de ses flèches
+sont considérés comme magiques.
+2. Flèche tueuse
+Le PJ fabrique et enchante une flèche particulière pour un ennemi unique qu’il nomme.
+Il lui faut une journée complète pour créer la
+flèche et il ne peut en posséder plus d’une à
+un moment donné (ni pour la même cible, ni
+pour une autre). Lorsqu’il utilise sa flèche contre
+l’ennemi pour lequel elle a été créée, il obtient un
+bonus de +3 à l’attaque et de +1d6 aux DM par
+rang atteint dans la voie. Si la flèche a été créée
+depuis plus d’un an, ces bonus sont doublés.
+3. Flèche animiste
+Le PJ peut utiliser des flèches capables d’animer la
+végétation. Une fois par combat, pour une action
+d’attaque, il peut lancer à distance jusqu’à la portée
+de son arc le sort Prison végétale (voie des forêts, rang
+2) dans sa version avancée sans consommer de PM.
+4. Flèche vivante
+L’aventurier enchante ses flèches pour leur donner
+vie au contact du sang. Plantées dans un corps, elles
+s’y enfoncent et prennent racine. Sur un résultat
+de 15 à 20 au test d’attaque (ou de 10 à 12 sur un
+d12), la flèche inflige +2d6 DM supplémentaires
+et se transforme en arbuste à la mort de la victime.
+5. Flèche intangible (L)
+Le PJ enchante sa flèche pour lui permettre de
+passer au travers des obstacles physiques. Le
+joueur réalise un test d’attaque normal mais
+remplace la DEF par le score de DEX de la
+cible pour fixer sa Difficulté. De surcroît, il
+ignore toutes les pénalités de couverture. S’il
+sait précisément où se situe sa cible, il peut
+même tirer au travers d’un mur ou une porte.
+Voie de l’audace
+Certaines personnes croquent la vie à pleines
+dents, sans se soucier des conséquences. Plus
+une action est insensée, plus elle leur apparaît
+séduisante. Cette voie est toute particulièrement
+indiquée pour les Gobelins.
+1. L’amour du risque
+Lorsqu’il réalise une action dans un lieu dangereux (par exemple au bord d’un précipice ou
+d’un lac de lave), Le PJ gagne un bonus de +3
+à tous ses tests au d20 (attaque, Carac., etc.).
+Ce bonus s’applique également aux tests réalisés
+pour résister à la peur.
+2. Mouche du coche
+Le PJ peut choisir de sacrifier une action de
+mouvement à ce tour pour gagner +3 en DEF
+jusqu’à son prochain tour. S’il sacrifie deux
+actions de mouvement, il gagne +6 en DEF.
+3. Ça passe ou ça casse
+Lorsque le résultat d’un test de caractéristique
+peut avoir une issue fatale pour le PJ (chute
+mortelle, réveil d’un dragon, etc.), le joueur
+lance un d20 supplémentaire et peut conserver
+le résultat qu’il préfère.
+4. Poussée d’adrénaline
+En dépensant 1d4 PV, le PJ gagne une action
+de mouvement supplémentaire à son tour. En
+combinaison avec Mouche du coche, le PJ peut
+ainsi sacrifier trois actions de mouvement et
+obtenir un bonus de +10 en DEF!
+5. Attaque kamikaze (L)
+Le PJ saute littéralement sur sa cible pour la
+rouer de coups au corps-à-corps. Plutôt qu’un
+test d’attaque, il réalise un test de DEX dont la
+difficulté est égale à la moitié de la DEF de la
+créature. En cas de réussite, il inflige des DM
+normaux et reçoit un bonus qui dépend de la
+taille de la créature: moyenne +1d6 DM, grande
++2d6, très grande +3d6, gigantesque +4d6 et
+colossale +5d6. Il ne reçoit aucun bonus aux
+DM pour les petites créatures. À la suite de
+cette attaque, il perd 5 points en DEF pour
+une durée de 1 tour.
+144
+Voie du duel
+Très populaire dans les cités-États du Tarascon
+et chez les Elfes – bleus et noirs surtout –,
+l’escrime pratiquée par les duellistes est raffinée
+et mortelle.
+1. Vives lames
+Le PJ peut utiliser son Mod. de DEX au choix
+en attaque au contact ou aux DM (mais pas les
+deux) au lieu du Mod. de FOR lorsqu’il utilise
+une arme de duel ou une épée.
+2. Défi (L)
+Une fois par combat, le PJ peut défier une cible
+de son choix (portée: 30 mètres). Il obtient un
+bonus de +2 en attaque et en DEF pour le reste
+du combat contre cette cible.
+3. Juste toi et moi
+Lors de chaque tour où il attaque la cible qu’il
+a défiée, le PJ obtient un bonus en DEF de +1
+par rang atteint dans la voie contre toutes les
+attaques provenant d’autres adversaires.
+4. Parade
+Une fois par tour, le PJ peut tenter de parer une
+attaque au contact de l’adversaire qu’il a défié.
+Il devra réussir un test d’attaque au contact au
+moins égal à celui obtenu par son adversaire
+pour parer ou esquiver l’attaque choisie.
+5. Duel mental
+Une fois par tour, le PJ peut faire un test opposé
+d’INT contre un adversaire au contact. S’il
+l’emporte, il peut relancer un dé d’attaque ou de
+DM contre cet adversaire d’ici à la fin du tour.
+Voie de la flibusterie
+Les combats à bord des navires sont toujours
+chaotiques et imprévisibles mais n’ont plus de
+secrets pour le flibustier.
+1. Équilibriste
+Le PJ gagne un bonus de +5 sur tous les tests
+de DEX réalisés sur un bateau ou sur d’autres
+supports mobiles (ce qui comprend les chariots,
+les cordages, les ponts de corde). Il gagne un
+bonus de +5 sur les tous les tests relatifs à la
+natation et à la navigation.
+2. Coup de crosse
+Une fois par tour, le PJ peut, au moment de
+son choix, accomplir une attaque gratuite avec
+la crosse d’une arbalète déchargée. Il utilise un
+d12 pour le test d’attaque et inflige [1d4 + Mod.
+de FOR] DM.
+3. À l’abordage !
+Le PJ sait s’élancer vers ses ennemis et mettre du
+cœur dans sa première attaque au contact lors
+d’un combat. Lors de cette attaque initiale, il
+obtient un bonus de +5 en attaque et de +2d6
+aux DM.
+4. Sabre au poing
+Le PJ peut tirer avec une arbalète de poing
+d’une main et porter une attaque de contact
+sans pénalité avec une seconde arme (tenue
+dans son autre main).
+5. Pas de quartier
+Pour le PJ, il s’agit de vaincre ou mourir. Sa
+férocité est légendaire: il peut tenter une action
+d’attaque gratuite contre toute créature à son
+contact qui utilise une action de mouvement
+dans le but de s’éloigner de lui. Pour cette
+attaque, il obtient un bonus de +5 en attaque
+et de +1d6 aux DM.
+145
+Steve VANPARYS - baronbucaille@gmail.com - 202008/254943/666075
+Voie de la lycanthropie
+La lycanthropie est très rare dans les Terres
+d’Arran. Elle est généralement le fruit d’une
+communion avec un esprit totémique animal
+et pratiqué par les Sylvains et les Orques. Mais
+il se murmure qu’il existerait également une
+maladie ou une malédiction du même nom...
+Au moment de l’acquisition du premier rang de
+cette voie, le joueur doit choisir par quelle forme
+de lycanthropie sera affectée son personnage:
+lupine ou féline. Ce choix est irréversible et
+conditionne le fonctionnement de plusieurs
+capacités.
+1. Forme hybride (L)
+Au prix d’une action limitée, le PJ peut se
+transformer en forme hybride, mi-humanoïde,
+mi-loup ou mi-panthère pendant [5 x Mod. de
+SAG] tours. Sous cette forme, il ne peut plus
+utiliser d’armes, mais il peut encore utiliser son
+armure, qui s’adapte à sa taille. Il gagne le bonus
+de Carac. et les attaques suivants:
+Lycanthropie lupine
+Valeur de FOR +2 - griffes [attaque au contact],
+DM [2d6 + Mod. de FOR] et morsure [attaque
+au contact], DM [1d6 + Mod. de FOR]. Il lui faut
+seulement une action d’attaque pour utiliser
+ces deux modes d’attaque lors du même tour.
+Lycanthropie féline
+Valeur de DEX +2 - griffes [attaque au contact
+ou à distance], DM [2d4 + Mod. de FOR ou de
+DEX] et morsure [attaque au contact], DM [1d4
++ Mod. de FOR ou de DEX]. Il lui faut seulement
+une action d’attaque pour utiliser ces deux modes
+d’attaque lors du même tour.
+2. Éventration
+Si le PJ réussit à toucher et à blesser avec ses
+deux attaques, il éventre sa cible et bénéficie
+d’un bonus de +2d6 DM sur sa seconde attaque.
+3. Forme animale (L)
+Le PJ peut prendre la forme d’un loup ou d’une
+panthère pendant une durée maximale d’1 heure
+par niveau du personnage et par jour. Le personnage conserve toutes ses caractéristiques sauf
+celles ci-dessous, ainsi que son score d’attaque
+au contact habituel.
+Loup : Init. 17, DEF 15, DM 1d6+3. FOR +3,
+DEX +1. Bonus de +5 aux tests fondés sur la
+perception.
+Panthère: Init. 23, DEF 16, DM 1d6+2. FOR +2,
+DEX +4*.
+Sous cette forme, il peut utiliser la capacité
+Attaque bondissante (L): le PJ parcourt jusqu’à
+30 m et bénéficie d’un bonus de +5 au test
+d’attaque et de +2d6 aux DM contre sa cible.
+Il doit se déplacer d’au minimum 5 m en ligne
+droite pour porter cette attaque et ne peut la
+réaliser qu’une seule fois par adversaire.
+Passer de la forme animale à la forme hybride
+ne demande qu’une action de mouvement.
+4. Odeur du sang
+Le PJ gagne un bonus de +1 en attaque et aux
+DM pour chaque tranche de 10 PV perdus
+pendant le combat contre la cible qui lui a
+infligé ces DM (maximum +5). Ces bonus
+restent jusqu’à la fin du combat. Ces bonus
+sont annulés si la cible meurt.
+5. Fourrure d’acier
+Les poils de la fourrure du lycanthrope se
+durcissent tandis que ses os se solidifient pour
+devenir aussi solides que de l’acier. Le PJ gagne
+un bonus de +3 en DEF et une RD de 3 tant
+qu’il est transformé en lycanthrope (forme
+animale ou hybride).
+Voie des poisons
+La plupart des gens condamnent fermement
+le recours aux poisons, jugeant ces substances
+déloyales, maléfiques et déshonorantes. Les empoisonneurs n’ont jamais prétendu le contraire:
+ils se contentent d’en admirer l’efficacité.
+1. Connaissance du poison
+Le PJ peut effectuer un test d’INT difficulté
+10 pour reconnaître, identifier ou détecter un
+poison. Il n’a plus besoin de test d’INT pour
+réussir à appliquer un poison sur une arme.
+2. Poison rapide
+Le PJ sait fabriquer du poison «rapide» en petite
+quantité. Avant chaque combat, ses armes (trois
+au maximum) sont enduites de ce poison. La
+première attaque réussie provoque 2d6 DM
+supplémentaires. Si la victime réussit un test
+de CON difficulté [10 + rang dans la voie], elle
+146
+ne subit que la moitié des DM de poison. Les
+DM du poison rapide passent à 3d6 au rang
+4 de la voie.
+3. Poison affaiblissant
+Le PJ peut remplacer le poison rapide par un
+poison affaiblissant : les effets ne sont alors
+appliqués que lors de la première attaque réussie
+avec cette arme. Si elle ne réussit pas un test de
+CON difficulté 15, la victime est affaiblie pour
+le reste du combat (voir «États préjudiciables»).
+4. Résistance au poison
+À force de manipuler les poisons, le PJ a développé des immunités. Lorsqu’il est empoisonné,
+faites un test de CON difficulté 10. En cas de
+succès, il ne subit aucun effet; s’il rate, seulement
+la moitié.
+5. Poisons virulents
+Le PJ sait fabriquer en petites quantités les
+poisons «lent» et « violent» et peut en utiliser [1
++ Mod. d’INT] doses par jour (cumul des deux
+sortes de poisons). La difficulté de résistance
+à ces poisons est de [12+Mod. d’INT] du PJ.
+Voie des rituels
+Les rituels constituent un ensemble de techniques
+mystiques complexes élaborées pour permettre
+à des profanes de manipuler dans une certaine
+mesure les puissances arcaniques du monde.
+Ils ne consomment aucun PM lors de leur
+exécution et délivrent des effets puissants et
+durables. En contrepartie, ils sont longs à
+produire: un rituel demande une préparation
+d’au moins 30 minutes pour être lancé.
+Chaque rang atteint dans cette voie permet
+l’acquisition d’un rituel au choix parmi la liste
+suivante:
+Animation des morts
+Pour accomplir ce rituel, il est nécessaire de
+disposer du cadavre d’un humanoïde décédé
+depuis moins de [rang de la voie x 4] jours –
+plus la décomposition du corps est avancée,
+moins l’entretien qui suivra sera intelligible.
+Pendant une heure, il est possible de discuter
+avec ce qu’il reste de l’âme du défunt et de lui
+poser toutes les questions que le PJ souhaite et
+auxquelles le mort acceptera de répondre d’une
+voix désincarnée et dépourvue d’émotion. Le
+mort énoncera les faits selon son propre point
+de vue et ses propres préjugés au moment de sa
+mort, ce qui peut parfois introduire un biais.
+Communion de l’esprit
+En trempant l’effet personnel d’une cible (une
+mèche de cheveu suffit) dans un volume d’eau
+porté à ébullition et en exécutant le rituel, le
+PJ peut voir à travers les yeux de sa cible en
+observant la surface de l’eau, tant qu’elle est
+maintenue à température adéquate. Il peut
+également entendre les sons qui l’entourent,
+mais ces sons peuvent subir une certaine
+distorsion ou un écho.
+L’eau des sens
+Le rituel enchante un récipient contenant de
+l’eau (l’équivalent d’un chaudron). Jusqu’à la
+prochaine lune, l’eau sera désormais enchantée.
+Le PJ peut emporter avec lui l’équivalent d’une
+gourde et pourra, une fois par jour et quelle que
+soit la distance, renouveler le rituel en versant
+le liquide dans un vase, tremper ses doigts
+dedans et communiquer mentalement avec
+toutes personnes restées autour de la source
+d'eau initial.
+Sanctuaire
+Après l’accomplissement du rituel, aucun
+animal, créature magique matérielle ou immatérielle ne peut pénétrer dans un cercle de
+20 m de diamètre autour du PJ. De plus, aucun
+sort ne peut être lancé depuis ni atteindre cette
+zone. Pour que le rituel reste actif, le PJ doit
+rester immobile et concentré. Il est déconnecté
+du monde et ne perçoit pas ce qui l’entoure à
+moins d’être physiquement touché par quelque
+chose, ce qui rompt la transe.
+Imitation
+Pour accomplir ce rituel, le PJ doit disposer
+d’un objet intime appartenant à une cible. Un
+bijou précieux ou une simple mèche de cheveux
+peuvent suffire. Le PJ prend alors l’apparence
+de sa cible pendant les six prochaines heures.
+Il garde cependant ses caractéristiques et son
+équipement, mais que ce soit son apparence
+physique, sa voix ou son odeur, rien ne permet
+de le distinguer de sa cible – pas même le recours
+à des sorts de divination.
+147
+Steve VANPARYS - baronbucaille@gmail.com - 202008/254943/666075
+148
+Les voies de prestige
+de la famille des mystiques
+Voie des arcanes
+La maîtrise des arcanes est l’apanage quasi
+exclusif des Mages. Ces sorts stigmatisent la
+terreur inspirée par les mystiques.
+1. Invisibilité*
+Le PJ se rend invisible pendant [1d6 + Mod.
+de SAG] minutes. Une fois invisible, personne
+ne peut plus détecter sa présence ou lui porter
+d’attaque. Si le PJ attaque ou lance un sort, il
+redevient visible.
+2. Hâte*
+Pendant [1d6 + Mod. de SAG] tours, le PJ voit
+son métabolisme s’accélérer. À partir du tour
+suivant, il obtient une action supplémentaire par
+tour: soit une attaque normale, soit une action
+de mouvement. Il ne peut toujours accomplir
+qu’une seule action limitée par tour, à laquelle
+s’ajoute cette action supplémentaire.
+3. Foudre*
+Le PJ produit un éclair sur une ligne de
+10 mètres. Toutes les créatures sur la trajectoire
+sont soumises à un test d’attaque magique et
+subissent [5d6 + Mod. d’INT] DM en cas
+d’échec. Les victimes peuvent tenter un test
+de DEX difficulté [12 + Mod. d’INT] pour ne
+subir que la moitié des DM.
+4. Téléportation*
+Le PJ disparaît et réapparaît à un autre endroit
+situé à moins de [INT x 10] mètres. Le lieu
+d’arrivée doit être soit en ligne de vue, soit
+parfaitement connu par le PJ.
+Alternativement, à l’issue d’un rituel d’une
+heure, le PJ peut se téléporter à une distance de
+[INT x 10] kilomètres. La destination doit être
+plane et dépeuplée pour éviter tout accident.
+5. Désintégration*
+Le PJ projette un rayon mortel dont la portée
+est de 20 mètres et qui annule la cohésion de
+la matière, ne laissant derrière lui qu’un amas
+de poussière. Un test d’attaque magique réussi
+permet de toucher une créature et d’infliger
+[6d6 + Mod. d’INT] DM.
+Si le PJ vise un objet porté par une créature, le
+jet d’attaque subit un malus de -5. Les objets
+de tradition et légendaires sont insensibles à ce
+sort et les objets normaux réduits en poussière.
+Aucun objet de plus de 50 kg ne peut être affecté
+par ce sort: inutile de tenter de creuser un
+tunnel par ce biais. En revanche, vous pourrez
+ainsi désintégrer une porte (ou même une pierre
+dans un mur).
+Sorts prestigieux
+et Magie économe
+Il n’est pas possible d’user
+de Magie économe sur
+les sorts issus de voies de
+prestige.
+149
+Steve VANPARYS - baronbucaille@gmail.com - 202008/254943/666075
+Voie des arts primitifs
+Les arcanes primitifs sont presque oubliés de
+nos jours et ne sont plus pratiqués que par une
+poignée de Peaux vertes en marge des territoires
+civilisés.
+1. Gri-gri (L)
+Le PJ utilise un petit fétiche (crâne d’oiseau,
+petite pierre, statuette) sur lequel il fait couler un
+peu de son sang afin de lui conférer du pouvoir.
+Ce rituel se traduit par le sacrifice temporaire
+de 1 PV. Le fétiche permet ensuite personnage
+portant le gri-gri la relance de 1d20 au moment
+de son choix dans un laps de temps de 12 h. Le
+gri-gri perd son pouvoir au terme de ce délai. En
+rendant la perte du PV permanente (maximum
+de PV réduit de 1), le gri-gri permet de relancer
+1d20 une fois par jour, tous les jours. S’il est
+détruit, le personnage récupère son PV. Le PJ
+peut créer ainsi un maximum de [rang atteint
+dans cette voie] gris-gris.
+2. Ombre mortelle*
+Le PJ choisit une cible. L’ombre de celle-ci
+attaque son propriétaire pendant [3 + Mod.
+de SAG] tours (portée 20 m) en cas de réussite
+d’un test d’attaque magique. L’ombre poursuit
+sa cible partout où elle se réfugie. Ombre: 1
+attaque par tour, att = att de la cible, DM =
+DM de la cible divisés par deux.
+3. Magie du sang
+En sacrifiant 1d4 PV, le PJ obtient la possibilité
+de lancer un sort plus rapidement. Un sort
+nécessitant une action d’attaque se lance pour
+une action de mouvement par exemple tandis
+qu’un sort nécessitant une concentration se
+lance pour une action d’attaque au lieu d’une
+action limitée. Par cette méthode, si le PJ
+souhaite lancer deux sorts dans le même tour,
+il doit sacrifier 1d4 PV supplémentaire (donc
+un maximum 3d4 PV). Les sorts affectés par
+cette capacité sont limités au rang 3.
+4. Vents des âmes*
+Le PJ invoque des esprits torturés qui hurlent
+et tourmentent un ennemi pendant un nombre
+de tours égal à son Mod. de SAG. Pendant la
+durée du sort, la cible peine à se concentrer et
+ne peut réaliser aucune action limitée à moins
+de réussir un test de SAG difficulté 15 à chaque
+tour. De plus, cette tempête nécrotique inflige
+automatiquement 1d6 DM à chaque tour.
+5. Mauvais œil
+Tant que le PJ regarde sa cible avec le mauvais
+œil, celle-ci est accablée de malchance. En plus
+de ses actions normales, le personnage peut
+poser le mauvais œil sur la cible visible de son
+choix à chaque tour. La victime choisie subit une
+pénalité de -2 à tous les tests. Si elle obtient un
+résultat de 1 ou 2 au d20 alors qu’elle est sous
+l’effet du mauvais œil, le joueur peut décider, en
+accord avec le MJ, des conséquences extrêmement désagréables que cet échec critique a pour
+la cible. S’il s’agit d’une créature ou d’un PNJ
+mineur, un tel résultat conduit généralement
+à sa mort d’une façon grotesque et/ou atroce.
+Évolution
+avec Mages ?
+Vu le développent récent
+de la série de BD Mages,
+dont la thématique
+centrale est la magie
+chez les humains, il
+est probable que sous
+une forme qui reste à
+déterminer, de nouvelles
+règles sur le sujet viennent
+compléter la façon dont
+la magie est abordée dans
+les livres de base de Terres
+d'Arran. A suivre...
+150
+Voie des cristaux
+L’enchantement de cristaux est un art délicat
+très prisés des alchimistes. Selon la légende,
+il serait à l’origine de la création des cristaux
+élémentaires.
+Le PJ sait tailler et s’harmoniser avec la puissance
+magique de petits cristaux. Il est le seul à pouvoir
+les utiliser. Il faut user d’une Rune de pouvoir
+(rang 5 de la voie de la magie runique) pour créer
+des cristaux capables de s’harmoniser avec autrui.
+Pour fonctionner, un cristal doit être lancé
+près du personnage: il se met alors à tourner
+rapidement autour de celui-ci. Un cristal a une
+DEF de 20, 10 PV et une RD de 5. Le pouvoir
+de chaque pierre varie selon sa couleur et sa
+forme. Le tableau ci-dessous récapitule ceux
+que l’on rencontre le plus couramment.
+1. Premier cristal
+Le PJ apprend à créer un cristal de son choix.
+Il peut fabriquer chaque cristal en dépensant
+200 pièces d’argent.
+2. Deuxième cristal
+Le PJ apprend à créer un cristal de son choix.
+Il peut bénéficier des effets de deux cristaux
+simultanément, mais pas deux fois le même.
+3. Troisième cristal
+Le PJ apprend à créer deux nouveaux cristaux
+de son choix. Il peut bénéficier au maximum
+des effets de trois cristaux simultanément,
+mais pas deux fois le même. Changer de cristal
+correspond à une action limitée.
+4. Quatrième cristal
+Le PJ apprend à créer deux nouveaux cristaux
+de son choix. Il peut bénéficier au maximum
+des effets de quatre cristaux simultanément,
+mais pas deux fois le même.
+5. Cinquième cristal
+Le PJ apprend à créer deux nouveaux cristaux
+de son choix. Il peut bénéficier au maximum
+des effets de cinq cristaux simultanément, dont
+un maximum de deux fois le même.
+Couleur Forme Effet
+Blanc laiteux Fuseau Régénération (1 PV/
+heure)*
+Bleu incandescent Sphère Bonus de +2 en SAG
+Bleu nuit Rhombe Bonus de +5 en Init.
+Bleu pâle Rhombe Bonus de +2 en FOR
+Irisé Fuseau Permet de subsister
+sans respirer
+Noir fumé Prisme Résistance au feu et au
+froid 10 points
+Orange Fuseau Résistance acide et
+électricité 10 points
+Rose et vert Sphère Bonus de +2 en CHA
+Rose laiteux Prisme Bonus de +2 en DEF
+(prémonition)
+Rose vif Rhombe Bonus de +2 en CON
+Rouge et
+bleu Sphère Bonus de +2 en INT
+Rouge sang Sphère Bonus de +2 en DEX
+Translucide Fuseau Permet de subsister
+sans boire ni manger
+Vert pâle Prisme Bonus de +1 en attaque
+(toutes)
+* Le cristal de régénération ne permet de guérir
+que des PV perdus alors qu’il était porté.
+151
+Steve VANPARYS - baronbucaille@gmail.com - 202008/254943/666075
+Voie des éléments
+Rares sont les mystiques à atteindre un degré
+de maîtrise suffisant pour lier leur essence avec
+les principes élémentaires du monde. Même les
+plus anciens des sages sylvains n’y parviennent
+que rarement.
+Chaque rang atteint dans cette voie permet la
+maîtrise d’un élément au choix (entre terre,
+eau, air et feu). Il n’est possible d’apprendre
+la forme élémentaire qu’après la maîtrise d’au
+moins un élément. La forme élémentaire est
+toujours considérée comme un sort de rang 4.
+Terre
+Le PJ ne fait qu’un avec la terre. Il ne peut plus
+être renversé et détecte automatiquement tous
+les pièges creusés dans le sol (trappes, fosses).
+Il gagne un bonus de +5 à tous les tests pour
+détecter des pièges ou des passages secrets
+dissimulés dans les murs de pierre ou au sol.
+Eau
+Le PJ peut marcher sur l’eau à sa guise (comme
+s’il s’agissait d’un sol stable). Il peut transférer
+cette capacité pour en faire profiter autrui au
+prix d’une action limitée en touchant sa cible.
+Il peut ainsi affecter un nombre maximum de
+cibles égal au rang atteint dans cette voie pour
+une durée de [1d6 + Mod. de SAG] minutes.
+Air
+Le PJ peut respirer dans n’importe quel milieu
+hostile, sous l’eau comme dans un milieu
+empoisonné ou dénué d’air. Il peut transférer
+cette capacité à autrui au prix d’une action
+limitée en touchant sa cible. Il peut ainsi affecter
+un nombre maximum de cibles égal au rang
+atteint dans cette voie pour une durée de [1d6
++ Mod. de SAG] minutes.
+Feu
+Le PJ devient immunisé aux DM de feu et ne
+reçoit plus que la moitié des DM de froid.
+Forme élémentaire*
+Le PJ peut transformer son corps une fois par
+jour pour chaque élément maîtrisé pendant
+[5 + Mod. de SAG] minutes. Chaque forme
+élémentaire lui permet de retrancher [rang
+atteint dans cette voie] points à tous les DM
+subis (RD) et lui octroie les capacités suivantes.
+- Feu: le personnage ajoute +2d6 DM de feu à
+toutes ses attaques au contact. Une créature qui
+s’attaque à lui avec des armes de contact subit
+1d6 DM pour chaque attaque réussie.
+- Eau: le personnage guérit toutes ses blessures
+au rythme de 3 PV par tour et peut déformer
+son corps pour passer dans le moindre interstice.
+- Terre : le personnage obtient un bonus de +6
+en FOR (+3 attaque, DM et tests de FOR) et
+en DEF.
+- Air: le personnage peut voler (à une vitesse
+de 30 mètres par action de mouvement) et tous
+les DM physiques qui lui sont infligés ou qu’il
+inflige sont divisés par deux (retranchez les
+points de RD ensuite).
+152
+Voie de la glace
+Les sorts de glace sont souvent assimilés aux
+arts nécromantiques et font partie des sorts de
+prédilection des Mages funestes qu’il est possible
+de rencontrer dans les Terres du Sud.
+1. Verglas*
+Un verglas glissant recouvre le sol sur une surface
+de 10 m de diamètre pour le reste du combat (le
+PJ peut décider à tout moment de mettre fin au
+sort). Dans cette zone, rester debout demande
+lors de son tour un test de DEX de difficulté 10,
+s’y déplacer ou combattre un test de difficulté
+15. Un échec signifie que la créature est au sol.
+Se relever nécessite de réussir un nouveau test de
+DEX de difficulté 15 et prend un tour. Ramper
+en dehors de la zone demande un tour complet.
+2. Cœur de glace (L)
+Le PJ divise par deux tous les DM de froid et
+d’électricité subis pour le reste du combat (10
+tours hors combat).
+3. Cône de froid*
+Le sort affecte toutes les créatures dans un cône
+approximatif d’une portée de 20 mètres et
+d’une largeur de 10 mètres à son extrémité. Les
+victimes subissent [2d6 + Mod d’INT] DM de
+froid et sont ralenties pour 1 tour si elles ratent
+un test de CON difficulté [10 + rang de la voie].
+, elles subissent seulement la moitié des DM et
+ne sont pas ralenties. Les DM du sort passent à
+4d6 au rang 5 atteint dans cette voie.
+4. Présence glaciale*
+Le PJ transforme son corps en glace vivante.
+Il gagne +4 en DEF, est immunisé au froid et
+divise les DM de feu par deux. Les créatures qui
+le touchent ou l’attaquent avec des armes de
+contact subissent 1d6 DM. Lorsqu’il marche,
+il gèle le sol et peut se déplacer sur l’eau en la
+transformant en glace. Le sort a une durée de
+[1d6 + Mod. de SAG] minutes.
+5. Tempête de cristal*
+Le PJ choisit une cible située à moins de
+40 mètres. Il fait un test d’attaque magique et
+le compare à la DEF de tous les personnages (y
+compris le PJ et ses compagnons) se trouvant
+dans un rayon de 10 mètres autour de la cible.
+Chaque victime pour laquelle le test est un
+succès encaisse [5d6 + Mod. d’INT] de DM
+de froid et est ralentie pendant 1 tour à moins
+de réussir un test de CON difficulté 13. Quand
+le test d’attaque est un échec, la cible ne subit
+que la moitié des DM et elle n’est pas ralentie.
+153
+Steve VANPARYS - baronbucaille@gmail.com - 202008/254943/666075
+Voie de la métamorphose
+Confondu à tort avec la lycanthropie, la métamorphose représente la quintessence et
+l’aboutissement des enseignements druidiques.
+1. Forme animale*
+Le PJ peut prendre la forme d’un animal de
+taille petite (aigle géant, singe, chien, etc.) ou
+moyenne (loup, serpent constricteur, crocodile,
+requin, etc.). Il conserve ses PV, ses valeurs
+d’INT, de SAG et de CHA mais acquiert les
+Carac. suivantes:
+Forme animale petite: FOR -2 DEX +4 * CON -2.
+DEF 15 Init. 19. Attaque +4 DM 1d4-2
+Forme animale moyenne: FOR +1 DEX +1 CON
++1. DEF 14 Init. 12. Attaque +2 DM 1d6+1
+Il conserve son équipement, qui est transformé
+en fourrure, mais ce dernier n’influence pas
+les caractéristiques de la forme animale. Le
+PJ acquiert une ou plusieurs capacités naturelles relatives à la forme revêtue: vol, odorat
+développé, respiration aquatique, protection
+contre le froid, etc. À moins d’avoir recours à
+une capacité spéciale telle que la Détection de
+la magie, rien ne permet de distinguer la forme
+animale d’un autre animal normal. Enfin, le PJ
+peut reprendre sa forme humanoïde lorsqu’il le
+désire pour une action limitée.
+2. Transformation rapide
+Le PJ n’a besoin que d’une action de mouvement
+pour reprendre sa forme humanoïde. Après s’être
+transformé une première fois, il peut changer
+de forme par une action de mouvement – mais
+doit quand même payer le coût du sort en PM .
+3. Grande forme animale*
+Le PJ peut prendre la forme d’un animal
+de grande taille (ours, bison, tigre, griffon,
+shargren, etc.).
+Forme animale grande: FOR +8* DEX +0 CON +8.
+DEF 18 Init. 10. Attaque +10 DM 2d6+8
+Sous cette forme, le PJ gagne un bonus de +5 à
+tous les tests pour impressionner ou intimider.
+4. Transformation régénérative
+S’il utilise une action limitée pour reprendre sa
+forme humanoïde après avoir subi des blessures
+sous forme animale, le PJ récupère 3d6 PV. Ces
+PV ne peuvent pas dépasser les DM reçus sous
+forme animale.
+5. Forme animale énorme*
+Le PJ peut prendre la forme d’un animal de
+taille énorme (éléphant, dragon d’Akrähyng,
+crocodile géant, etc.).
+Forme animale énorme: FOR +11* DEX +0 CON
++11*. DEF 20 Init. 10. Attaque +15 DM 3d6+11
+Sous cette forme, le PJ gagne une réduction des
+DM de 2 contre tous les types de DM.
+154
+Voie des vermines
+Le domptage des vermines est une pratique
+terrifiante que certains chamans gobelins
+maîtrisent avec brio.
+1. Nuées de criquets*
+Le PJ fait l’acquisition de la capacité Nuées
+d’insectes (rang 2 de la voie des arts druidiques).
+S’il possède déjà ce sort, ou venait à l’obtenir
+par la suite, les DM continus et le malus aux
+tests sont augmentés de 1.
+2. Compagnon vermine
+Le PJ adopte un scorpion géant ou une araignée
+géante (au choix du joueur).
+Scorpion géant: taille moyenne. Init. 12, DEF
+16, PV [4 x niveau du PJ], attaque au contact =
+[niveau du PJ + 3], DM 1d6+3 [poison 2d6 DM,
+test CON 13 = DM/2], FOR +3, DEX +1, CON +3,
+INT -3, SAG +3, CHA -3
+Araignée géante: taille moyenne. Init. 16, DEF
+15, PV [4 x niveau du PJ], attaque au contact =
+[niveau du PJ + 3], DM 1d6+1 [poison 3d6 DM,
+test CON 13 = DM/2], FOR +1, DEX +3, CON +2,
+INT -3, SAG +4, CHA -3
+3. Affinité au poison
+Après des années passées en compagnie d’êtres
+qui rampent et piquent, le PJ a développé une
+aptitude à maîtriser le poison de ces derniers.
+S’il utilise une arme tranchante ou perforante,
+comme une dague ou un épieu, il peut l’enduire
+de poison. En cas d’attaque de contact réussie, le
+PJ inflige 1d6 DM supplémentaires au début de
+chaque tour de la créature affectée. Après avoir
+subi les effets du poison, la victime peut faire
+un test de CON difficulté [10 + Mod d’INT
+du PJ] pour stopper les effets du poison. L’effet
+de poison n’est pas cumulable et la réussite d’un
+test de CON immunise au poison pour 24 h.
+En plus des effets décrits ci-dessus, le PJ gagne
+désormais un bonus de +5 à tous les tests de
+CON destinés à résister au poison.
+4. Vermine supérieure
+Le compagnon vermine du PJ gagne l’une des
+capacités suivantes, qui dépend de sa nature.
+Étreinte (scorpion): le scorpion peut désormais
+tenter d’attraper une créature entre ses pinces,
+si elle n’est pas d’une taille supérieure à la
+sienne. Lorsqu’il obtient un résultat de 15 à
+20 sur son dé d’attaque, le scorpion attrape
+son adversaire. Au début de son tour, la cible
+saisie doit faire un test de FOR en opposition
+avec le scorpion, en cas de succès, elle réussit à
+se libérer, sinon elle est étourdie (pas d’action
+et -5 en DEF) et le scorpion maintient l’étreinte.
+Lorsqu’il maintient une étreinte, le scorpion ne
+peut rien faire pendant son tour, mais il inflige
+automatiquement [1d6+3] DM à la créature
+prisonnière. Le scorpion peut lâcher son étreinte
+quand il le veut.
+Toile (araignée): l’araignée gagne la capacité
+de lancer (portée: 10 mètres) une toile gluante
+et collante sur un ennemi. Si elle réussit une
+attaque à distance [niveau du PJ + 3], la cible
+est immobilisée (pas de déplacement, utilisez
+le d12 : voir «États préjudiciables») pour 1d6
+tours. Au début de son tour, la créature engluée
+doit faire un test de FOR difficulté 13: en cas
+de succès, elle réussit à se libérer, sinon elle reste
+immobilisée.
+5. Maître vermine
+Le PJ obtient le titre de «Maître vermine». Il
+peut désormais communiquer avec les vermines
+en tout genre et celles-ci le considèrent plutôt
+comme une créature amicale –sauf si elles
+sont sous l’emprise d’un autre mystique plus
+puissant ou sous contrôle magique. En plus
+de cette capacité de communication, le PJ
+peut désormais monter sur son compagnon
+animal. La créature obtient ses actions normales
+(déplacement et/ou attaque) et le PJ peut agir
+normalement depuis sa position (action limitée
+ou action d’attaque).
