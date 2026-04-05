@@ -24,7 +24,7 @@ import {
   TOPIC_NAMES,
   type TopicName,
 } from "./knowledge/tools.js";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "./db/index.js";
 import { campaigns, campaignMembers, characters, generatedImages, journalCompagnie, journalPages, users } from "./db/schema.js";
 
@@ -528,6 +528,14 @@ app.post("/api/chat", requireAuth, async (req, res) => {
 
       const MAX_TOOL_TURNS = 5;
 
+      // Cache portrait image IDs collected during this request (name → portraitImageId)
+      const portraitIds = new Map<string, number>();
+      const currentPortraitId = character ? (character as Record<string, unknown>).portraitImageId : null;
+      if (typeof currentPortraitId === "number" && currentPortraitId > 0) {
+        const currentName = character ? String((character as Record<string, unknown>).name ?? "Joueur") : "Joueur";
+        portraitIds.set(currentName, currentPortraitId);
+      }
+
       for (let turn = 0; turn < MAX_TOOL_TURNS; turn++) {
         const allParts: GeminiPart[] = [];
         let lastUsage: { promptTokenCount?: number; candidatesTokenCount?: number; totalTokenCount?: number } | undefined;
@@ -685,44 +693,47 @@ app.post("/api/chat", requireAuth, async (req, res) => {
           writeSse(res, "tool_use", { tool: "generate_image", label: "Génération d'une illustration…" });
 
           try {
-            // Load character portrait if available (to use as visual reference)
-            let portraitBase64: string | null = null;
-            let portraitMimeType: string | null = null;
-            const portraitId = character ? (character as Record<string, unknown>).portraitImageId : null;
-            if (typeof portraitId === "number" && portraitId > 0) {
-              const [portraitRow] = await db
-                .select({ data: generatedImages.data, mimeType: generatedImages.mimeType })
+            // Load all cached portraits in one query
+            const portraits: Array<{ name: string; data: string; mimeType: string }> = [];
+            if (portraitIds.size > 0) {
+              const ids = [...portraitIds.values()];
+              const rows = await db
+                .select({ id: generatedImages.id, data: generatedImages.data, mimeType: generatedImages.mimeType })
                 .from(generatedImages)
-                .where(eq(generatedImages.id, portraitId));
-              if (portraitRow) {
-                portraitBase64 = portraitRow.data;
-                portraitMimeType = portraitRow.mimeType;
+                .where(inArray(generatedImages.id, ids));
+              const rowById = new Map(rows.map((r) => [r.id, r]));
+              for (const [name, imgId] of portraitIds) {
+                const row = rowById.get(imgId);
+                if (row) portraits.push({ name, data: row.data, mimeType: row.mimeType });
               }
             }
+            console.log(`[generate_image] Portraits: ${portraits.length > 0 ? portraits.map((p) => p.name).join(", ") : "none"}`);
 
+            // Build image parts: style ref first, then portraits, then prompt
             const imageParts: Array<Record<string, unknown>> = [];
             if (styleRefBase64) {
               imageParts.push({
                 inlineData: { mimeType: "image/jpeg", data: styleRefBase64 },
               });
             }
-            if (portraitBase64 && portraitMimeType) {
-              imageParts.push({
-                inlineData: { mimeType: portraitMimeType, data: portraitBase64 },
-              });
-              imageParts.push({
-                text: (styleRefBase64
-                  ? "Generate a full-frame illustration in the exact same artistic style as the first reference image (European fantasy comic art). Match the color palette, ink linework, and painterly rendering. The second image is the character's portrait — use it as a visual reference for the character's appearance (face, hair, build, clothing). IMPORTANT: full bleed illustration filling the entire frame, no borders, no book pages, no white margins, no photo of a page. Subject: "
-                  : "The attached image is the character's portrait — use it as a visual reference for the character's appearance (face, hair, build, clothing). IMPORTANT: full bleed illustration filling the entire frame, no borders, no book pages, no white margins. Subject: "
-                ) + imagePrompt,
-              });
-            } else if (styleRefBase64) {
-              imageParts.push({
-                text: "Generate a full-frame illustration in the exact same artistic style as this reference (European fantasy comic art). Match the color palette, ink linework, and painterly rendering. IMPORTANT: full bleed illustration filling the entire frame, no borders, no book pages, no white margins, no photo of a page. Subject: " + imagePrompt,
-              });
-            } else {
-              imageParts.push({ text: imagePrompt });
+            for (const p of portraits) {
+              imageParts.push({ inlineData: { mimeType: p.mimeType, data: p.data } });
             }
+
+            // Build text instruction based on what images are attached
+            const hasStyle = !!styleRefBase64;
+            const portraitNames = portraits.map((p) => p.name).join(", ");
+            let textPrefix: string;
+            if (hasStyle && portraits.length > 0) {
+              textPrefix = `Generate a full-frame illustration in the exact same artistic style as the first reference image (European fantasy comic art). Match the color palette, ink linework, and painterly rendering. The following ${portraits.length > 1 ? "images are character portraits" : "image is a character portrait"} for: ${portraitNames} — use ${portraits.length > 1 ? "them" : "it"} as visual reference for the characters' appearance (face, hair, build, clothing). IMPORTANT: full bleed illustration filling the entire frame, no borders, no book pages, no white margins, no photo of a page. Subject: `;
+            } else if (portraits.length > 0) {
+              textPrefix = `The attached ${portraits.length > 1 ? "images are character portraits" : "image is a character portrait"} for: ${portraitNames} — use ${portraits.length > 1 ? "them" : "it"} as visual reference for the characters' appearance (face, hair, build, clothing). IMPORTANT: full bleed illustration filling the entire frame, no borders, no book pages, no white margins. Subject: `;
+            } else if (hasStyle) {
+              textPrefix = "Generate a full-frame illustration in the exact same artistic style as this reference (European fantasy comic art). Match the color palette, ink linework, and painterly rendering. IMPORTANT: full bleed illustration filling the entire frame, no borders, no book pages, no white margins, no photo of a page. Subject: ";
+            } else {
+              textPrefix = "";
+            }
+            imageParts.push({ text: textPrefix + imagePrompt });
 
             const imageResponse = await geminiClient!.models.generateContent({
               model: GEMINI_IMAGE_MODEL,
@@ -801,6 +812,11 @@ app.post("/api/chat", requireAuth, async (req, res) => {
                 };
                 toolResult = buildCharacterSection(charPayload);
                 console.log(`[get_character] Loaded character "${char.name}" (id=${char.id})\n${toolResult}`);
+
+                // Cache portrait ID for generate_image
+                if (char.portraitImageId) {
+                  portraitIds.set(char.name, char.portraitImageId);
+                }
 
                 // Load portrait if available
                 if (char.portraitImageId) {
