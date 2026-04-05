@@ -1,13 +1,17 @@
 /**
- * Calls the TTS endpoint and returns a playable audio Blob URL.
- * The caller is responsible for revoking the URL when done.
+ * Calls the TTS endpoint and returns a raw ArrayBuffer (WAV).
+ * Supports AbortSignal for cancellation.
  */
-export async function fetchTts(text: string): Promise<string> {
+export async function fetchTtsBuffer(
+  text: string,
+  signal?: AbortSignal
+): Promise<ArrayBuffer> {
   const res = await fetch("/api/tts", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
     body: JSON.stringify({ text }),
+    signal,
   });
 
   if (!res.ok) {
@@ -17,6 +21,5 @@ export async function fetchTts(text: string): Promise<string> {
     );
   }
 
-  const blob = await res.blob();
-  return URL.createObjectURL(blob);
+  return res.arrayBuffer();
 }

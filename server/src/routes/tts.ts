@@ -11,8 +11,8 @@ const geminiClient = process.env.GEMINI_API_KEY
 // Voice style prompt for Isilwen — mystical elvish oracle
 const VOICE_STYLE = [
   "Speak in a soft, mystical, enchanting tone.",
-  "You are an ancient elvish oracle — wise, calm, slightly ethereal.",
-  "Pace: steady and fluid, no long pauses.",
+  "You are an ancient elvish oracle — wise, slightly ethereal.",
+  "Pace: brisk and lively, speak a bit faster than normal, no long pauses.",
   "Accent: elegant, flowing, otherworldly.",
 ].join(" ");
 

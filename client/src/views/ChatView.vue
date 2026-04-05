@@ -4,7 +4,8 @@ import MarkdownIt from "markdown-it";
 import DOMPurify from "dompurify";
 import { streamChat, type ChatMessage, type ToolUseEntry } from "../api/chat";
 import { SendHorizonal, SquarePen, Sparkles, Download, X, Volume2, Loader, Mic } from "lucide-vue-next";
-import { fetchTts } from "../api/tts";
+import { useTtsQueue } from "../composables/useTtsQueue";
+import AppPageLayout from "../components/ui/AppPageLayout.vue";
 import AppIconBtn from "../components/ui/AppIconBtn.vue";
 import AppEmptyState from "../components/ui/AppEmptyState.vue";
 import { useCharacter, loadCharacter } from "../composables/useCharacter";
@@ -139,12 +140,19 @@ async function submit() {
   try {
     typewriterQueue.value = [];
     startTypewriter();
+    // Start auto-play TTS pipeline before streaming begins
+    if (autoVoice.value) {
+      ttsQueue.startAutoPlay(messages.value.length - 1);
+    }
     await streamChat(
       next,
       {
         onDelta: (delta) => {
           for (const char of delta) {
             typewriterQueue.value.push(char);
+          }
+          if (autoVoice.value) {
+            ttsQueue.feedDelta(delta);
           }
         },
         onToolUse: (entry) => {
@@ -192,12 +200,9 @@ async function submit() {
     });
     flushTypewriterQueue();
 
-    // Auto-voice: read the response aloud when enabled
+    // Auto-voice: flush remaining text to TTS pipeline
     if (autoVoice.value) {
-      const lastMsg = messages.value[messages.value.length - 1];
-      if (lastMsg?.role === "assistant" && lastMsg.content.trim()) {
-        playTts(lastMsg.content, messages.value.length - 1);
-      }
+      ttsQueue.flushAutoPlay();
     }
   } catch (e) {
     flushTypewriterQueue();
@@ -265,59 +270,20 @@ function closeImageModal() {
 }
 
 // ── Text-to-Speech ───────────────────────────────────────────────────────────
+const ttsQueue = useTtsQueue();
+const { playingIndex, ttsLoadingIndex } = ttsQueue;
 const autoVoice = ref(false);
-const ttsLoadingIndex = ref<number | null>(null);
-let currentAudio: HTMLAudioElement | null = null;
-let currentAudioUrl: string | null = null;
-const playingIndex = ref<number | null>(null);
 
 function toggleAutoVoice() {
   autoVoice.value = !autoVoice.value;
 }
 
-function stopCurrentAudio() {
-  if (currentAudio) {
-    currentAudio.pause();
-    currentAudio = null;
-  }
-  if (currentAudioUrl) {
-    URL.revokeObjectURL(currentAudioUrl);
-    currentAudioUrl = null;
-  }
-  playingIndex.value = null;
-}
-
-async function playTts(text: string, index: number) {
-  // If already playing this message, stop it
-  if (playingIndex.value === index) {
-    stopCurrentAudio();
-    return;
-  }
-
-  stopCurrentAudio();
-  ttsLoadingIndex.value = index;
-
-  try {
-    const url = await fetchTts(text);
-    currentAudioUrl = url;
-    currentAudio = new Audio(url);
-    playingIndex.value = index;
-    ttsLoadingIndex.value = null;
-
-    currentAudio.addEventListener("ended", () => {
-      stopCurrentAudio();
-    });
-
-    await currentAudio.play();
-  } catch (e) {
-    console.error("[tts]", e);
-    ttsLoadingIndex.value = null;
-    stopCurrentAudio();
-  }
+function playTts(text: string, index: number) {
+  ttsQueue.play(text, index);
 }
 
 onUnmounted(() => {
-  stopCurrentAudio();
+  ttsQueue.stop();
   stopListening();
 });
 
@@ -400,28 +366,23 @@ async function downloadImage() {
 </script>
 
 <template>
-  <div class="page chat-page">
-    <header class="page-head">
-      <div class="head-row">
+  <AppPageLayout mode="full" width="wide" class="chat-page">
+    <template #top-bar>
+      <header class="page-head">
         <h1>
           <span class="chat-title-short">🔮 Isilwen</span>
           <span class="chat-title-full">🔮 Isilwen, miroir astral</span>
         </h1>
-        <AppIconBtn
-          v-if="activeTab === 'chat'"
-          :size="34"
-          title="Nouvelle conversation"
-          class="new-chat-btn"
-          @click="clearChat"
-        >
-          <SquarePen :size="18" />
-        </AppIconBtn>
-      </div>
-      <nav class="isilwen-tabs">
-        <button class="isilwen-tab" :class="{ active: activeTab === 'chat' }" @click="switchTab('chat')">💬 Chat</button>
-        <button class="isilwen-tab" :class="{ active: activeTab === 'images' }" @click="switchTab('images')">🎨 Images</button>
-      </nav>
-    </header>
+        <nav class="isilwen-tabs">
+          <button class="isilwen-tab" :class="{ active: activeTab === 'chat' }" @click="switchTab('chat')">
+            <span class="tab-icon">💬</span><span class="tab-text"> Chat</span>
+          </button>
+          <button class="isilwen-tab" :class="{ active: activeTab === 'images' }" @click="switchTab('images')">
+            <span class="tab-icon">🎨</span><span class="tab-text"> Images</span>
+          </button>
+        </nav>
+      </header>
+    </template>
 
     <p v-if="loadError" class="error" role="alert">{{ loadError }}</p>
 
@@ -484,56 +445,6 @@ async function downloadImage() {
 
     <p v-if="error && activeTab === 'chat'" class="error" role="alert">{{ error }}</p>
 
-    <form v-show="activeTab === 'chat'" class="composer" @submit.prevent="submit">
-      <textarea
-        ref="textareaEl"
-        v-model="input"
-        class="textarea"
-        rows="2"
-        placeholder="Pose une question à Isilwen…"
-        :disabled="loading"
-        @keydown.enter.exact.prevent="submit"
-      />
-      <div class="composer-footer">
-        <div class="composer-left">
-          <div v-if="character.id" class="character-chip">
-            <span class="chip-icon">⚔️</span>
-            <span class="chip-name">{{ character.name }}</span>
-          </div>
-          <button
-            type="button"
-            class="voice-toggle-btn"
-            :class="{ active: autoVoice }"
-            :title="autoVoice ? 'Désactiver la voix auto' : 'Activer la voix auto'"
-            @click="toggleAutoVoice"
-          >
-            <Volume2 :size="15" />
-          </button>
-        </div>
-        <div class="composer-right">
-          <button
-            v-if="sttSupported"
-            type="button"
-            class="mic-btn"
-            :class="{ recording: listening }"
-            :title="listening ? 'Arrêter l\'écoute' : 'Dicter un message'"
-            :disabled="loading"
-            @click="toggleListening"
-          >
-            <Mic :size="20" aria-hidden="true" />
-          </button>
-          <button
-            type="submit"
-            class="send-icon-btn"
-            :disabled="loading || !input.trim()"
-            :title="loading ? 'Envoi…' : 'Envoyer'"
-          >
-            <SendHorizonal :size="20" aria-hidden="true" />
-          </button>
-        </div>
-      </div>
-    </form>
-
     <!-- Images tab -->
     <div v-if="activeTab === 'images'" class="gallery-container">
       <AppEmptyState v-if="galleryLoading" variant="loading">Chargement…</AppEmptyState>
@@ -569,38 +480,80 @@ async function downloadImage() {
         </div>
       </div>
     </Teleport>
-  </div>
+
+    <template #bottom-bar>
+      <form v-show="activeTab === 'chat'" class="composer" @submit.prevent="submit">
+        <textarea
+          ref="textareaEl"
+          v-model="input"
+          class="textarea"
+          rows="2"
+          placeholder="Pose une question à Isilwen…"
+          @keydown.enter.exact.prevent="submit"
+        />
+        <div class="composer-footer">
+          <div class="composer-left">
+            <div v-if="character.id" class="character-chip">
+              <span class="chip-icon">⚔️</span>
+              <span class="chip-name">{{ character.name }}</span>
+            </div>
+            <AppIconBtn
+              :size="28"
+              title="Nouvelle conversation"
+              class="new-chat-btn"
+              @click="clearChat"
+            >
+              <SquarePen :size="14" />
+            </AppIconBtn>
+          </div>
+          <div class="composer-right">
+            <button
+              type="button"
+              class="voice-toggle-btn"
+              :class="{ active: autoVoice }"
+              :title="autoVoice ? 'Désactiver la voix auto' : 'Activer la voix auto'"
+              @click="toggleAutoVoice"
+            >
+              <Volume2 :size="17" />
+            </button>
+            <button
+              v-if="sttSupported"
+              type="button"
+              class="mic-btn"
+              :class="{ recording: listening }"
+              :title="listening ? 'Arrêter l\'écoute' : 'Dicter un message'"
+              :disabled="loading"
+              @click="toggleListening"
+            >
+              <Mic :size="17" aria-hidden="true" />
+            </button>
+            <button
+              type="submit"
+              class="send-icon-btn"
+              :disabled="loading || !input.trim()"
+              :title="loading ? 'Envoi…' : 'Envoyer'"
+            >
+              <SendHorizonal :size="17" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      </form>
+    </template>
+  </AppPageLayout>
 </template>
 
 <style scoped>
 .chat-page {
-  max-width: 46rem;
-  margin: 0 auto -1.5rem; /* absorb main's padding-bottom on mobile */
-  /* nav (~3.6rem) + main padding-top (1rem) */
-  height: calc(100dvh - 4.6rem);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-@media (min-width: 740px) {
-  .chat-page {
-    margin-bottom: -2rem; /* main padding-bottom at desktop */
-    height: calc(100dvh - 4.85rem); /* nav + 1.25rem padding-top */
-  }
+  padding-bottom: 0.5rem !important;
 }
 
 .page-head {
-  margin-bottom: 0.5rem;
-  flex: 0 0 auto;
-}
-
-.head-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 0;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  flex: 0 0 auto;
 }
 
 .page-head h1 {
@@ -609,6 +562,7 @@ async function downloadImage() {
   font-family: var(--title-font);
   letter-spacing: 0.01em;
   color: var(--brand-strong);
+  white-space: nowrap;
 }
 
 .chat-title-full {
@@ -787,12 +741,7 @@ async function downloadImage() {
 .composer {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
-  padding: 0.75rem;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  background: var(--surface);
-  box-shadow: var(--shadow-soft);
+  gap: 0.4rem;
   flex: 0 0 auto;
 }
 
@@ -845,9 +794,9 @@ async function downloadImage() {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.4rem;
-  height: 2.4rem;
-  border-radius: 10px;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 8px;
   border: none;
   background: var(--brand);
   color: #fff;
@@ -881,7 +830,7 @@ async function downloadImage() {
 .isilwen-tabs {
   display: flex;
   gap: 0.35rem;
-  margin-top: 0.35rem;
+  flex-shrink: 0;
 }
 
 .isilwen-tab {
@@ -905,6 +854,16 @@ async function downloadImage() {
   background: var(--accent);
   color: #fff;
   border-color: var(--accent);
+}
+
+.tab-text {
+  display: none;
+}
+
+@media (min-width: 500px) {
+  .tab-text {
+    display: inline;
+  }
 }
 
 /* ── Gallery ───────────────────────────────────────────────────────────────── */
@@ -1027,11 +986,12 @@ async function downloadImage() {
 }
 
 .voice-toggle-btn {
-  display: inline-flex;
+  flex: 0 0 auto;
+  display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 2rem;
+  height: 2rem;
   border-radius: 8px;
   border: 1px solid var(--border);
   background: transparent;
@@ -1063,9 +1023,9 @@ async function downloadImage() {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.4rem;
-  height: 2.4rem;
-  border-radius: 10px;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 8px;
   border: 1px solid var(--border);
   background: transparent;
   color: var(--muted);
