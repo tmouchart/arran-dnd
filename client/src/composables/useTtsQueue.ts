@@ -25,7 +25,6 @@ export function useTtsQueue() {
   // Streaming auto-play state
   let streamBuffer = "";
   let streamingMode = false;
-  let streamGeneration = 0;
 
   function getAudioContext(): AudioContext {
     if (!audioCtx) {
@@ -181,7 +180,6 @@ export function useTtsQueue() {
     stop();
     streamingMode = true;
     streamBuffer = "";
-    streamGeneration = generation;
     ttsLoadingIndex.value = index;
     playingIndex.value = null;
   }
