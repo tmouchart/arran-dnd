@@ -24,6 +24,7 @@ import { user } from "../composables/useAuth";
 import { generateLoot } from "../api/combats";
 import { MONSTERS_CATALOG, type Monster } from "../data/monstersCatalog";
 import { filterCatalog, formatMod } from "../utils/monsterSession";
+import { hpGradientColor } from "../utils/hpGradientColor";
 import { rollDie, rollDiceNotation } from "../utils/dice";
 import AppPageLayout from "../components/ui/AppPageLayout.vue";
 import AppPageHead from "../components/ui/AppPageHead.vue";
@@ -71,12 +72,17 @@ const filteredMonsters = computed(() =>
 );
 
 // Custom monster form
+const STAT_KEYS = ['For', 'Dex', 'Con', 'Int', 'Sag', 'Cha'] as const
 interface CustomMonsterForm {
   name: string; init: number; pv: number; def: number; nc: number;
-  statFor: number; statDex: number; statCon: number; statInt: number; statSag: number; statCha: number;
+  stats: Record<typeof STAT_KEYS[number], number>;
 }
 const showCustomForm = ref(false);
-const customForm = ref<CustomMonsterForm>({ name: "Nouveau monstre", init: 0, pv: 10, def: 10, nc: 0, statFor: 0, statDex: 0, statCon: 0, statInt: 0, statSag: 0, statCha: 0 });
+const defaultCustomForm = (): CustomMonsterForm => ({
+  name: "Nouveau monstre", init: 0, pv: 10, def: 10, nc: 0,
+  stats: { For: 0, Dex: 0, Con: 0, Int: 0, Sag: 0, Cha: 0 },
+})
+const customForm = ref<CustomMonsterForm>(defaultCustomForm());
 
 // Delete confirmation
 const confirmDeleteId = ref<number | null>(null);
@@ -207,23 +213,6 @@ function signedNum(n: number): string {
   return n >= 0 ? `+${n}` : String(n);
 }
 
-function hpColor(current: number, max: number): string {
-  if (max <= 0) return '#c95f56'
-  const ratio = Math.max(0, Math.min(1, current / max))
-  if (ratio > 0.5) {
-    const t = (ratio - 0.5) * 2
-    const r = Math.round(0xe6 + t * (0x3a - 0xe6))
-    const g = Math.round(0x7e + t * (0x8a - 0x7e))
-    const b = Math.round(0x22 + t * (0x4a - 0x22))
-    return `rgb(${r},${g},${b})`
-  } else {
-    const t = ratio * 2
-    const r = Math.round(0xc9 + t * (0xe6 - 0xc9))
-    const g = Math.round(0x5f + t * (0x7e - 0x5f))
-    const b = Math.round(0x56 + t * (0x22 - 0x56))
-    return `rgb(${r},${g},${b})`
-  }
-}
 
 async function handleAddFromCatalog(m: Monster) {
   await addMonster({
@@ -247,12 +236,25 @@ async function handleAddFromCatalog(m: Monster) {
 }
 
 function openCustomForm() {
-  customForm.value = { name: "Nouveau monstre", init: 0, pv: 10, def: 10, nc: 0, statFor: 0, statDex: 0, statCon: 0, statInt: 0, statSag: 0, statCha: 0 };
+  customForm.value = defaultCustomForm();
   showCustomForm.value = true;
 }
 
 async function handleSubmitCustomMonster() {
-  await addMonster({ ...customForm.value });
+  const f = customForm.value;
+  await addMonster({
+    name: f.name,
+    init: f.init,
+    pv: f.pv,
+    def: f.def,
+    nc: f.nc,
+    statFor: f.stats.For,
+    statDex: f.stats.Dex,
+    statCon: f.stats.Con,
+    statInt: f.stats.Int,
+    statSag: f.stats.Sag,
+    statCha: f.stats.Cha,
+  });
   showCustomForm.value = false;
   showAddMonster.value = false;
 }
@@ -376,13 +378,13 @@ function goBack() {
                 <template v-if="canAdjustHp(p) && p.hpCurrent !== null && p.hpMax !== null">
                   <div class="card-hp-inline" @click.stop>
                     <button class="hp-btn-sm" @click="adjustHp(p, -1)"><Minus :size="12" /></button>
-                    <span class="card-hp" :style="{ color: hpColor(p.hpCurrent!, p.hpMax!) }">{{ p.hpCurrent }}/{{ p.hpMax }}</span>
+                    <span class="card-hp" :style="{ color: hpGradientColor(p.hpCurrent!, p.hpMax!) }">{{ p.hpCurrent }}/{{ p.hpMax }}</span>
                     <button class="hp-btn-sm" @click="adjustHp(p, 1)"><Plus :size="12" /></button>
                   </div>
                 </template>
                 <!-- HP display (read-only) -->
                 <template v-else-if="p.hpCurrent !== null && p.hpMax !== null">
-                  <span class="card-hp" :style="{ color: hpColor(p.hpCurrent, p.hpMax) }">{{ p.hpCurrent }}/{{ p.hpMax }}</span>
+                  <span class="card-hp" :style="{ color: hpGradientColor(p.hpCurrent, p.hpMax) }">{{ p.hpCurrent }}/{{ p.hpMax }}</span>
                 </template>
                 <template v-else-if="p.hpStatus">
                   <component
@@ -404,7 +406,7 @@ function goBack() {
             >
               <button class="hp-btn" @click="adjustHp(p, -5)">-5</button>
               <button class="hp-btn" @click="adjustHp(p, -1)">-1</button>
-              <span class="hp-display" :style="{ color: hpColor(p.hpCurrent!, p.hpMax!) }">{{ p.hpCurrent }} / {{ p.hpMax }}</span>
+              <span class="hp-display" :style="{ color: hpGradientColor(p.hpCurrent!, p.hpMax!) }">{{ p.hpCurrent }} / {{ p.hpMax }}</span>
               <button class="hp-btn" @click="adjustHp(p, 1)">+1</button>
               <button class="hp-btn" @click="adjustHp(p, 5)">+5</button>
             </div>
@@ -579,9 +581,9 @@ function goBack() {
               </div>
             </div>
             <div class="custom-stats-grid">
-              <div v-for="s in (['For','Dex','Con','Int','Sag','Cha'] as const)" :key="s" class="custom-stat">
+              <div v-for="s in STAT_KEYS" :key="s" class="custom-stat">
                 <label>{{ s.toUpperCase() }}</label>
-                <AppInput v-model="(customForm as unknown as Record<string,number>)[`stat${s}`]" type="number" text-align="center" />
+                <AppInput v-model="customForm.stats[s]" type="number" text-align="center" />
               </div>
             </div>
             <div class="custom-form-actions">

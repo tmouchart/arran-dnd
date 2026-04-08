@@ -6,9 +6,9 @@ export const AI_PROVIDER = process.env.AI_PROVIDER ?? "gemini";
 export const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-20250514";
 export const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
 
-export const anthropicClient = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+export const anthropicClient = process.env.ANTHROPIC_API_KEY
+  ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  : null;
 
 export const geminiClient = process.env.GEMINI_API_KEY
   ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
@@ -26,6 +26,7 @@ export async function generateText(prompt: string): Promise<string> {
     });
     return response.text ?? "";
   } else {
+    if (!anthropicClient) throw new Error("ANTHROPIC_API_KEY manquante.");
     const message = await anthropicClient.messages.create({
       model: ANTHROPIC_MODEL,
       max_tokens: 1024,

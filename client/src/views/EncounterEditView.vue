@@ -156,18 +156,17 @@ async function handleDeleteMonster(mid: number) {
 }
 
 // Save monster field changes with debounce
-const monsterTimers = new Map<number, ReturnType<typeof setTimeout>>()
+const monsterTimers = new Map<string, ReturnType<typeof setTimeout>>()
 
-function saveMonsterField(monster: EncounterMonster, field: string, value: unknown) {
-  ;(monster as unknown as Record<string, unknown>)[field] = value
-
-  const existing = monsterTimers.get(monster.id)
+function debounceSaveMonsterField(monster: EncounterMonster, field: string, value: unknown) {
+  const key = `${monster.id}:${field}`
+  const existing = monsterTimers.get(key)
   if (existing) clearTimeout(existing)
 
   monsterTimers.set(
-    monster.id,
+    key,
     setTimeout(async () => {
-      monsterTimers.delete(monster.id)
+      monsterTimers.delete(key)
       try {
         await updateEncounterMonster(campaignId, encounterId, monster.id, { [field]: value })
       } catch {
@@ -177,6 +176,11 @@ function saveMonsterField(monster: EncounterMonster, field: string, value: unkno
   )
 }
 
+function saveMonsterField(monster: EncounterMonster, field: string, value: unknown) {
+  ;(monster as unknown as Record<string, unknown>)[field] = value
+  debounceSaveMonsterField(monster, field, value)
+}
+
 async function addAttack(monster: EncounterMonster) {
   const newAttack: EncounterMonsterAttack = { name: 'Attaque', bonus: 0, damage: '1d6' }
   const attacks = [...monster.attacks, newAttack]
@@ -184,10 +188,9 @@ async function addAttack(monster: EncounterMonster) {
   await updateEncounterMonster(campaignId, encounterId, monster.id, { attacks })
 }
 
-async function updateAttack(monster: EncounterMonster, index: number, field: keyof EncounterMonsterAttack, value: string | number) {
-  const attacks = monster.attacks.map((a, i) => i === index ? { ...a, [field]: value } : a)
-  monster.attacks = attacks
-  await updateEncounterMonster(campaignId, encounterId, monster.id, { attacks })
+function updateAttack(monster: EncounterMonster, index: number, field: keyof EncounterMonsterAttack, value: string | number) {
+  monster.attacks = monster.attacks.map((a, i) => i === index ? { ...a, [field]: value } : a)
+  debounceSaveMonsterField(monster, 'attacks', monster.attacks)
 }
 
 async function removeAttack(monster: EncounterMonster, index: number) {
@@ -203,10 +206,9 @@ async function addAbility(monster: EncounterMonster) {
   await updateEncounterMonster(campaignId, encounterId, monster.id, { abilities })
 }
 
-async function updateAbility(monster: EncounterMonster, index: number, field: keyof EncounterMonsterAbility, value: string) {
-  const abilities = monster.abilities.map((a, i) => i === index ? { ...a, [field]: value } : a)
-  monster.abilities = abilities
-  await updateEncounterMonster(campaignId, encounterId, monster.id, { abilities })
+function updateAbility(monster: EncounterMonster, index: number, field: keyof EncounterMonsterAbility, value: string) {
+  monster.abilities = monster.abilities.map((a, i) => i === index ? { ...a, [field]: value } : a)
+  debounceSaveMonsterField(monster, 'abilities', monster.abilities)
 }
 
 async function removeAbility(monster: EncounterMonster, index: number) {
