@@ -3650,7 +3650,7 @@ export const MONSTERS_CATALOG: Monster[] = [
     "def": 27,
     "pv": 115,
     "init": 10,
-    "rd": 3,
+    "rd": "3",
     "attacks": [{ "name": "Épée longue", "bonus": 14, "damage": "1d8+13" }],
     "abilities": [
       { "name": "Charge (L)", "description": "Attaque à 2d20. Succès = FOR opposé ou renversé, DM×2." },
@@ -3708,7 +3708,7 @@ export const MONSTERS_CATALOG: Monster[] = [
     "def": 27,
     "pv": 115,
     "init": 10,
-    "rd": 3,
+    "rd": "3",
     "attacks": [{ "name": "Épée longue", "bonus": 14, "damage": "1d8+13" }],
     "abilities": [
       { "name": "Charge (L)", "description": "Attaque à 2d20. Succès = FOR opposé ou renversé, DM×2." },
@@ -3766,7 +3766,7 @@ export const MONSTERS_CATALOG: Monster[] = [
     "def": 29,
     "pv": 135,
     "init": 10,
-    "rd": 3,
+    "rd": "3",
     "attacks": [{ "name": "Épée longue", "bonus": 16, "damage": "1d8+15" }],
     "abilities": [
       { "name": "Charge (L)", "description": "Attaque à 2d20. Succès = FOR opposé ou renversé, DM×2." },
@@ -3824,7 +3824,7 @@ export const MONSTERS_CATALOG: Monster[] = [
     "def": 29,
     "pv": 135,
     "init": 10,
-    "rd": 6,
+    "rd": "6",
     "attacks": [{ "name": "Épée longue", "bonus": 16, "damage": "1d8+15" }],
     "abilities": [
       { "name": "Charge (L)", "description": "Attaque à 2d20. Succès = FOR opposé ou renversé, DM×2." },
@@ -3882,7 +3882,7 @@ export const MONSTERS_CATALOG: Monster[] = [
     "def": 29,
     "pv": 145,
     "init": 10,
-    "rd": 6,
+    "rd": "6",
     "attacks": [{ "name": "Épée longue", "bonus": 20, "damage": "1d8+18" }],
     "abilities": [
       { "name": "Charge (L)", "description": "Attaque à 2d20. Succès = FOR opposé ou renversé, DM×2." },
@@ -3940,7 +3940,7 @@ export const MONSTERS_CATALOG: Monster[] = [
     "def": 31,
     "pv": 165,
     "init": 10,
-    "rd": 6,
+    "rd": "6",
     "attacks": [{ "name": "Épée longue", "bonus": 22, "damage": "1d8+20" }],
     "abilities": [
       { "name": "Charge (L)", "description": "Attaque à 2d20. Succès = FOR opposé ou renversé, DM×2." },
