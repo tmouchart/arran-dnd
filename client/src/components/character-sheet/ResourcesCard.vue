@@ -4,6 +4,7 @@ import AppCard from "../ui/AppCard.vue";
 import HpGrowthModal from "./HpGrowthModal.vue";
 import type { Character } from "../../types/character";
 import type { VoieFamily } from "../../data/voies";
+import { hpGradientColor } from "../../utils/hpGradientColor";
 
 const props = defineProps<{
   character: Character;
@@ -45,7 +46,7 @@ const mpIsMystique = computed(() => props.family === "mystiques");
         <div class="hp-current-row">
           <button type="button" class="hp-btn hp-btn--minus" :disabled="character.hpCurrent <= 0" @click="character.hpCurrent = Math.max(0, character.hpCurrent - 1)">-</button>
           <div class="hp-current-display hp-current-display--hp">
-            <span class="hp-current-value">{{ character.hpCurrent }}</span>
+            <span class="hp-current-value" :style="{ color: hpGradientColor(character.hpCurrent, computedHp) }">{{ character.hpCurrent }}</span>
             <span class="hp-current-sep">/</span>
             <span class="hp-current-max">{{ computedHp }}</span>
           </div>
@@ -193,9 +194,9 @@ const mpIsMystique = computed(() => props.family === "mystiques");
 }
 
 .bars {
-  display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem 1.2rem;
 }
 
 .bar-label {
@@ -325,7 +326,7 @@ const mpIsMystique = computed(() => props.family === "mystiques");
   font-weight: 600;
 }
 
-.hp-current-display--hp .hp-current-value { color: #c95f56; }
+/* hp-current-display--hp color is set dynamically via :style */
 .hp-current-display--mp .hp-current-value { color: #678fc2; }
 
 .hp-formula { margin-top: 0.3rem; }
@@ -369,14 +370,12 @@ const mpIsMystique = computed(() => props.family === "mystiques");
   padding-top: 0.75rem;
   border-top: 1px solid var(--border);
   display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
+  flex-direction: row;
+  gap: 1.2rem;
+  flex-wrap: wrap;
 }
 
-@media (min-width: 520px) {
-  .extra-row { flex-direction: row; gap: 1.2rem; }
-  .extra-row .field { flex: 1; }
-}
+.extra-row .field { flex: 1; min-width: 0; }
 
 .def-chip--pc {
   border-color: #c89c3a;

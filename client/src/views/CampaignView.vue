@@ -209,8 +209,9 @@ async function handleLaunchCombat() {
             <div
               v-for="m in campaign.members"
               :key="m.userId"
-              class="member-card clickable"
-              @click="viewCharacter(m.userId)"
+              class="member-card"
+              :class="{ clickable: isGm || m.userId === user?.id }"
+              @click="isGm || m.userId === user?.id ? viewCharacter(m.userId) : undefined"
             >
               <div class="member-avatar">
                 <img v-if="m.portraitUrl" :src="m.portraitUrl" alt="" />

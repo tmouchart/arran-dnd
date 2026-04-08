@@ -100,17 +100,22 @@ function modDisplay(score: number): string {
 .ability-row {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.2rem;
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 0.3rem 0.4rem 0.3rem 0.55rem;
+  padding: 0.3rem 0.3rem 0.3rem 0.4rem;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .score-mod {
   display: flex;
   align-items: baseline;
-  gap: 0.2rem;
+  gap: 0.15rem;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .score-val {

@@ -3260,5 +3260,2335 @@ export const MONSTERS_CATALOG: Monster[] = [
       }
     ],
     "description": "Les worgs sont des cousins des loups, plus puissants (jusqu'à 150 kg) et plus dangereux. Ils ont été domestiqués par certaines tribus orques pour participer aux chasses."
+  },
+  {
+    "name": "Combattant NC0.5",
+    "nc": 0.5,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 14,
+    "pv": 9,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 2, "damage": "1d8+1" }],
+    "abilities": [],
+    "description": "Guerrier humanoïde de bas rang."
+  },
+  {
+    "name": "Combattant NC1",
+    "nc": 1,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 15,
+    "pv": 15,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 4, "damage": "1d8+3" }],
+    "abilities": [],
+    "description": "Guerrier humanoïde aguerri."
+  },
+  {
+    "name": "Combattant NC2",
+    "nc": 2,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 17,
+    "pv": 35,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 6, "damage": "1d8+5" }],
+    "abilities": [],
+    "description": "Guerrier humanoïde confirmé."
+  },
+  {
+    "name": "Combattant Brute NC3",
+    "nc": 3,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 17,
+    "pv": 35,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 6, "damage": "1d8+5" }],
+    "abilities": [{ "name": "Charge (L)", "description": "Attaque à 2d20 (garde le meilleur). Succès = FOR opposé ou renversé, DM×2." }],
+    "description": "Guerrier brut spécialisé dans les charges dévastatrices."
+  },
+  {
+    "name": "Combattant Champion NC3",
+    "nc": 3,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 17,
+    "pv": 35,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 6, "damage": "1d8+5" }],
+    "abilities": [{ "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche automatiquement, +1d6 DM." }],
+    "description": "Guerrier technique capable de parer et de contre-attaquer."
+  },
+  {
+    "name": "Combattant Conquérant NC3",
+    "nc": 3,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 17,
+    "pv": 35,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 6, "damage": "1d8+5" }],
+    "abilities": [{ "name": "Sergent", "description": "+1 action à un allié en vue par tour. Une fois par combat ignore un coup mortel." }],
+    "description": "Guerrier meneur d'hommes qui inspire ses alliés au combat."
+  },
+  {
+    "name": "Combattant Brute NC4",
+    "nc": 4,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 19,
+    "pv": 55,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 8, "damage": "1d8+7" }],
+    "abilities": [
+      { "name": "Charge (L)", "description": "Attaque à 2d20. Succès = FOR opposé ou renversé, DM×2." },
+      { "name": "Enrager", "description": "Sur critique ou ≤50% PV : +5 attaque, +1d6 DM. Agit 1 tour après 0 PV." }
+    ],
+    "description": "Guerrier brut de haut rang, redoutable dans les charges."
+  },
+  {
+    "name": "Combattant Champion NC4",
+    "nc": 4,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 19,
+    "pv": 55,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 8, "damage": "1d8+7" }],
+    "abilities": [
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Riposte", "description": "Attaque gratuite contre chaque agresseur (sauf cible choisie)." }
+    ],
+    "description": "Guerrier technique avec riposte automatique."
+  },
+  {
+    "name": "Combattant Conquérant NC4",
+    "nc": 4,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 19,
+    "pv": 55,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 8, "damage": "1d8+7" }],
+    "abilities": [
+      { "name": "Sergent", "description": "+1 action à un allié en vue par tour. Ignore un coup mortel une fois par combat." },
+      { "name": "Capitaine", "description": "Alliés en vue : +2 init/attaque/DM. Attaque supplémentaire avec action limitée." }
+    ],
+    "description": "Chef de guerre inspirant."
+  },
+  {
+    "name": "Combattant Brute NC5",
+    "nc": 5,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 19,
+    "pv": 55,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 8, "damage": "1d8+7" }],
+    "abilities": [
+      { "name": "Charge (L)", "description": "Attaque à 2d20. Succès = FOR opposé ou renversé, DM×2." },
+      { "name": "Enrager", "description": "Sur critique ou ≤50% PV : +5 attaque, +1d6 DM. Agit 1 tour après 0 PV." },
+      { "name": "Percuter", "description": "Après une Charge réussie, CON 15 ou étourdi." }
+    ],
+    "description": "Brute imparable et enragée."
+  },
+  {
+    "name": "Combattant Champion NC5",
+    "nc": 5,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 19,
+    "pv": 55,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 8, "damage": "1d8+7" }],
+    "abilities": [
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Riposte", "description": "Attaque gratuite contre chaque agresseur." },
+      { "name": "Hausser le ton", "description": "À ≤50% PV : +5 attaque, +1d6 DM, RD 5." }
+    ],
+    "description": "Champion endurci qui regagne de la puissance sous la pression."
+  },
+  {
+    "name": "Combattant Conquérant NC5",
+    "nc": 5,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 19,
+    "pv": 55,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 8, "damage": "1d8+7" }],
+    "abilities": [
+      { "name": "Sergent", "description": "+1 action à un allié en vue par tour. Ignore un coup mortel une fois par combat." },
+      { "name": "Capitaine", "description": "Alliés en vue : +2 init/attaque/DM. Attaque supplémentaire." },
+      { "name": "Commandant", "description": "Bonus à +3. Si ≥4 alliés à 10 m, prend moitié des DM." }
+    ],
+    "description": "Commandant de terrain avec bonus de commandement croissants."
+  },
+  {
+    "name": "Combattant Brute NC6",
+    "nc": 6,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 23,
+    "pv": 75,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 10, "damage": "1d8+9" }],
+    "abilities": [
+      { "name": "Charge (L)", "description": "Attaque à 2d20. Succès = FOR opposé ou renversé, DM×2." },
+      { "name": "Enrager", "description": "Sur critique ou ≤50% PV : +5 attaque, +1d6 DM." },
+      { "name": "Percuter", "description": "Après Charge, CON 15 ou étourdi." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." }
+    ],
+    "description": "Brute implacable."
+  },
+  {
+    "name": "Combattant Champion NC6",
+    "nc": 6,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 23,
+    "pv": 75,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 10, "damage": "1d8+9" }],
+    "abilities": [
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Riposte", "description": "Attaque gratuite contre chaque agresseur." },
+      { "name": "Hausser le ton", "description": "À ≤50% PV : +5 attaque, +1d6 DM, RD 5." },
+      { "name": "Charge (L)", "description": "Attaque à 2d20. Succès = FOR opposé ou renversé, DM×2." }
+    ],
+    "description": "Champion de haut rang, virtuose du combat."
+  },
+  {
+    "name": "Combattant Conquérant NC6",
+    "nc": 6,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 23,
+    "pv": 75,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 10, "damage": "1d8+9" }],
+    "abilities": [
+      { "name": "Sergent", "description": "+1 action à un allié en vue par tour. Ignore un coup mortel une fois par combat." },
+      { "name": "Capitaine", "description": "Alliés en vue : +2 init/attaque/DM. Attaque supplémentaire." },
+      { "name": "Commandant", "description": "Bonus à +3. Si ≥4 alliés à 10 m, prend moitié des DM." },
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." }
+    ],
+    "description": "Conquérant redoutable avec instinct de survie."
+  },
+  {
+    "name": "Combattant Brute NC7",
+    "nc": 7,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 23,
+    "pv": 75,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 10, "damage": "1d8+9" }],
+    "abilities": [
+      { "name": "Charge (L)", "description": "Attaque à 2d20. Succès = FOR opposé ou renversé, DM×2." },
+      { "name": "Enrager", "description": "Sur critique ou ≤50% PV : +5 attaque, +1d6 DM." },
+      { "name": "Percuter", "description": "Après Charge, CON 15 ou étourdi." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Fauchage", "description": "Sur 15-20 au d20, cible renversée si rate DEX [10+BU]." }
+    ],
+    "description": "Brute expérimentée qui fauche ses ennemis."
+  },
+  {
+    "name": "Combattant Champion NC7",
+    "nc": 7,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 23,
+    "pv": 75,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 10, "damage": "1d8+9" }],
+    "abilities": [
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Riposte", "description": "Attaque gratuite contre chaque agresseur." },
+      { "name": "Hausser le ton", "description": "À ≤50% PV : +5 attaque, +1d6 DM, RD 5." },
+      { "name": "Charge (L)", "description": "Attaque à 2d20. Succès = FOR opposé ou renversé, DM×2." },
+      { "name": "Enrager", "description": "Sur critique ou ≤50% PV : +5 attaque, +1d6 DM." }
+    ],
+    "description": "Champion capable de charger et contre-attaquer."
+  },
+  {
+    "name": "Combattant Conquérant NC7",
+    "nc": 7,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 23,
+    "pv": 75,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 10, "damage": "1d8+9" }],
+    "abilities": [
+      { "name": "Sergent", "description": "+1 action à un allié en vue par tour. Ignore un coup mortel une fois par combat." },
+      { "name": "Capitaine", "description": "Alliés en vue : +2 init/attaque/DM. Attaque supplémentaire." },
+      { "name": "Commandant", "description": "Bonus à +3. Si ≥4 alliés à 10 m, prend moitié des DM." },
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Chair à canon", "description": "Redirige attaques sur un subordonné dans 3 m. +5 DEF avec subordonnés proches." }
+    ],
+    "description": "Conquérant qui sacrifie ses subordonnés pour se protéger."
+  },
+  {
+    "name": "Combattant Brute NC8",
+    "nc": 8,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 25,
+    "pv": 95,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 12, "damage": "1d8+11" }],
+    "abilities": [
+      { "name": "Charge (L)", "description": "Attaque à 2d20. Succès = FOR opposé ou renversé, DM×2." },
+      { "name": "Enrager", "description": "Sur critique ou ≤50% PV : +5 attaque, +1d6 DM." },
+      { "name": "Percuter", "description": "Après Charge, CON 15 ou étourdi." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Fauchage", "description": "Sur 15-20, cible renversée si rate DEX [10+BU]." }
+    ],
+    "description": "Brute puissante avec portée de frappe étendue."
+  },
+  {
+    "name": "Combattant Champion NC8",
+    "nc": 8,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 25,
+    "pv": 95,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 12, "damage": "1d8+11" }],
+    "abilities": [
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Riposte", "description": "Attaque gratuite contre chaque agresseur." },
+      { "name": "Hausser le ton", "description": "À ≤50% PV : +5 attaque, +1d6 DM, RD 5." },
+      { "name": "Charge (L)", "description": "Attaque à 2d20. Succès = FOR opposé ou renversé, DM×2." },
+      { "name": "Enrager", "description": "Sur critique ou ≤50% PV : +5 attaque, +1d6 DM." }
+    ],
+    "description": "Champion maîtrisant charge et enragement."
+  },
+  {
+    "name": "Combattant Conquérant NC8",
+    "nc": 8,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 25,
+    "pv": 95,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 12, "damage": "1d8+11" }],
+    "abilities": [
+      { "name": "Sergent", "description": "+1 action à un allié en vue par tour. Ignore un coup mortel une fois par combat." },
+      { "name": "Capitaine", "description": "Alliés en vue : +2 init/attaque/DM. Attaque supplémentaire." },
+      { "name": "Commandant", "description": "Bonus à +3. Si ≥4 alliés à 10 m, prend moitié des DM." },
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Chair à canon", "description": "Redirige attaques sur un subordonné dans 3 m. +5 DEF avec subordonnés proches." }
+    ],
+    "description": "Conquérant capable de piéger les ennemis."
+  },
+  {
+    "name": "Combattant Brute NC9",
+    "nc": 9,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 25,
+    "pv": 95,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 12, "damage": "1d8+11" }],
+    "abilities": [
+      { "name": "Charge (L)", "description": "Attaque à 2d20. Succès = FOR opposé ou renversé, DM×2." },
+      { "name": "Enrager", "description": "Sur critique ou ≤50% PV : +5 attaque, +1d6 DM." },
+      { "name": "Percuter", "description": "Après Charge, CON 15 ou étourdi." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Fauchage", "description": "Sur 15-20, cible renversée si rate DEX [10+BU]." },
+      { "name": "Balayage", "description": "Attaque jusqu'à 3 cibles dans un arc de 180°." }
+    ],
+    "description": "Brute balayant ses adversaires dans un arc dévastateur."
+  },
+  {
+    "name": "Combattant Champion NC9",
+    "nc": 9,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 25,
+    "pv": 95,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 12, "damage": "1d8+11" }],
+    "abilities": [
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Riposte", "description": "Attaque gratuite contre chaque agresseur." },
+      { "name": "Hausser le ton", "description": "À ≤50% PV : +5 attaque, +1d6 DM, RD 5." },
+      { "name": "Charge (L)", "description": "Attaque à 2d20. Succès = FOR opposé ou renversé, DM×2." },
+      { "name": "Enrager", "description": "Sur critique ou ≤50% PV : +5 attaque, +1d6 DM." },
+      { "name": "Percuter", "description": "Après Charge, CON 15 ou étourdi." }
+    ],
+    "description": "Champion percutant, maître du contrôle de foule."
+  },
+  {
+    "name": "Combattant Conquérant NC9",
+    "nc": 9,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 25,
+    "pv": 95,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 12, "damage": "1d8+11" }],
+    "abilities": [
+      { "name": "Sergent", "description": "+1 action à un allié en vue par tour. Ignore un coup mortel une fois par combat." },
+      { "name": "Capitaine", "description": "Alliés en vue : +2 init/attaque/DM. Attaque supplémentaire." },
+      { "name": "Commandant", "description": "Bonus à +3. Si ≥4 alliés à 10 m, prend moitié des DM." },
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Chair à canon", "description": "Redirige attaques sur un subordonné dans 3 m. +5 DEF avec subordonnés proches." },
+      { "name": "Attaque mortelle (L)", "description": "Depuis derrière ou surprise : +5 attaque, +3d6 DM. +5 en discrétion." }
+    ],
+    "description": "Conquérant maîtrisant l'attaque mortelle dissimulée."
+  },
+  {
+    "name": "Combattant Brute NC10",
+    "nc": 10,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 27,
+    "pv": 115,
+    "init": 10,
+    "rd": "3",
+    "attacks": [{ "name": "Épée longue", "bonus": 14, "damage": "1d8+13" }],
+    "abilities": [
+      { "name": "Charge (L)", "description": "Attaque à 2d20. Succès = FOR opposé ou renversé, DM×2." },
+      { "name": "Enrager", "description": "Sur critique ou ≤50% PV : +5 attaque, +1d6 DM." },
+      { "name": "Percuter", "description": "Après Charge, CON 15 ou étourdi." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Fauchage", "description": "Sur 15-20, cible renversée si rate DEX [10+BU]." },
+      { "name": "Balayage", "description": "Attaque jusqu'à 3 cibles dans un arc de 180°." }
+    ],
+    "description": "Brute de haut rang avec RD 3."
+  },
+  {
+    "name": "Combattant Champion NC10",
+    "nc": 10,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 27,
+    "pv": 115,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 14, "damage": "1d8+13" }],
+    "abilities": [
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Riposte", "description": "Attaque gratuite contre chaque agresseur." },
+      { "name": "Hausser le ton", "description": "À ≤50% PV : +5 attaque, +1d6 DM, RD 5." },
+      { "name": "Charge (L)", "description": "Attaque à 2d20. Succès = FOR opposé ou renversé, DM×2." },
+      { "name": "Enrager", "description": "Sur critique ou ≤50% PV : +5 attaque, +1d6 DM." },
+      { "name": "Percuter", "description": "Après Charge, CON 15 ou étourdi." }
+    ],
+    "description": "Champion légendaire."
+  },
+  {
+    "name": "Combattant Conquérant NC10",
+    "nc": 10,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 27,
+    "pv": 115,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 14, "damage": "1d8+13" }],
+    "abilities": [
+      { "name": "Sergent", "description": "+1 action à un allié en vue par tour. Ignore un coup mortel une fois par combat." },
+      { "name": "Capitaine", "description": "Alliés en vue : +2 init/attaque/DM. Attaque supplémentaire." },
+      { "name": "Commandant", "description": "Bonus à +3. Si ≥4 alliés à 10 m, prend moitié des DM." },
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Chair à canon", "description": "Redirige attaques sur un subordonné dans 3 m. +5 DEF avec subordonnés proches." },
+      { "name": "Attaque mortelle (L)", "description": "Depuis derrière ou surprise : +5 attaque, +3d6 DM. +5 en discrétion." }
+    ],
+    "description": "Conquérant suprême, commandant de légion."
+  },
+  {
+    "name": "Combattant Brute NC11",
+    "nc": 11,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 27,
+    "pv": 115,
+    "init": 10,
+    "rd": "3",
+    "attacks": [{ "name": "Épée longue", "bonus": 14, "damage": "1d8+13" }],
+    "abilities": [
+      { "name": "Charge (L)", "description": "Attaque à 2d20. Succès = FOR opposé ou renversé, DM×2." },
+      { "name": "Enrager", "description": "Sur critique ou ≤50% PV : +5 attaque, +1d6 DM." },
+      { "name": "Percuter", "description": "Après Charge, CON 15 ou étourdi." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Fauchage", "description": "Sur 15-20, cible renversée si rate DEX [10+BU]." },
+      { "name": "Balayage", "description": "Attaque jusqu'à 3 cibles dans un arc de 180°." }
+    ],
+    "description": "Brute quasi-invincible avec RD 3."
+  },
+  {
+    "name": "Combattant Champion NC11",
+    "nc": 11,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 27,
+    "pv": 115,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 14, "damage": "1d8+13" }],
+    "abilities": [
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Riposte", "description": "Attaque gratuite contre chaque agresseur." },
+      { "name": "Hausser le ton", "description": "À ≤50% PV : +5 attaque, +1d6 DM, RD 5." },
+      { "name": "Charge (L)", "description": "Attaque à 2d20. Succès = FOR opposé ou renversé, DM×2." },
+      { "name": "Enrager", "description": "Sur critique ou ≤50% PV : +5 attaque, +1d6 DM." },
+      { "name": "Percuter", "description": "Après Charge, CON 15 ou étourdi." }
+    ],
+    "description": "Champion de légende avec riposte totale."
+  },
+  {
+    "name": "Combattant Conquérant NC11",
+    "nc": 11,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 27,
+    "pv": 115,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 14, "damage": "1d8+13" }],
+    "abilities": [
+      { "name": "Sergent", "description": "+1 action à un allié en vue par tour. Ignore un coup mortel une fois par combat." },
+      { "name": "Capitaine", "description": "Alliés en vue : +2 init/attaque/DM. Attaque supplémentaire." },
+      { "name": "Commandant", "description": "Bonus à +3. Si ≥4 alliés à 10 m, prend moitié des DM." },
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Chair à canon", "description": "Redirige attaques sur un subordonné dans 3 m. +5 DEF avec subordonnés proches." },
+      { "name": "Attaque mortelle (L)", "description": "Depuis derrière ou surprise : +5 attaque, +3d6 DM. +5 en discrétion." }
+    ],
+    "description": "Conquérant légendaire."
+  },
+  {
+    "name": "Combattant Brute NC12",
+    "nc": 12,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 29,
+    "pv": 135,
+    "init": 10,
+    "rd": "3",
+    "attacks": [{ "name": "Épée longue", "bonus": 16, "damage": "1d8+15" }],
+    "abilities": [
+      { "name": "Charge (L)", "description": "Attaque à 2d20. Succès = FOR opposé ou renversé, DM×2." },
+      { "name": "Enrager", "description": "Sur critique ou ≤50% PV : +5 attaque, +1d6 DM." },
+      { "name": "Percuter", "description": "Après Charge, CON 15 ou étourdi." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Fauchage", "description": "Sur 15-20, cible renversée si rate DEX [10+BU]." },
+      { "name": "Balayage", "description": "Attaque jusqu'à 3 cibles dans un arc de 180°." }
+    ],
+    "description": "Brute de haut rang avec RD 3."
+  },
+  {
+    "name": "Combattant Champion NC12",
+    "nc": 12,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 29,
+    "pv": 135,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 16, "damage": "1d8+15" }],
+    "abilities": [
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Riposte", "description": "Attaque gratuite contre chaque agresseur." },
+      { "name": "Hausser le ton", "description": "À ≤50% PV : +5 attaque, +1d6 DM, RD 5." },
+      { "name": "Charge (L)", "description": "Attaque à 2d20. Succès = FOR opposé ou renversé, DM×2." },
+      { "name": "Enrager", "description": "Sur critique ou ≤50% PV : +5 attaque, +1d6 DM." },
+      { "name": "Percuter", "description": "Après Charge, CON 15 ou étourdi." }
+    ],
+    "description": "Champion au sommet."
+  },
+  {
+    "name": "Combattant Conquérant NC12",
+    "nc": 12,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 29,
+    "pv": 135,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 16, "damage": "1d8+15" }],
+    "abilities": [
+      { "name": "Sergent", "description": "+1 action à un allié en vue par tour. Ignore un coup mortel une fois par combat." },
+      { "name": "Capitaine", "description": "Alliés en vue : +2 init/attaque/DM. Attaque supplémentaire." },
+      { "name": "Commandant", "description": "Bonus à +3. Si ≥4 alliés à 10 m, prend moitié des DM." },
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Chair à canon", "description": "Redirige attaques sur un subordonné dans 3 m. +5 DEF avec subordonnés proches." },
+      { "name": "Attaque mortelle (L)", "description": "Depuis derrière ou surprise : +5 attaque, +3d6 DM. +5 en discrétion." }
+    ],
+    "description": "Conquérant au sommet de l'art militaire."
+  },
+  {
+    "name": "Combattant Brute NC13",
+    "nc": 13,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 29,
+    "pv": 135,
+    "init": 10,
+    "rd": "6",
+    "attacks": [{ "name": "Épée longue", "bonus": 16, "damage": "1d8+15" }],
+    "abilities": [
+      { "name": "Charge (L)", "description": "Attaque à 2d20. Succès = FOR opposé ou renversé, DM×2." },
+      { "name": "Enrager", "description": "Sur critique ou ≤50% PV : +5 attaque, +1d6 DM." },
+      { "name": "Percuter", "description": "Après Charge, CON 15 ou étourdi." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Fauchage", "description": "Sur 15-20, cible renversée si rate DEX [10+BU]." },
+      { "name": "Balayage", "description": "Attaque jusqu'à 3 cibles dans un arc de 180°." }
+    ],
+    "description": "Brute épique avec RD 6."
+  },
+  {
+    "name": "Combattant Champion NC13",
+    "nc": 13,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 29,
+    "pv": 135,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 16, "damage": "1d8+15" }],
+    "abilities": [
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Riposte", "description": "Attaque gratuite contre chaque agresseur." },
+      { "name": "Hausser le ton", "description": "À ≤50% PV : +5 attaque, +1d6 DM, RD 5." },
+      { "name": "Charge (L)", "description": "Attaque à 2d20. Succès = FOR opposé ou renversé, DM×2." },
+      { "name": "Enrager", "description": "Sur critique ou ≤50% PV : +5 attaque, +1d6 DM." },
+      { "name": "Percuter", "description": "Après Charge, CON 15 ou étourdi." }
+    ],
+    "description": "Champion épique."
+  },
+  {
+    "name": "Combattant Conquérant NC13",
+    "nc": 13,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 29,
+    "pv": 135,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 16, "damage": "1d8+15" }],
+    "abilities": [
+      { "name": "Sergent", "description": "+1 action à un allié en vue par tour. Ignore un coup mortel une fois par combat." },
+      { "name": "Capitaine", "description": "Alliés en vue : +2 init/attaque/DM. Attaque supplémentaire." },
+      { "name": "Commandant", "description": "Bonus à +3. Si ≥4 alliés à 10 m, prend moitié des DM." },
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Chair à canon", "description": "Redirige attaques sur un subordonné dans 3 m. +5 DEF avec subordonnés proches." },
+      { "name": "Attaque mortelle (L)", "description": "Depuis derrière ou surprise : +5 attaque, +3d6 DM. +5 en discrétion." }
+    ],
+    "description": "Conquérant épique."
+  },
+  {
+    "name": "Combattant Brute NC14",
+    "nc": 14,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 29,
+    "pv": 145,
+    "init": 10,
+    "rd": "6",
+    "attacks": [{ "name": "Épée longue", "bonus": 20, "damage": "1d8+18" }],
+    "abilities": [
+      { "name": "Charge (L)", "description": "Attaque à 2d20. Succès = FOR opposé ou renversé, DM×2." },
+      { "name": "Enrager", "description": "Sur critique ou ≤50% PV : +5 attaque, +1d6 DM." },
+      { "name": "Percuter", "description": "Après Charge, CON 15 ou étourdi." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Fauchage", "description": "Sur 15-20, cible renversée si rate DEX [10+BU]." },
+      { "name": "Balayage", "description": "Attaque jusqu'à 3 cibles dans un arc de 180°." }
+    ],
+    "description": "Brute légendaire avec RD 6."
+  },
+  {
+    "name": "Combattant Champion NC14",
+    "nc": 14,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 29,
+    "pv": 145,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 20, "damage": "1d8+18" }],
+    "abilities": [
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Riposte", "description": "Attaque gratuite contre chaque agresseur." },
+      { "name": "Hausser le ton", "description": "À ≤50% PV : +5 attaque, +1d6 DM, RD 5." },
+      { "name": "Charge (L)", "description": "Attaque à 2d20. Succès = FOR opposé ou renversé, DM×2." },
+      { "name": "Enrager", "description": "Sur critique ou ≤50% PV : +5 attaque, +1d6 DM." },
+      { "name": "Percuter", "description": "Après Charge, CON 15 ou étourdi." }
+    ],
+    "description": "Champion légendaire."
+  },
+  {
+    "name": "Combattant Conquérant NC14",
+    "nc": 14,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 29,
+    "pv": 145,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 20, "damage": "1d8+18" }],
+    "abilities": [
+      { "name": "Sergent", "description": "+1 action à un allié en vue par tour. Ignore un coup mortel une fois par combat." },
+      { "name": "Capitaine", "description": "Alliés en vue : +2 init/attaque/DM. Attaque supplémentaire." },
+      { "name": "Commandant", "description": "Bonus à +3. Si ≥4 alliés à 10 m, prend moitié des DM." },
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Chair à canon", "description": "Redirige attaques sur un subordonné dans 3 m. +5 DEF avec subordonnés proches." },
+      { "name": "Attaque mortelle (L)", "description": "Depuis derrière ou surprise : +5 attaque, +3d6 DM. +5 en discrétion." }
+    ],
+    "description": "Conquérant légendaire."
+  },
+  {
+    "name": "Combattant Brute NC15",
+    "nc": 15,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 31,
+    "pv": 165,
+    "init": 10,
+    "rd": "6",
+    "attacks": [{ "name": "Épée longue", "bonus": 22, "damage": "1d8+20" }],
+    "abilities": [
+      { "name": "Charge (L)", "description": "Attaque à 2d20. Succès = FOR opposé ou renversé, DM×2." },
+      { "name": "Enrager", "description": "Sur critique ou ≤50% PV : +5 attaque, +1d6 DM." },
+      { "name": "Percuter", "description": "Après Charge, CON 15 ou étourdi." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Fauchage", "description": "Sur 15-20, cible renversée si rate DEX [10+BU]." },
+      { "name": "Balayage", "description": "Attaque jusqu'à 3 cibles dans un arc de 180°." }
+    ],
+    "description": "Brute suprême avec RD 6."
+  },
+  {
+    "name": "Combattant Champion NC15",
+    "nc": 15,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 31,
+    "pv": 165,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 22, "damage": "1d8+20" }],
+    "abilities": [
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Riposte", "description": "Attaque gratuite contre chaque agresseur." },
+      { "name": "Hausser le ton", "description": "À ≤50% PV : +5 attaque, +1d6 DM, RD 5." },
+      { "name": "Charge (L)", "description": "Attaque à 2d20. Succès = FOR opposé ou renversé, DM×2." },
+      { "name": "Enrager", "description": "Sur critique ou ≤50% PV : +5 attaque, +1d6 DM." },
+      { "name": "Percuter", "description": "Après Charge, CON 15 ou étourdi." }
+    ],
+    "description": "Champion suprême."
+  },
+  {
+    "name": "Combattant Conquérant NC15",
+    "nc": 15,
+    "size": "moyenne",
+    "stats": { "for": 3, "dex": 0, "con": 3, "int": 0, "sag": 0, "cha": 0 },
+    "def": 31,
+    "pv": 165,
+    "init": 10,
+    "attacks": [{ "name": "Épée longue", "bonus": 22, "damage": "1d8+20" }],
+    "abilities": [
+      { "name": "Sergent", "description": "+1 action à un allié en vue par tour. Ignore un coup mortel une fois par combat." },
+      { "name": "Capitaine", "description": "Alliés en vue : +2 init/attaque/DM. Attaque supplémentaire." },
+      { "name": "Commandant", "description": "Bonus à +3. Si ≥4 alliés à 10 m, prend moitié des DM." },
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Chair à canon", "description": "Redirige attaques sur un subordonné dans 3 m. +5 DEF avec subordonnés proches." },
+      { "name": "Attaque mortelle (L)", "description": "Depuis derrière ou surprise : +5 attaque, +3d6 DM. +5 en discrétion." }
+    ],
+    "description": "Conquérant suprême, seigneur de guerre légendaire."
+  },
+  {
+    "name": "Aventurier NC0.5",
+    "nc": 0.5,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 14,
+    "pv": 3,
+    "init": 14,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 3, "damage": "1d6" }],
+    "abilities": [],
+    "description": "Aventurier humanoïde de bas rang, agile et rapide."
+  },
+  {
+    "name": "Aventurier NC1",
+    "nc": 1,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 16,
+    "pv": 6,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 5, "damage": "1d6" }],
+    "abilities": [{ "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." }],
+    "description": "Aventurier aguerri avec instinct de survie."
+  },
+  {
+    "name": "Aventurier NC2",
+    "nc": 2,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 18,
+    "pv": 26,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 7, "damage": "1d6+2" }],
+    "abilities": [{ "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." }],
+    "description": "Aventurier confirmé avec instinct de survie."
+  },
+  {
+    "name": "Aventurier Assassin NC3",
+    "nc": 3,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 18,
+    "pv": 26,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 7, "damage": "1d6+2" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Attaque mortelle (L)", "description": "Depuis derrière ou surprise : +5 attaque, +3d6 DM. +5 discrétion." }
+    ],
+    "description": "Assassin spécialisé dans les attaques mortelles."
+  },
+  {
+    "name": "Aventurier Maître d'armes NC3",
+    "nc": 3,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 18,
+    "pv": 26,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 7, "damage": "1d6+2" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." }
+    ],
+    "description": "Duelliste capable de déjouer et contre-attaquer."
+  },
+  {
+    "name": "Aventurier Tireur NC3",
+    "nc": 3,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 18,
+    "pv": 26,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 7, "damage": "1d6+2" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Embuscade", "description": "Premier tour : SAG 19 ou surpris. +1d6 DM vs surpris. +5 discrétion/init." }
+    ],
+    "description": "Tireur d'élite adepte des embuscades."
+  },
+  {
+    "name": "Aventurier Assassin NC4",
+    "nc": 4,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 20,
+    "pv": 46,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 9, "damage": "1d6+4" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Attaque mortelle (L)", "description": "Depuis derrière ou surprise : +5 attaque, +3d6 DM. +5 discrétion." },
+      { "name": "Disparition (L)", "description": "Devient invisible, déplacement 20 m. Tour suivant : Attaque mortelle si DEX > SAG." }
+    ],
+    "description": "Assassin redoutable qui disparaît après ses coups."
+  },
+  {
+    "name": "Aventurier Maître d'armes NC4",
+    "nc": 4,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 20,
+    "pv": 46,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 9, "damage": "1d6+4" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Riposte", "description": "Attaque gratuite contre chaque agresseur." }
+    ],
+    "description": "Maître d'armes qui riposte automatiquement."
+  },
+  {
+    "name": "Aventurier Tireur NC4",
+    "nc": 4,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 20,
+    "pv": 46,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 9, "damage": "1d6+4" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Embuscade", "description": "Premier tour : SAG 19 ou surpris. +1d6 DM vs surpris. +5 discrétion/init." },
+      { "name": "Attaque mortelle (L)", "description": "Depuis derrière ou surprise : +5 attaque, +3d6 DM. +5 discrétion." }
+    ],
+    "description": "Tireur mobile et difficile à cibler."
+  },
+  {
+    "name": "Aventurier Assassin NC5",
+    "nc": 5,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 20,
+    "pv": 46,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 9, "damage": "1d6+4" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Attaque mortelle (L)", "description": "Depuis derrière ou surprise : +5 attaque, +3d6 DM. +5 discrétion." },
+      { "name": "Disparition (L)", "description": "Invisible, 20 m. Tour suivant : Attaque mortelle si DEX > SAG." },
+      { "name": "Assassinat", "description": "Attaque mortelle sur cible surprise : CON 15 ou 0 PV." }
+    ],
+    "description": "Assassin capable d'exécuter ses cibles."
+  },
+  {
+    "name": "Aventurier Maître d'armes NC5",
+    "nc": 5,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 20,
+    "pv": 46,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 9, "damage": "1d6+4" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Riposte", "description": "Attaque gratuite contre chaque agresseur." },
+      { "name": "Hausser le ton", "description": "À ≤50% PV : +5 attaque, +1d6 DM, RD 5." }
+    ],
+    "description": "Maître d'armes qui reprend de la vigueur sous pression."
+  },
+  {
+    "name": "Aventurier Tireur NC5",
+    "nc": 5,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 20,
+    "pv": 46,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 9, "damage": "1d6+4" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Attaque mortelle (L)", "description": "Depuis derrière ou surprise : +5 attaque, +3d6 DM. +5 discrétion." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." }
+    ],
+    "description": "Tireur d'élite avec double tir."
+  },
+  {
+    "name": "Aventurier Assassin NC6",
+    "nc": 6,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 22,
+    "pv": 66,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 11, "damage": "1d6+6" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Attaque mortelle (L)", "description": "Depuis derrière ou surprise : +5 attaque, +3d6 DM. +5 discrétion." },
+      { "name": "Disparition (L)", "description": "Invisible, 20 m. Tour suivant : Attaque mortelle si DEX > SAG." },
+      { "name": "Assassinat", "description": "Attaque mortelle sur surpris : CON 15 ou 0 PV." },
+      { "name": "Interchangeables", "description": "+5 DEF en supériorité numérique. Redistribution des DM possible." }
+    ],
+    "description": "Assassin interchangeable, imprévisible en groupe."
+  },
+  {
+    "name": "Aventurier Maître d'armes NC6",
+    "nc": 6,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 22,
+    "pv": 66,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 11, "damage": "1d6+6" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Riposte", "description": "Attaque gratuite contre chaque agresseur." },
+      { "name": "Hausser le ton", "description": "À ≤50% PV : +5 attaque, +1d6 DM, RD 5." },
+      { "name": "Interchangeables", "description": "+5 DEF en supériorité numérique. Redistribution des DM possible." }
+    ],
+    "description": "Maître d'armes interchangeable en groupe."
+  },
+  {
+    "name": "Aventurier Tireur NC6",
+    "nc": 6,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 22,
+    "pv": 66,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 11, "damage": "1d6+6" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Attaque mortelle (L)", "description": "Depuis derrière ou surprise : +5 attaque, +3d6 DM. +5 discrétion." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Tireur d'élite (L)", "description": "2 attaques à distance par action. Ignore couverture. Option d12 : +2d6 DM." }
+    ],
+    "description": "Tireur d'élite avec disparition tactique."
+  },
+  {
+    "name": "Aventurier Assassin NC7",
+    "nc": 7,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 22,
+    "pv": 66,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 11, "damage": "1d6+6" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Embuscade", "description": "Premier tour : SAG 19 ou surpris. +1d6 DM vs surpris. +5 discrétion/init." },
+      { "name": "Attaque mortelle (L)", "description": "Depuis derrière ou surprise : +5 attaque, +3d6 DM. +5 discrétion." },
+      { "name": "Disparition (L)", "description": "Invisible, 20 m. Tour suivant : Attaque mortelle si DEX > SAG." },
+      { "name": "Assassinat", "description": "Attaque mortelle sur surpris : CON 15 ou 0 PV." },
+      { "name": "Interchangeables", "description": "+5 DEF en supériorité numérique." }
+    ],
+    "description": "Assassin de haut rang."
+  },
+  {
+    "name": "Aventurier Maître d'armes NC7",
+    "nc": 7,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 22,
+    "pv": 66,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 11, "damage": "1d6+6" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Embuscade", "description": "Premier tour : SAG 19 ou surpris. +1d6 DM vs surpris. +5 discrétion/init." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Riposte", "description": "Attaque gratuite contre chaque agresseur." },
+      { "name": "Hausser le ton", "description": "À ≤50% PV : +5 attaque, +1d6 DM, RD 5." },
+      { "name": "Interchangeables", "description": "+5 DEF en supériorité numérique." }
+    ],
+    "description": "Maître d'armes expert."
+  },
+  {
+    "name": "Aventurier Tireur NC7",
+    "nc": 7,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 22,
+    "pv": 66,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 11, "damage": "1d6+6" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Embuscade", "description": "Premier tour : SAG 19 ou surpris. +1d6 DM vs surpris. +5 discrétion/init." },
+      { "name": "Attaque mortelle (L)", "description": "Depuis derrière ou surprise : +5 attaque, +3d6 DM. +5 discrétion." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Tireur d'élite (L)", "description": "2 attaques à distance par action. Ignore couverture. Option d12 : +2d6 DM." },
+      { "name": "Disparition (L)", "description": "Invisible, 20 m. Tour suivant : Attaque mortelle si DEX > SAG." }
+    ],
+    "description": "Tireur d'élite avec disparition et double tir."
+  },
+  {
+    "name": "Aventurier Assassin NC8",
+    "nc": 8,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 24,
+    "pv": 86,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 13, "damage": "1d6+8" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Embuscade", "description": "Premier tour : SAG 19 ou surpris. +1d6 DM vs surpris. +5 discrétion/init." },
+      { "name": "Attaque mortelle (L)", "description": "Depuis derrière ou surprise : +5 attaque, +3d6 DM. +5 discrétion." },
+      { "name": "Disparition (L)", "description": "Invisible, 20 m. Tour suivant : Attaque mortelle si DEX > SAG." },
+      { "name": "Assassinat", "description": "Attaque mortelle sur surpris : CON 15 ou 0 PV." },
+      { "name": "Interchangeables", "description": "+5 DEF en supériorité numérique." }
+    ],
+    "description": "Assassin de haut rang."
+  },
+  {
+    "name": "Aventurier Maître d'armes NC8",
+    "nc": 8,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 24,
+    "pv": 86,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 13, "damage": "1d6+8" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Embuscade", "description": "Premier tour : SAG 19 ou surpris. +1d6 DM vs surpris. +5 discrétion/init." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Riposte", "description": "Attaque gratuite contre chaque agresseur." },
+      { "name": "Hausser le ton", "description": "À ≤50% PV : +5 attaque, +1d6 DM, RD 5." },
+      { "name": "Interchangeables", "description": "+5 DEF en supériorité numérique." }
+    ],
+    "description": "Maître d'armes de haut rang."
+  },
+  {
+    "name": "Aventurier Tireur NC8",
+    "nc": 8,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 24,
+    "pv": 86,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 13, "damage": "1d6+8" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Embuscade", "description": "Premier tour : SAG 19 ou surpris. +1d6 DM vs surpris. +5 discrétion/init." },
+      { "name": "Attaque mortelle (L)", "description": "Depuis derrière ou surprise : +5 attaque, +3d6 DM. +5 discrétion." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Tireur d'élite (L)", "description": "2 attaques à distance par action. Ignore couverture. Option d12 : +2d6 DM." },
+      { "name": "Disparition (L)", "description": "Invisible, 20 m. Tour suivant : Attaque mortelle si DEX > SAG." }
+    ],
+    "description": "Tireur de haut rang avec arsenal complet."
+  },
+  {
+    "name": "Aventurier Assassin NC9",
+    "nc": 9,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 24,
+    "pv": 86,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 13, "damage": "1d6+8" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Embuscade", "description": "Premier tour : SAG 19 ou surpris. +1d6 DM vs surpris. +5 discrétion/init." },
+      { "name": "Attaque mortelle (L)", "description": "Depuis derrière ou surprise : +5 attaque, +3d6 DM. +5 discrétion." },
+      { "name": "Disparition (L)", "description": "Invisible, 20 m. Tour suivant : Attaque mortelle si DEX > SAG." },
+      { "name": "Assassinat", "description": "Attaque mortelle sur surpris : CON 15 ou 0 PV." },
+      { "name": "Interchangeables", "description": "+5 DEF en supériorité numérique." }
+    ],
+    "description": "Assassin de haut rang avec embuscade permanente."
+  },
+  {
+    "name": "Aventurier Maître d'armes NC9",
+    "nc": 9,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 24,
+    "pv": 86,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 13, "damage": "1d6+8" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Embuscade", "description": "Premier tour : SAG 19 ou surpris. +1d6 DM vs surpris. +5 discrétion/init." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Riposte", "description": "Attaque gratuite contre chaque agresseur." },
+      { "name": "Hausser le ton", "description": "À ≤50% PV : +5 attaque, +1d6 DM, RD 5." },
+      { "name": "Interchangeables", "description": "+5 DEF en supériorité numérique." }
+    ],
+    "description": "Maître d'armes avec embuscade."
+  },
+  {
+    "name": "Aventurier Tireur NC9",
+    "nc": 9,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 24,
+    "pv": 86,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 13, "damage": "1d6+8" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Embuscade", "description": "Premier tour : SAG 19 ou surpris. +1d6 DM vs surpris. +5 discrétion/init." },
+      { "name": "Attaque mortelle (L)", "description": "Depuis derrière ou surprise : +5 attaque, +3d6 DM. +5 discrétion." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Tireur d'élite (L)", "description": "2 attaques à distance par action. Ignore couverture. Option d12 : +2d6 DM." },
+      { "name": "Disparition (L)", "description": "Invisible, 20 m. Tour suivant : Attaque mortelle si DEX > SAG." }
+    ],
+    "description": "Tireur de haut rang."
+  },
+  {
+    "name": "Aventurier Assassin NC10",
+    "nc": 10,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 24,
+    "pv": 96,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 17, "damage": "2d6+8" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Embuscade", "description": "Premier tour : SAG 19 ou surpris. +1d6 DM vs surpris. +5 discrétion/init." },
+      { "name": "Attaque mortelle (L)", "description": "Depuis derrière ou surprise : +5 attaque, +3d6 DM. +5 discrétion." },
+      { "name": "Disparition (L)", "description": "Invisible, 20 m. Tour suivant : Attaque mortelle si DEX > SAG." },
+      { "name": "Assassinat", "description": "Attaque mortelle sur surpris : CON 15 ou 0 PV." },
+      { "name": "Interchangeables", "description": "+5 DEF en supériorité numérique." }
+    ],
+    "description": "Assassin de haut rang."
+  },
+  {
+    "name": "Aventurier Maître d'armes NC10",
+    "nc": 10,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 24,
+    "pv": 96,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 17, "damage": "2d6+8" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Embuscade", "description": "Premier tour : SAG 19 ou surpris. +1d6 DM vs surpris. +5 discrétion/init." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Riposte", "description": "Attaque gratuite contre chaque agresseur." },
+      { "name": "Hausser le ton", "description": "À ≤50% PV : +5 attaque, +1d6 DM, RD 5." },
+      { "name": "Interchangeables", "description": "+5 DEF en supériorité numérique." }
+    ],
+    "description": "Maître d'armes légendaire."
+  },
+  {
+    "name": "Aventurier Tireur NC10",
+    "nc": 10,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 24,
+    "pv": 96,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 17, "damage": "2d6+8" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Embuscade", "description": "Premier tour : SAG 19 ou surpris. +1d6 DM vs surpris. +5 discrétion/init." },
+      { "name": "Attaque mortelle (L)", "description": "Depuis derrière ou surprise : +5 attaque, +3d6 DM. +5 discrétion." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Tireur d'élite (L)", "description": "2 attaques à distance par action. Ignore couverture. Option d12 : +2d6 DM." },
+      { "name": "Disparition (L)", "description": "Invisible, 20 m. Tour suivant : Attaque mortelle si DEX > SAG." }
+    ],
+    "description": "Tireur d'élite légendaire."
+  },
+  {
+    "name": "Aventurier Assassin NC11",
+    "nc": 11,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 24,
+    "pv": 96,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 17, "damage": "2d6+8" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Embuscade", "description": "Premier tour : SAG 19 ou surpris. +1d6 DM vs surpris. +5 discrétion/init." },
+      { "name": "Attaque mortelle (L)", "description": "Depuis derrière ou surprise : +5 attaque, +3d6 DM. +5 discrétion." },
+      { "name": "Disparition (L)", "description": "Invisible, 20 m. Tour suivant : Attaque mortelle si DEX > SAG." },
+      { "name": "Assassinat", "description": "Attaque mortelle sur surpris : CON 15 ou 0 PV." },
+      { "name": "Interchangeables", "description": "+5 DEF en supériorité numérique." }
+    ],
+    "description": "Assassin de haute maîtrise."
+  },
+  {
+    "name": "Aventurier Maître d'armes NC11",
+    "nc": 11,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 24,
+    "pv": 96,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 17, "damage": "2d6+8" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Embuscade", "description": "Premier tour : SAG 19 ou surpris. +1d6 DM vs surpris. +5 discrétion/init." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Riposte", "description": "Attaque gratuite contre chaque agresseur." },
+      { "name": "Hausser le ton", "description": "À ≤50% PV : +5 attaque, +1d6 DM, RD 5." },
+      { "name": "Interchangeables", "description": "+5 DEF en supériorité numérique." }
+    ],
+    "description": "Maître d'armes légendaire."
+  },
+  {
+    "name": "Aventurier Tireur NC11",
+    "nc": 11,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 24,
+    "pv": 96,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 17, "damage": "2d6+8" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Embuscade", "description": "Premier tour : SAG 19 ou surpris. +1d6 DM vs surpris. +5 discrétion/init." },
+      { "name": "Attaque mortelle (L)", "description": "Depuis derrière ou surprise : +5 attaque, +3d6 DM. +5 discrétion." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Tireur d'élite (L)", "description": "2 attaques à distance par action. Ignore couverture. Option d12 : +2d6 DM." },
+      { "name": "Disparition (L)", "description": "Invisible, 20 m. Tour suivant : Attaque mortelle si DEX > SAG." }
+    ],
+    "description": "Tireur avec arsenal complet."
+  },
+  {
+    "name": "Aventurier Assassin NC12",
+    "nc": 12,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 26,
+    "pv": 116,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 19, "damage": "2d6+10" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Embuscade", "description": "Premier tour : SAG 19 ou surpris. +1d6 DM vs surpris. +5 discrétion/init." },
+      { "name": "Attaque mortelle (L)", "description": "Depuis derrière ou surprise : +5 attaque, +3d6 DM. +5 discrétion." },
+      { "name": "Disparition (L)", "description": "Invisible, 20 m. Tour suivant : Attaque mortelle si DEX > SAG." },
+      { "name": "Assassinat", "description": "Attaque mortelle sur surpris : CON 15 ou 0 PV." },
+      { "name": "Interchangeables", "description": "+5 DEF en supériorité numérique." }
+    ],
+    "description": "Assassin redoutable."
+  },
+  {
+    "name": "Aventurier Maître d'armes NC12",
+    "nc": 12,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 26,
+    "pv": 116,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 19, "damage": "2d6+10" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Embuscade", "description": "Premier tour : SAG 19 ou surpris. +1d6 DM vs surpris. +5 discrétion/init." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Riposte", "description": "Attaque gratuite contre chaque agresseur." },
+      { "name": "Hausser le ton", "description": "À ≤50% PV : +5 attaque, +1d6 DM, RD 5." },
+      { "name": "Interchangeables", "description": "+5 DEF en supériorité numérique." }
+    ],
+    "description": "Maître d'armes légendaire."
+  },
+  {
+    "name": "Aventurier Tireur NC12",
+    "nc": 12,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 26,
+    "pv": 116,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 19, "damage": "2d6+10" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Embuscade", "description": "Premier tour : SAG 19 ou surpris. +1d6 DM vs surpris. +5 discrétion/init." },
+      { "name": "Attaque mortelle (L)", "description": "Depuis derrière ou surprise : +5 attaque, +3d6 DM. +5 discrétion." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Tireur d'élite (L)", "description": "2 attaques à distance par action. Ignore couverture. Option d12 : +2d6 DM." },
+      { "name": "Disparition (L)", "description": "Invisible, 20 m. Tour suivant : Attaque mortelle si DEX > SAG." }
+    ],
+    "description": "Tireur de haut rang."
+  },
+  {
+    "name": "Aventurier Assassin NC13",
+    "nc": 13,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 26,
+    "pv": 116,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 19, "damage": "2d6+10" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Embuscade", "description": "Premier tour : SAG 19 ou surpris. +1d6 DM vs surpris. +5 discrétion/init." },
+      { "name": "Attaque en traître (L)", "description": "+5 attaque, +2d6 DM quand il cible le même ennemi qu'un allié." },
+      { "name": "Attaque mortelle (L)", "description": "Depuis derrière ou surprise : +5 attaque, +3d6 DM. +5 discrétion." },
+      { "name": "Disparition (L)", "description": "Invisible, 20 m. Tour suivant : Attaque mortelle si DEX > SAG." },
+      { "name": "Assassinat", "description": "Attaque mortelle sur surpris : CON 15 ou 0 PV." },
+      { "name": "Interchangeables", "description": "+5 DEF en supériorité numérique." }
+    ],
+    "description": "Assassin épique avec attaque en traître."
+  },
+  {
+    "name": "Aventurier Maître d'armes NC13",
+    "nc": 13,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 26,
+    "pv": 116,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 19, "damage": "2d6+10" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Embuscade", "description": "Premier tour : SAG 19 ou surpris. +1d6 DM vs surpris. +5 discrétion/init." },
+      { "name": "Attaque en traître (L)", "description": "+5 attaque, +2d6 DM quand il cible le même ennemi qu'un allié." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Riposte", "description": "Attaque gratuite contre chaque agresseur." },
+      { "name": "Hausser le ton", "description": "À ≤50% PV : +5 attaque, +1d6 DM, RD 5." },
+      { "name": "Interchangeables", "description": "+5 DEF en supériorité numérique." }
+    ],
+    "description": "Maître d'armes épique avec attaque en traître."
+  },
+  {
+    "name": "Aventurier Tireur NC13",
+    "nc": 13,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 26,
+    "pv": 116,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 19, "damage": "2d6+10" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Embuscade", "description": "Premier tour : SAG 19 ou surpris. +1d6 DM vs surpris. +5 discrétion/init." },
+      { "name": "Attaque en traître (L)", "description": "+5 attaque, +2d6 DM quand il cible le même ennemi qu'un allié." },
+      { "name": "Attaque mortelle (L)", "description": "Depuis derrière ou surprise : +5 attaque, +3d6 DM. +5 discrétion." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Tireur d'élite (L)", "description": "2 attaques à distance par action. Ignore couverture. Option d12 : +2d6 DM." },
+      { "name": "Disparition (L)", "description": "Invisible, 20 m. Tour suivant : Attaque mortelle si DEX > SAG." }
+    ],
+    "description": "Tireur épique avec attaque en traître."
+  },
+  {
+    "name": "Aventurier Assassin NC14",
+    "nc": 14,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 26,
+    "pv": 126,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 23, "damage": "3d6+10" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Embuscade", "description": "Premier tour : SAG 19 ou surpris. +1d6 DM vs surpris. +5 discrétion/init." },
+      { "name": "Attaque en traître (L)", "description": "+5 attaque, +2d6 DM sur même cible qu'un allié." },
+      { "name": "Attaque mortelle (L)", "description": "Depuis derrière ou surprise : +5 attaque, +3d6 DM. +5 discrétion." },
+      { "name": "Disparition (L)", "description": "Invisible, 20 m. Tour suivant : Attaque mortelle si DEX > SAG." },
+      { "name": "Assassinat", "description": "Attaque mortelle sur surpris : CON 15 ou 0 PV." },
+      { "name": "Interchangeables", "description": "+5 DEF en supériorité numérique." }
+    ],
+    "description": "Assassin légendaire."
+  },
+  {
+    "name": "Aventurier Maître d'armes NC14",
+    "nc": 14,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 26,
+    "pv": 126,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 23, "damage": "3d6+10" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Embuscade", "description": "Premier tour : SAG 19 ou surpris. +1d6 DM vs surpris. +5 discrétion/init." },
+      { "name": "Attaque en traître (L)", "description": "+5 attaque, +2d6 DM sur même cible qu'un allié." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Riposte", "description": "Attaque gratuite contre chaque agresseur." },
+      { "name": "Hausser le ton", "description": "À ≤50% PV : +5 attaque, +1d6 DM, RD 5." },
+      { "name": "Interchangeables", "description": "+5 DEF en supériorité numérique." }
+    ],
+    "description": "Maître d'armes légendaire."
+  },
+  {
+    "name": "Aventurier Tireur NC14",
+    "nc": 14,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 26,
+    "pv": 126,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 23, "damage": "3d6+10" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Embuscade", "description": "Premier tour : SAG 19 ou surpris. +1d6 DM vs surpris. +5 discrétion/init." },
+      { "name": "Attaque en traître (L)", "description": "+5 attaque, +2d6 DM sur même cible qu'un allié." },
+      { "name": "Attaque mortelle (L)", "description": "Depuis derrière ou surprise : +5 attaque, +3d6 DM. +5 discrétion." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Tireur d'élite (L)", "description": "2 attaques à distance par action. Ignore couverture. Option d12 : +2d6 DM." },
+      { "name": "Disparition (L)", "description": "Invisible, 20 m. Tour suivant : Attaque mortelle si DEX > SAG." }
+    ],
+    "description": "Tireur légendaire."
+  },
+  {
+    "name": "Aventurier Assassin NC15",
+    "nc": 15,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 26,
+    "pv": 126,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 23, "damage": "3d6+10" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Embuscade", "description": "Premier tour : SAG 19 ou surpris. +1d6 DM vs surpris. +5 discrétion/init." },
+      { "name": "Attaque en traître (L)", "description": "+5 attaque, +2d6 DM sur même cible qu'un allié." },
+      { "name": "L'hallali", "description": "Attaque en traître gratuite quand l'ennemi obtient 1-5 sur son dé d'attaque." },
+      { "name": "Attaque mortelle (L)", "description": "Depuis derrière ou surprise : +5 attaque, +3d6 DM. +5 discrétion." },
+      { "name": "Disparition (L)", "description": "Invisible, 20 m. Tour suivant : Attaque mortelle si DEX > SAG." },
+      { "name": "Assassinat", "description": "Attaque mortelle sur surpris : CON 15 ou 0 PV." },
+      { "name": "Interchangeables", "description": "+5 DEF en supériorité numérique." }
+    ],
+    "description": "Assassin suprême."
+  },
+  {
+    "name": "Aventurier Maître d'armes NC15",
+    "nc": 15,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 26,
+    "pv": 126,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 23, "damage": "3d6+10" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Embuscade", "description": "Premier tour : SAG 19 ou surpris. +1d6 DM vs surpris. +5 discrétion/init." },
+      { "name": "Attaque en traître (L)", "description": "+5 attaque, +2d6 DM sur même cible qu'un allié." },
+      { "name": "L'hallali", "description": "Attaque en traître gratuite quand l'ennemi obtient 1-5 sur son dé d'attaque." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Riposte", "description": "Attaque gratuite contre chaque agresseur." },
+      { "name": "Hausser le ton", "description": "À ≤50% PV : +5 attaque, +1d6 DM, RD 5." },
+      { "name": "Interchangeables", "description": "+5 DEF en supériorité numérique." }
+    ],
+    "description": "Maître d'armes suprême."
+  },
+  {
+    "name": "Aventurier Tireur NC15",
+    "nc": 15,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 4, "con": 0, "int": 0, "sag": 1, "cha": 1 },
+    "def": 26,
+    "pv": 126,
+    "init": 18,
+    "attacks": [{ "name": "Rapière ou arc court", "bonus": 23, "damage": "3d6+10" }],
+    "abilities": [
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Embuscade", "description": "Premier tour : SAG 19 ou surpris. +1d6 DM vs surpris. +5 discrétion/init." },
+      { "name": "Attaque en traître (L)", "description": "+5 attaque, +2d6 DM sur même cible qu'un allié." },
+      { "name": "L'hallali", "description": "Attaque en traître gratuite quand l'ennemi obtient 1-5 sur son dé d'attaque." },
+      { "name": "Attaque mortelle (L)", "description": "Depuis derrière ou surprise : +5 attaque, +3d6 DM. +5 discrétion." },
+      { "name": "Imparable (L)", "description": "Attaque à 2d20. Sur 15-20 touche auto, +1d6 DM." },
+      { "name": "Tireur d'élite (L)", "description": "2 attaques à distance par action. Ignore couverture. Option d12 : +2d6 DM." },
+      { "name": "Disparition (L)", "description": "Invisible, 20 m. Tour suivant : Attaque mortelle si DEX > SAG." }
+    ],
+    "description": "Tireur suprême avec l'hallali."
+  },
+  {
+    "name": "Mystique NC0.5",
+    "nc": 0.5,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 10,
+    "pv": 4,
+    "init": 10,
+    "attacks": [
+      { "name": "Dague", "bonus": 1, "damage": "1d4" },
+      { "name": "Attaque magique (L)", "bonus": 4, "damage": "1d4" }
+    ],
+    "abilities": [],
+    "description": "Mystique humanoïde de bas rang, magie rudimentaire."
+  },
+  {
+    "name": "Mystique NC1",
+    "nc": 1,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 10,
+    "pv": 4,
+    "init": 10,
+    "attacks": [
+      { "name": "Dague", "bonus": 1, "damage": "1d4" },
+      { "name": "Attaque magique (L)", "bonus": 4, "damage": "1d6" }
+    ],
+    "abilities": [],
+    "description": "Mystique initié, projection magique basique."
+  },
+  {
+    "name": "Mystique NC2",
+    "nc": 2,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 13,
+    "pv": 19,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton", "bonus": 4, "damage": "1d6+1" },
+      { "name": "Attaque magique (L)", "bonus": 7, "damage": "2d6" }
+    ],
+    "abilities": [],
+    "description": "Mystique confirmé, bâton et magie de zone."
+  },
+  {
+    "name": "Mystique Arcaniste NC3",
+    "nc": 3,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 13,
+    "pv": 19,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton", "bonus": 4, "damage": "1d6+1" },
+      { "name": "Attaque magique (L)", "bonus": 7, "damage": "3d6" }
+    ],
+    "abilities": [
+      { "name": "Maîtrise élémentaire", "description": "AM touche zone 10 m diamètre. DEX [10+BU] ou DM entiers. RD élémentaire = BU." }
+    ],
+    "description": "Arcaniste maîtrisant les attaques magiques de zone."
+  },
+  {
+    "name": "Mystique Guérisseur NC3",
+    "nc": 3,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 13,
+    "pv": 19,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton", "bonus": 4, "damage": "1d6+1" },
+      { "name": "Attaque magique (L)", "bonus": 7, "damage": "3d6" }
+    ],
+    "abilities": [
+      { "name": "Soigner (L)", "description": "Restaure 50% des PV max d'une cible. Une fois par jour." }
+    ],
+    "description": "Guérisseur capable de soigner massivement ses alliés."
+  },
+  {
+    "name": "Mystique Nécromancien NC3",
+    "nc": 3,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 13,
+    "pv": 19,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton", "bonus": 4, "damage": "1d6+1" },
+      { "name": "Attaque magique (L)", "bonus": 7, "damage": "3d6" }
+    ],
+    "abilities": [
+      { "name": "Vampirisation (L)", "description": "AM jusqu'à 30 m. [1d6×NC/2] DM, soigne autant. [1d6+NC] PV à chaque mort dans 20 m." }
+    ],
+    "description": "Nécromancien qui draine la vie de ses victimes."
+  },
+  {
+    "name": "Mystique Arcaniste NC4",
+    "nc": 4,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 13,
+    "pv": 19,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton", "bonus": 4, "damage": "1d6+1" },
+      { "name": "Attaque magique (L)", "bonus": 7, "damage": "4d6" }
+    ],
+    "abilities": [
+      { "name": "Maîtrise élémentaire", "description": "AM touche zone 10 m. DEX [10+BU] ou DM entiers. RD élémentaire = BU." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques pour le reste du combat." }
+    ],
+    "description": "Arcaniste avec armure magique."
+  },
+  {
+    "name": "Mystique Guérisseur NC4",
+    "nc": 4,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 13,
+    "pv": 19,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton", "bonus": 4, "damage": "1d6+1" },
+      { "name": "Attaque magique (L)", "bonus": 7, "damage": "4d6" }
+    ],
+    "abilities": [
+      { "name": "Soigner (L)", "description": "Restaure 50% des PV max. Une fois par jour." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." }
+    ],
+    "description": "Guérisseur avec armure magique."
+  },
+  {
+    "name": "Mystique Nécromancien NC4",
+    "nc": 4,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 13,
+    "pv": 19,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton", "bonus": 4, "damage": "1d6+1" },
+      { "name": "Attaque magique (L)", "bonus": 7, "damage": "4d6" }
+    ],
+    "abilities": [
+      { "name": "Vampirisation (L)", "description": "[1d6×NC/2] DM, soigne autant. [1d6+NC] PV à chaque mort dans 20 m." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." }
+    ],
+    "description": "Nécromancien vampirique avec armure magique."
+  },
+  {
+    "name": "Mystique Arcaniste NC5",
+    "nc": 5,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 16,
+    "pv": 34,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton", "bonus": 7, "damage": "1d6+2" },
+      { "name": "Attaque magique (L)", "bonus": 10, "damage": "5d6" }
+    ],
+    "abilities": [
+      { "name": "Maîtrise élémentaire", "description": "AM touche zone 10 m. DEX [10+BU] ou DM entiers. RD élémentaire = BU." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." }
+    ],
+    "description": "Arcaniste de rang moyen."
+  },
+  {
+    "name": "Mystique Guérisseur NC5",
+    "nc": 5,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 16,
+    "pv": 34,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton", "bonus": 7, "damage": "1d6+2" },
+      { "name": "Attaque magique (L)", "bonus": 10, "damage": "5d6" }
+    ],
+    "abilities": [
+      { "name": "Soigner (L)", "description": "Restaure 50% des PV max. Une fois par jour." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." },
+      { "name": "Guérir (L)", "description": "Supprime tous les états négatifs (poison, paralysie, maladie)." }
+    ],
+    "description": "Guérisseur capable de purifier et soigner."
+  },
+  {
+    "name": "Mystique Nécromancien NC5",
+    "nc": 5,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 16,
+    "pv": 34,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton", "bonus": 7, "damage": "1d6+2" },
+      { "name": "Attaque magique (L)", "bonus": 10, "damage": "5d6" }
+    ],
+    "abilities": [
+      { "name": "Vampirisation (L)", "description": "[1d6×NC/2] DM, soigne autant. [1d6+NC] PV à chaque mort dans 20 m." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." },
+      { "name": "Animer un cadavre (L)", "description": "Réanime un mort avec ses stats -2 attaque/-2 init. Impossible si NC mort > NC nécromancien." }
+    ],
+    "description": "Nécromancien capable d'animer les morts."
+  },
+  {
+    "name": "Mystique Arcaniste NC6",
+    "nc": 6,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 16,
+    "pv": 34,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton", "bonus": 7, "damage": "1d6+2" },
+      { "name": "Attaque magique (L)", "bonus": 10, "damage": "6d6" }
+    ],
+    "abilities": [
+      { "name": "Maîtrise élémentaire", "description": "AM touche zone 10 m. DEX [10+BU] ou DM entiers. RD élémentaire = BU." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." },
+      { "name": "Contrôle mental (L)", "description": "Attaque magique opposée. Contrôle la cible 1d4 tours. SAG [15+BU] pour se libérer." }
+    ],
+    "description": "Arcaniste contrôlant les esprits adverses."
+  },
+  {
+    "name": "Mystique Guérisseur NC6",
+    "nc": 6,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 16,
+    "pv": 34,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton", "bonus": 7, "damage": "1d6+2" },
+      { "name": "Attaque magique (L)", "bonus": 10, "damage": "6d6" }
+    ],
+    "abilities": [
+      { "name": "Soigner (L)", "description": "Restaure 50% des PV max. Une fois par jour." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." },
+      { "name": "Guérir (L)", "description": "Supprime tous les états négatifs." },
+      { "name": "Gaz alchimique (L)", "description": "Nuage toxique 10 m portée, 4 m diamètre. CON [12+BU] ou 5 DM + affaibli 1d4 tours." }
+    ],
+    "description": "Guérisseur avec gaz alchimique offensif."
+  },
+  {
+    "name": "Mystique Nécromancien NC6",
+    "nc": 6,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 16,
+    "pv": 34,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton", "bonus": 7, "damage": "1d6+2" },
+      { "name": "Attaque magique (L)", "bonus": 10, "damage": "6d6" }
+    ],
+    "abilities": [
+      { "name": "Vampirisation (L)", "description": "[1d6×NC/2] DM, soigne autant. [1d6+NC] PV à chaque mort dans 20 m." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." },
+      { "name": "Animer un cadavre (L)", "description": "Réanime un mort avec ses stats -2 attaque/-2 init." },
+      { "name": "Injonction mortelle (L)", "description": "Cible dans 30 m : CON 15 ou PV=0. En cas de réussite [2d6+NC] DM. Une fois par cible par combat." }
+    ],
+    "description": "Nécromancien avec injonction mortelle dévastatrice."
+  },
+  {
+    "name": "Mystique Arcaniste NC7",
+    "nc": 7,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 19,
+    "pv": 49,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton runique", "bonus": 10, "damage": "1d6+3" },
+      { "name": "Attaque magique (L)", "bonus": 13, "damage": "7d6" }
+    ],
+    "abilities": [
+      { "name": "Maîtrise élémentaire", "description": "AM touche zone 10 m. DEX [10+BU] ou DM entiers. RD élémentaire = BU." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." },
+      { "name": "Contrôle mental (L)", "description": "Attaque magique opposée. Contrôle 1d4 tours. SAG [15+BU] pour se libérer." }
+    ],
+    "description": "Arcaniste puissant avec bâton runique."
+  },
+  {
+    "name": "Mystique Guérisseur NC7",
+    "nc": 7,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 19,
+    "pv": 49,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton runique", "bonus": 10, "damage": "1d6+3" },
+      { "name": "Attaque magique (L)", "bonus": 13, "damage": "7d6" }
+    ],
+    "abilities": [
+      { "name": "Soigner (L)", "description": "Restaure 50% des PV max. Une fois par jour." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." },
+      { "name": "Guérir (L)", "description": "Supprime tous les états négatifs." },
+      { "name": "Gaz alchimique (L)", "description": "Nuage toxique ; CON [12+BU] ou 5 DM + affaibli." }
+    ],
+    "description": "Guérisseur de haut rang."
+  },
+  {
+    "name": "Mystique Nécromancien NC7",
+    "nc": 7,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 19,
+    "pv": 49,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton runique", "bonus": 10, "damage": "1d6+3" },
+      { "name": "Attaque magique (L)", "bonus": 13, "damage": "7d6" }
+    ],
+    "abilities": [
+      { "name": "Vampirisation (L)", "description": "[1d6×NC/2] DM, soigne autant. [1d6+NC] PV à chaque mort dans 20 m." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." },
+      { "name": "Animer un cadavre (L)", "description": "Réanime un mort avec ses stats -2 attaque/-2 init." },
+      { "name": "Injonction mortelle (L)", "description": "CON 15 ou PV=0. Sinon [2d6+NC] DM." }
+    ],
+    "description": "Nécromancien de haut rang."
+  },
+  {
+    "name": "Mystique Arcaniste NC8",
+    "nc": 8,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 19,
+    "pv": 49,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton runique", "bonus": 10, "damage": "1d6+3" },
+      { "name": "Attaque magique (L)", "bonus": 13, "damage": "8d6" }
+    ],
+    "abilities": [
+      { "name": "Maîtrise élémentaire", "description": "AM touche zone 10 m. DEX [10+BU] ou DM entiers. RD élémentaire = BU." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." },
+      { "name": "Contrôle mental (L)", "description": "Attaque magique opposée. Contrôle 1d4 tours. SAG [15+BU] pour se libérer." }
+    ],
+    "description": "Arcaniste de haut rang."
+  },
+  {
+    "name": "Mystique Guérisseur NC8",
+    "nc": 8,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 19,
+    "pv": 49,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton runique", "bonus": 10, "damage": "1d6+3" },
+      { "name": "Attaque magique (L)", "bonus": 13, "damage": "8d6" }
+    ],
+    "abilities": [
+      { "name": "Soigner (L)", "description": "Restaure 50% des PV max. Une fois par jour." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." },
+      { "name": "Guérir (L)", "description": "Supprime tous les états négatifs." },
+      { "name": "Gaz alchimique (L)", "description": "Nuage toxique ; CON [12+BU] ou 5 DM + affaibli." }
+    ],
+    "description": "Guérisseur de haut rang."
+  },
+  {
+    "name": "Mystique Nécromancien NC8",
+    "nc": 8,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 19,
+    "pv": 49,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton runique", "bonus": 10, "damage": "1d6+3" },
+      { "name": "Attaque magique (L)", "bonus": 13, "damage": "8d6" }
+    ],
+    "abilities": [
+      { "name": "Vampirisation (L)", "description": "[1d6×NC/2] DM, soigne autant. [1d6+NC] PV à chaque mort dans 20 m." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." },
+      { "name": "Animer un cadavre (L)", "description": "Réanime un mort avec ses stats -2 attaque/-2 init." },
+      { "name": "Injonction mortelle (L)", "description": "CON 15 ou PV=0. Sinon [2d6+NC] DM." }
+    ],
+    "description": "Nécromancien implacable."
+  },
+  {
+    "name": "Mystique Arcaniste NC9",
+    "nc": 9,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 19,
+    "pv": 49,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton runique", "bonus": 10, "damage": "1d6+3" },
+      { "name": "Attaque magique (L)", "bonus": 13, "damage": "9d6" }
+    ],
+    "abilities": [
+      { "name": "Maîtrise élémentaire", "description": "AM touche zone 10 m. DEX [10+BU] ou DM entiers. RD élémentaire = BU." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." },
+      { "name": "Contrôle mental (L)", "description": "Attaque magique opposée. Contrôle 1d4 tours." },
+      { "name": "Déplacement magique (L)", "description": "Téléportation jusqu'à 30 m vers un emplacement en ligne de vue ou connu." }
+    ],
+    "description": "Arcaniste avec téléportation magique."
+  },
+  {
+    "name": "Mystique Guérisseur NC9",
+    "nc": 9,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 19,
+    "pv": 49,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton runique", "bonus": 10, "damage": "1d6+3" },
+      { "name": "Attaque magique (L)", "bonus": 13, "damage": "9d6" }
+    ],
+    "abilities": [
+      { "name": "Soigner (L)", "description": "Restaure 50% des PV max. Une fois par jour." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." },
+      { "name": "Guérir (L)", "description": "Supprime tous les états négatifs." },
+      { "name": "Gaz alchimique (L)", "description": "Nuage toxique ; CON [12+BU] ou 5 DM + affaibli." },
+      { "name": "Déplacement magique (L)", "description": "Téléportation jusqu'à 30 m." }
+    ],
+    "description": "Guérisseur avec téléportation."
+  },
+  {
+    "name": "Mystique Nécromancien NC9",
+    "nc": 9,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 19,
+    "pv": 49,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton runique", "bonus": 10, "damage": "1d6+3" },
+      { "name": "Attaque magique (L)", "bonus": 13, "damage": "9d6" }
+    ],
+    "abilities": [
+      { "name": "Vampirisation (L)", "description": "[1d6×NC/2] DM, soigne autant. [1d6+NC] PV à chaque mort dans 20 m." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." },
+      { "name": "Animer un cadavre (L)", "description": "Réanime un mort." },
+      { "name": "Injonction mortelle (L)", "description": "CON 15 ou PV=0. Sinon [2d6+NC] DM." },
+      { "name": "Déplacement magique (L)", "description": "Téléportation jusqu'à 30 m." }
+    ],
+    "description": "Nécromancien se téléportant parmi les morts."
+  },
+  {
+    "name": "Mystique Arcaniste NC10",
+    "nc": 10,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 22,
+    "pv": 64,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton runique", "bonus": 10, "damage": "1d6+3" },
+      { "name": "Attaque magique (L)", "bonus": 16, "damage": "10d6" }
+    ],
+    "abilities": [
+      { "name": "Maîtrise élémentaire", "description": "AM touche zone 10 m. DEX [10+BU] ou DM entiers. RD élémentaire = BU." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." },
+      { "name": "Contrôle mental (L)", "description": "Attaque magique opposée. Contrôle 1d4 tours." },
+      { "name": "Déplacement magique (L)", "description": "Téléportation jusqu'à 30 m." }
+    ],
+    "description": "Arcaniste légendaire."
+  },
+  {
+    "name": "Mystique Guérisseur NC10",
+    "nc": 10,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 22,
+    "pv": 64,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton runique", "bonus": 10, "damage": "1d6+3" },
+      { "name": "Attaque magique (L)", "bonus": 16, "damage": "10d6" }
+    ],
+    "abilities": [
+      { "name": "Soigner (L)", "description": "Restaure 50% des PV max. Une fois par jour." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." },
+      { "name": "Guérir (L)", "description": "Supprime tous les états négatifs." },
+      { "name": "Gaz alchimique (L)", "description": "Nuage toxique ; CON [12+BU] ou 5 DM + affaibli." },
+      { "name": "Déplacement magique (L)", "description": "Téléportation jusqu'à 30 m." }
+    ],
+    "description": "Guérisseur légendaire."
+  },
+  {
+    "name": "Mystique Nécromancien NC10",
+    "nc": 10,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 22,
+    "pv": 64,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton runique", "bonus": 10, "damage": "1d6+3" },
+      { "name": "Attaque magique (L)", "bonus": 16, "damage": "10d6" }
+    ],
+    "abilities": [
+      { "name": "Vampirisation (L)", "description": "[1d6×NC/2] DM, soigne autant. [1d6+NC] PV à chaque mort dans 20 m." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." },
+      { "name": "Animer un cadavre (L)", "description": "Réanime un mort." },
+      { "name": "Injonction mortelle (L)", "description": "CON 15 ou PV=0. Sinon [2d6+NC] DM." },
+      { "name": "Déplacement magique (L)", "description": "Téléportation jusqu'à 30 m." }
+    ],
+    "description": "Nécromancien légendaire."
+  },
+  {
+    "name": "Mystique Arcaniste NC11",
+    "nc": 11,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 22,
+    "pv": 64,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton runique", "bonus": 13, "damage": "1d6+4" },
+      { "name": "Attaque magique (L)", "bonus": 16, "damage": "10d6+3" }
+    ],
+    "abilities": [
+      { "name": "Maîtrise élémentaire", "description": "AM touche zone 10 m. DEX [10+BU] ou DM entiers. RD élémentaire = BU." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." },
+      { "name": "Contrôle mental (L)", "description": "Attaque magique opposée. Contrôle 1d4 tours." },
+      { "name": "Déplacement magique (L)", "description": "Téléportation jusqu'à 30 m." },
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." }
+    ],
+    "description": "Arcaniste épique avec instinct de survie."
+  },
+  {
+    "name": "Mystique Guérisseur NC11",
+    "nc": 11,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 22,
+    "pv": 64,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton runique", "bonus": 13, "damage": "1d6+4" },
+      { "name": "Attaque magique (L)", "bonus": 16, "damage": "10d6+3" }
+    ],
+    "abilities": [
+      { "name": "Soigner (L)", "description": "Restaure 50% des PV max. Une fois par jour." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." },
+      { "name": "Guérir (L)", "description": "Supprime tous les états négatifs." },
+      { "name": "Gaz alchimique (L)", "description": "Nuage toxique ; CON [12+BU] ou 5 DM + affaibli." },
+      { "name": "Déplacement magique (L)", "description": "Téléportation jusqu'à 30 m." },
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." }
+    ],
+    "description": "Guérisseur épique."
+  },
+  {
+    "name": "Mystique Nécromancien NC11",
+    "nc": 11,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 22,
+    "pv": 64,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton runique", "bonus": 13, "damage": "1d6+4" },
+      { "name": "Attaque magique (L)", "bonus": 16, "damage": "10d6+3" }
+    ],
+    "abilities": [
+      { "name": "Vampirisation (L)", "description": "[1d6×NC/2] DM, soigne autant. [1d6+NC] PV à chaque mort dans 20 m." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." },
+      { "name": "Animer un cadavre (L)", "description": "Réanime un mort." },
+      { "name": "Injonction mortelle (L)", "description": "CON 15 ou PV=0. Sinon [2d6+NC] DM." },
+      { "name": "Déplacement magique (L)", "description": "Téléportation jusqu'à 30 m." },
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." }
+    ],
+    "description": "Nécromancien épique."
+  },
+  {
+    "name": "Mystique Arcaniste NC12",
+    "nc": 12,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 25,
+    "pv": 79,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton runique", "bonus": 16, "damage": "1d6+5" },
+      { "name": "Attaque magique (L)", "bonus": 19, "damage": "10d6+6" }
+    ],
+    "abilities": [
+      { "name": "Maîtrise élémentaire", "description": "AM touche zone 10 m. DEX [10+BU] ou DM entiers. RD élémentaire = BU." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." },
+      { "name": "Contrôle mental (L)", "description": "Attaque magique opposée. Contrôle 1d4 tours." },
+      { "name": "Déplacement magique (L)", "description": "Téléportation jusqu'à 30 m." },
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." }
+    ],
+    "description": "Arcaniste de haut rang."
+  },
+  {
+    "name": "Mystique Guérisseur NC12",
+    "nc": 12,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 25,
+    "pv": 79,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton runique", "bonus": 16, "damage": "1d6+5" },
+      { "name": "Attaque magique (L)", "bonus": 19, "damage": "10d6+6" }
+    ],
+    "abilities": [
+      { "name": "Soigner (L)", "description": "Restaure 50% des PV max. Une fois par jour." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." },
+      { "name": "Guérir (L)", "description": "Supprime tous les états négatifs." },
+      { "name": "Gaz alchimique (L)", "description": "Nuage toxique ; CON [12+BU] ou 5 DM + affaibli." },
+      { "name": "Déplacement magique (L)", "description": "Téléportation jusqu'à 30 m." },
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." }
+    ],
+    "description": "Guérisseur de haut rang."
+  },
+  {
+    "name": "Mystique Nécromancien NC12",
+    "nc": 12,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 25,
+    "pv": 79,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton runique", "bonus": 16, "damage": "1d6+5" },
+      { "name": "Attaque magique (L)", "bonus": 19, "damage": "10d6+6" }
+    ],
+    "abilities": [
+      { "name": "Vampirisation (L)", "description": "[1d6×NC/2] DM, soigne autant. [1d6+NC] PV à chaque mort dans 20 m." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." },
+      { "name": "Animer un cadavre (L)", "description": "Réanime un mort." },
+      { "name": "Injonction mortelle (L)", "description": "CON 15 ou PV=0. Sinon [2d6+NC] DM." },
+      { "name": "Déplacement magique (L)", "description": "Téléportation jusqu'à 30 m." },
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." }
+    ],
+    "description": "Nécromancien de haut rang."
+  },
+  {
+    "name": "Mystique Arcaniste NC13",
+    "nc": 13,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 25,
+    "pv": 79,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton runique", "bonus": 16, "damage": "1d6+5" },
+      { "name": "Attaque magique (L)", "bonus": 19, "damage": "10d6+9" }
+    ],
+    "abilities": [
+      { "name": "Maîtrise élémentaire", "description": "AM touche zone 10 m. DEX [10+BU] ou DM entiers. RD élémentaire = BU." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." },
+      { "name": "Contrôle mental (L)", "description": "Attaque magique opposée. Contrôle 1d4 tours." },
+      { "name": "Déplacement magique (L)", "description": "Téléportation jusqu'à 30 m." },
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Résistance à la magie", "description": "RD 5 contre tous les dégâts magiques." }
+    ],
+    "description": "Arcaniste épique résistant à la magie."
+  },
+  {
+    "name": "Mystique Guérisseur NC13",
+    "nc": 13,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 25,
+    "pv": 79,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton runique", "bonus": 16, "damage": "1d6+5" },
+      { "name": "Attaque magique (L)", "bonus": 19, "damage": "10d6+9" }
+    ],
+    "abilities": [
+      { "name": "Soigner (L)", "description": "Restaure 50% des PV max. Une fois par jour." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." },
+      { "name": "Guérir (L)", "description": "Supprime tous les états négatifs." },
+      { "name": "Gaz alchimique (L)", "description": "Nuage toxique ; CON [12+BU] ou 5 DM + affaibli." },
+      { "name": "Déplacement magique (L)", "description": "Téléportation jusqu'à 30 m." },
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Résistance à la magie", "description": "RD 5 contre tous les dégâts magiques." }
+    ],
+    "description": "Guérisseur épique résistant à la magie."
+  },
+  {
+    "name": "Mystique Nécromancien NC13",
+    "nc": 13,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 25,
+    "pv": 79,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton runique", "bonus": 16, "damage": "1d6+5" },
+      { "name": "Attaque magique (L)", "bonus": 19, "damage": "10d6+9" }
+    ],
+    "abilities": [
+      { "name": "Vampirisation (L)", "description": "[1d6×NC/2] DM, soigne autant. [1d6+NC] PV à chaque mort dans 20 m." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." },
+      { "name": "Animer un cadavre (L)", "description": "Réanime un mort." },
+      { "name": "Injonction mortelle (L)", "description": "CON 15 ou PV=0. Sinon [2d6+NC] DM." },
+      { "name": "Déplacement magique (L)", "description": "Téléportation jusqu'à 30 m." },
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Résistance à la magie", "description": "RD 5 contre tous les dégâts magiques." }
+    ],
+    "description": "Nécromancien épique résistant à la magie."
+  },
+  {
+    "name": "Mystique Arcaniste NC14",
+    "nc": 14,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 28,
+    "pv": 94,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton runique", "bonus": 19, "damage": "1d6+6" },
+      { "name": "Attaque magique (L)", "bonus": 21, "damage": "10d6+12" }
+    ],
+    "abilities": [
+      { "name": "Maîtrise élémentaire", "description": "AM touche zone 10 m. DEX [10+BU] ou DM entiers. RD élémentaire = BU." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." },
+      { "name": "Contrôle mental (L)", "description": "Attaque magique opposée. Contrôle 1d4 tours." },
+      { "name": "Déplacement magique (L)", "description": "Téléportation jusqu'à 30 m." },
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Résistance à la magie", "description": "RD 5 contre tous les dégâts magiques." }
+    ],
+    "description": "Arcaniste légendaire."
+  },
+  {
+    "name": "Mystique Guérisseur NC14",
+    "nc": 14,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 28,
+    "pv": 94,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton runique", "bonus": 19, "damage": "1d6+6" },
+      { "name": "Attaque magique (L)", "bonus": 21, "damage": "10d6+12" }
+    ],
+    "abilities": [
+      { "name": "Soigner (L)", "description": "Restaure 50% des PV max. Une fois par jour." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." },
+      { "name": "Guérir (L)", "description": "Supprime tous les états négatifs." },
+      { "name": "Gaz alchimique (L)", "description": "Nuage toxique ; CON [12+BU] ou 5 DM + affaibli." },
+      { "name": "Déplacement magique (L)", "description": "Téléportation jusqu'à 30 m." },
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Résistance à la magie", "description": "RD 5 contre tous les dégâts magiques." }
+    ],
+    "description": "Guérisseur légendaire."
+  },
+  {
+    "name": "Mystique Nécromancien NC14",
+    "nc": 14,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 28,
+    "pv": 94,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton runique", "bonus": 19, "damage": "1d6+6" },
+      { "name": "Attaque magique (L)", "bonus": 21, "damage": "10d6+12" }
+    ],
+    "abilities": [
+      { "name": "Vampirisation (L)", "description": "[1d6×NC/2] DM, soigne autant. [1d6+NC] PV à chaque mort dans 20 m." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." },
+      { "name": "Animer un cadavre (L)", "description": "Réanime un mort." },
+      { "name": "Injonction mortelle (L)", "description": "CON 15 ou PV=0. Sinon [2d6+NC] DM." },
+      { "name": "Déplacement magique (L)", "description": "Téléportation jusqu'à 30 m." },
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Résistance à la magie", "description": "RD 5 contre tous les dégâts magiques." }
+    ],
+    "description": "Nécromancien légendaire quasi-indestructible."
+  },
+  {
+    "name": "Mystique Arcaniste NC15",
+    "nc": 15,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 28,
+    "pv": 94,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton runique", "bonus": 19, "damage": "1d6+6" },
+      { "name": "Attaque magique (L)", "bonus": 21, "damage": "10d6+15" }
+    ],
+    "abilities": [
+      { "name": "Maîtrise élémentaire", "description": "AM touche zone 10 m. DEX [10+BU] ou DM entiers. RD élémentaire = BU." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." },
+      { "name": "Contrôle mental (L)", "description": "Attaque magique opposée. Contrôle 1d4 tours." },
+      { "name": "Déplacement magique (L)", "description": "Téléportation jusqu'à 30 m." },
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Résistance à la magie", "description": "RD 5 contre tous les dégâts magiques." },
+      { "name": "Régénération magique", "description": "Régénère 5 PV par tour. Seuls le feu et l'acide peuvent détruire définitivement l'arcaniste." }
+    ],
+    "description": "Arcaniste suprême avec régénération magique."
+  },
+  {
+    "name": "Mystique Guérisseur NC15",
+    "nc": 15,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 28,
+    "pv": 94,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton runique", "bonus": 19, "damage": "1d6+6" },
+      { "name": "Attaque magique (L)", "bonus": 21, "damage": "10d6+15" }
+    ],
+    "abilities": [
+      { "name": "Soigner (L)", "description": "Restaure 50% des PV max. Une fois par jour." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." },
+      { "name": "Guérir (L)", "description": "Supprime tous les états négatifs." },
+      { "name": "Gaz alchimique (L)", "description": "Nuage toxique ; CON [12+BU] ou 5 DM + affaibli." },
+      { "name": "Déplacement magique (L)", "description": "Téléportation jusqu'à 30 m." },
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Résistance à la magie", "description": "RD 5 contre tous les dégâts magiques." },
+      { "name": "Régénération magique", "description": "Régénère 5 PV par tour. Seuls le feu et l'acide peuvent détruire définitivement le guérisseur." }
+    ],
+    "description": "Guérisseur suprême avec régénération."
+  },
+  {
+    "name": "Mystique Nécromancien NC15",
+    "nc": 15,
+    "size": "moyenne",
+    "stats": { "for": 0, "dex": 0, "con": 0, "int": 3, "sag": 2, "cha": 2 },
+    "def": 28,
+    "pv": 94,
+    "init": 10,
+    "attacks": [
+      { "name": "Bâton runique", "bonus": 19, "damage": "1d6+6" },
+      { "name": "Attaque magique (L)", "bonus": 21, "damage": "10d6+15" }
+    ],
+    "abilities": [
+      { "name": "Vampirisation (L)", "description": "[1d6×NC/2] DM, soigne autant. [1d6+NC] PV à chaque mort dans 20 m." },
+      { "name": "Armure magique (L)", "description": "Réduit de moitié tous les DM non magiques." },
+      { "name": "Animer un cadavre (L)", "description": "Réanime un mort." },
+      { "name": "Injonction mortelle (L)", "description": "CON 15 ou PV=0. Sinon [2d6+NC] DM." },
+      { "name": "Déplacement magique (L)", "description": "Téléportation jusqu'à 30 m." },
+      { "name": "Instinct de survie", "description": "+1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5]." },
+      { "name": "Résistance à la magie", "description": "RD 5 contre tous les dégâts magiques." },
+      { "name": "Régénération magique", "description": "Régénère 5 PV par tour. Seuls le feu et l'acide peuvent détruire définitivement le nécromancien." }
+    ],
+    "description": "Nécromancien suprême avec armée de morts."
   }
 ]

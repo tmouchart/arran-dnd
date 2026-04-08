@@ -119,3 +119,20 @@ export function finishCombat(campaignId: number, combatId: number): Promise<void
     body: JSON.stringify({}),
   })
 }
+
+export function removeCombatParticipant(
+  campaignId: number,
+  combatId: number,
+  participantId: number,
+): Promise<void> {
+  return request(`/${campaignId}/combats/${combatId}/participants/${participantId}`, {
+    method: 'DELETE',
+  })
+}
+
+export function generateLoot(campaignId: number, combatId: number): Promise<{ loot: string }> {
+  return request(`/${campaignId}/combats/${combatId}/generate-loot`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  })
+}
