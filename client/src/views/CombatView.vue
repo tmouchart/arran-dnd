@@ -16,9 +16,12 @@ import {
   LayoutList,
   Dices,
   Shield,
+  Sparkles,
+  Trash2,
 } from "lucide-vue-next";
 import { useCombat } from "../composables/useCombat";
 import { user } from "../composables/useAuth";
+import { generateLoot } from "../api/combats";
 import { MONSTERS_CATALOG, type Monster } from "../data/monstersCatalog";
 import { filterCatalog, formatMod } from "../utils/monsterSession";
 import { rollDie, rollDiceNotation } from "../utils/dice";
@@ -49,6 +52,7 @@ const {
   prevTurn,
   updateHp,
   addMonster,
+  removeMonster,
   finish,
 } = useCombat();
 
@@ -66,8 +70,38 @@ const filteredMonsters = computed(() =>
   filterCatalog(monsterSearchQuery.value, MONSTERS_CATALOG),
 );
 
+// Custom monster form
+interface CustomMonsterForm {
+  name: string; init: number; pv: number; def: number; nc: number;
+  statFor: number; statDex: number; statCon: number; statInt: number; statSag: number; statCha: number;
+}
+const showCustomForm = ref(false);
+const customForm = ref<CustomMonsterForm>({ name: "Nouveau monstre", init: 0, pv: 10, def: 10, nc: 0, statFor: 0, statDex: 0, statCon: 0, statInt: 0, statSag: 0, statCha: 0 });
+
+// Delete confirmation
+const confirmDeleteId = ref<number | null>(null);
+
 // Finish confirmation
 const showFinishConfirm = ref(false);
+
+// Loot generation
+const lootText = ref<string | null>(null);
+const lootLoading = ref(false);
+const lootError = ref<string | null>(null);
+
+async function handleGenerateLoot() {
+  lootLoading.value = true;
+  lootError.value = null;
+  lootText.value = null;
+  try {
+    const result = await generateLoot(campaignId, combatId);
+    lootText.value = result.loot;
+  } catch (e) {
+    lootError.value = e instanceof Error ? e.message : "Erreur inconnue";
+  } finally {
+    lootLoading.value = false;
+  }
+}
 
 onMounted(() => connect(campaignId, combatId));
 onUnmounted(() => disconnect());
@@ -173,6 +207,24 @@ function signedNum(n: number): string {
   return n >= 0 ? `+${n}` : String(n);
 }
 
+function hpColor(current: number, max: number): string {
+  if (max <= 0) return '#c95f56'
+  const ratio = Math.max(0, Math.min(1, current / max))
+  if (ratio > 0.5) {
+    const t = (ratio - 0.5) * 2
+    const r = Math.round(0xe6 + t * (0x3a - 0xe6))
+    const g = Math.round(0x7e + t * (0x8a - 0x7e))
+    const b = Math.round(0x22 + t * (0x4a - 0x22))
+    return `rgb(${r},${g},${b})`
+  } else {
+    const t = ratio * 2
+    const r = Math.round(0xc9 + t * (0xe6 - 0xc9))
+    const g = Math.round(0x5f + t * (0x7e - 0x5f))
+    const b = Math.round(0x56 + t * (0x22 - 0x56))
+    return `rgb(${r},${g},${b})`
+  }
+}
+
 async function handleAddFromCatalog(m: Monster) {
   await addMonster({
     name: m.name,
@@ -194,14 +246,27 @@ async function handleAddFromCatalog(m: Monster) {
   showAddMonster.value = false;
 }
 
-async function handleAddCustomMonster() {
-  await addMonster({
-    name: "Nouveau monstre",
-    init: 0,
-    pv: 10,
-    def: 10,
-  });
+function openCustomForm() {
+  customForm.value = { name: "Nouveau monstre", init: 0, pv: 10, def: 10, nc: 0, statFor: 0, statDex: 0, statCon: 0, statInt: 0, statSag: 0, statCha: 0 };
+  showCustomForm.value = true;
+}
+
+async function handleSubmitCustomMonster() {
+  await addMonster({ ...customForm.value });
+  showCustomForm.value = false;
   showAddMonster.value = false;
+}
+
+async function handleConfirmDelete() {
+  if (confirmDeleteId.value === null) return;
+  await removeMonster(confirmDeleteId.value);
+  confirmDeleteId.value = null;
+}
+
+function openFinishConfirm() {
+  lootText.value = null;
+  lootError.value = null;
+  showFinishConfirm.value = true;
 }
 
 async function handleFinish() {
@@ -306,17 +371,18 @@ function goBack() {
                   p.initiative
                 }}</span>
                 <span v-if="p.def && (isGm || p.kind === 'player')" class="card-def"><Shield :size="13" /> {{ p.def }}</span>
+                <button v-if="isGm && p.kind === 'monster'" class="trash-btn" title="Supprimer" @click.stop="confirmDeleteId = p.id"><Trash2 :size="13" /></button>
                 <!-- Inline HP controls (GM monsters) -->
                 <template v-if="canAdjustHp(p) && p.hpCurrent !== null && p.hpMax !== null">
                   <div class="card-hp-inline" @click.stop>
                     <button class="hp-btn-sm" @click="adjustHp(p, -1)"><Minus :size="12" /></button>
-                    <span class="card-hp">{{ p.hpCurrent }}/{{ p.hpMax }}</span>
+                    <span class="card-hp" :style="{ color: hpColor(p.hpCurrent!, p.hpMax!) }">{{ p.hpCurrent }}/{{ p.hpMax }}</span>
                     <button class="hp-btn-sm" @click="adjustHp(p, 1)"><Plus :size="12" /></button>
                   </div>
                 </template>
                 <!-- HP display (read-only) -->
                 <template v-else-if="p.hpCurrent !== null && p.hpMax !== null">
-                  <span class="card-hp">{{ p.hpCurrent }}/{{ p.hpMax }}</span>
+                  <span class="card-hp" :style="{ color: hpColor(p.hpCurrent, p.hpMax) }">{{ p.hpCurrent }}/{{ p.hpMax }}</span>
                 </template>
                 <template v-else-if="p.hpStatus">
                   <component
@@ -338,7 +404,7 @@ function goBack() {
             >
               <button class="hp-btn" @click="adjustHp(p, -5)">-5</button>
               <button class="hp-btn" @click="adjustHp(p, -1)">-1</button>
-              <span class="hp-display">{{ p.hpCurrent }} / {{ p.hpMax }}</span>
+              <span class="hp-display" :style="{ color: hpColor(p.hpCurrent!, p.hpMax!) }">{{ p.hpCurrent }} / {{ p.hpMax }}</span>
               <button class="hp-btn" @click="adjustHp(p, 1)">+1</button>
               <button class="hp-btn" @click="adjustHp(p, 5)">+5</button>
             </div>
@@ -457,7 +523,7 @@ function goBack() {
           v-if="isGm"
           size="small"
           variant="danger"
-          @click="showFinishConfirm = true"
+          @click="openFinishConfirm"
         >
           Terminer
         </AppButton>
@@ -480,37 +546,82 @@ function goBack() {
       <div
         v-if="showAddMonster"
         class="sheet-overlay"
-        @click.self="showAddMonster = false"
+        @click.self="showAddMonster = false; showCustomForm = false"
       >
         <div class="sheet-panel">
           <div class="sheet-header">
-            <h2 class="sheet-title">Ajouter un renfort</h2>
-            <AppIconBtn @click="showAddMonster = false"
-              ><X :size="18"
-            /></AppIconBtn>
+            <h2 class="sheet-title">{{ showCustomForm ? 'Monstre custom' : 'Ajouter un renfort' }}</h2>
+            <AppIconBtn @click="showAddMonster = false; showCustomForm = false"><X :size="18" /></AppIconBtn>
           </div>
-          <AppInput
-            v-model="monsterSearchQuery"
-            placeholder="Rechercher un monstre…"
-            :autofocus="true"
-          />
-          <div class="bestiary-results">
-            <div
-              v-for="m in filteredMonsters"
-              :key="m.name"
-              class="bestiary-item"
-              @click="handleAddFromCatalog(m)"
-            >
-              <span class="bestiary-name">{{ m.name }}</span>
-              <span class="bestiary-meta"
-                >NC {{ m.nc }} · {{ m.pv }} PV · DEF {{ m.def }}</span
-              >
+
+          <!-- Custom form -->
+          <template v-if="showCustomForm">
+            <div class="custom-form-grid">
+              <div class="custom-field custom-field--full">
+                <label>Nom</label>
+                <AppInput v-model="customForm.name" placeholder="Nom du monstre" />
+              </div>
+              <div class="custom-field">
+                <label>NC</label>
+                <AppInput v-model="customForm.nc" type="number" :min="0" :step="0.5" text-align="center" />
+              </div>
+              <div class="custom-field">
+                <label>PV</label>
+                <AppInput v-model="customForm.pv" type="number" :min="1" text-align="center" />
+              </div>
+              <div class="custom-field">
+                <label>DEF</label>
+                <AppInput v-model="customForm.def" type="number" text-align="center" />
+              </div>
+              <div class="custom-field">
+                <label>Init</label>
+                <AppInput v-model="customForm.init" type="number" text-align="center" />
+              </div>
             </div>
+            <div class="custom-stats-grid">
+              <div v-for="s in (['For','Dex','Con','Int','Sag','Cha'] as const)" :key="s" class="custom-stat">
+                <label>{{ s.toUpperCase() }}</label>
+                <AppInput v-model="(customForm as unknown as Record<string,number>)[`stat${s}`]" type="number" text-align="center" />
+              </div>
+            </div>
+            <div class="custom-form-actions">
+              <AppButton variant="ghost" @click="showCustomForm = false">Retour</AppButton>
+              <AppButton variant="primary" @click="handleSubmitCustomMonster">Ajouter</AppButton>
+            </div>
+          </template>
+
+          <!-- Bestiary search -->
+          <template v-else>
+            <AppInput v-model="monsterSearchQuery" placeholder="Rechercher un monstre…" :autofocus="true" />
+            <div class="bestiary-results">
+              <div
+                v-for="m in filteredMonsters"
+                :key="m.name"
+                class="bestiary-item"
+                @click="handleAddFromCatalog(m)"
+              >
+                <span class="bestiary-name">{{ m.name }}</span>
+                <span class="bestiary-meta">NC {{ m.nc }} · {{ m.pv }} PV · DEF {{ m.def }}</span>
+              </div>
+            </div>
+            <AppButton variant="ghost" block @click="openCustomForm">
+              <Plus :size="16" />
+              Monstre custom
+            </AppButton>
+          </template>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Delete confirmation -->
+    <Teleport to="body">
+      <div v-if="confirmDeleteId !== null" class="sheet-overlay" @click.self="confirmDeleteId = null">
+        <div class="modal-box">
+          <p>Supprimer ce monstre du combat ?</p>
+          <div class="modal-actions">
+            <AppButton variant="ghost" @click="confirmDeleteId = null">Annuler</AppButton>
+            <AppButton variant="danger" @click="handleConfirmDelete">Supprimer</AppButton>
           </div>
-          <AppButton variant="ghost" block @click="handleAddCustomMonster">
-            <Plus :size="16" />
-            Monstre custom
-          </AppButton>
         </div>
       </div>
     </Teleport>
@@ -524,6 +635,21 @@ function goBack() {
       >
         <div class="modal-box">
           <p>Terminer ce combat ?</p>
+
+          <!-- Loot generation (GM only) -->
+          <div v-if="isGm" class="loot-section">
+            <AppButton
+              variant="ghost"
+              :disabled="lootLoading"
+              @click="handleGenerateLoot"
+            >
+              <Sparkles :size="16" />
+              {{ lootLoading ? "Génération…" : "Génère le loot" }}
+            </AppButton>
+            <p v-if="lootError" class="loot-error">{{ lootError }}</p>
+            <div v-if="lootText" class="loot-result">{{ lootText }}</div>
+          </div>
+
           <div class="modal-actions">
             <AppButton variant="ghost" @click="showFinishConfirm = false"
               >Annuler</AppButton
@@ -1039,5 +1165,93 @@ function goBack() {
   display: flex;
   gap: 0.5rem;
   justify-content: center;
+}
+
+.loot-section {
+  margin-bottom: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.loot-result {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 0.85rem 1rem;
+  font-size: 0.85rem;
+  color: var(--text);
+  text-align: left;
+  white-space: pre-wrap;
+  max-height: 240px;
+  overflow-y: auto;
+  width: 100%;
+}
+
+.loot-error {
+  font-size: 0.82rem;
+  color: var(--danger, #c0392b);
+  margin: 0;
+}
+
+/* Trash button on monster cards */
+.trash-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 0;
+  transition: color 120ms, background 120ms;
+}
+.trash-btn:hover {
+  color: var(--danger, #c0392b);
+  background: color-mix(in srgb, var(--danger, #c0392b) 12%, transparent);
+}
+
+/* Custom monster form */
+.custom-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+.custom-field { display: flex; flex-direction: column; gap: 0.2rem; }
+.custom-field label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.custom-field--full { grid-column: 1 / -1; }
+
+.custom-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.4rem;
+}
+.custom-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+.custom-stat label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.custom-form-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 0.25rem;
 }
 </style>

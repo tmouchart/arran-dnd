@@ -105,6 +105,11 @@ export function useCombat() {
     await api.addCombatMonster(currentCampaignId, combat.value.id, data)
   }
 
+  async function removeMonster(participantId: number): Promise<void> {
+    if (!combat.value || !currentCampaignId) return
+    await api.removeCombatParticipant(currentCampaignId, combat.value.id, participantId)
+  }
+
   async function finish(): Promise<void> {
     if (!combat.value || !currentCampaignId) return
     await api.finishCombat(currentCampaignId, combat.value.id)
@@ -124,6 +129,7 @@ export function useCombat() {
     prevTurn: doPrevTurn,
     updateHp,
     addMonster,
+    removeMonster,
     finish,
   }
 }

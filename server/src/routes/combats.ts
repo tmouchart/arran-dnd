@@ -6,6 +6,7 @@ import {
 } from '../db/schema.js'
 import { requireAuth, type AuthRequest } from '../auth/middleware.js'
 import { broadcastCombatState, getClientsForCombat, type SseClient } from '../combats/sseStore.js'
+import { generateText } from '../ai/client.js'
 
 // Armor/shield lookup for initiative calculation (mirrors client armorsCatalog.ts)
 const ARMOR_DEF: Record<string, number> = {
@@ -348,6 +349,69 @@ router.post('/:id/combats/:cid/monsters', async (req, res) => {
 
   await broadcastCombatState(combatId, check.gmUserId)
   res.status(201).json({ ok: true })
+})
+
+// DELETE /:id/combats/:cid/participants/:pid — supprimer un monstre (GM seulement)
+router.delete('/:id/combats/:cid/participants/:pid', async (req, res) => {
+  const userId = (req as unknown as AuthRequest).userId
+  const campaignId = Number(req.params.id)
+  const combatId = Number(req.params.cid)
+  const pid = Number(req.params.pid)
+
+  const check = await verifyGm(campaignId, userId)
+  if (check.status !== 'ok') { res.status(403).json({ error: 'Réservé au MJ' }); return }
+
+  const [participant] = await db.select().from(combatParticipants).where(eq(combatParticipants.id, pid))
+  if (!participant || participant.combatId !== combatId) {
+    res.status(404).json({ error: 'Participant introuvable' }); return
+  }
+  if (participant.kind !== 'monster') {
+    res.status(400).json({ error: 'Seuls les monstres peuvent être supprimés' }); return
+  }
+
+  await db.delete(combatParticipants).where(eq(combatParticipants.id, pid))
+  await broadcastCombatState(combatId, check.gmUserId)
+  res.json({ ok: true })
+})
+
+// POST /:id/combats/:cid/generate-loot — générer du loot via IA (MJ seulement)
+router.post('/:id/combats/:cid/generate-loot', async (req, res) => {
+  const userId = (req as unknown as AuthRequest).userId
+  const campaignId = Number(req.params.id)
+  const combatId = Number(req.params.cid)
+
+  const check = await verifyGm(campaignId, userId)
+  if (check.status === 'not_found') { res.status(404).json({ error: 'Campagne introuvable' }); return }
+  if (check.status === 'forbidden') { res.status(403).json({ error: 'Réservé au MJ' }); return }
+
+  const participants = await db
+    .select({
+      name: combatParticipants.name,
+      nc: combatParticipants.nc,
+      monsterDescription: combatParticipants.monsterDescription,
+    })
+    .from(combatParticipants)
+    .where(and(eq(combatParticipants.combatId, combatId), eq(combatParticipants.kind, 'monster')))
+
+  if (participants.length === 0) {
+    res.status(400).json({ error: 'Aucun monstre dans ce combat' }); return
+  }
+
+  const monsterLines = participants.map((m) => {
+    const nc = m.nc != null ? ` (NC ${m.nc})` : ''
+    const desc = m.monsterDescription ? ` — ${m.monsterDescription}` : ''
+    return `- ${m.name}${nc}${desc}`
+  }).join('\n')
+
+  const prompt = `Tu es le maître du jeu d'un jeu de rôle médiéval-fantastique (Arran). Les joueurs viennent de vaincre les ennemis suivants :\n${monsterLines}\n\nGénère un loot cohérent et immersif pour récompenser les joueurs. Tiens compte de la nature des ennemis, leur niveau de dangerosité (NC), et leur description. Propose des objets, de l'argent (pièces d'or/argent/cuivre), et éventuellement un objet spécial ou magique si le NC le justifie. Sois concis, en français, et donne directement la liste du loot sans introduction ni explication.`
+
+  try {
+    const loot = await generateText(prompt)
+    res.json({ loot })
+  } catch (err) {
+    console.error('[generate-loot] AI error:', err)
+    res.status(500).json({ error: "Erreur lors de la génération du loot" })
+  }
 })
 
 // POST /:id/combats/:cid/finish — terminer le combat

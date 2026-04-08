@@ -5,6 +5,25 @@ import HpGrowthModal from "./HpGrowthModal.vue";
 import type { Character } from "../../types/character";
 import type { VoieFamily } from "../../data/voies";
 
+function hpColor(current: number, max: number): string {
+  if (max <= 0) return '#c95f56'
+  const ratio = Math.max(0, Math.min(1, current / max))
+  // red #c95f56 → orange #e67e22 → green #3a8a4a
+  if (ratio > 0.5) {
+    const t = (ratio - 0.5) * 2
+    const r = Math.round(0xe6 + t * (0x3a - 0xe6))
+    const g = Math.round(0x7e + t * (0x8a - 0x7e))
+    const b = Math.round(0x22 + t * (0x4a - 0x22))
+    return `rgb(${r},${g},${b})`
+  } else {
+    const t = ratio * 2
+    const r = Math.round(0xc9 + t * (0xe6 - 0xc9))
+    const g = Math.round(0x5f + t * (0x7e - 0x5f))
+    const b = Math.round(0x56 + t * (0x22 - 0x56))
+    return `rgb(${r},${g},${b})`
+  }
+}
+
 const props = defineProps<{
   character: Character;
   computedMp: number;
@@ -45,7 +64,7 @@ const mpIsMystique = computed(() => props.family === "mystiques");
         <div class="hp-current-row">
           <button type="button" class="hp-btn hp-btn--minus" :disabled="character.hpCurrent <= 0" @click="character.hpCurrent = Math.max(0, character.hpCurrent - 1)">-</button>
           <div class="hp-current-display hp-current-display--hp">
-            <span class="hp-current-value">{{ character.hpCurrent }}</span>
+            <span class="hp-current-value" :style="{ color: hpColor(character.hpCurrent, computedHp) }">{{ character.hpCurrent }}</span>
             <span class="hp-current-sep">/</span>
             <span class="hp-current-max">{{ computedHp }}</span>
           </div>
@@ -193,9 +212,9 @@ const mpIsMystique = computed(() => props.family === "mystiques");
 }
 
 .bars {
-  display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem 1.2rem;
 }
 
 .bar-label {
@@ -325,7 +344,7 @@ const mpIsMystique = computed(() => props.family === "mystiques");
   font-weight: 600;
 }
 
-.hp-current-display--hp .hp-current-value { color: #c95f56; }
+/* hp-current-display--hp color is set dynamically via :style */
 .hp-current-display--mp .hp-current-value { color: #678fc2; }
 
 .hp-formula { margin-top: 0.3rem; }
@@ -369,14 +388,12 @@ const mpIsMystique = computed(() => props.family === "mystiques");
   padding-top: 0.75rem;
   border-top: 1px solid var(--border);
   display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
+  flex-direction: row;
+  gap: 1.2rem;
+  flex-wrap: wrap;
 }
 
-@media (min-width: 520px) {
-  .extra-row { flex-direction: row; gap: 1.2rem; }
-  .extra-row .field { flex: 1; }
-}
+.extra-row .field { flex: 1; min-width: 0; }
 
 .def-chip--pc {
   border-color: #c89c3a;

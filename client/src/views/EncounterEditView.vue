@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, Copy, Trash2, Plus, Search } from 'lucide-vue-next'
+import { ArrowLeft, Copy, Trash2, Plus, Search, X } from 'lucide-vue-next'
 import {
   fetchEncounter,
   updateEncounter,
@@ -11,6 +11,8 @@ import {
   deleteEncounterMonster,
   type EncounterDetail,
   type EncounterMonster,
+  type EncounterMonsterAttack,
+  type EncounterMonsterAbility,
 } from '../api/campaigns'
 import { MONSTERS_CATALOG, type Monster } from '../data/monstersCatalog'
 import { filterCatalog, formatMod } from '../utils/monsterSession'
@@ -175,6 +177,44 @@ function saveMonsterField(monster: EncounterMonster, field: string, value: unkno
   )
 }
 
+async function addAttack(monster: EncounterMonster) {
+  const newAttack: EncounterMonsterAttack = { name: 'Attaque', bonus: 0, damage: '1d6' }
+  const attacks = [...monster.attacks, newAttack]
+  monster.attacks = attacks
+  await updateEncounterMonster(campaignId, encounterId, monster.id, { attacks })
+}
+
+async function updateAttack(monster: EncounterMonster, index: number, field: keyof EncounterMonsterAttack, value: string | number) {
+  const attacks = monster.attacks.map((a, i) => i === index ? { ...a, [field]: value } : a)
+  monster.attacks = attacks
+  await updateEncounterMonster(campaignId, encounterId, monster.id, { attacks })
+}
+
+async function removeAttack(monster: EncounterMonster, index: number) {
+  const attacks = monster.attacks.filter((_, i) => i !== index)
+  monster.attacks = attacks
+  await updateEncounterMonster(campaignId, encounterId, monster.id, { attacks })
+}
+
+async function addAbility(monster: EncounterMonster) {
+  const newAbility: EncounterMonsterAbility = { name: 'Capacité', description: '' }
+  const abilities = [...monster.abilities, newAbility]
+  monster.abilities = abilities
+  await updateEncounterMonster(campaignId, encounterId, monster.id, { abilities })
+}
+
+async function updateAbility(monster: EncounterMonster, index: number, field: keyof EncounterMonsterAbility, value: string) {
+  const abilities = monster.abilities.map((a, i) => i === index ? { ...a, [field]: value } : a)
+  monster.abilities = abilities
+  await updateEncounterMonster(campaignId, encounterId, monster.id, { abilities })
+}
+
+async function removeAbility(monster: EncounterMonster, index: number) {
+  const abilities = monster.abilities.filter((_, i) => i !== index)
+  monster.abilities = abilities
+  await updateEncounterMonster(campaignId, encounterId, monster.id, { abilities })
+}
+
 function goBack() {
   router.push(`/campagnes/${campaignId}`)
 }
@@ -318,20 +358,39 @@ function goBack() {
 
             <!-- Attacks -->
             <div class="sub-section">
-              <h3>Attaques ({{ m.attacks.length }})</h3>
-              <div v-for="(atk, i) in m.attacks" :key="i" class="attack-row">
-                <span class="atk-name">{{ atk.name }}</span>
-                <span class="atk-detail">{{ formatMod(atk.bonus) }} · {{ atk.damage }}{{ atk.range ? ` · ${atk.range}m` : '' }}</span>
+              <div class="sub-section-head">
+                <h3>Attaques ({{ m.attacks.length }})</h3>
+                <AppIconBtn :size="28" variant="primary" title="Ajouter une attaque" @click="addAttack(m)">
+                  <Plus :size="14" />
+                </AppIconBtn>
+              </div>
+              <div v-for="(atk, i) in m.attacks" :key="i" class="attack-edit-row">
+                <AppInput :model-value="atk.name" placeholder="Nom" @update:model-value="updateAttack(m, i, 'name', $event as string)" />
+                <AppInput type="number" :model-value="atk.bonus" placeholder="Bonus" text-align="center" @update:model-value="updateAttack(m, i, 'bonus', $event as number)" />
+                <AppInput :model-value="atk.damage" placeholder="Dégâts" @update:model-value="updateAttack(m, i, 'damage', $event as string)" />
+                <AppIconBtn :size="28" variant="danger" title="Supprimer" @click="removeAttack(m, i)">
+                  <X :size="13" />
+                </AppIconBtn>
               </div>
               <p v-if="m.attacks.length === 0" class="sub-empty">Aucune attaque</p>
             </div>
 
             <!-- Abilities -->
             <div class="sub-section">
-              <h3>Capacités ({{ m.abilities.length }})</h3>
-              <div v-for="(ab, i) in m.abilities" :key="i" class="ability-row">
-                <span class="ability-name">{{ ab.name }}</span>
-                <span class="ability-desc">{{ ab.description }}</span>
+              <div class="sub-section-head">
+                <h3>Capacités ({{ m.abilities.length }})</h3>
+                <AppIconBtn :size="28" variant="primary" title="Ajouter une capacité" @click="addAbility(m)">
+                  <Plus :size="14" />
+                </AppIconBtn>
+              </div>
+              <div v-for="(ab, i) in m.abilities" :key="i" class="ability-edit-row">
+                <div class="ability-edit-fields">
+                  <AppInput :model-value="ab.name" placeholder="Nom" @update:model-value="updateAbility(m, i, 'name', $event as string)" />
+                  <AppInput :model-value="ab.description" placeholder="Description" @update:model-value="updateAbility(m, i, 'description', $event as string)" />
+                </div>
+                <AppIconBtn :size="28" variant="danger" title="Supprimer" @click="removeAbility(m, i)">
+                  <X :size="13" />
+                </AppIconBtn>
               </div>
               <p v-if="m.abilities.length === 0" class="sub-empty">Aucune capacité</p>
             </div>
@@ -526,6 +585,13 @@ function goBack() {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 0.4rem;
+  min-width: 0;
+}
+
+@media (max-width: 480px) {
+  .stats-row {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 .stat-cell {
@@ -550,7 +616,13 @@ function goBack() {
 .sub-section {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 0.35rem;
+}
+
+.sub-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .sub-section h3 {
@@ -560,41 +632,24 @@ function goBack() {
   margin: 0;
 }
 
-.attack-row {
+.attack-edit-row {
+  display: grid;
+  grid-template-columns: 1fr 60px 80px 28px;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.ability-edit-row {
   display: flex;
-  justify-content: space-between;
-  padding: 0.3rem 0.5rem;
-  background: var(--surface);
-  border-radius: 0.5rem;
-  font-size: 0.82rem;
+  gap: 0.3rem;
+  align-items: flex-start;
 }
 
-.atk-name {
-  font-weight: 600;
-  color: var(--text);
-}
-
-.atk-detail {
-  color: var(--muted);
-}
-
-.ability-row {
-  padding: 0.3rem 0.5rem;
-  background: var(--surface);
-  border-radius: 0.5rem;
-  font-size: 0.82rem;
-}
-
-.ability-name {
-  font-weight: 600;
-  color: var(--text);
-}
-
-.ability-desc {
-  display: block;
-  color: var(--muted);
-  font-size: 0.78rem;
-  margin-top: 0.1rem;
+.ability-edit-fields {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
 }
 
 .sub-empty {

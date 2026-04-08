@@ -1504,3 +1504,2502 @@ Les worgs sont des cousins des loups, plus puissants (jusqu'à 150 kg) et plus d
 - **L'hallali** : Les worgs profitent d'une erreur de leur adversaire pour lui porter des attaques fatales. À chaque fois que la victime de la meute rate une attaque ou obtient sur un test d'attaque un résultat au d20 allant de 1 à 5 (inclus), elle déclenche la curée ! Chaque worg doté de cette capacité bénéficie immédiatement et gratuitement d'une attaque en traître contre la victime (+5 au jet d'attaque/+2d6 aux DM).
 
 ---
+
+# Humanoïdes PNJ
+
+---
+
+## Combattant NC0.5
+
+Guerrier humanoïde de bas rang. Profil physique simple, peu d'expérience mais robuste.
+
+**NC** 0.5, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 14 | **PV** 9 | **Init.** 10
+
+**Attaques :**
+- Épée longue +2, DM 1d8+1
+
+---
+
+## Combattant NC1
+
+Guerrier humanoïde aguerri. Combattant de premier rang.
+
+**NC** 1, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 15 | **PV** 15 | **Init.** 10
+
+**Attaques :**
+- Épée longue +4, DM 1d8+3
+
+---
+
+## Combattant NC2
+
+Guerrier humanoïde confirmé. Soldats endurcis et expérimentés.
+
+**NC** 2, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 17 | **PV** 35 | **Init.** 10
+
+**Attaques :**
+- Épée longue +6, DM 1d8+5
+
+---
+
+## Combattant Brute NC3
+
+Guerrier brut spécialisé dans les charges dévastatrices.
+
+**NC** 3, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 17 | **PV** 35 | **Init.** 10
+
+**Attaques :**
+- Épée longue +6, DM 1d8+5
+
+**Capacités :**
+- **Charge (L)** : Le combattant effectue une attaque à 2d20 (garde le meilleur). En cas de succès, la cible doit réussir un test de FOR opposé ou être renversée, et les DM sont doublés.
+
+---
+
+## Combattant Champion NC3
+
+Guerrier technique capable de parer et de contre-attaquer.
+
+**NC** 3, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 17 | **PV** 35 | **Init.** 10
+
+**Attaques :**
+- Épée longue +6, DM 1d8+5
+
+**Capacités :**
+- **Imparable (L)** : Le combattant effectue une attaque à 2d20 (garde le meilleur). Sur un résultat de 15 à 20, l'attaque touche automatiquement et inflige +1d6 DM supplémentaires.
+
+---
+
+## Combattant Conquérant NC3
+
+Guerrier meneur d'hommes qui inspire ses alliés au combat.
+
+**NC** 3, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 17 | **PV** 35 | **Init.** 10
+
+**Attaques :**
+- Épée longue +6, DM 1d8+5
+
+**Capacités :**
+- **Sergent** : Le conquérant accorde une action supplémentaire à un allié de son choix en vue (une fois par tour). De plus, une fois par combat, il peut ignorer un coup mortel.
+
+---
+
+## Combattant Brute NC4
+
+Guerrier brut de haut rang, redoutable dans les charges.
+
+**NC** 4, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 19 | **PV** 55 | **Init.** 10
+
+**Attaques :**
+- Épée longue +8, DM 1d8+7
+
+**Capacités :**
+- **Charge (L)** : Attaque à 2d20 ; succès = FOR opposé ou renversé, DM×2.
+- **Enrager** : Sur un coup critique ou quand la Brute tombe sous 50% de ses PV, elle gagne +5 en attaque et +1d6 aux DM. Elle peut continuer à agir pendant 1 tour après être tombée à 0 PV.
+
+---
+
+## Combattant Champion NC4
+
+Guerrier technique avec riposte automatique.
+
+**NC** 4, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 19 | **PV** 55 | **Init.** 10
+
+**Attaques :**
+- Épée longue +8, DM 1d8+7
+
+**Capacités :**
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche automatiquement, +1d6 DM.
+- **Riposte** : Chaque fois qu'un adversaire attaque le Champion (sauf la cible choisie du tour), il riposte immédiatement avec une attaque gratuite.
+
+---
+
+## Combattant Conquérant NC4
+
+Chef de guerre inspirant, améliore les alliés proches.
+
+**NC** 4, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 19 | **PV** 55 | **Init.** 10
+
+**Attaques :**
+- Épée longue +8, DM 1d8+7
+
+**Capacités :**
+- **Sergent** : +1 action à un allié en vue par tour ; ignore un coup mortel une fois par combat.
+- **Capitaine** : Tous les alliés en vue gagnent +2 en initiative, attaque et DM. Le Conquérant peut effectuer une attaque supplémentaire avec son action limitée.
+
+---
+
+## Combattant Brute NC5
+
+Brute de haut niveau, imparable et enragée.
+
+**NC** 5, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 19 | **PV** 55 | **Init.** 10
+
+**Attaques :**
+- Épée longue +8, DM 1d8+7
+
+**Capacités :**
+- **Charge (L)** : Attaque à 2d20 ; succès = FOR opposé ou renversé, DM×2.
+- **Enrager** : Sur critique ou ≤50% PV : +5 attaque, +1d6 DM ; agit 1 tour après 0 PV.
+- **Percuter** : Après une Charge réussie, la cible doit réussir un test de CON difficulté 15 ou être étourdie.
+
+---
+
+## Combattant Champion NC5
+
+Champion endurci qui regagne de la puissance sous la pression.
+
+**NC** 5, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 19 | **PV** 55 | **Init.** 10
+
+**Attaques :**
+- Épée longue +8, DM 1d8+7
+
+**Capacités :**
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Riposte** : Attaque gratuite contre chaque agresseur (sauf cible choisie).
+- **Hausser le ton** : Quand ses PV tombent à 50% ou moins, le Champion gagne +5 en attaque, +1d6 DM et une RD 5.
+
+---
+
+## Combattant Conquérant NC5
+
+Commandant de terrain avec bonus de commandement croissants.
+
+**NC** 5, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 19 | **PV** 55 | **Init.** 10
+
+**Attaques :**
+- Épée longue +8, DM 1d8+7
+
+**Capacités :**
+- **Sergent** : +1 action à un allié en vue par tour ; ignore un coup mortel une fois par combat.
+- **Capitaine** : Alliés en vue : +2 init/attaque/DM ; attaque supplémentaire avec action limitée.
+- **Commandant** : Les bonus passent à +3. Si au moins 4 alliés sont dans un rayon de 10 m, le Conquérant ne subit que la moitié des dégâts.
+
+---
+
+## Combattant Brute NC6
+
+Brute implacable, frappe avec une puissance terrifiante.
+
+**NC** 6, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 23 | **PV** 75 | **Init.** 10
+
+**Attaques :**
+- Épée longue +10, DM 1d8+9
+
+**Capacités :**
+- **Charge (L)** : Attaque à 2d20 ; succès = FOR opposé ou renversé, DM×2.
+- **Enrager** : Sur critique ou ≤50% PV : +5 attaque, +1d6 DM ; agit 1 tour après 0 PV.
+- **Percuter** : Après Charge, CON 15 ou étourdi.
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+
+---
+
+## Combattant Champion NC6
+
+Champion de haut rang, virtuose du combat défensif et offensif.
+
+**NC** 6, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 23 | **PV** 75 | **Init.** 10
+
+**Attaques :**
+- Épée longue +10, DM 1d8+9
+
+**Capacités :**
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Riposte** : Attaque gratuite contre chaque agresseur.
+- **Hausser le ton** : À ≤50% PV : +5 attaque, +1d6 DM, RD 5.
+- **Charge (L)** : Attaque à 2d20 ; succès = FOR opposé ou renversé, DM×2.
+
+---
+
+## Combattant Conquérant NC6
+
+Conquérant redoutable avec instinct de survie.
+
+**NC** 6, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 23 | **PV** 75 | **Init.** 10
+
+**Attaques :**
+- Épée longue +10, DM 1d8+9
+
+**Capacités :**
+- **Sergent** : +1 action à un allié en vue par tour ; ignore un coup mortel une fois par combat.
+- **Capitaine** : Alliés en vue : +2 init/attaque/DM ; attaque supplémentaire.
+- **Commandant** : Bonus à +3 ; si ≥4 alliés à 10 m, prend moitié des DM.
+- **Instinct de survie** : +1 action de mouvement par tour ; résiste à la paralysie ; +5 DEF si PV < [NC×5].
+
+---
+
+## Combattant Brute NC7
+
+Brute expérimentée, fauche ses ennemis avec ses attaques larges.
+
+**NC** 7, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 23 | **PV** 75 | **Init.** 10
+
+**Attaques :**
+- Épée longue +10, DM 1d8+9
+
+**Capacités :**
+- **Charge (L)** : Attaque à 2d20 ; succès = FOR opposé ou renversé, DM×2.
+- **Enrager** : Sur critique ou ≤50% PV : +5 attaque, +1d6 DM ; agit 1 tour après 0 PV.
+- **Percuter** : Après Charge, CON 15 ou étourdi.
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Fauchage** : Sur un résultat de 15 à 20 au d20, la cible est renversée si elle rate un test de DEX [10 + bonus universel].
+
+---
+
+## Combattant Champion NC7
+
+Champion de haut rang capable de charger et de contre-attaquer.
+
+**NC** 7, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 23 | **PV** 75 | **Init.** 10
+
+**Attaques :**
+- Épée longue +10, DM 1d8+9
+
+**Capacités :**
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Riposte** : Attaque gratuite contre chaque agresseur.
+- **Hausser le ton** : À ≤50% PV : +5 attaque, +1d6 DM, RD 5.
+- **Charge (L)** : Attaque à 2d20 ; succès = FOR opposé ou renversé, DM×2.
+- **Enrager** : Sur critique ou ≤50% PV : +5 attaque, +1d6 DM ; agit 1 tour après 0 PV.
+
+---
+
+## Combattant Conquérant NC7
+
+Conquérant qui sait se sacrifier pour protéger ses hommes.
+
+**NC** 7, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 23 | **PV** 75 | **Init.** 10
+
+**Attaques :**
+- Épée longue +10, DM 1d8+9
+
+**Capacités :**
+- **Sergent** : +1 action à un allié en vue par tour ; ignore un coup mortel une fois par combat.
+- **Capitaine** : Alliés en vue : +2 init/attaque/DM ; attaque supplémentaire.
+- **Commandant** : Bonus à +3 ; si ≥4 alliés à 10 m, prend moitié des DM.
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Chair à canon** : Peut rediriger une attaque vers un subordonné dans 3 m. Obtient +5 DEF tant que des subordonnés sont proches.
+
+---
+
+## Combattant Brute NC8
+
+Brute puissante avec portée de frappe étendue.
+
+**NC** 8, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 25 | **PV** 95 | **Init.** 10
+
+**Attaques :**
+- Épée longue +12, DM 1d8+11
+
+**Capacités :**
+- **Charge (L)** : Attaque à 2d20 ; succès = FOR opposé ou renversé, DM×2.
+- **Enrager** : Sur critique ou ≤50% PV : +5 attaque, +1d6 DM ; agit 1 tour après 0 PV.
+- **Percuter** : Après Charge, CON 15 ou étourdi.
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Fauchage** : Sur 15-20, cible renversée si rate DEX [10+BU].
+
+---
+
+## Combattant Champion NC8
+
+Champion maîtrisant charge et enragement sous pression.
+
+**NC** 8, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 25 | **PV** 95 | **Init.** 10
+
+**Attaques :**
+- Épée longue +12, DM 1d8+11
+
+**Capacités :**
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Riposte** : Attaque gratuite contre chaque agresseur.
+- **Hausser le ton** : À ≤50% PV : +5 attaque, +1d6 DM, RD 5.
+- **Charge (L)** : Attaque à 2d20 ; succès = FOR opposé ou renversé, DM×2.
+- **Enrager** : Sur critique ou ≤50% PV : +5 attaque, +1d6 DM ; agit 1 tour après 0 PV.
+
+---
+
+## Combattant Conquérant NC8
+
+Conquérant capable de piéger les ennemis depuis les rangs arrière.
+
+**NC** 8, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 25 | **PV** 95 | **Init.** 10
+
+**Attaques :**
+- Épée longue +12, DM 1d8+11
+
+**Capacités :**
+- **Sergent** : +1 action à un allié en vue par tour ; ignore un coup mortel une fois par combat.
+- **Capitaine** : Alliés en vue : +2 init/attaque/DM ; attaque supplémentaire.
+- **Commandant** : Bonus à +3 ; si ≥4 alliés à 10 m, prend moitié des DM.
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Chair à canon** : Redirige attaques sur un subordonné dans 3 m ; +5 DEF avec subordonnés proches.
+
+---
+
+## Combattant Brute NC9
+
+Brute balayant ses adversaires dans un arc de cercle dévastateur.
+
+**NC** 9, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 25 | **PV** 95 | **Init.** 10
+
+**Attaques :**
+- Épée longue +12, DM 1d8+11
+
+**Capacités :**
+- **Charge (L)** : Attaque à 2d20 ; succès = FOR opposé ou renversé, DM×2.
+- **Enrager** : Sur critique ou ≤50% PV : +5 attaque, +1d6 DM ; agit 1 tour après 0 PV.
+- **Percuter** : Après Charge, CON 15 ou étourdi.
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Fauchage** : Sur 15-20, cible renversée si rate DEX [10+BU].
+- **Balayage** : Attaque jusqu'à 3 cibles dans un arc de 180° autour de la Brute.
+
+---
+
+## Combattant Champion NC9
+
+Champion percutant, maître du contrôle de foule.
+
+**NC** 9, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 25 | **PV** 95 | **Init.** 10
+
+**Attaques :**
+- Épée longue +12, DM 1d8+11
+
+**Capacités :**
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Riposte** : Attaque gratuite contre chaque agresseur.
+- **Hausser le ton** : À ≤50% PV : +5 attaque, +1d6 DM, RD 5.
+- **Charge (L)** : Attaque à 2d20 ; succès = FOR opposé ou renversé, DM×2.
+- **Enrager** : Sur critique ou ≤50% PV : +5 attaque, +1d6 DM ; agit 1 tour après 0 PV.
+- **Percuter** : Après Charge, CON 15 ou étourdi.
+
+---
+
+## Combattant Conquérant NC9
+
+Conquérant maîtrisant l'art de l'attaque mortelle dissimulée.
+
+**NC** 9, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 25 | **PV** 95 | **Init.** 10
+
+**Attaques :**
+- Épée longue +12, DM 1d8+11
+
+**Capacités :**
+- **Sergent** : +1 action à un allié en vue par tour ; ignore un coup mortel une fois par combat.
+- **Capitaine** : Alliés en vue : +2 init/attaque/DM ; attaque supplémentaire.
+- **Commandant** : Bonus à +3 ; si ≥4 alliés à 10 m, prend moitié des DM.
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Chair à canon** : Redirige attaques sur un subordonné dans 3 m ; +5 DEF avec subordonnés proches.
+- **Attaque mortelle (L)** : Depuis derrière ou par surprise : +5 attaque, +3d6 DM ; +5 en discrétion.
+
+---
+
+## Combattant Brute NC10
+
+Brute de haut rang, avec réduction de dégâts physique.
+
+**NC** 10, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 27 | **PV** 115 | **Init.** 10 | **RD** 3
+
+**Attaques :**
+- Épée longue +14, DM 1d8+13
+
+**Capacités :**
+- **Charge (L)** : Attaque à 2d20 ; succès = FOR opposé ou renversé, DM×2.
+- **Enrager** : Sur critique ou ≤50% PV : +5 attaque, +1d6 DM ; agit 1 tour après 0 PV.
+- **Percuter** : Après Charge, CON 15 ou étourdi.
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Fauchage** : Sur 15-20, cible renversée si rate DEX [10+BU].
+- **Balayage** : Attaque jusqu'à 3 cibles dans un arc de 180°.
+
+---
+
+## Combattant Champion NC10
+
+Champion légendaire, contre-attaque tout agresseur.
+
+**NC** 10, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 27 | **PV** 115 | **Init.** 10
+
+**Attaques :**
+- Épée longue +14, DM 1d8+13
+
+**Capacités :**
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Riposte** : Attaque gratuite contre chaque agresseur.
+- **Hausser le ton** : À ≤50% PV : +5 attaque, +1d6 DM, RD 5.
+- **Charge (L)** : Attaque à 2d20 ; succès = FOR opposé ou renversé, DM×2.
+- **Enrager** : Sur critique ou ≤50% PV : +5 attaque, +1d6 DM ; agit 1 tour après 0 PV.
+- **Percuter** : Après Charge, CON 15 ou étourdi.
+
+---
+
+## Combattant Conquérant NC10
+
+Conquérant suprême, commandant de légion.
+
+**NC** 10, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 27 | **PV** 115 | **Init.** 10
+
+**Attaques :**
+- Épée longue +14, DM 1d8+13
+
+**Capacités :**
+- **Sergent** : +1 action à un allié en vue par tour ; ignore un coup mortel une fois par combat.
+- **Capitaine** : Alliés en vue : +2 init/attaque/DM ; attaque supplémentaire.
+- **Commandant** : Bonus à +3 ; si ≥4 alliés à 10 m, prend moitié des DM.
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Chair à canon** : Redirige attaques sur un subordonné dans 3 m ; +5 DEF avec subordonnés proches.
+- **Attaque mortelle (L)** : Depuis derrière ou par surprise : +5 attaque, +3d6 DM ; +5 en discrétion.
+
+---
+
+## Combattant Brute NC11
+
+Brute quasi-invincible avec RD 3.
+
+**NC** 11, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 27 | **PV** 115 | **Init.** 10 | **RD** 3
+
+**Attaques :**
+- Épée longue +14, DM 1d8+13
+
+**Capacités :**
+- **Charge (L)** : Attaque à 2d20 ; succès = FOR opposé ou renversé, DM×2.
+- **Enrager** : Sur critique ou ≤50% PV : +5 attaque, +1d6 DM ; agit 1 tour après 0 PV.
+- **Percuter** : Après Charge, CON 15 ou étourdi.
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Fauchage** : Sur 15-20, cible renversée si rate DEX [10+BU].
+- **Balayage** : Attaque jusqu'à 3 cibles dans un arc de 180°.
+
+---
+
+## Combattant Champion NC11
+
+Champion de légende avec riposte totale.
+
+**NC** 11, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 27 | **PV** 115 | **Init.** 10
+
+**Attaques :**
+- Épée longue +14, DM 1d8+13
+
+**Capacités :**
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Riposte** : Attaque gratuite contre chaque agresseur.
+- **Hausser le ton** : À ≤50% PV : +5 attaque, +1d6 DM, RD 5.
+- **Charge (L)** : Attaque à 2d20 ; succès = FOR opposé ou renversé, DM×2.
+- **Enrager** : Sur critique ou ≤50% PV : +5 attaque, +1d6 DM ; agit 1 tour après 0 PV.
+- **Percuter** : Après Charge, CON 15 ou étourdi.
+
+---
+
+## Combattant Conquérant NC11
+
+Conquérant légendaire, inarrêtable.
+
+**NC** 11, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 27 | **PV** 115 | **Init.** 10
+
+**Attaques :**
+- Épée longue +14, DM 1d8+13
+
+**Capacités :**
+- **Sergent** : +1 action à un allié en vue par tour ; ignore un coup mortel une fois par combat.
+- **Capitaine** : Alliés en vue : +2 init/attaque/DM ; attaque supplémentaire.
+- **Commandant** : Bonus à +3 ; si ≥4 alliés à 10 m, prend moitié des DM.
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Chair à canon** : Redirige attaques sur un subordonné dans 3 m ; +5 DEF avec subordonnés proches.
+- **Attaque mortelle (L)** : Depuis derrière ou par surprise : +5 attaque, +3d6 DM ; +5 en discrétion.
+
+---
+
+## Combattant Brute NC12
+
+Brute de haut rang avec RD 3 et balayage dévastateur.
+
+**NC** 12, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 29 | **PV** 135 | **Init.** 10 | **RD** 3
+
+**Attaques :**
+- Épée longue +16, DM 1d8+15
+
+**Capacités :**
+- **Charge (L)** : Attaque à 2d20 ; succès = FOR opposé ou renversé, DM×2.
+- **Enrager** : Sur critique ou ≤50% PV : +5 attaque, +1d6 DM ; agit 1 tour après 0 PV.
+- **Percuter** : Après Charge, CON 15 ou étourdi.
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Fauchage** : Sur 15-20, cible renversée si rate DEX [10+BU].
+- **Balayage** : Attaque jusqu'à 3 cibles dans un arc de 180°.
+
+---
+
+## Combattant Champion NC12
+
+Champion au sommet, toutes capacités maîtrisées.
+
+**NC** 12, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 29 | **PV** 135 | **Init.** 10
+
+**Attaques :**
+- Épée longue +16, DM 1d8+15
+
+**Capacités :**
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Riposte** : Attaque gratuite contre chaque agresseur.
+- **Hausser le ton** : À ≤50% PV : +5 attaque, +1d6 DM, RD 5.
+- **Charge (L)** : Attaque à 2d20 ; succès = FOR opposé ou renversé, DM×2.
+- **Enrager** : Sur critique ou ≤50% PV : +5 attaque, +1d6 DM ; agit 1 tour après 0 PV.
+- **Percuter** : Après Charge, CON 15 ou étourdi.
+
+---
+
+## Combattant Conquérant NC12
+
+Conquérant au sommet de l'art militaire.
+
+**NC** 12, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 29 | **PV** 135 | **Init.** 10
+
+**Attaques :**
+- Épée longue +16, DM 1d8+15
+
+**Capacités :**
+- **Sergent** : +1 action à un allié en vue par tour ; ignore un coup mortel une fois par combat.
+- **Capitaine** : Alliés en vue : +2 init/attaque/DM ; attaque supplémentaire.
+- **Commandant** : Bonus à +3 ; si ≥4 alliés à 10 m, prend moitié des DM.
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Chair à canon** : Redirige attaques sur un subordonné dans 3 m ; +5 DEF avec subordonnés proches.
+- **Attaque mortelle (L)** : Depuis derrière ou par surprise : +5 attaque, +3d6 DM ; +5 en discrétion.
+
+---
+
+## Combattant Brute NC13
+
+Brute épique avec RD 6.
+
+**NC** 13, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 29 | **PV** 135 | **Init.** 10 | **RD** 6
+
+**Attaques :**
+- Épée longue +16, DM 1d8+15
+
+**Capacités :**
+- **Charge (L)** : Attaque à 2d20 ; succès = FOR opposé ou renversé, DM×2.
+- **Enrager** : Sur critique ou ≤50% PV : +5 attaque, +1d6 DM ; agit 1 tour après 0 PV.
+- **Percuter** : Après Charge, CON 15 ou étourdi.
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Fauchage** : Sur 15-20, cible renversée si rate DEX [10+BU].
+- **Balayage** : Attaque jusqu'à 3 cibles dans un arc de 180°.
+
+---
+
+## Combattant Champion NC13
+
+Champion épique, inarrêtable une fois lancé.
+
+**NC** 13, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 29 | **PV** 135 | **Init.** 10
+
+**Attaques :**
+- Épée longue +16, DM 1d8+15
+
+**Capacités :**
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Riposte** : Attaque gratuite contre chaque agresseur.
+- **Hausser le ton** : À ≤50% PV : +5 attaque, +1d6 DM, RD 5.
+- **Charge (L)** : Attaque à 2d20 ; succès = FOR opposé ou renversé, DM×2.
+- **Enrager** : Sur critique ou ≤50% PV : +5 attaque, +1d6 DM ; agit 1 tour après 0 PV.
+- **Percuter** : Après Charge, CON 15 ou étourdi.
+
+---
+
+## Combattant Conquérant NC13
+
+Conquérant épique, stratège redoutable.
+
+**NC** 13, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 29 | **PV** 135 | **Init.** 10
+
+**Attaques :**
+- Épée longue +16, DM 1d8+15
+
+**Capacités :**
+- **Sergent** : +1 action à un allié en vue par tour ; ignore un coup mortel une fois par combat.
+- **Capitaine** : Alliés en vue : +2 init/attaque/DM ; attaque supplémentaire.
+- **Commandant** : Bonus à +3 ; si ≥4 alliés à 10 m, prend moitié des DM.
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Chair à canon** : Redirige attaques sur un subordonné dans 3 m ; +5 DEF avec subordonnés proches.
+- **Attaque mortelle (L)** : Depuis derrière ou par surprise : +5 attaque, +3d6 DM ; +5 en discrétion.
+
+---
+
+## Combattant Brute NC14
+
+Brute légendaire avec RD 6.
+
+**NC** 14, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 29 | **PV** 145 | **Init.** 10 | **RD** 6
+
+**Attaques :**
+- Épée longue +20, DM 1d8+18
+
+**Capacités :**
+- **Charge (L)** : Attaque à 2d20 ; succès = FOR opposé ou renversé, DM×2.
+- **Enrager** : Sur critique ou ≤50% PV : +5 attaque, +1d6 DM ; agit 1 tour après 0 PV.
+- **Percuter** : Après Charge, CON 15 ou étourdi.
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Fauchage** : Sur 15-20, cible renversée si rate DEX [10+BU].
+- **Balayage** : Attaque jusqu'à 3 cibles dans un arc de 180°.
+
+---
+
+## Combattant Champion NC14
+
+Champion légendaire, dévastation totale.
+
+**NC** 14, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 29 | **PV** 145 | **Init.** 10
+
+**Attaques :**
+- Épée longue +20, DM 1d8+18
+
+**Capacités :**
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Riposte** : Attaque gratuite contre chaque agresseur.
+- **Hausser le ton** : À ≤50% PV : +5 attaque, +1d6 DM, RD 5.
+- **Charge (L)** : Attaque à 2d20 ; succès = FOR opposé ou renversé, DM×2.
+- **Enrager** : Sur critique ou ≤50% PV : +5 attaque, +1d6 DM ; agit 1 tour après 0 PV.
+- **Percuter** : Après Charge, CON 15 ou étourdi.
+
+---
+
+## Combattant Conquérant NC14
+
+Conquérant légendaire à la puissance écrasante.
+
+**NC** 14, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 29 | **PV** 145 | **Init.** 10
+
+**Attaques :**
+- Épée longue +20, DM 1d8+18
+
+**Capacités :**
+- **Sergent** : +1 action à un allié en vue par tour ; ignore un coup mortel une fois par combat.
+- **Capitaine** : Alliés en vue : +2 init/attaque/DM ; attaque supplémentaire.
+- **Commandant** : Bonus à +3 ; si ≥4 alliés à 10 m, prend moitié des DM.
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Chair à canon** : Redirige attaques sur un subordonné dans 3 m ; +5 DEF avec subordonnés proches.
+- **Attaque mortelle (L)** : Depuis derrière ou par surprise : +5 attaque, +3d6 DM ; +5 en discrétion.
+
+---
+
+## Combattant Brute NC15
+
+Brute suprême, force brute légendaire avec RD 6.
+
+**NC** 15, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 31 | **PV** 165 | **Init.** 10 | **RD** 6
+
+**Attaques :**
+- Épée longue +22, DM 1d8+20
+
+**Capacités :**
+- **Charge (L)** : Attaque à 2d20 ; succès = FOR opposé ou renversé, DM×2.
+- **Enrager** : Sur critique ou ≤50% PV : +5 attaque, +1d6 DM ; agit 1 tour après 0 PV.
+- **Percuter** : Après Charge, CON 15 ou étourdi.
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Fauchage** : Sur 15-20, cible renversée si rate DEX [10+BU].
+- **Balayage** : Attaque jusqu'à 3 cibles dans un arc de 180°.
+
+---
+
+## Combattant Champion NC15
+
+Champion suprême, inarrêtable.
+
+**NC** 15, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 31 | **PV** 165 | **Init.** 10
+
+**Attaques :**
+- Épée longue +22, DM 1d8+20
+
+**Capacités :**
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Riposte** : Attaque gratuite contre chaque agresseur.
+- **Hausser le ton** : À ≤50% PV : +5 attaque, +1d6 DM, RD 5.
+- **Charge (L)** : Attaque à 2d20 ; succès = FOR opposé ou renversé, DM×2.
+- **Enrager** : Sur critique ou ≤50% PV : +5 attaque, +1d6 DM ; agit 1 tour après 0 PV.
+- **Percuter** : Après Charge, CON 15 ou étourdi.
+
+---
+
+## Combattant Conquérant NC15
+
+Conquérant suprême, seigneur de guerre légendaire.
+
+**NC** 15, taille moyenne
+**FOR** +3 | **DEX** +0 | **CON** +3 | **INT** +0 | **SAG** +0 | **CHA** +0
+**DEF** 31 | **PV** 165 | **Init.** 10
+
+**Attaques :**
+- Épée longue +22, DM 1d8+20
+
+**Capacités :**
+- **Sergent** : +1 action à un allié en vue par tour ; ignore un coup mortel une fois par combat.
+- **Capitaine** : Alliés en vue : +2 init/attaque/DM ; attaque supplémentaire.
+- **Commandant** : Bonus à +3 ; si ≥4 alliés à 10 m, prend moitié des DM.
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Chair à canon** : Redirige attaques sur un subordonné dans 3 m ; +5 DEF avec subordonnés proches.
+- **Attaque mortelle (L)** : Depuis derrière ou par surprise : +5 attaque, +3d6 DM ; +5 en discrétion.
+
+---
+
+## Aventurier NC0.5
+
+Aventurier humanoïde de bas rang, agile et rapide.
+
+**NC** 0.5, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 14 | **PV** 3 | **Init.** 14
+
+**Attaques :**
+- Rapière ou arc court +3, DM 1d6
+
+---
+
+## Aventurier NC1
+
+Aventurier aguerri, instinct de survie développé.
+
+**NC** 1, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 16 | **PV** 6 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +5, DM 1d6
+
+**Capacités :**
+- **Instinct de survie** : +1 action de mouvement par tour ; résiste à la paralysie ; obtient +5 en DEF si ses PV sont inférieurs à [NC×5].
+
+---
+
+## Aventurier NC2
+
+Aventurier confirmé, instinct de survie aiguisé.
+
+**NC** 2, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 18 | **PV** 26 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +7, DM 1d6+2
+
+**Capacités :**
+- **Instinct de survie** : +1 action de mouvement par tour ; résiste à la paralysie ; +5 DEF si PV < [NC×5].
+
+---
+
+## Aventurier Assassin NC3
+
+Assassin spécialisé dans les attaques mortelles par surprise.
+
+**NC** 3, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 18 | **PV** 26 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +7, DM 1d6+2
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Attaque mortelle (L)** : Depuis derrière ou par surprise : +5 en attaque, +3d6 DM ; +5 en discrétion.
+
+---
+
+## Aventurier Maître d'armes NC3
+
+Duelliste capable de déjouer et contre-attaquer.
+
+**NC** 3, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 18 | **PV** 26 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +7, DM 1d6+2
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche automatiquement, +1d6 DM.
+
+---
+
+## Aventurier Tireur NC3
+
+Tireur d'élite adepte des embuscades.
+
+**NC** 3, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 18 | **PV** 26 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +7, DM 1d6+2
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Embuscade** : Au premier tour, la cible doit faire SAG 19 ou être surprise. Attaque vs cible surprise : +1d6 DM. +5 en discrétion et en initiative.
+
+---
+
+## Aventurier Assassin NC4
+
+Assassin redoutable, disparaît après ses coups.
+
+**NC** 4, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 20 | **PV** 46 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +9, DM 1d6+4
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Attaque mortelle (L)** : Depuis derrière ou par surprise : +5 attaque, +3d6 DM ; +5 discrétion.
+- **Disparition (L)** : Devient invisible et se déplace jusqu'à 20 m. Au tour suivant, peut réaliser une Attaque mortelle si DEX réussit contre SAG de la cible.
+
+---
+
+## Aventurier Maître d'armes NC4
+
+Maître d'armes qui riposte automatiquement.
+
+**NC** 4, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 20 | **PV** 46 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +9, DM 1d6+4
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Riposte** : Attaque gratuite contre chaque agresseur.
+
+---
+
+## Aventurier Tireur NC4
+
+Tireur mobile et difficile à cibler.
+
+**NC** 4, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 20 | **PV** 46 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +9, DM 1d6+4
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Embuscade** : SAG 19 ou surpris ; +1d6 DM vs surpris ; +5 discrétion/init.
+- **Attaque mortelle (L)** : Depuis derrière ou surprise : +5 attaque, +3d6 DM ; +5 discrétion.
+
+---
+
+## Aventurier Assassin NC5
+
+Assassin capable d'exécuter ses cibles.
+
+**NC** 5, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 20 | **PV** 46 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +9, DM 1d6+4
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Attaque mortelle (L)** : Depuis derrière ou surprise : +5 attaque, +3d6 DM ; +5 discrétion.
+- **Disparition (L)** : Invisible, déplacement 20 m ; Attaque mortelle au tour suivant si DEX > SAG.
+- **Assassinat** : Si l'Attaque mortelle touche une cible surprise, celle-ci fait CON 15 ou tombe à 0 PV.
+
+---
+
+## Aventurier Maître d'armes NC5
+
+Maître d'armes qui reprend de la vigueur sous pression.
+
+**NC** 5, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 20 | **PV** 46 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +9, DM 1d6+4
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Riposte** : Attaque gratuite contre chaque agresseur.
+- **Hausser le ton** : À ≤50% PV : +5 attaque, +1d6 DM, RD 5.
+
+---
+
+## Aventurier Tireur NC5
+
+Tireur d'élite avec double tir.
+
+**NC** 5, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 20 | **PV** 46 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +9, DM 1d6+4
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Attaque mortelle (L)** : Depuis derrière ou surprise : +5 attaque, +3d6 DM ; +5 discrétion.
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+
+---
+
+## Aventurier Assassin NC6
+
+Assassin interchangeable, imprévisible en groupe.
+
+**NC** 6, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 22 | **PV** 66 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +11, DM 1d6+6
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Attaque mortelle (L)** : Depuis derrière ou surprise : +5 attaque, +3d6 DM ; +5 discrétion.
+- **Disparition (L)** : Invisible, 20 m ; Attaque mortelle si DEX > SAG.
+- **Assassinat** : Attaque mortelle sur cible surprise : CON 15 ou 0 PV.
+- **Interchangeables** : +5 DEF tant que l'assassin et ses alliés surpassent en nombre la cible. Le MJ peut redistribuer les DM d'une attaque entre membres du groupe.
+
+---
+
+## Aventurier Maître d'armes NC6
+
+Maître d'armes interchangeable, insaisissable en groupe.
+
+**NC** 6, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 22 | **PV** 66 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +11, DM 1d6+6
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Riposte** : Attaque gratuite contre chaque agresseur.
+- **Hausser le ton** : À ≤50% PV : +5 attaque, +1d6 DM, RD 5.
+- **Interchangeables** : +5 DEF en supériorité numérique ; redistribution des DM possible.
+
+---
+
+## Aventurier Tireur NC6
+
+Tireur d'élite avec disparition tactique.
+
+**NC** 6, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 22 | **PV** 66 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +11, DM 1d6+6
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Attaque mortelle (L)** : Depuis derrière ou surprise : +5 attaque, +3d6 DM ; +5 discrétion.
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Tireur d'élite (L)** : Effectue 2 attaques à distance par action. Ignore les malus de couverture. Peut utiliser 1d12 au lieu du d20 et inflige +2d6 DM supplémentaires.
+
+---
+
+## Aventurier Assassin NC7
+
+Assassin de haut rang avec embuscade commune.
+
+**NC** 7, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 22 | **PV** 66 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +11, DM 1d6+6
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Embuscade** : Premier tour : SAG 19 ou surpris ; +1d6 DM vs surpris ; +5 discrétion/init.
+- **Attaque mortelle (L)** : Depuis derrière ou surprise : +5 attaque, +3d6 DM ; +5 discrétion.
+- **Disparition (L)** : Invisible, 20 m ; Attaque mortelle si DEX > SAG.
+- **Assassinat** : Attaque mortelle sur surpris : CON 15 ou 0 PV.
+- **Interchangeables** : +5 DEF en supériorité numérique.
+
+---
+
+## Aventurier Maître d'armes NC7
+
+Maître d'armes expert, toutes capacités offensives maîtrisées.
+
+**NC** 7, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 22 | **PV** 66 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +11, DM 1d6+6
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Embuscade** : Premier tour : SAG 19 ou surpris ; +1d6 DM vs surpris ; +5 discrétion/init.
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Riposte** : Attaque gratuite contre chaque agresseur.
+- **Hausser le ton** : À ≤50% PV : +5 attaque, +1d6 DM, RD 5.
+- **Interchangeables** : +5 DEF en supériorité numérique.
+
+---
+
+## Aventurier Tireur NC7
+
+Tireur d'élite avec disparition et double tir.
+
+**NC** 7, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 22 | **PV** 66 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +11, DM 1d6+6
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Embuscade** : Premier tour : SAG 19 ou surpris ; +1d6 DM vs surpris ; +5 discrétion/init.
+- **Attaque mortelle (L)** : Depuis derrière ou surprise : +5 attaque, +3d6 DM ; +5 discrétion.
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Tireur d'élite (L)** : 2 attaques à distance par action ; ignore couverture ; d12 option +2d6 DM.
+- **Disparition (L)** : Invisible, 20 m ; Attaque mortelle si DEX > SAG.
+
+---
+
+## Aventurier Assassin NC8
+
+Assassin de haut rang, impossible à cibler en groupe.
+
+**NC** 8, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 24 | **PV** 86 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +13, DM 1d6+8
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Embuscade** : Premier tour : SAG 19 ou surpris ; +1d6 DM vs surpris ; +5 discrétion/init.
+- **Attaque mortelle (L)** : Depuis derrière ou surprise : +5 attaque, +3d6 DM ; +5 discrétion.
+- **Disparition (L)** : Invisible, 20 m ; Attaque mortelle si DEX > SAG.
+- **Assassinat** : Attaque mortelle sur surpris : CON 15 ou 0 PV.
+- **Interchangeables** : +5 DEF en supériorité numérique.
+
+---
+
+## Aventurier Maître d'armes NC8
+
+Maître d'armes de haut rang, interchangeable et inarrêtable.
+
+**NC** 8, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 24 | **PV** 86 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +13, DM 1d6+8
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Embuscade** : Premier tour : SAG 19 ou surpris ; +1d6 DM vs surpris ; +5 discrétion/init.
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Riposte** : Attaque gratuite contre chaque agresseur.
+- **Hausser le ton** : À ≤50% PV : +5 attaque, +1d6 DM, RD 5.
+- **Interchangeables** : +5 DEF en supériorité numérique.
+
+---
+
+## Aventurier Tireur NC8
+
+Tireur de haut rang avec arsenal de techniques.
+
+**NC** 8, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 24 | **PV** 86 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +13, DM 1d6+8
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Embuscade** : Premier tour : SAG 19 ou surpris ; +1d6 DM vs surpris ; +5 discrétion/init.
+- **Attaque mortelle (L)** : Depuis derrière ou surprise : +5 attaque, +3d6 DM ; +5 discrétion.
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Tireur d'élite (L)** : 2 attaques à distance par action ; ignore couverture ; d12 option +2d6 DM.
+- **Disparition (L)** : Invisible, 20 m ; Attaque mortelle si DEX > SAG.
+
+---
+
+## Aventurier Assassin NC9
+
+Assassin de haut rang avec embuscade permanente.
+
+**NC** 9, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 24 | **PV** 86 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +13, DM 1d6+8
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Embuscade** : Premier tour : SAG 19 ou surpris ; +1d6 DM vs surpris ; +5 discrétion/init.
+- **Attaque mortelle (L)** : Depuis derrière ou surprise : +5 attaque, +3d6 DM ; +5 discrétion.
+- **Disparition (L)** : Invisible, 20 m ; Attaque mortelle si DEX > SAG.
+- **Assassinat** : Attaque mortelle sur surpris : CON 15 ou 0 PV.
+- **Interchangeables** : +5 DEF en supériorité numérique.
+
+---
+
+## Aventurier Maître d'armes NC9
+
+Maître d'armes avec embuscade et interchangeables.
+
+**NC** 9, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 24 | **PV** 86 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +13, DM 1d6+8
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Embuscade** : Premier tour : SAG 19 ou surpris ; +1d6 DM vs surpris ; +5 discrétion/init.
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Riposte** : Attaque gratuite contre chaque agresseur.
+- **Hausser le ton** : À ≤50% PV : +5 attaque, +1d6 DM, RD 5.
+- **Interchangeables** : +5 DEF en supériorité numérique.
+
+---
+
+## Aventurier Tireur NC9
+
+Tireur de haut rang avec embuscade commune.
+
+**NC** 9, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 24 | **PV** 86 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +13, DM 1d6+8
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Embuscade** : Premier tour : SAG 19 ou surpris ; +1d6 DM vs surpris ; +5 discrétion/init.
+- **Attaque mortelle (L)** : Depuis derrière ou surprise : +5 attaque, +3d6 DM ; +5 discrétion.
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Tireur d'élite (L)** : 2 attaques à distance par action ; ignore couverture ; d12 option +2d6 DM.
+- **Disparition (L)** : Invisible, 20 m ; Attaque mortelle si DEX > SAG.
+
+---
+
+## Aventurier Assassin NC10
+
+Assassin de haut rang, attaque coordonnée avec alliés.
+
+**NC** 10, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 24 | **PV** 96 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +17, DM 2d6+8
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Embuscade** : Premier tour : SAG 19 ou surpris ; +1d6 DM vs surpris ; +5 discrétion/init.
+- **Attaque mortelle (L)** : Depuis derrière ou surprise : +5 attaque, +3d6 DM ; +5 discrétion.
+- **Disparition (L)** : Invisible, 20 m ; Attaque mortelle si DEX > SAG.
+- **Assassinat** : Attaque mortelle sur surpris : CON 15 ou 0 PV.
+- **Interchangeables** : +5 DEF en supériorité numérique.
+
+---
+
+## Aventurier Maître d'armes NC10
+
+Maître d'armes légendaire, embuscade et contrôle total.
+
+**NC** 10, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 24 | **PV** 96 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +17, DM 2d6+8
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Embuscade** : Premier tour : SAG 19 ou surpris ; +1d6 DM vs surpris ; +5 discrétion/init.
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Riposte** : Attaque gratuite contre chaque agresseur.
+- **Hausser le ton** : À ≤50% PV : +5 attaque, +1d6 DM, RD 5.
+- **Interchangeables** : +5 DEF en supériorité numérique.
+
+---
+
+## Aventurier Tireur NC10
+
+Tireur d'élite légendaire.
+
+**NC** 10, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 24 | **PV** 96 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +17, DM 2d6+8
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Embuscade** : Premier tour : SAG 19 ou surpris ; +1d6 DM vs surpris ; +5 discrétion/init.
+- **Attaque mortelle (L)** : Depuis derrière ou surprise : +5 attaque, +3d6 DM ; +5 discrétion.
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Tireur d'élite (L)** : 2 attaques à distance par action ; ignore couverture ; d12 option +2d6 DM.
+- **Disparition (L)** : Invisible, 20 m ; Attaque mortelle si DEX > SAG.
+
+---
+
+## Aventurier Assassin NC11
+
+Assassin de haute maîtrise, attaque en traître coordonnée.
+
+**NC** 11, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 24 | **PV** 96 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +17, DM 2d6+8
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Embuscade** : Premier tour : SAG 19 ou surpris ; +1d6 DM vs surpris ; +5 discrétion/init.
+- **Attaque mortelle (L)** : Depuis derrière ou surprise : +5 attaque, +3d6 DM ; +5 discrétion.
+- **Disparition (L)** : Invisible, 20 m ; Attaque mortelle si DEX > SAG.
+- **Assassinat** : Attaque mortelle sur surpris : CON 15 ou 0 PV.
+- **Interchangeables** : +5 DEF en supériorité numérique.
+
+---
+
+## Aventurier Maître d'armes NC11
+
+Maître d'armes légendaire avec attaque en traître.
+
+**NC** 11, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 24 | **PV** 96 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +17, DM 2d6+8
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Embuscade** : Premier tour : SAG 19 ou surpris ; +1d6 DM vs surpris ; +5 discrétion/init.
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Riposte** : Attaque gratuite contre chaque agresseur.
+- **Hausser le ton** : À ≤50% PV : +5 attaque, +1d6 DM, RD 5.
+- **Interchangeables** : +5 DEF en supériorité numérique.
+
+---
+
+## Aventurier Tireur NC11
+
+Tireur avec arsenal complet de techniques de tir.
+
+**NC** 11, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 24 | **PV** 96 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +17, DM 2d6+8
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Embuscade** : Premier tour : SAG 19 ou surpris ; +1d6 DM vs surpris ; +5 discrétion/init.
+- **Attaque mortelle (L)** : Depuis derrière ou surprise : +5 attaque, +3d6 DM ; +5 discrétion.
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Tireur d'élite (L)** : 2 attaques à distance par action ; ignore couverture ; d12 option +2d6 DM.
+- **Disparition (L)** : Invisible, 20 m ; Attaque mortelle si DEX > SAG.
+
+---
+
+## Aventurier Assassin NC12
+
+Assassin redoutable avec attaque en traître coordonnée.
+
+**NC** 12, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 26 | **PV** 116 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +19, DM 2d6+10
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Embuscade** : Premier tour : SAG 19 ou surpris ; +1d6 DM vs surpris ; +5 discrétion/init.
+- **Attaque mortelle (L)** : Depuis derrière ou surprise : +5 attaque, +3d6 DM ; +5 discrétion.
+- **Disparition (L)** : Invisible, 20 m ; Attaque mortelle si DEX > SAG.
+- **Assassinat** : Attaque mortelle sur surpris : CON 15 ou 0 PV.
+- **Interchangeables** : +5 DEF en supériorité numérique.
+
+---
+
+## Aventurier Maître d'armes NC12
+
+Maître d'armes légendaire, inarrêtable.
+
+**NC** 12, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 26 | **PV** 116 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +19, DM 2d6+10
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Embuscade** : Premier tour : SAG 19 ou surpris ; +1d6 DM vs surpris ; +5 discrétion/init.
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Riposte** : Attaque gratuite contre chaque agresseur.
+- **Hausser le ton** : À ≤50% PV : +5 attaque, +1d6 DM, RD 5.
+- **Interchangeables** : +5 DEF en supériorité numérique.
+
+---
+
+## Aventurier Tireur NC12
+
+Tireur de haut rang avec arsenal complet.
+
+**NC** 12, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 26 | **PV** 116 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +19, DM 2d6+10
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Embuscade** : Premier tour : SAG 19 ou surpris ; +1d6 DM vs surpris ; +5 discrétion/init.
+- **Attaque mortelle (L)** : Depuis derrière ou surprise : +5 attaque, +3d6 DM ; +5 discrétion.
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Tireur d'élite (L)** : 2 attaques à distance par action ; ignore couverture ; d12 option +2d6 DM.
+- **Disparition (L)** : Invisible, 20 m ; Attaque mortelle si DEX > SAG.
+
+---
+
+## Aventurier Assassin NC13
+
+Assassin épique avec attaque en traître commune.
+
+**NC** 13, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 26 | **PV** 116 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +19, DM 2d6+10
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Embuscade** : Premier tour : SAG 19 ou surpris ; +1d6 DM vs surpris ; +5 discrétion/init.
+- **Attaque en traître (L)** : +5 attaque, +2d6 DM quand l'assassin cible le même ennemi qu'un allié.
+- **Attaque mortelle (L)** : Depuis derrière ou surprise : +5 attaque, +3d6 DM ; +5 discrétion.
+- **Disparition (L)** : Invisible, 20 m ; Attaque mortelle si DEX > SAG.
+- **Assassinat** : Attaque mortelle sur surpris : CON 15 ou 0 PV.
+- **Interchangeables** : +5 DEF en supériorité numérique.
+
+---
+
+## Aventurier Maître d'armes NC13
+
+Maître d'armes épique avec attaque en traître.
+
+**NC** 13, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 26 | **PV** 116 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +19, DM 2d6+10
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Embuscade** : Premier tour : SAG 19 ou surpris ; +1d6 DM vs surpris ; +5 discrétion/init.
+- **Attaque en traître (L)** : +5 attaque, +2d6 DM quand il cible le même ennemi qu'un allié.
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Riposte** : Attaque gratuite contre chaque agresseur.
+- **Hausser le ton** : À ≤50% PV : +5 attaque, +1d6 DM, RD 5.
+- **Interchangeables** : +5 DEF en supériorité numérique.
+
+---
+
+## Aventurier Tireur NC13
+
+Tireur épique avec attaque en traître.
+
+**NC** 13, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 26 | **PV** 116 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +19, DM 2d6+10
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Embuscade** : Premier tour : SAG 19 ou surpris ; +1d6 DM vs surpris ; +5 discrétion/init.
+- **Attaque en traître (L)** : +5 attaque, +2d6 DM quand il cible le même ennemi qu'un allié.
+- **Attaque mortelle (L)** : Depuis derrière ou surprise : +5 attaque, +3d6 DM ; +5 discrétion.
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Tireur d'élite (L)** : 2 attaques à distance par action ; ignore couverture ; d12 option +2d6 DM.
+- **Disparition (L)** : Invisible, 20 m ; Attaque mortelle si DEX > SAG.
+
+---
+
+## Aventurier Assassin NC14
+
+Assassin légendaire, frappe de partout.
+
+**NC** 14, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 26 | **PV** 126 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +23, DM 3d6+10
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Embuscade** : Premier tour : SAG 19 ou surpris ; +1d6 DM vs surpris ; +5 discrétion/init.
+- **Attaque en traître (L)** : +5 attaque, +2d6 DM sur même cible qu'un allié.
+- **Attaque mortelle (L)** : Depuis derrière ou surprise : +5 attaque, +3d6 DM ; +5 discrétion.
+- **Disparition (L)** : Invisible, 20 m ; Attaque mortelle si DEX > SAG.
+- **Assassinat** : Attaque mortelle sur surpris : CON 15 ou 0 PV.
+- **Interchangeables** : +5 DEF en supériorité numérique.
+
+---
+
+## Aventurier Maître d'armes NC14
+
+Maître d'armes légendaire, maîtrise absolue.
+
+**NC** 14, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 26 | **PV** 126 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +23, DM 3d6+10
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Embuscade** : Premier tour : SAG 19 ou surpris ; +1d6 DM vs surpris ; +5 discrétion/init.
+- **Attaque en traître (L)** : +5 attaque, +2d6 DM sur même cible qu'un allié.
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Riposte** : Attaque gratuite contre chaque agresseur.
+- **Hausser le ton** : À ≤50% PV : +5 attaque, +1d6 DM, RD 5.
+- **Interchangeables** : +5 DEF en supériorité numérique.
+
+---
+
+## Aventurier Tireur NC14
+
+Tireur légendaire, frappe n'importe où avec précision.
+
+**NC** 14, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 26 | **PV** 126 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +23, DM 3d6+10
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Embuscade** : Premier tour : SAG 19 ou surpris ; +1d6 DM vs surpris ; +5 discrétion/init.
+- **Attaque en traître (L)** : +5 attaque, +2d6 DM sur même cible qu'un allié.
+- **Attaque mortelle (L)** : Depuis derrière ou surprise : +5 attaque, +3d6 DM ; +5 discrétion.
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Tireur d'élite (L)** : 2 attaques à distance par action ; ignore couverture ; d12 option +2d6 DM.
+- **Disparition (L)** : Invisible, 20 m ; Attaque mortelle si DEX > SAG.
+
+---
+
+## Aventurier Assassin NC15
+
+Assassin suprême, l'hallali imparable.
+
+**NC** 15, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 26 | **PV** 126 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +23, DM 3d6+10
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Embuscade** : Premier tour : SAG 19 ou surpris ; +1d6 DM vs surpris ; +5 discrétion/init.
+- **Attaque en traître (L)** : +5 attaque, +2d6 DM sur même cible qu'un allié.
+- **L'hallali** : Attaque en traître gratuite quand l'ennemi obtient 1-5 sur son dé d'attaque.
+- **Attaque mortelle (L)** : Depuis derrière ou surprise : +5 attaque, +3d6 DM ; +5 discrétion.
+- **Disparition (L)** : Invisible, 20 m ; Attaque mortelle si DEX > SAG.
+- **Assassinat** : Attaque mortelle sur surpris : CON 15 ou 0 PV.
+- **Interchangeables** : +5 DEF en supériorité numérique.
+
+---
+
+## Aventurier Maître d'armes NC15
+
+Maître d'armes suprême, imparable et imprévisible.
+
+**NC** 15, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 26 | **PV** 126 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +23, DM 3d6+10
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Embuscade** : Premier tour : SAG 19 ou surpris ; +1d6 DM vs surpris ; +5 discrétion/init.
+- **Attaque en traître (L)** : +5 attaque, +2d6 DM sur même cible qu'un allié.
+- **L'hallali** : Attaque en traître gratuite quand l'ennemi obtient 1-5 sur son dé d'attaque.
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Riposte** : Attaque gratuite contre chaque agresseur.
+- **Hausser le ton** : À ≤50% PV : +5 attaque, +1d6 DM, RD 5.
+- **Interchangeables** : +5 DEF en supériorité numérique.
+
+---
+
+## Aventurier Tireur NC15
+
+Tireur suprême, l'hallali à distance.
+
+**NC** 15, taille moyenne
+**FOR** +0 | **DEX** +4 | **CON** +0 | **INT** +0 | **SAG** +1 | **CHA** +1
+**DEF** 26 | **PV** 126 | **Init.** 18
+
+**Attaques :**
+- Rapière ou arc court +23, DM 3d6+10
+
+**Capacités :**
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Embuscade** : Premier tour : SAG 19 ou surpris ; +1d6 DM vs surpris ; +5 discrétion/init.
+- **Attaque en traître (L)** : +5 attaque, +2d6 DM sur même cible qu'un allié.
+- **L'hallali** : Attaque en traître gratuite quand l'ennemi obtient 1-5 sur son dé d'attaque.
+- **Attaque mortelle (L)** : Depuis derrière ou surprise : +5 attaque, +3d6 DM ; +5 discrétion.
+- **Imparable (L)** : Attaque à 2d20 ; sur 15-20 touche auto, +1d6 DM.
+- **Tireur d'élite (L)** : 2 attaques à distance par action ; ignore couverture ; d12 option +2d6 DM.
+- **Disparition (L)** : Invisible, 20 m ; Attaque mortelle si DEX > SAG.
+
+---
+
+## Mystique NC0.5
+
+Mystique humanoïde de bas rang, magie rudimentaire.
+
+**NC** 0.5, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 10 | **PV** 4 | **Init.** 10
+
+**Attaques :**
+- Dague +1, DM 1d4
+- Attaque magique (L) +4, DM 1d4
+
+---
+
+## Mystique NC1
+
+Mystique initié, projection magique basique.
+
+**NC** 1, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 10 | **PV** 4 | **Init.** 10
+
+**Attaques :**
+- Dague +1, DM 1d4
+- Attaque magique (L) +4, DM 1d6
+
+---
+
+## Mystique NC2
+
+Mystique confirmé, bâton et magie de zone.
+
+**NC** 2, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 13 | **PV** 19 | **Init.** 10
+
+**Attaques :**
+- Bâton +4, DM 1d6+1
+- Attaque magique (L) +7, DM 2d6
+
+---
+
+## Mystique Arcaniste NC3
+
+Arcaniste maîtrisant les attaques magiques de zone.
+
+**NC** 3, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 13 | **PV** 19 | **Init.** 10
+
+**Attaques :**
+- Bâton +4, DM 1d6+1
+- Attaque magique (L) +7, DM 3d6
+
+**Capacités :**
+- **Maîtrise élémentaire** : L'attaque magique touche une zone de 10 m de diamètre. Les cibles font un test de DEX [10+BU] ou subissent les DM entiers. L'arcaniste bénéficie d'une RD élémentaire égale à son bonus universel.
+
+---
+
+## Mystique Guérisseur NC3
+
+Guérisseur capable de soigner massivement ses alliés.
+
+**NC** 3, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 13 | **PV** 19 | **Init.** 10
+
+**Attaques :**
+- Bâton +4, DM 1d6+1
+- Attaque magique (L) +7, DM 3d6
+
+**Capacités :**
+- **Soigner (L)** : Restaure 50% des PV max d'une cible. Une fois par jour.
+
+---
+
+## Mystique Nécromancien NC3
+
+Nécromancien qui draine la vie de ses victimes.
+
+**NC** 3, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 13 | **PV** 19 | **Init.** 10
+
+**Attaques :**
+- Bâton +4, DM 1d6+1
+- Attaque magique (L) +7, DM 3d6
+
+**Capacités :**
+- **Vampirisation (L)** : Attaque magique jusqu'à 30 m. Inflige [1d6×NC/2] DM et soigne le nécromancien du même montant. Gagne [1d6+NC] PV quand une créature meurt dans un rayon de 20 m.
+
+---
+
+## Mystique Arcaniste NC4
+
+Arcaniste avec armure magique contre les dégâts physiques.
+
+**NC** 4, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 13 | **PV** 19 | **Init.** 10
+
+**Attaques :**
+- Bâton +4, DM 1d6+1
+- Attaque magique (L) +7, DM 4d6
+
+**Capacités :**
+- **Maîtrise élémentaire** : Zone de 10 m ; DEX [10+BU] ou DM entiers ; RD élémentaire = BU.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques pour le reste du combat.
+
+---
+
+## Mystique Guérisseur NC4
+
+Guérisseur avec armure magique et soin puissant.
+
+**NC** 4, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 13 | **PV** 19 | **Init.** 10
+
+**Attaques :**
+- Bâton +4, DM 1d6+1
+- Attaque magique (L) +7, DM 4d6
+
+**Capacités :**
+- **Soigner (L)** : Restaure 50% des PV max. Une fois par jour.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+
+---
+
+## Mystique Nécromancien NC4
+
+Nécromancien vampirique avec armure magique.
+
+**NC** 4, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 13 | **PV** 19 | **Init.** 10
+
+**Attaques :**
+- Bâton +4, DM 1d6+1
+- Attaque magique (L) +7, DM 4d6
+
+**Capacités :**
+- **Vampirisation (L)** : [1d6×NC/2] DM, soigne autant ; [1d6+NC] PV à chaque mort dans 20 m.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+
+---
+
+## Mystique Arcaniste NC5
+
+Arcaniste de rang moyen avec maîtrise élémentaire avancée.
+
+**NC** 5, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 16 | **PV** 34 | **Init.** 10
+
+**Attaques :**
+- Bâton +7, DM 1d6+2
+- Attaque magique (L) +10, DM 5d6
+
+**Capacités :**
+- **Maîtrise élémentaire** : Zone 10 m ; DEX [10+BU] ou DM entiers ; RD élémentaire = BU.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+
+---
+
+## Mystique Guérisseur NC5
+
+Guérisseur capable de purifier et de soigner.
+
+**NC** 5, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 16 | **PV** 34 | **Init.** 10
+
+**Attaques :**
+- Bâton +7, DM 1d6+2
+- Attaque magique (L) +10, DM 5d6
+
+**Capacités :**
+- **Soigner (L)** : Restaure 50% des PV max. Une fois par jour.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+- **Guérir (L)** : Supprime tous les états négatifs (poison, paralysie, maladie) d'une cible au contact.
+
+---
+
+## Mystique Nécromancien NC5
+
+Nécromancien capable d'animer les morts.
+
+**NC** 5, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 16 | **PV** 34 | **Init.** 10
+
+**Attaques :**
+- Bâton +7, DM 1d6+2
+- Attaque magique (L) +10, DM 5d6
+
+**Capacités :**
+- **Vampirisation (L)** : [1d6×NC/2] DM, soigne autant ; [1d6+NC] PV à chaque mort dans 20 m.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+- **Animer un cadavre (L)** : Réanime un mort avec ses stats -2 attaque/-2 init. Impossible si NC mort > NC nécromancien.
+
+---
+
+## Mystique Arcaniste NC6
+
+Arcaniste contrôlant les esprits adverses.
+
+**NC** 6, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 16 | **PV** 34 | **Init.** 10
+
+**Attaques :**
+- Bâton +7, DM 1d6+2
+- Attaque magique (L) +10, DM 6d6
+
+**Capacités :**
+- **Maîtrise élémentaire** : Zone 10 m ; DEX [10+BU] ou DM entiers ; RD élémentaire = BU.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+- **Contrôle mental (L)** : Attaque magique opposée ; contrôle la cible 1d4 tours. La cible peut faire SAG [15+BU] pour se libérer.
+
+---
+
+## Mystique Guérisseur NC6
+
+Guérisseur avec gaz alchimique offensif.
+
+**NC** 6, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 16 | **PV** 34 | **Init.** 10
+
+**Attaques :**
+- Bâton +7, DM 1d6+2
+- Attaque magique (L) +10, DM 6d6
+
+**Capacités :**
+- **Soigner (L)** : Restaure 50% des PV max. Une fois par jour.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+- **Guérir (L)** : Supprime tous les états négatifs d'une cible au contact.
+- **Gaz alchimique (L)** : Lance un nuage toxique à 10 m de portée, 4 m de diamètre. CON [12+BU] ou 5 DM + affaibli 1d4 tours.
+
+---
+
+## Mystique Nécromancien NC6
+
+Nécromancien avec injonction mortelle dévastatrice.
+
+**NC** 6, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 16 | **PV** 34 | **Init.** 10
+
+**Attaques :**
+- Bâton +7, DM 1d6+2
+- Attaque magique (L) +10, DM 6d6
+
+**Capacités :**
+- **Vampirisation (L)** : [1d6×NC/2] DM, soigne autant ; [1d6+NC] PV à chaque mort dans 20 m.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+- **Animer un cadavre (L)** : Réanime un mort avec ses stats -2 attaque/-2 init.
+- **Injonction mortelle (L)** : Cible dans 30 m : CON 15 ou PV=0. En cas de succès, subit [2d6+NC] DM. Une fois par cible par combat.
+
+---
+
+## Mystique Arcaniste NC7
+
+Arcaniste puissant avec bâton runique.
+
+**NC** 7, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 19 | **PV** 49 | **Init.** 10
+
+**Attaques :**
+- Bâton runique +10, DM 1d6+3
+- Attaque magique (L) +13, DM 7d6
+
+**Capacités :**
+- **Maîtrise élémentaire** : Zone 10 m ; DEX [10+BU] ou DM entiers ; RD élémentaire = BU.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+- **Contrôle mental (L)** : Attaque magique opposée ; contrôle 1d4 tours ; SAG [15+BU] pour se libérer.
+
+---
+
+## Mystique Guérisseur NC7
+
+Guérisseur de haut rang avec arsenal de soins.
+
+**NC** 7, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 19 | **PV** 49 | **Init.** 10
+
+**Attaques :**
+- Bâton runique +10, DM 1d6+3
+- Attaque magique (L) +13, DM 7d6
+
+**Capacités :**
+- **Soigner (L)** : Restaure 50% des PV max. Une fois par jour.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+- **Guérir (L)** : Supprime tous les états négatifs d'une cible au contact.
+- **Gaz alchimique (L)** : Nuage toxique 10 m portée, 4 m diamètre ; CON [12+BU] ou 5 DM + affaibli.
+
+---
+
+## Mystique Nécromancien NC7
+
+Nécromancien de haut rang avec bâton runique.
+
+**NC** 7, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 19 | **PV** 49 | **Init.** 10
+
+**Attaques :**
+- Bâton runique +10, DM 1d6+3
+- Attaque magique (L) +13, DM 7d6
+
+**Capacités :**
+- **Vampirisation (L)** : [1d6×NC/2] DM, soigne autant ; [1d6+NC] PV à chaque mort dans 20 m.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+- **Animer un cadavre (L)** : Réanime un mort avec ses stats -2 attaque/-2 init.
+- **Injonction mortelle (L)** : CON 15 ou PV=0 ; en cas de réussite [2d6+NC] DM.
+
+---
+
+## Mystique Arcaniste NC8
+
+Arcaniste de haut rang, contrôle mental renforcé.
+
+**NC** 8, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 19 | **PV** 49 | **Init.** 10
+
+**Attaques :**
+- Bâton runique +10, DM 1d6+3
+- Attaque magique (L) +13, DM 8d6
+
+**Capacités :**
+- **Maîtrise élémentaire** : Zone 10 m ; DEX [10+BU] ou DM entiers ; RD élémentaire = BU.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+- **Contrôle mental (L)** : Attaque magique opposée ; contrôle 1d4 tours ; SAG [15+BU] pour se libérer.
+
+---
+
+## Mystique Guérisseur NC8
+
+Guérisseur de haut rang, soins et purification.
+
+**NC** 8, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 19 | **PV** 49 | **Init.** 10
+
+**Attaques :**
+- Bâton runique +10, DM 1d6+3
+- Attaque magique (L) +13, DM 8d6
+
+**Capacités :**
+- **Soigner (L)** : Restaure 50% des PV max. Une fois par jour.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+- **Guérir (L)** : Supprime tous les états négatifs.
+- **Gaz alchimique (L)** : Nuage toxique ; CON [12+BU] ou 5 DM + affaibli.
+
+---
+
+## Mystique Nécromancien NC8
+
+Nécromancien implacable avec armée de morts.
+
+**NC** 8, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 19 | **PV** 49 | **Init.** 10
+
+**Attaques :**
+- Bâton runique +10, DM 1d6+3
+- Attaque magique (L) +13, DM 8d6
+
+**Capacités :**
+- **Vampirisation (L)** : [1d6×NC/2] DM, soigne autant ; [1d6+NC] PV à chaque mort dans 20 m.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+- **Animer un cadavre (L)** : Réanime un mort avec ses stats -2 attaque/-2 init.
+- **Injonction mortelle (L)** : CON 15 ou PV=0 ; sinon [2d6+NC] DM.
+
+---
+
+## Mystique Arcaniste NC9
+
+Arcaniste avec téléportation magique.
+
+**NC** 9, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 19 | **PV** 49 | **Init.** 10
+
+**Attaques :**
+- Bâton runique +10, DM 1d6+3
+- Attaque magique (L) +13, DM 9d6
+
+**Capacités :**
+- **Maîtrise élémentaire** : Zone 10 m ; DEX [10+BU] ou DM entiers ; RD élémentaire = BU.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+- **Contrôle mental (L)** : Attaque magique opposée ; contrôle 1d4 tours.
+- **Déplacement magique (L)** : Se téléporte jusqu'à 30 m vers un emplacement en ligne de vue ou connu.
+
+---
+
+## Mystique Guérisseur NC9
+
+Guérisseur avec téléportation et arsenal de soins.
+
+**NC** 9, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 19 | **PV** 49 | **Init.** 10
+
+**Attaques :**
+- Bâton runique +10, DM 1d6+3
+- Attaque magique (L) +13, DM 9d6
+
+**Capacités :**
+- **Soigner (L)** : Restaure 50% des PV max. Une fois par jour.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+- **Guérir (L)** : Supprime tous les états négatifs.
+- **Gaz alchimique (L)** : Nuage toxique ; CON [12+BU] ou 5 DM + affaibli.
+- **Déplacement magique (L)** : Téléportation jusqu'à 30 m.
+
+---
+
+## Mystique Nécromancien NC9
+
+Nécromancien se téléportant parmi les morts.
+
+**NC** 9, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 19 | **PV** 49 | **Init.** 10
+
+**Attaques :**
+- Bâton runique +10, DM 1d6+3
+- Attaque magique (L) +13, DM 9d6
+
+**Capacités :**
+- **Vampirisation (L)** : [1d6×NC/2] DM, soigne autant ; [1d6+NC] PV à chaque mort dans 20 m.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+- **Animer un cadavre (L)** : Réanime un mort.
+- **Injonction mortelle (L)** : CON 15 ou PV=0 ; sinon [2d6+NC] DM.
+- **Déplacement magique (L)** : Téléportation jusqu'à 30 m.
+
+---
+
+## Mystique Arcaniste NC10
+
+Arcaniste avec bâton runique renforcé et magie 10d6.
+
+**NC** 10, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 22 | **PV** 64 | **Init.** 10
+
+**Attaques :**
+- Bâton runique +10, DM 1d6+3
+- Attaque magique (L) +16, DM 10d6
+
+**Capacités :**
+- **Maîtrise élémentaire** : Zone 10 m ; DEX [10+BU] ou DM entiers ; RD élémentaire = BU.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+- **Contrôle mental (L)** : Attaque magique opposée ; contrôle 1d4 tours.
+- **Déplacement magique (L)** : Téléportation jusqu'à 30 m.
+
+---
+
+## Mystique Guérisseur NC10
+
+Guérisseur légendaire avec téléportation.
+
+**NC** 10, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 22 | **PV** 64 | **Init.** 10
+
+**Attaques :**
+- Bâton runique +10, DM 1d6+3
+- Attaque magique (L) +16, DM 10d6
+
+**Capacités :**
+- **Soigner (L)** : Restaure 50% des PV max. Une fois par jour.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+- **Guérir (L)** : Supprime tous les états négatifs.
+- **Gaz alchimique (L)** : Nuage toxique ; CON [12+BU] ou 5 DM + affaibli.
+- **Déplacement magique (L)** : Téléportation jusqu'à 30 m.
+
+---
+
+## Mystique Nécromancien NC10
+
+Nécromancien légendaire se téléportant parmi ses armées.
+
+**NC** 10, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 22 | **PV** 64 | **Init.** 10
+
+**Attaques :**
+- Bâton runique +10, DM 1d6+3
+- Attaque magique (L) +16, DM 10d6
+
+**Capacités :**
+- **Vampirisation (L)** : [1d6×NC/2] DM, soigne autant ; [1d6+NC] PV à chaque mort dans 20 m.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+- **Animer un cadavre (L)** : Réanime un mort.
+- **Injonction mortelle (L)** : CON 15 ou PV=0 ; sinon [2d6+NC] DM.
+- **Déplacement magique (L)** : Téléportation jusqu'à 30 m.
+
+---
+
+## Mystique Arcaniste NC11
+
+Arcaniste épique avec bâton runique amélioré et instinct de survie.
+
+**NC** 11, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 22 | **PV** 64 | **Init.** 10
+
+**Attaques :**
+- Bâton runique +13, DM 1d6+4
+- Attaque magique (L) +16, DM 10d6+3
+
+**Capacités :**
+- **Maîtrise élémentaire** : Zone 10 m ; DEX [10+BU] ou DM entiers ; RD élémentaire = BU.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+- **Contrôle mental (L)** : Attaque magique opposée ; contrôle 1d4 tours.
+- **Déplacement magique (L)** : Téléportation jusqu'à 30 m.
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+
+---
+
+## Mystique Guérisseur NC11
+
+Guérisseur épique avec instinct de survie.
+
+**NC** 11, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 22 | **PV** 64 | **Init.** 10
+
+**Attaques :**
+- Bâton runique +13, DM 1d6+4
+- Attaque magique (L) +16, DM 10d6+3
+
+**Capacités :**
+- **Soigner (L)** : Restaure 50% des PV max. Une fois par jour.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+- **Guérir (L)** : Supprime tous les états négatifs.
+- **Gaz alchimique (L)** : Nuage toxique ; CON [12+BU] ou 5 DM + affaibli.
+- **Déplacement magique (L)** : Téléportation jusqu'à 30 m.
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+
+---
+
+## Mystique Nécromancien NC11
+
+Nécromancien épique, instinct de survie développé.
+
+**NC** 11, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 22 | **PV** 64 | **Init.** 10
+
+**Attaques :**
+- Bâton runique +13, DM 1d6+4
+- Attaque magique (L) +16, DM 10d6+3
+
+**Capacités :**
+- **Vampirisation (L)** : [1d6×NC/2] DM, soigne autant ; [1d6+NC] PV à chaque mort dans 20 m.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+- **Animer un cadavre (L)** : Réanime un mort.
+- **Injonction mortelle (L)** : CON 15 ou PV=0 ; sinon [2d6+NC] DM.
+- **Déplacement magique (L)** : Téléportation jusqu'à 30 m.
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+
+---
+
+## Mystique Arcaniste NC12
+
+Arcaniste de haut rang avec bâton runique puissant.
+
+**NC** 12, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 25 | **PV** 79 | **Init.** 10
+
+**Attaques :**
+- Bâton runique +16, DM 1d6+5
+- Attaque magique (L) +19, DM 10d6+6
+
+**Capacités :**
+- **Maîtrise élémentaire** : Zone 10 m ; DEX [10+BU] ou DM entiers ; RD élémentaire = BU.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+- **Contrôle mental (L)** : Attaque magique opposée ; contrôle 1d4 tours.
+- **Déplacement magique (L)** : Téléportation jusqu'à 30 m.
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+
+---
+
+## Mystique Guérisseur NC12
+
+Guérisseur de haut rang avec puissance accrue.
+
+**NC** 12, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 25 | **PV** 79 | **Init.** 10
+
+**Attaques :**
+- Bâton runique +16, DM 1d6+5
+- Attaque magique (L) +19, DM 10d6+6
+
+**Capacités :**
+- **Soigner (L)** : Restaure 50% des PV max. Une fois par jour.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+- **Guérir (L)** : Supprime tous les états négatifs.
+- **Gaz alchimique (L)** : Nuage toxique ; CON [12+BU] ou 5 DM + affaibli.
+- **Déplacement magique (L)** : Téléportation jusqu'à 30 m.
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+
+---
+
+## Mystique Nécromancien NC12
+
+Nécromancien de haut rang avec puissance accrue.
+
+**NC** 12, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 25 | **PV** 79 | **Init.** 10
+
+**Attaques :**
+- Bâton runique +16, DM 1d6+5
+- Attaque magique (L) +19, DM 10d6+6
+
+**Capacités :**
+- **Vampirisation (L)** : [1d6×NC/2] DM, soigne autant ; [1d6+NC] PV à chaque mort dans 20 m.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+- **Animer un cadavre (L)** : Réanime un mort.
+- **Injonction mortelle (L)** : CON 15 ou PV=0 ; sinon [2d6+NC] DM.
+- **Déplacement magique (L)** : Téléportation jusqu'à 30 m.
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+
+---
+
+## Mystique Arcaniste NC13
+
+Arcaniste épique avec résistance à la magie.
+
+**NC** 13, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 25 | **PV** 79 | **Init.** 10
+
+**Attaques :**
+- Bâton runique +16, DM 1d6+5
+- Attaque magique (L) +19, DM 10d6+9
+
+**Capacités :**
+- **Maîtrise élémentaire** : Zone 10 m ; DEX [10+BU] ou DM entiers ; RD élémentaire = BU.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+- **Contrôle mental (L)** : Attaque magique opposée ; contrôle 1d4 tours.
+- **Déplacement magique (L)** : Téléportation jusqu'à 30 m.
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Résistance à la magie** : RD 5 contre tous les dégâts magiques.
+
+---
+
+## Mystique Guérisseur NC13
+
+Guérisseur épique résistant à la magie.
+
+**NC** 13, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 25 | **PV** 79 | **Init.** 10
+
+**Attaques :**
+- Bâton runique +16, DM 1d6+5
+- Attaque magique (L) +19, DM 10d6+9
+
+**Capacités :**
+- **Soigner (L)** : Restaure 50% des PV max. Une fois par jour.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+- **Guérir (L)** : Supprime tous les états négatifs.
+- **Gaz alchimique (L)** : Nuage toxique ; CON [12+BU] ou 5 DM + affaibli.
+- **Déplacement magique (L)** : Téléportation jusqu'à 30 m.
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Résistance à la magie** : RD 5 contre tous les dégâts magiques.
+
+---
+
+## Mystique Nécromancien NC13
+
+Nécromancien épique résistant à la magie.
+
+**NC** 13, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 25 | **PV** 79 | **Init.** 10
+
+**Attaques :**
+- Bâton runique +16, DM 1d6+5
+- Attaque magique (L) +19, DM 10d6+9
+
+**Capacités :**
+- **Vampirisation (L)** : [1d6×NC/2] DM, soigne autant ; [1d6+NC] PV à chaque mort dans 20 m.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+- **Animer un cadavre (L)** : Réanime un mort.
+- **Injonction mortelle (L)** : CON 15 ou PV=0 ; sinon [2d6+NC] DM.
+- **Déplacement magique (L)** : Téléportation jusqu'à 30 m.
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Résistance à la magie** : RD 5 contre tous les dégâts magiques.
+
+---
+
+## Mystique Arcaniste NC14
+
+Arcaniste légendaire avec bâton runique surpuissant.
+
+**NC** 14, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 28 | **PV** 94 | **Init.** 10
+
+**Attaques :**
+- Bâton runique +19, DM 1d6+6
+- Attaque magique (L) +21, DM 10d6+12
+
+**Capacités :**
+- **Maîtrise élémentaire** : Zone 10 m ; DEX [10+BU] ou DM entiers ; RD élémentaire = BU.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+- **Contrôle mental (L)** : Attaque magique opposée ; contrôle 1d4 tours.
+- **Déplacement magique (L)** : Téléportation jusqu'à 30 m.
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Résistance à la magie** : RD 5 contre tous les dégâts magiques.
+
+---
+
+## Mystique Guérisseur NC14
+
+Guérisseur légendaire avec résistance totale.
+
+**NC** 14, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 28 | **PV** 94 | **Init.** 10
+
+**Attaques :**
+- Bâton runique +19, DM 1d6+6
+- Attaque magique (L) +21, DM 10d6+12
+
+**Capacités :**
+- **Soigner (L)** : Restaure 50% des PV max. Une fois par jour.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+- **Guérir (L)** : Supprime tous les états négatifs.
+- **Gaz alchimique (L)** : Nuage toxique ; CON [12+BU] ou 5 DM + affaibli.
+- **Déplacement magique (L)** : Téléportation jusqu'à 30 m.
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Résistance à la magie** : RD 5 contre tous les dégâts magiques.
+
+---
+
+## Mystique Nécromancien NC14
+
+Nécromancien légendaire, quasi-indestructible.
+
+**NC** 14, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 28 | **PV** 94 | **Init.** 10
+
+**Attaques :**
+- Bâton runique +19, DM 1d6+6
+- Attaque magique (L) +21, DM 10d6+12
+
+**Capacités :**
+- **Vampirisation (L)** : [1d6×NC/2] DM, soigne autant ; [1d6+NC] PV à chaque mort dans 20 m.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+- **Animer un cadavre (L)** : Réanime un mort.
+- **Injonction mortelle (L)** : CON 15 ou PV=0 ; sinon [2d6+NC] DM.
+- **Déplacement magique (L)** : Téléportation jusqu'à 30 m.
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Résistance à la magie** : RD 5 contre tous les dégâts magiques.
+
+---
+
+## Mystique Arcaniste NC15
+
+Arcaniste suprême, régénération magique permanente.
+
+**NC** 15, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 28 | **PV** 94 | **Init.** 10
+
+**Attaques :**
+- Bâton runique +19, DM 1d6+6
+- Attaque magique (L) +21, DM 10d6+15
+
+**Capacités :**
+- **Maîtrise élémentaire** : Zone 10 m ; DEX [10+BU] ou DM entiers ; RD élémentaire = BU.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+- **Contrôle mental (L)** : Attaque magique opposée ; contrôle 1d4 tours.
+- **Déplacement magique (L)** : Téléportation jusqu'à 30 m.
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Résistance à la magie** : RD 5 contre tous les dégâts magiques.
+- **Régénération magique** : Régénère 5 PV par tour. Seuls le feu et l'acide peuvent détruire définitivement l'arcaniste.
+
+---
+
+## Mystique Guérisseur NC15
+
+Guérisseur suprême, régénération permanente.
+
+**NC** 15, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 28 | **PV** 94 | **Init.** 10
+
+**Attaques :**
+- Bâton runique +19, DM 1d6+6
+- Attaque magique (L) +21, DM 10d6+15
+
+**Capacités :**
+- **Soigner (L)** : Restaure 50% des PV max. Une fois par jour.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+- **Guérir (L)** : Supprime tous les états négatifs.
+- **Gaz alchimique (L)** : Nuage toxique ; CON [12+BU] ou 5 DM + affaibli.
+- **Déplacement magique (L)** : Téléportation jusqu'à 30 m.
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Résistance à la magie** : RD 5 contre tous les dégâts magiques.
+- **Régénération magique** : Régénère 5 PV par tour. Seuls le feu et l'acide peuvent détruire définitivement le guérisseur.
+
+---
+
+## Mystique Nécromancien NC15
+
+Nécromancien suprême, armée de morts et régénération magique.
+
+**NC** 15, taille moyenne
+**FOR** +0 | **DEX** +0 | **CON** +0 | **INT** +3 | **SAG** +2 | **CHA** +2
+**DEF** 28 | **PV** 94 | **Init.** 10
+
+**Attaques :**
+- Bâton runique +19, DM 1d6+6
+- Attaque magique (L) +21, DM 10d6+15
+
+**Capacités :**
+- **Vampirisation (L)** : [1d6×NC/2] DM, soigne autant ; [1d6+NC] PV à chaque mort dans 20 m.
+- **Armure magique (L)** : Réduit de moitié tous les DM non magiques.
+- **Animer un cadavre (L)** : Réanime un mort.
+- **Injonction mortelle (L)** : CON 15 ou PV=0 ; sinon [2d6+NC] DM.
+- **Déplacement magique (L)** : Téléportation jusqu'à 30 m.
+- **Instinct de survie** : +1 mouvement/tour, résiste paralysie, +5 DEF si PV < [NC×5].
+- **Résistance à la magie** : RD 5 contre tous les dégâts magiques.
+- **Régénération magique** : Régénère 5 PV par tour. Seuls le feu et l'acide peuvent détruire définitivement le nécromancien.
+
+---
