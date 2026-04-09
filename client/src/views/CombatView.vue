@@ -282,18 +282,16 @@ function goBack() {
 </script>
 
 <template>
-  <AppPageLayout mode="full" width="wide" class="combat-page">
+  <AppPageLayout mode="scroll" class="combat-page">
     <template #top-bar>
-      <div class="combat-content-header">
-        <AppPageHead>
-          <template #actions>
-            <AppIconBtn title="Retour" @click="goBack">
-              <ArrowLeft :size="18" />
-            </AppIconBtn>
-          </template>
-          {{ combat?.name ?? "Combat" }}
-        </AppPageHead>
-      </div>
+      <AppPageHead>
+        <template #actions>
+          <AppIconBtn title="Retour" @click="goBack">
+            <ArrowLeft :size="18" />
+          </AppIconBtn>
+        </template>
+        {{ combat?.name ?? "Combat" }}
+      </AppPageHead>
     </template>
 
     <div class="combat-content">
@@ -496,7 +494,7 @@ function goBack() {
       </template>
     </div>
 
-    <template #bottom-bar>
+    <Teleport to="body">
     <div v-if="combat && combat.status === 'active'" class="combat-footer">
       <div class="footer-left">
         <AppIconBtn v-if="isGm" title="Précédent" @click="prevTurn">
@@ -541,7 +539,7 @@ function goBack() {
         <ChevronRight :size="14" />
       </AppButton>
     </div>
-    </template>
+    </Teleport>
 
     <!-- Bottom sheet: Add monster -->
     <Teleport to="body">
@@ -711,33 +709,11 @@ function goBack() {
   white-space: nowrap;
 }
 
-.actions-tab {
-  min-height: 200px;
-}
-
-.combat-page {
-  /* Override AppPageLayout padding — combat handles its own */
-  padding: 0 !important;
-}
-
-.combat-content-header {
-  max-width: 560px;
-  width: 100%;
-  margin: 0 auto;
-  padding: 1rem 0.78rem 0;
-}
-
 .combat-content {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-  max-width: 560px;
-  width: 100%;
-  margin: 0 auto;
-  padding: 0 0.78rem;
+  padding-bottom: 4.5rem; /* space for sticky footer */
 }
 
 /* Timeline */
@@ -745,9 +721,6 @@ function goBack() {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
-  flex: 1;
-  overflow-y: auto;
-  min-height: 0;
 }
 
 .participant-card {
@@ -1045,17 +1018,20 @@ function goBack() {
 }
 
 
-/* Footer — full width, content centered */
+/* Footer — sticky at bottom */
 .combat-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0.6rem 1rem;
   background: var(--surface-2);
   border-top: 1px solid var(--border);
-  flex-shrink: 0;
   gap: 0.5rem;
-  width: 100%;
+  z-index: 100;
 }
 
 .next-btn {
