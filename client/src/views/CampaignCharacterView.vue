@@ -266,6 +266,17 @@ const TABS: { id: TabId; label: string; icon: string }[] = [
   display: none !important;
 }
 
+/* Allow expanding/collapsing voie cards */
+.readonly-wrapper :deep(.voie-header) {
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+/* Hide voie edit controls (rank +/-, remove) even when expanded */
+.readonly-wrapper :deep(.voie-controls) {
+  display: none !important;
+}
+
 .readonly-wrapper :deep(input),
 .readonly-wrapper :deep(select),
 .readonly-wrapper :deep(textarea) {
