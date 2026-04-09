@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, Copy, Trash2, Plus, Search, X } from 'lucide-vue-next'
+import { ArrowLeft, Copy, Trash2, Plus, Search, X, ChevronUp, ChevronDown } from 'lucide-vue-next'
 import {
   fetchEncounter,
   updateEncounter,
@@ -217,6 +217,12 @@ async function removeAbility(monster: EncounterMonster, index: number) {
   await updateEncounterMonster(campaignId, encounterId, monster.id, { abilities })
 }
 
+function autoResize(e: Event) {
+  const el = e.target as HTMLTextAreaElement
+  el.style.height = 'auto'
+  el.style.height = el.scrollHeight + 'px'
+}
+
 function goBack() {
   router.push(`/campagnes/${campaignId}`)
 }
@@ -341,20 +347,32 @@ function goBack() {
               </div>
               <div class="edit-field">
                 <label>RD</label>
-                <AppInput :model-value="m.rd ?? ''" @update:model-value="saveMonsterField(m, 'rd', $event || null)" />
+                <AppInput :model-value="m.rd ?? '0'" @update:model-value="saveMonsterField(m, 'rd', $event || null)" />
               </div>
             </div>
 
             <div class="stats-row">
               <div v-for="stat in ['For', 'Dex', 'Con', 'Int', 'Sag', 'Cha']" :key="stat" class="stat-cell">
-                <label>{{ stat }}</label>
-                <AppInput
-                  type="number"
-                  text-align="center"
-                  :model-value="(m as Record<string, unknown>)[`stat${stat}`] as number"
-                  @update:model-value="saveMonsterField(m, `stat${stat}`, $event)"
-                />
-                <span class="stat-mod">{{ formatMod((m as Record<string, unknown>)[`stat${stat}`] as number) }}</span>
+                <span class="stat-label">{{ stat }}</span>
+                <div class="stat-box">
+                  <div class="stat-score-mod">
+                    <input
+                      type="number"
+                      class="stat-val-input"
+                      :value="(m as Record<string, unknown>)[`stat${stat}`]"
+                      @change="saveMonsterField(m, `stat${stat}`, Number(($event.target as HTMLInputElement).value))"
+                    />
+                    <span class="stat-mod">{{ formatMod((m as Record<string, unknown>)[`stat${stat}`] as number) }}</span>
+                  </div>
+                  <div class="stat-btns">
+                    <button type="button" class="stat-btn" @click="saveMonsterField(m, `stat${stat}`, ((m as Record<string, unknown>)[`stat${stat}`] as number) + 1)">
+                      <ChevronUp :size="12" :stroke-width="2.5" />
+                    </button>
+                    <button type="button" class="stat-btn" @click="saveMonsterField(m, `stat${stat}`, ((m as Record<string, unknown>)[`stat${stat}`] as number) - 1)">
+                      <ChevronDown :size="12" :stroke-width="2.5" />
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -388,7 +406,15 @@ function goBack() {
               <div v-for="(ab, i) in m.abilities" :key="i" class="ability-edit-row">
                 <div class="ability-edit-fields">
                   <AppInput :model-value="ab.name" placeholder="Nom" @update:model-value="updateAbility(m, i, 'name', $event as string)" />
-                  <AppInput :model-value="ab.description" placeholder="Description" @update:model-value="updateAbility(m, i, 'description', $event as string)" />
+                  <textarea
+                    ref="abilityDescRefs"
+                    class="input ability-desc"
+                    :value="ab.description"
+                    placeholder="Description"
+                    rows="1"
+                    @input="autoResize($event); updateAbility(m, i, 'description', ($event.target as HTMLTextAreaElement).value)"
+                    @vue:mounted="({ el }: any) => { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px' }"
+                  />
                 </div>
                 <AppIconBtn :size="28" variant="danger" title="Supprimer" @click="removeAbility(m, i)">
                   <X :size="13" />
@@ -584,35 +610,99 @@ function goBack() {
 }
 
 .stats-row {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 0.4rem;
-  min-width: 0;
-}
-
-@media (max-width: 480px) {
-  .stats-row {
-    grid-template-columns: repeat(3, 1fr);
-  }
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.6rem;
 }
 
 .stat-cell {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.15rem;
+  gap: 0.25rem;
+  flex: 1 1 0;
+  min-width: 0;
 }
 
-.stat-cell label {
-  font-size: 0.7rem;
+.stat-label {
+  font-size: 0.68rem;
   font-weight: 700;
+  letter-spacing: 0.08em;
   color: var(--muted);
   text-transform: uppercase;
 }
 
+.stat-box {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.3rem 0.3rem 0.3rem 0.4rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.stat-score-mod {
+  display: flex;
+  align-items: baseline;
+  gap: 0.15rem;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.stat-val-input {
+  width: 2.2ch;
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  line-height: 1;
+  background: transparent;
+  border: none;
+  padding: 0;
+  outline: none;
+  -moz-appearance: textfield;
+}
+
+.stat-val-input::-webkit-inner-spin-button,
+.stat-val-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+}
+
 .stat-mod {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
   color: var(--muted);
+}
+
+.stat-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-left: auto;
+}
+
+.stat-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 14px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 100ms ease, color 100ms ease;
+}
+
+.stat-btn:hover {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
 }
 
 .sub-section {
@@ -652,6 +742,13 @@ function goBack() {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
+}
+
+.ability-desc {
+  resize: none;
+  overflow: hidden;
+  min-height: 2.2rem;
+  line-height: 1.4;
 }
 
 .sub-empty {
