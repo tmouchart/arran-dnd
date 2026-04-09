@@ -485,12 +485,12 @@ router.post('/:id/encounters/:eid/monsters/:mid/duplicate', async (req, res) => 
     .from(encounterMonsters)
     .where(eq(encounterMonsters.encounterId, eid))
 
-  // Strip trailing number from source name to get base name
-  const baseNameMatch = source.name.match(/^(.+?)\s*\d*$/)
-  const baseName = baseNameMatch ? baseNameMatch[1].trim() : source.name
+  // Strip trailing " <number>" suffix (space required before digits) to get base name
+  const baseNameMatch = source.name.match(/^(.+)\s+(\d+)$/)
+  const baseName = baseNameMatch ? baseNameMatch[1] : source.name
 
   // Find existing numbered copies
-  const regex = new RegExp(`^${baseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*(\\d+)?$`)
+  const regex = new RegExp(`^${baseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:\\s+(\\d+))?$`)
   const existingNumbers = allMonsters
     .filter((m) => regex.test(m.name))
     .map((m) => {
@@ -501,7 +501,7 @@ router.post('/:id/encounters/:eid/monsters/:mid/duplicate', async (req, res) => 
   const nextNumber = Math.max(...existingNumbers, 0) + 1
 
   // If source has no number yet and this is the first duplicate, rename it to 1
-  const sourceHasNumber = /\d+$/.test(source.name)
+  const sourceHasNumber = baseNameMatch !== null
   if (!sourceHasNumber && nextNumber === 1) {
     await db
       .update(encounterMonsters)
