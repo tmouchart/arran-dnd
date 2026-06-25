@@ -165,7 +165,7 @@ export function createDefaultCharacter(): Character {
   }
 }
 
-const character = ref<Character>(createDefaultCharacter())
+export const character = ref<Character>(createDefaultCharacter())
 const serverId = ref<number | null>(null)
 
 

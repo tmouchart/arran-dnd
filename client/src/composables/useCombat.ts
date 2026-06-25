@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue'
 import { user } from './useAuth'
+import { character } from './useCharacter'
 import * as api from '../api/combats'
 import type { CombatState, CombatParticipant } from '../api/combats'
 import { setActiveCombat, clearActiveCombat } from './useActiveCombat'
@@ -84,6 +85,16 @@ export function useCombat() {
         connecting.value = false
         error.value = null
         resetIdleTimer()
+        // Keep my own character sheet HP in sync with the live combat state
+        // (combat is the moment my HP changes — reflect it in "Mes actions"/ma perso).
+        if (user.value) {
+          const mine = state.participants.find(
+            (p) => p.kind === 'player' && p.userId === user.value!.id,
+          )
+          if (mine && mine.hpCurrent != null && character.value.hpCurrent !== mine.hpCurrent) {
+            character.value.hpCurrent = mine.hpCurrent
+          }
+        }
         if (state.status === 'active') {
           setActiveCombat({
             url: `/campagnes/${campaignId}/combat/${combatId}`,

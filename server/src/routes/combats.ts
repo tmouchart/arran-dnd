@@ -5,7 +5,7 @@ import {
   combats, combatParticipants, campaigns, campaignMembers, characters, encounterTemplates, encounterMonsters,
 } from '../db/schema.js'
 import { requireAuth, type AuthRequest } from '../auth/middleware.js'
-import { broadcastCombatState, getClientsForCombat, type SseClient } from '../combats/sseStore.js'
+import { broadcastCombatState, enrichParticipantHp, getClientsForCombat, type SseClient } from '../combats/sseStore.js'
 import { generateText } from '../ai/client.js'
 
 // Armor/shield lookup for initiative calculation (mirrors client armorsCatalog.ts)
@@ -176,7 +176,8 @@ router.get('/:id/combats/:cid', async (req, res) => {
   }
 
   const participants = await db.select().from(combatParticipants).where(eq(combatParticipants.combatId, combatId))
-  const sorted = [...participants].sort((a, b) => b.initiative - a.initiative)
+  const enriched = await enrichParticipantHp(campaignId, participants)
+  const sorted = [...enriched].sort((a, b) => b.initiative - a.initiative)
 
   const isGm = userId === check.gmUserId
 
@@ -306,9 +307,24 @@ router.patch('/:id/combats/:cid/participants/:pid', async (req, res) => {
   const { hpCurrent } = req.body as { hpCurrent?: number }
   if (typeof hpCurrent !== 'number') { res.status(400).json({ error: 'hpCurrent requis' }); return }
 
-  const clamped = Math.max(0, Math.min(Math.round(hpCurrent), participant.hpMax))
+  if (participant.kind === 'player' && participant.userId != null) {
+    // Player HP is owned by the character sheet — write there, not on the snapshot.
+    const [member] = await db
+      .select({ characterId: campaignMembers.characterId })
+      .from(campaignMembers)
+      .where(and(eq(campaignMembers.campaignId, campaignId), eq(campaignMembers.userId, participant.userId)))
+    if (member?.characterId != null) {
+      const [char] = await db.select({ hpMax: characters.hpMax }).from(characters).where(eq(characters.id, member.characterId))
+      if (char) {
+        const clamped = Math.max(0, Math.min(Math.round(hpCurrent), char.hpMax))
+        await db.update(characters).set({ hpCurrent: clamped, updatedAt: new Date() }).where(eq(characters.id, member.characterId))
+      }
+    }
+  } else {
+    const clamped = Math.max(0, Math.min(Math.round(hpCurrent), participant.hpMax))
+    await db.update(combatParticipants).set({ hpCurrent: clamped }).where(eq(combatParticipants.id, pid))
+  }
 
-  await db.update(combatParticipants).set({ hpCurrent: clamped }).where(eq(combatParticipants.id, pid))
   await broadcastCombatState(combatId, check.gmUserId)
   res.json({ ok: true })
 })

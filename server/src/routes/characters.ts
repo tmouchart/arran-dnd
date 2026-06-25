@@ -8,6 +8,7 @@ function username(req: unknown): string {
   return (req as AuthRequest).username ?? 'unknown'
 }
 import { syncParticipantHpFromCharacter } from '../sessions/store.js'
+import { broadcastUserCombats } from '../combats/sseStore.js'
 type SkillRow = { name: string; rank: number }
 type CompetenceRow = { id: string; name: string; ability: string | null; bonus: number }
 type PathRow = { id?: string; name: string; rank: number; kind?: string; notes?: string }
@@ -172,6 +173,7 @@ router.put('/:id', async (req, res) => {
   }
   console.log(`[character] updated: user=${username(req)} name="${row.name}"`)
   syncParticipantHpFromCharacter(row.id, userId, row.hpCurrent, row.hpMax)
+  void broadcastUserCombats(userId).catch(() => {})
   res.json(row)
 })
 
@@ -207,6 +209,7 @@ router.patch('/:id', async (req, res) => {
     return
   }
   syncParticipantHpFromCharacter(row.id, userId, row.hpCurrent, row.hpMax)
+  void broadcastUserCombats(userId).catch(() => {})
   res.json(row)
 })
 
