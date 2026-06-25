@@ -45,10 +45,12 @@ const {
   combat,
   connecting,
   error,
+  idle,
   isGm,
   isMyTurn,
   connect,
   disconnect,
+  markActivity,
   nextTurn,
   prevTurn,
   updateHp,
@@ -109,8 +111,31 @@ async function handleGenerateLoot() {
   }
 }
 
-onMounted(() => connect(campaignId, combatId));
-onUnmounted(() => disconnect());
+// Release the SSE connection when the tab goes to the background (forgotten tab),
+// reconnect when the user comes back. Lets Fly auto-stop the machine when idle.
+function handleVisibility(): void {
+  if (document.hidden) {
+    disconnect();
+  } else {
+    connect(campaignId, combatId);
+  }
+}
+
+// Manual resume after the inactivity timeout paused the combat.
+function resumeCombat(): void {
+  connect(campaignId, combatId);
+}
+
+onMounted(() => {
+  connect(campaignId, combatId);
+  document.addEventListener("visibilitychange", handleVisibility);
+  window.addEventListener("pointerdown", markActivity);
+});
+onUnmounted(() => {
+  disconnect();
+  document.removeEventListener("visibilitychange", handleVisibility);
+  window.removeEventListener("pointerdown", markActivity);
+});
 
 // Scroll to active participant on turn change
 const timelineRef = ref<HTMLElement | null>(null);
@@ -302,6 +327,12 @@ function goBack() {
       <AppEmptyState v-else-if="error" variant="error">{{
         error
       }}</AppEmptyState>
+      <AppEmptyState v-else-if="idle" variant="empty">
+        Combat en pause après une longue inactivité.
+        <template #actions>
+          <AppButton variant="primary" @click="resumeCombat">Reprendre</AppButton>
+        </template>
+      </AppEmptyState>
 
       <template v-else-if="combat">
         <!-- Tabs: Timeline / Actions -->

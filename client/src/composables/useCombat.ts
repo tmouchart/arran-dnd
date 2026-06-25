@@ -7,8 +7,35 @@ import { setActiveCombat, clearActiveCombat } from './useActiveCombat'
 const combat = ref<CombatState | null>(null)
 const connecting = ref(false)
 const error = ref<string | null>(null)
+const idle = ref(false)
 let eventSource: EventSource | null = null
 let currentCampaignId: number | null = null
+let idleTimer: ReturnType<typeof setTimeout> | null = null
+
+// Combat paused after this much inactivity (no combat update nor user interaction)
+// → release the SSE connection so Fly can auto-stop the machine.
+const IDLE_MS = 25 * 60 * 1000
+
+function closeStream(): void {
+  if (eventSource) {
+    eventSource.close()
+    eventSource = null
+  }
+  if (idleTimer) {
+    clearTimeout(idleTimer)
+    idleTimer = null
+  }
+}
+
+function resetIdleTimer(): void {
+  if (idleTimer) clearTimeout(idleTimer)
+  idleTimer = setTimeout(() => {
+    closeStream()
+    combat.value = null
+    connecting.value = false
+    idle.value = true
+  }, IDLE_MS)
+}
 
 export function useCombat() {
   const isGm = computed(() => {
@@ -44,15 +71,19 @@ export function useCombat() {
     currentCampaignId = campaignId
     connecting.value = true
     error.value = null
+    idle.value = false
     eventSource = new EventSource(
       `/api/campaigns/${campaignId}/combats/${combatId}/events`,
       { withCredentials: true },
     )
+    resetIdleTimer()
     eventSource.addEventListener('combat-updated', (e: MessageEvent) => {
       try {
         const state = JSON.parse(e.data as string) as CombatState
         combat.value = state
         connecting.value = false
+        error.value = null
+        resetIdleTimer()
         if (state.status === 'active') {
           setActiveCombat({
             url: `/campagnes/${campaignId}/combat/${combatId}`,
@@ -68,21 +99,29 @@ export function useCombat() {
       }
     })
     eventSource.onerror = () => {
-      error.value = 'Connexion perdue'
-      connecting.value = false
+      // EventSource reconnecte automatiquement tant qu'il n'est pas CLOSED.
+      // On n'affiche l'erreur fatale qu'en cas de fermeture définitive ;
+      // sur une coupure transitoire on garde l'état affiché pendant la reco.
+      if (eventSource?.readyState === EventSource.CLOSED) {
+        error.value = 'Connexion perdue'
+        connecting.value = false
+      }
     }
   }
 
   function disconnect(): void {
-    if (eventSource) {
-      eventSource.close()
-      eventSource = null
-    }
+    closeStream()
     combat.value = null
     connecting.value = false
     error.value = null
+    idle.value = false
     currentCampaignId = null
     // Don't clear activeCombat here — the banner should persist when navigating away
+  }
+
+  // Reset the inactivity timer on user interaction (only while connected).
+  function markActivity(): void {
+    if (eventSource) resetIdleTimer()
   }
 
   async function doNextTurn(): Promise<void> {
@@ -119,12 +158,14 @@ export function useCombat() {
     combat,
     connecting,
     error,
+    idle,
     isGm,
     currentParticipant,
     isMyTurn,
     myParticipant,
     connect,
     disconnect,
+    markActivity,
     nextTurn: doNextTurn,
     prevTurn: doPrevTurn,
     updateHp,

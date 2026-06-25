@@ -449,10 +449,18 @@ router.get('/:id/combats/:cid/events', async (req, res) => {
   const clients = getClientsForCombat(combatId)
   clients.add(client)
 
+  // Heartbeat: keep the connection alive through Fly's idle proxy timeout (~60s).
+  // A connection silently dropped by the proxy is what causes the "Connexion perdue" banner.
+  const heartbeat = setInterval(() => {
+    res.write(': ping\n\n')
+    console.log(`[sse] heartbeat → combat=${combatId} user=${userId} (clients=${clients.size})`)
+  }, 25000)
+
   // Send initial state
   await broadcastCombatState(combatId, check.gmUserId)
 
   req.on('close', () => {
+    clearInterval(heartbeat)
     clients.delete(client)
   })
 })
