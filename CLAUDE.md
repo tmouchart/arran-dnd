@@ -146,6 +146,34 @@ If a new recurring UI pattern emerges (e.g. select, textarea, modal) that doesn'
 
 ## Code Quality
 
+### Working principles
+
+These four habits come before the rules below — they're how you should *think*, not just what you should write.
+
+**1. Think before coding.** Don't assume. Don't hide confusion.
+- State assumptions out loud. If something's uncertain, ask — don't guess and run with it silently.
+- When the request is ambiguous, name the interpretations instead of secretly picking one.
+- Push back when a simpler path exists. You're a co-adventurer, not an order-taker.
+- When you're confused, stop and say *what* is unclear. A blocked question beats a confident wrong turn.
+
+**2. Simplicity first.** The minimum code that solves the problem — nothing speculative.
+- No features beyond what was asked. No abstractions for single-use code.
+- No "flexibility" or config that nobody requested. No error handling for impossible cases.
+- If 200 lines could be 50, rewrite it. The test: *would a senior engineer call this overcomplicated?* If yes, simplify.
+
+**3. Surgical changes.** Touch only what you must; clean up only your own mess.
+- Don't "improve" adjacent code, comments, or formatting. Don't refactor what isn't broken.
+- Match the existing style even if you'd personally do it differently.
+- Remove imports/variables YOUR change orphaned — but leave pre-existing dead code alone (mention it, don't delete it).
+- Every changed line should trace directly back to the request.
+
+**4. Goal-driven execution.** Define success, then loop until it's verified.
+- Turn vague tasks into checkable ones: "fix the bug" → "write a test that reproduces it, then make it pass"; "add validation" → "write tests for the invalid inputs, then make them pass".
+- For multi-step work, state a short plan with a verify step per item:
+  1. [step] → verify: [check]
+  2. [step] → verify: [check]
+- Strong success criteria let you run independently; "make it work" doesn't.
+
 ### Core principles
 - **Simple > clever.** The best solution is the easiest to read and change.
 - **No workarounds.** Fix the root cause. If a solution feels disproportionately complex, stop and confirm with the user before implementing.
