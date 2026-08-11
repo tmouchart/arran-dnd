@@ -340,9 +340,24 @@ const saveStatus = ref<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
+// Génération de chargement : si un loadCharacter plus récent démarre, les réponses
+// des chargements précédents sont ignorées (évite qu'une réponse lente écrase la bonne).
+let loadGen = 0
+// Snapshot du dernier état connu du serveur : la sauvegarde auto ne part que si le
+// personnage a réellement changé (bloque le PUT parasite déclenché par le load lui-même,
+// la garde `loading` étant inopérante avec un watcher asynchrone).
+let lastSavedPayload = ''
+
+function applyLoaded(row: ServerCharacter): void {
+  serverId.value = row.id
+  character.value = toCharacter(row)
+  lastSavedPayload = JSON.stringify(toServerPayload(character.value))
+}
+
 export async function loadCharacter(id?: number): Promise<void> {
   // Annule tout debounce en cours et remet les états propres
   if (debounceTimer) { clearTimeout(debounceTimer); debounceTimer = null }
+  const gen = ++loadGen
   loading.value = true
   loadError.value = null
   character.value = createDefaultCharacter()
@@ -350,25 +365,26 @@ export async function loadCharacter(id?: number): Promise<void> {
   try {
     if (id) {
       const row = await fetchCharacter(id)
-      serverId.value = row.id
-      character.value = toCharacter(row)
+      if (gen !== loadGen) return
+      applyLoaded(row)
     } else {
       const list = await fetchCharacters()
+      if (gen !== loadGen) return
       const active = list.find((c) => c.isActive) ?? list[0] ?? null
       if (active) {
-        serverId.value = active.id
-        character.value = toCharacter(active)
+        applyLoaded(active)
       } else {
         const created = await createCharacter({ name: 'Nouveau héros' })
-        serverId.value = created.id
-        character.value = toCharacter(created)
+        if (gen !== loadGen) return
+        applyLoaded(created)
       }
     }
   } catch {
+    if (gen !== loadGen) return
     loadError.value =
       "Impossible de charger le personnage (API arrêtée, erreur serveur ou base non à jour). Relance l’API et exécute npm run db:migrate si besoin."
   } finally {
-    loading.value = false
+    if (gen === loadGen) loading.value = false
   }
 }
 
@@ -386,9 +402,14 @@ watch(
     if (debounceTimer) clearTimeout(debounceTimer)
     debounceTimer = setTimeout(async () => {
       if (!serverId.value) return
+      const payload = toServerPayload(character.value)
+      const json = JSON.stringify(payload)
+      // Rien n'a changé depuis le dernier état serveur connu → pas de PUT
+      if (json === lastSavedPayload) return
       saveStatus.value = 'saving'
       try {
-        await updateCharacter(serverId.value, toServerPayload(c))
+        await updateCharacter(serverId.value, payload)
+        lastSavedPayload = json
         saveStatus.value = 'saved'
         setTimeout(() => { saveStatus.value = 'idle' }, 2000)
       } catch {
