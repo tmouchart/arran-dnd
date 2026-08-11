@@ -8,6 +8,9 @@ import { GoogleGenAI } from "@google/genai";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
+// Express 4 ne rattrape pas les rejets des handlers async : sans ça, une erreur
+// DB devient une unhandledRejection et tue le process. Doit être importé avant les routes.
+import "express-async-errors";
 import authRouter from "./routes/auth.js";
 import charactersRouter from "./routes/characters.js";
 import journalRouter from "./routes/journal.js";
@@ -1075,6 +1078,14 @@ if (existsSync(CLIENT_DIST)) {
     });
   });
 }
+
+// Filet de sécurité : toute erreur non gérée d'un handler finit ici en 500 propre
+// plutôt qu'en crash du process. Doit rester le dernier `app.use`.
+app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error("[error]", err);
+  if (res.headersSent) return;
+  res.status(500).json({ error: "Erreur serveur" });
+});
 
 const PORT = Number(process.env.PORT) || 3566;
 
