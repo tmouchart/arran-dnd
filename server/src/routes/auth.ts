@@ -82,7 +82,7 @@ router.post('/logout', requireAuth, (_req, res) => {
 
 router.get('/me', requireAuth, async (req, res) => {
   const userId = (req as AuthRequest).userId
-  const [user] = await db.select({ id: users.id, username: users.username, avatarUrl: users.avatarUrl })
+  const [user] = await db.select({ id: users.id, username: users.username, avatarUrl: users.avatarUrl, activeCampaignId: users.activeCampaignId })
     .from(users)
     .where(eq(users.id, userId))
     .limit(1)

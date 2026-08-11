@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, computed } from "vue";
+import { ref, watch, onMounted, computed, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { ArrowLeft, Pencil, Trash2, Maximize, Minimize } from "lucide-vue-next";
+import { ArrowLeft, Pencil, Trash2, Maximize, Minimize, SquarePen, BookOpen } from "lucide-vue-next";
 import AppPageLayout from "../components/ui/AppPageLayout.vue";
 import AppPageHead from "../components/ui/AppPageHead.vue";
 import AppButton from "../components/ui/AppButton.vue";
@@ -9,9 +9,14 @@ import AppInput from "../components/ui/AppInput.vue";
 import AppIconBtn from "../components/ui/AppIconBtn.vue";
 import AppEmptyState from "../components/ui/AppEmptyState.vue";
 import DrawingCanvas from "../components/DrawingCanvas.vue";
+import MentionTextarea from "../components/journal/MentionTextarea.vue";
+import NoteContent from "../components/journal/NoteContent.vue";
+import MentionSheet from "../components/journal/MentionSheet.vue";
 import { fetchPage, savePage, deletePage, type JournalPage, type Stroke } from "../api/journal";
 import { useJournalLock } from "../composables/useJournalLock";
+import { showToast } from "../composables/useToast";
 import { relativeTime } from "../utils/relativeTime";
+import type { MentionKind } from "../utils/mentions";
 
 const route = useRoute();
 const router = useRouter();
@@ -97,16 +102,44 @@ async function onFocus() {
 
 let blurTimeout: ReturnType<typeof setTimeout> | null = null;
 function onBlur() {
-  if (!isLockedByMe.value) return;
+  if (!isLockedByMe.value) {
+    editing.value = false;
+    return;
+  }
   // Delay to allow focus to move between title and content
   blurTimeout = setTimeout(async () => {
-    if (debounce) {
-      clearTimeout(debounce);
-      debounce = null;
-      try { await savePage(pageId.value, { title: title.value, content: content.value }); } catch { /* best effort */ }
-    }
-    await release();
+    await exitEditing();
   }, 200);
+}
+
+// ── Mode lecture / édition (pages texte) ─────────────────────────────────────
+
+const editing = ref(false);
+const editorRef = ref<InstanceType<typeof MentionTextarea> | null>(null);
+
+function startEditing() {
+  editing.value = true;
+  nextTick(() => editorRef.value?.focus());
+}
+
+async function exitEditing() {
+  if (debounce) {
+    clearTimeout(debounce);
+    debounce = null;
+    try { await savePage(pageId.value, { title: title.value, content: content.value }); } catch { /* best effort */ }
+  }
+  if (isLockedByMe.value) await release();
+  editing.value = false;
+}
+
+const showMention = ref(false);
+const mentionKind = ref<MentionKind | null>(null);
+const mentionId = ref<number | null>(null);
+
+function onMention(kind: MentionKind, id: number) {
+  mentionKind.value = kind;
+  mentionId.value = id;
+  showMention.value = true;
 }
 
 // ── Drawing support ─────────────────────────────────────────────────────────
@@ -135,7 +168,8 @@ async function handleDelete() {
     await deletePage(pageId.value);
     router.replace({ name: "journal" });
   } catch {
-    alert("Erreur lors de la suppression.");
+    showDeleteConfirm.value = false;
+    showToast("Erreur lors de la suppression.");
   } finally {
     deleting.value = false;
   }
@@ -152,6 +186,8 @@ async function load() {
     lastEditedBy.value = data.lastEditedBy;
     updatedAt.value = data.updatedAt;
     if (data.lock) lock.value = data.lock;
+    // Page texte vide : on démarre directement en édition
+    if (data.type === "text" && !data.content.trim()) editing.value = true;
     connectSSE();
   } catch {
     error.value = "Page introuvable.";
@@ -205,6 +241,25 @@ onMounted(load);
           En cours d'édition par {{ lockedByName }}
         </span>
 
+        <AppIconBtn
+          v-if="!isDrawing && !editing && !isLockedByOther"
+          variant="ghost"
+          :size="34"
+          title="Modifier"
+          @click="startEditing"
+        >
+          <SquarePen :size="16" />
+        </AppIconBtn>
+        <AppIconBtn
+          v-else-if="!isDrawing && editing"
+          variant="ghost"
+          :size="34"
+          title="Mode lecture"
+          @click="exitEditing"
+        >
+          <BookOpen :size="16" />
+        </AppIconBtn>
+
         <AppIconBtn variant="ghost" :size="34" title="Supprimer" @click="showDeleteConfirm = true">
           <Trash2 :size="16" />
         </AppIconBtn>
@@ -225,19 +280,26 @@ onMounted(load);
         @update:strokes="onStrokesUpdate"
         @focus="onFocus"
       />
-      <!-- Text page -->
-      <textarea
-        v-else
+      <!-- Text page : édition -->
+      <MentionTextarea
+        v-else-if="editing"
+        ref="editorRef"
         v-model="content"
-        class="journal-editor"
-        :class="{ 'journal-editor--readonly': isLockedByOther }"
         :readonly="isLockedByOther"
-        placeholder="Contenu de la page…"
-        spellcheck="true"
+        placeholder="Contenu de la page… Tape @ pour mentionner."
         @focus="onFocus"
         @blur="onBlur"
       />
+      <!-- Text page : lecture -->
+      <NoteContent
+        v-else-if="content.trim()"
+        :content="content"
+        @mention="onMention"
+      />
+      <AppEmptyState v-else>Page vide. Appuie sur le crayon pour écrire.</AppEmptyState>
     </div>
+
+    <MentionSheet v-model="showMention" :kind="mentionKind" :id="mentionId" />
 
     <!-- Delete confirmation -->
     <Teleport to="body">
@@ -283,37 +345,6 @@ onMounted(load);
   display: flex;
   flex-direction: column;
   min-height: 0;
-}
-
-.journal-editor {
-  flex: 1;
-  width: 100%;
-  min-height: 0;
-  resize: none;
-  padding: 1rem;
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text);
-  font-family: inherit;
-  font-size: 0.95rem;
-  line-height: 1.65;
-  box-sizing: border-box;
-  transition: border-color 150ms;
-}
-
-.journal-editor:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-
-.journal-editor--readonly {
-  cursor: default;
-  opacity: 0.7;
-}
-
-.journal-editor--readonly:focus {
-  border-color: var(--border);
 }
 
 .lock-badge {

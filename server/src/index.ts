@@ -10,10 +10,11 @@ import cors from "cors";
 import express from "express";
 import authRouter from "./routes/auth.js";
 import charactersRouter from "./routes/characters.js";
-import sessionsRouter from "./routes/sessions.js";
 import journalRouter from "./routes/journal.js";
 import campaignsRouter from "./routes/campaigns.js";
 import combatsRouter from "./routes/combats.js";
+import codexRouter from "./routes/codex.js";
+import notesRouter from "./routes/notes.js";
 import ttsRouter from "./routes/tts.js";
 import { requireAuth, type AuthRequest } from "./auth/middleware.js";
 import { loadCoreIndex, loadTopic } from "./knowledge/loadKnowledge.js";
@@ -45,10 +46,11 @@ app.use((req, res, next) => {
 
 app.use("/api/auth", authRouter);
 app.use("/api/characters", charactersRouter);
-app.use("/api/sessions", sessionsRouter);
 app.use("/api/journal", journalRouter);
 app.use("/api/campaigns", campaignsRouter);
 app.use("/api/campaigns", combatsRouter);
+app.use("/api/campaigns", codexRouter);
+app.use("/api/notes", notesRouter);
 app.use("/api/tts", ttsRouter);
 
 // Serve generated images from database (auth-protected, owner only)

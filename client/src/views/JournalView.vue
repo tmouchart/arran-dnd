@@ -1,51 +1,32 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from "vue";
-import { useRouter } from "vue-router";
-import { BookText, Lock, Users, FileText, Pencil, BookPlus, Plus, PenLine } from "lucide-vue-next";
+import { useRoute } from "vue-router";
+import { BookText, Users, StickyNote, Brush, BookUser, Pencil, BookPlus } from "lucide-vue-next";
 import AppPageLayout from "../components/ui/AppPageLayout.vue";
 import AppPageHead from "../components/ui/AppPageHead.vue";
 import AppButton from "../components/ui/AppButton.vue";
 import AppInput from "../components/ui/AppInput.vue";
 import AppEmptyState from "../components/ui/AppEmptyState.vue";
+import AppBottomSheet from "../components/ui/AppBottomSheet.vue";
+import NotesTab from "../components/journal/NotesTab.vue";
+import MentionTextarea from "../components/journal/MentionTextarea.vue";
+import CodexTab from "../components/journal/CodexTab.vue";
 import {
-  fetchNotesPerso,
-  saveNotesPerso,
   fetchJournalCompagnie,
   saveJournalCompagnie,
-  fetchPages,
   createPage,
-  type JournalPageSummary,
-  type JournalPageType,
 } from "../api/journal";
 import { useJournalLock } from "../composables/useJournalLock";
+import { showToast } from "../composables/useToast";
 import { relativeTime } from "../utils/relativeTime";
 
-const router = useRouter();
+const route = useRoute();
 
-type Tab = "compagnie" | "pages" | "perso";
-const activeTab = ref<Tab>("compagnie");
-
-// ── Notes perso ──────────────────────────────────────────────────────────────
-
-const persoContent = ref("");
-const persoSaveStatus = ref<"idle" | "saving" | "saved" | "error">("idle");
-let persoDebounce: ReturnType<typeof setTimeout> | null = null;
-
-function schedulePersoSave(content: string) {
-  if (persoDebounce) clearTimeout(persoDebounce);
-  persoSaveStatus.value = "saving";
-  persoDebounce = setTimeout(async () => {
-    try {
-      await saveNotesPerso(content);
-      persoSaveStatus.value = "saved";
-      setTimeout(() => { persoSaveStatus.value = "idle"; }, 2000);
-    } catch {
-      persoSaveStatus.value = "error";
-    }
-  }, 800);
-}
-
-watch(persoContent, (v) => { if (!loading.value) schedulePersoSave(v); });
+type Tab = "compagnie" | "notes" | "dessins" | "fiches";
+const initialTab = ["compagnie", "notes", "dessins", "fiches"].includes(String(route.query.tab))
+  ? (String(route.query.tab) as Tab)
+  : "compagnie";
+const activeTab = ref<Tab>(initialTab);
 
 // ── Journal compagnie (live) ─────────────────────────────────────────────────
 
@@ -127,49 +108,11 @@ async function handleSaveAsPage() {
     await createPage(saveAsPageTitle.value.trim(), compagnieContent.value);
     showSaveAsPage.value = false;
     saveAsPageTitle.value = "";
-    await loadPages();
+    showToast("Page sauvegardée");
   } catch {
-    alert("Erreur lors de la sauvegarde.");
+    showToast("Erreur lors de la sauvegarde.");
   } finally {
     savingPage.value = false;
-  }
-}
-
-// ── Pages list ───────────────────────────────────────────────────────────────
-
-const pages = ref<JournalPageSummary[]>([]);
-const pagesLoading = ref(false);
-
-async function loadPages() {
-  pagesLoading.value = true;
-  try {
-    pages.value = await fetchPages();
-  } catch { /* ignore */ }
-  pagesLoading.value = false;
-}
-
-function openPage(id: number) {
-  router.push({ name: "journal-page", params: { id } });
-}
-
-const showNewPage = ref(false);
-const newPageTitle = ref("");
-const newPageType = ref<JournalPageType>("text");
-const creatingPage = ref(false);
-
-async function handleCreatePage() {
-  if (!newPageTitle.value.trim()) return;
-  creatingPage.value = true;
-  try {
-    const page = await createPage(newPageTitle.value.trim(), undefined, newPageType.value);
-    newPageTitle.value = "";
-    newPageType.value = "text";
-    showNewPage.value = false;
-    router.push({ name: "journal-page", params: { id: page.id } });
-  } catch {
-    alert("Erreur lors de la création.");
-  } finally {
-    creatingPage.value = false;
   }
 }
 
@@ -182,17 +125,12 @@ async function load() {
   loading.value = true;
   error.value = null;
   try {
-    const [perso, compagnie] = await Promise.all([
-      fetchNotesPerso(),
-      fetchJournalCompagnie(),
-    ]);
-    persoContent.value = perso;
+    const compagnie = await fetchJournalCompagnie();
     compagnieContent.value = compagnie.content;
     compagnieLastEditedBy.value = compagnie.lastEditedBy;
     compagnieUpdatedAt.value = compagnie.updatedAt;
     if (compagnie.lock) compagnieLock.value = compagnie.lock;
     connectCompagnieSSE();
-    await loadPages();
   } catch {
     error.value = "Impossible de charger le journal.";
   } finally {
@@ -219,11 +157,6 @@ onMounted(load);
               par {{ compagnieLastEditedBy }} · {{ relativeTime(compagnieUpdatedAt) }}
             </span>
           </template>
-          <template v-if="activeTab === 'perso'">
-            <span v-if="persoSaveStatus === 'saving'" class="save-indicator saving">Sauvegarde…</span>
-            <span v-else-if="persoSaveStatus === 'saved'" class="save-indicator saved">Sauvegardé ✓</span>
-            <span v-else-if="persoSaveStatus === 'error'" class="save-indicator error">Erreur</span>
-          </template>
         </template>
       </AppPageHead>
     </template>
@@ -237,13 +170,17 @@ onMounted(load);
           <Users :size="15" />
           <span class="tab-text">Journal de bord</span>
         </button>
-        <button class="tab-btn" :class="{ active: activeTab === 'pages' }" @click="activeTab = 'pages'">
-          <FileText :size="15" />
-          <span class="tab-text">Pages</span>
+        <button class="tab-btn" :class="{ active: activeTab === 'notes' }" @click="activeTab = 'notes'">
+          <StickyNote :size="15" />
+          <span class="tab-text">Notes</span>
         </button>
-        <button class="tab-btn" :class="{ active: activeTab === 'perso' }" @click="activeTab = 'perso'">
-          <Lock :size="15" />
-          <span class="tab-text">Notes perso</span>
+        <button class="tab-btn" :class="{ active: activeTab === 'dessins' }" @click="activeTab = 'dessins'">
+          <Brush :size="15" />
+          <span class="tab-text">Dessins</span>
+        </button>
+        <button class="tab-btn" :class="{ active: activeTab === 'fiches' }" @click="activeTab = 'fiches'">
+          <BookUser :size="15" />
+          <span class="tab-text">Fiches</span>
         </button>
       </nav>
 
@@ -262,101 +199,40 @@ onMounted(load);
         </div>
 
         <div class="editor-wrapper">
-          <textarea
+          <MentionTextarea
             v-model="compagnieContent"
-            class="journal-editor"
-            :class="{ 'journal-editor--readonly': compagnieLockedByOther }"
             :readonly="compagnieLockedByOther"
-            placeholder="Le journal de la compagnie, visible et éditable par tous…"
-            spellcheck="true"
+            placeholder="Le journal de la compagnie, visible et éditable par tous… Tape @ pour mentionner."
             @focus="onCompagnieFocus"
             @blur="onCompagnieBlur"
           />
         </div>
 
-        <!-- Save as page modal -->
-        <Teleport to="body">
-          <div v-if="showSaveAsPage" class="modal-backdrop" @click.self="showSaveAsPage = false">
-            <div class="modal-box">
-              <h3 class="modal-title">Sauvegarder en page</h3>
-              <p class="modal-hint">Le contenu actuel du journal sera copié dans une nouvelle page.</p>
-              <form @submit.prevent="handleSaveAsPage">
-                <AppInput
-                  v-model="saveAsPageTitle"
-                  placeholder="Titre de la page (ex: Session 1)"
-                  :required="true"
-                  :autofocus="true"
-                  class="modal-input"
-                />
-                <div class="modal-actions">
-                  <AppButton variant="primary" type="submit" :disabled="savingPage">
-                    {{ savingPage ? "Sauvegarde…" : "Sauvegarder" }}
-                  </AppButton>
-                  <AppButton @click="showSaveAsPage = false">Annuler</AppButton>
-                </div>
-              </form>
-            </div>
-          </div>
-        </Teleport>
+        <!-- Save as page sheet -->
+        <AppBottomSheet v-model="showSaveAsPage" title="Sauvegarder en page">
+          <p class="modal-hint">Le contenu actuel du journal sera copié dans une nouvelle page.</p>
+          <form class="save-as-page-form" @submit.prevent="handleSaveAsPage">
+            <AppInput
+              v-model="saveAsPageTitle"
+              placeholder="Titre de la page (ex: Session 1)"
+              :required="true"
+              :autofocus="true"
+            />
+            <AppButton variant="primary" type="submit" :disabled="savingPage" :block="true">
+              {{ savingPage ? "Sauvegarde…" : "Sauvegarder" }}
+            </AppButton>
+          </form>
+        </AppBottomSheet>
       </div>
 
-      <!-- ── Pages ── -->
-      <div v-if="activeTab === 'pages'" class="tab-content">
-        <div class="pages-toolbar">
-          <AppButton size="small" @click="showNewPage = true">
-            <Plus :size="14" />
-            Nouvelle page
-          </AppButton>
-        </div>
+      <!-- ── Notes ── -->
+      <NotesTab v-if="activeTab === 'notes'" class="tab-content" />
 
-        <!-- New page inline form -->
-        <form v-if="showNewPage" class="new-page-form" @submit.prevent="handleCreatePage">
-          <div class="type-toggle">
-            <button type="button" class="type-btn" :class="{ active: newPageType === 'text' }" @click="newPageType = 'text'">
-              <FileText :size="15" /> Texte
-            </button>
-            <button type="button" class="type-btn" :class="{ active: newPageType === 'drawing' }" @click="newPageType = 'drawing'">
-              <PenLine :size="15" /> Dessin
-            </button>
-          </div>
-          <AppInput
-            v-model="newPageTitle"
-            placeholder="Titre de la page"
-            :required="true"
-            :autofocus="true"
-            class="new-page-input"
-          />
-          <AppButton variant="primary" type="submit" :disabled="creatingPage">Créer</AppButton>
-          <AppButton @click="showNewPage = false">Annuler</AppButton>
-        </form>
+      <!-- ── Dessins ── -->
+      <NotesTab v-if="activeTab === 'dessins'" kind="drawing" class="tab-content" />
 
-        <AppEmptyState v-if="pagesLoading" variant="loading">Chargement…</AppEmptyState>
-        <ul v-else-if="pages.length" class="pages-list">
-          <li v-for="page in pages" :key="page.id" class="page-item" @click="openPage(page.id)">
-            <span class="page-type-icon">
-              <PenLine v-if="page.type === 'drawing'" :size="16" />
-              <FileText v-else :size="16" />
-            </span>
-            <div class="page-info">
-              <span class="page-title">{{ page.title }}</span>
-              <span class="page-meta">
-                par {{ page.createdByCharacterName }} · {{ relativeTime(page.updatedAt) }}
-              </span>
-            </div>
-          </li>
-        </ul>
-        <p v-else class="muted">Aucune page sauvegardée.</p>
-      </div>
-
-      <!-- ── Notes perso ── -->
-      <div v-if="activeTab === 'perso'" class="tab-content editor-wrapper">
-        <textarea
-          v-model="persoContent"
-          class="journal-editor"
-          placeholder="Tes notes personnelles, secrètes et privées…"
-          spellcheck="true"
-        />
-      </div>
+      <!-- ── Fiches ── -->
+      <CodexTab v-if="activeTab === 'fiches'" class="tab-content" />
     </template>
   </AppPageLayout>
 </template>
@@ -420,41 +296,9 @@ onMounted(load);
   min-height: 0;
 }
 
-.journal-editor {
-  flex: 1;
-  width: 100%;
-  min-height: 0;
-  resize: none;
-  padding: 1rem;
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text);
-  font-family: inherit;
-  font-size: 0.95rem;
-  line-height: 1.65;
-  box-sizing: border-box;
-  transition: border-color 150ms;
-}
-
-.journal-editor:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-
-.journal-editor--readonly {
-  cursor: default;
-  opacity: 0.7;
-}
-
-.journal-editor--readonly:focus {
-  border-color: var(--border);
-}
-
 /* ── Toolbar ── */
 
-.compagnie-toolbar,
-.pages-toolbar {
+.compagnie-toolbar {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -480,144 +324,18 @@ onMounted(load);
   font-style: italic;
 }
 
-/* ── Pages list ── */
-
-.new-page-form {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding-bottom: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.type-toggle {
-  display: flex;
-  gap: 0.25rem;
-}
-
-.type-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.35rem 0.7rem;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  color: var(--muted);
-  font-size: 0.82rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 120ms, color 120ms, border-color 120ms;
-}
-
-.type-btn:hover {
-  color: var(--text);
-  border-color: var(--accent);
-}
-
-.type-btn.active {
-  background: var(--accent);
-  color: #fff;
-  border-color: var(--accent);
-}
-
-.new-page-input {
-  flex: 1;
-}
-
-.pages-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.page-type-icon {
-  color: var(--muted);
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-}
-
-.page-item {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.7rem 0.9rem;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  cursor: pointer;
-  transition: border-color 120ms, background 120ms;
-}
-
-.page-item:hover {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
-}
-
-.page-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-
-.page-title {
-  font-weight: 600;
-  font-size: 0.95rem;
-}
-
-.page-meta {
-  font-size: 0.78rem;
-  color: var(--muted);
-}
-
-/* ── Modal ── */
-
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 1rem;
-}
-
-.modal-box {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 1.5rem;
-  width: 100%;
-  max-width: 400px;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.modal-title {
-  margin: 0;
-  font-size: 1.1rem;
-}
+/* ── Save as page sheet ── */
 
 .modal-hint {
-  margin: 0;
+  margin: 0 0 0.75rem;
   font-size: 0.85rem;
   color: var(--muted);
 }
 
-.modal-input {
-  width: 100%;
-}
-
-.modal-actions {
+.save-as-page-form {
   display: flex;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 /* ── Misc ── */
@@ -629,6 +347,4 @@ onMounted(load);
 .save-indicator.saving { color: var(--muted); }
 .save-indicator.saved  { color: var(--accent-strong); }
 .save-indicator.error  { color: #c95f56; }
-
-.muted { color: var(--muted); font-size: 0.9rem; margin: 0; padding: 1rem 0; }
 </style>

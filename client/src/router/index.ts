@@ -4,13 +4,13 @@ import CharacterSheetView from '../views/CharacterSheetView.vue'
 import CharacterListView from '../views/CharacterListView.vue'
 import ActionsView from '../views/ActionsView.vue'
 import LoginView from '../views/LoginView.vue'
-import SessionListView from '../views/SessionListView.vue'
-import SessionView from '../views/SessionView.vue'
 import JetsView from '../views/JetsView.vue'
 import InventaireView from '../views/InventaireView.vue'
 import OptionsView from '../views/OptionsView.vue'
 import JournalView from '../views/JournalView.vue'
 import JournalPageView from '../views/JournalPageView.vue'
+import NoteEditView from '../views/NoteEditView.vue'
+import NoteDrawingView from '../views/NoteDrawingView.vue'
 import CampaignListView from '../views/CampaignListView.vue'
 import CampaignView from '../views/CampaignView.vue'
 import CampaignCharacterView from '../views/CampaignCharacterView.vue'
@@ -30,14 +30,14 @@ export const router = createRouter({
     { path: '/inventaire', name: 'inventaire', component: InventaireView },
     { path: '/jets', name: 'jets', component: JetsView },
     { path: '/journal', name: 'journal', component: JournalView },
+    { path: '/journal/note/:id', name: 'journal-note', component: NoteEditView },
+    { path: '/journal/dessin/:id', name: 'journal-dessin', component: NoteDrawingView },
     { path: '/journal/:id', name: 'journal-page', component: JournalPageView },
     { path: '/campagnes', name: 'campaigns', component: CampaignListView },
     { path: '/campagnes/:id', name: 'campaign', component: CampaignView },
     { path: '/campagnes/:campaignId/personnage/:userId', name: 'campaign-character', component: CampaignCharacterView },
     { path: '/campagnes/:id/rencontres/:eid', name: 'encounter-edit', component: EncounterEditView },
     { path: '/campagnes/:id/combat/:cid', name: 'combat', component: CombatView },
-    { path: '/sessions', name: 'sessions', component: SessionListView },
-    { path: '/sessions/:id', name: 'session', component: SessionView },
     { path: '/options', name: 'options', component: OptionsView },
   ],
 })

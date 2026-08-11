@@ -4,6 +4,7 @@ export interface AuthUser {
   id: number
   username: string
   avatarUrl: string | null
+  activeCampaignId?: number | null
 }
 
 export async function login(username: string, password: string): Promise<AuthUser> {

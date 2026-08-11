@@ -4,6 +4,7 @@ import { computed } from "vue";
 import { useRoute } from "vue-router";
 import { UserCircle, Loader2, ScrollText, Swords, Backpack, BookOpenText, Map } from "lucide-vue-next";
 import CrystalBall from "./components/icons/CrystalBall.vue";
+import AppToast from "./components/ui/AppToast.vue";
 import { user, authReady } from "./composables/useAuth";
 import { useActiveCombat } from "./composables/useActiveCombat";
 
@@ -80,6 +81,7 @@ if (savedStyle) {
     <main class="main">
       <RouterView />
     </main>
+    <AppToast />
   </div>
 </template>
 
