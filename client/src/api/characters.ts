@@ -41,6 +41,7 @@ export interface ServerCharacter {
   copperCoins: number | undefined
   pcCurrent: number | undefined
   prCurrent: number | undefined
+  affaibli: boolean | undefined
   competences: Character['competences'] | undefined
   portraitImageId: number | null | undefined
 }

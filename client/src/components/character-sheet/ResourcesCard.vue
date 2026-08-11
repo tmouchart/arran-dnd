@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import AppCard from "../ui/AppCard.vue";
+import AffaibliPill from "../AffaibliPill.vue";
 import HpGrowthModal from "./HpGrowthModal.vue";
 import type { Character } from "../../types/character";
 import type { VoieFamily } from "../../data/voies";
@@ -39,6 +40,9 @@ const mpIsMystique = computed(() => props.family === "mystiques");
 
 <template>
   <AppCard title="PV &amp; ressources" class="resources">
+    <template #titleActions>
+      <AffaibliPill v-model="character.affaibli" />
+    </template>
     <div class="bars">
       <!-- Points de vie -->
       <div class="bar-block">

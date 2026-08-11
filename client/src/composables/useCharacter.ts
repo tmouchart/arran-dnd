@@ -19,14 +19,11 @@ export const FAMILY_DIE_MAX: Record<VoieFamily, number> = {
   prestige: 8,
 }
 
-// PM courants : localStorage ; PV courants : colonne serveur `hp_current` (+ cache localStorage)
-const HP_KEY = 'arran-hp-current'
+// PM courants : localStorage ; PV courants : colonne serveur `hp_current` (source de vérité)
 const MP_KEY = 'arran-mp-current'
 
-function loadCurrentHp(hpMax: number): number {
-  const v = Number(localStorage.getItem(HP_KEY))
-  return Number.isFinite(v) && v > 0 ? v : hpMax
-}
+// Nettoyage : ancien cache PV local, remplacé par la colonne serveur
+try { localStorage.removeItem('arran-hp-current') } catch { /* noop */ }
 function loadCurrentMp(mpMax: number): number {
   const v = Number(localStorage.getItem(MP_KEY))
   return Number.isFinite(v) && v >= 0 ? v : mpMax
@@ -48,10 +45,7 @@ export function toCharacter(s: ServerCharacter): Character {
       wisdom: s.wis,
       charisma: s.cha,
     },
-    hpCurrent:
-      typeof s.hpCurrent === 'number' && Number.isFinite(s.hpCurrent)
-        ? Math.max(0, Math.min(s.hpCurrent, s.hpMax))
-        : loadCurrentHp(s.hpMax),
+    hpCurrent: Math.max(0, Math.min(s.hpCurrent, s.hpMax)),
     hpMax: s.hpMax,
     mpCurrent:
       typeof s.mpCurrent === 'number' && Number.isFinite(s.mpCurrent)
@@ -80,6 +74,7 @@ export function toCharacter(s: ServerCharacter): Character {
     copperCoins: s.copperCoins ?? 0,
     pcCurrent: typeof s.pcCurrent === 'number' ? s.pcCurrent : 0,
     prCurrent: typeof s.prCurrent === 'number' ? s.prCurrent : 5,
+    affaibli: s.affaibli === true,
     competences: Array.isArray(s.competences) ? s.competences : [],
     portraitImageId: s.portraitImageId ?? null,
   }
@@ -122,6 +117,7 @@ function toServerPayload(c: Character): Omit<ServerCharacter, 'id' | 'userId' | 
     copperCoins: c.copperCoins,
     pcCurrent: c.pcCurrent,
     prCurrent: c.prCurrent,
+    affaibli: c.affaibli,
     competences: c.competences,
     portraitImageId: c.portraitImageId,
   }
@@ -160,6 +156,7 @@ export function createDefaultCharacter(): Character {
     copperCoins: 0,
     pcCurrent: 0,
     prCurrent: 5,
+    affaibli: false,
     competences: [],
     portraitImageId: null,
   }
@@ -264,6 +261,9 @@ export const computedPcMax = computed(() => {
 /** PR max = 5 (règle de base CO / Terres d'Arran). */
 export const PR_MAX = 5
 
+/** Faces du dé d'attaque/test : 12 si le personnage est affaibli, 20 sinon. */
+export const attackDieSides = computed(() => (character.value.affaibli ? 12 : 20))
+
 // Bonus d'attaque par famille
 function familyAttackBonus(family: VoieFamily): { contact: number; distance: number; magique: number } {
   if (family === 'combattants') return { contact: 2, distance: 2, magique: 0 }
@@ -309,9 +309,10 @@ export const computedAttackMagique = computed(() => {
   return c.level + intMod + bonus.magique - equipPenalty + (c.attackMagiqueBonus ?? 0)
 })
 
-// Sync computed HP → character.hpMax
+// Sync computed HP → character.hpMax (et clamp hpCurrent, qui ne doit jamais dépasser le max)
 watch(computedHp, (val) => {
   character.value.hpMax = val
+  if (character.value.hpCurrent > val) character.value.hpCurrent = val
 }, { immediate: true })
 
 
@@ -374,9 +375,8 @@ export async function loadCharacter(id?: number): Promise<void> {
 watch(
   character,
   (c) => {
-    // Persister hp/mp courants en localStorage uniquement
+    // Persister mp courant en localStorage uniquement
     try {
-      localStorage.setItem(HP_KEY, String(c.hpCurrent))
       localStorage.setItem(MP_KEY, String(c.mpCurrent))
     } catch { /* quota */ }
 
@@ -420,6 +420,7 @@ export function useCharacter() {
     computedDv,
     computedInitiative,
     computedPcMax,
+    attackDieSides,
     computedAttackContact,
     computedAttackDistance,
     computedAttackMagique,

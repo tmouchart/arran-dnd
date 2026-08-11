@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { Skull, Heart, RefreshCw, X } from 'lucide-vue-next'
 import { rollDie } from '../utils/dice'
+import { attackDieSides } from '../composables/useCharacter'
 
 defineProps<{ characterName: string }>()
 const emit = defineEmits<{
@@ -30,9 +31,10 @@ const verdict = computed<'none' | 'stabilise' | 'death'>(() => {
 
 function roll() {
   if (verdict.value !== 'none') return
-  const die = rollDie(20)
+  const sides = attackDieSides.value
+  const die = rollDie(sides)
   let result: DeathRoll['result']
-  if (die === 20) result = 'critical-save'
+  if (die === sides) result = 'critical-save'
   else if (die === 1) result = 'critical-death'
   else if (die >= 11) result = 'success'
   else result = 'failure'
@@ -61,7 +63,7 @@ function confirm() {
       </div>
 
       <h2 class="modal-title">Agonie — {{ characterName }}</h2>
-      <p class="modal-subtitle">0 PV — jets de mort (d20 ≥ 11 = succès)</p>
+      <p class="modal-subtitle">0 PV — jets de mort (d{{ attackDieSides }} ≥ 11 = succès)</p>
 
       <!-- Trackers -->
       <div class="trackers">
@@ -115,7 +117,7 @@ function confirm() {
           class="btn-roll"
           @click="roll"
         >
-          Lancer le d20
+          Lancer le d{{ attackDieSides }}
         </button>
         <button
           v-if="verdict !== 'none'"

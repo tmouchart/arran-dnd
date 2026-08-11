@@ -8,6 +8,8 @@ import { rollDie, rollDiceNotation } from '../utils/dice'
 export interface SingleHandRoll {
   weaponName: string
   attackDie: number
+  /** Faces du dé d'attaque (12 si affaibli, 20 sinon). */
+  attackSides: number
   attackBonus: number
   attackTotal: number
   damageDice: string
@@ -103,11 +105,12 @@ export function useDualWield(
 
     const c = character.value
 
-    // Main directrice — d20
+    // Main directrice — d20 (d12 si affaibli)
+    const mainSides = c.affaibli ? 12 : 20
     const mainBonus =
       attackContact.value +
       (!isMartialWeaponProficient(mainWeapon, c.martialFormations) ? -3 : 0)
-    const mainDie = rollDie(20)
+    const mainDie = rollDie(mainSides)
     const mainDamAbility = mainWeapon.damageAbility
       ? abilityModifier(c.abilities[mainWeapon.damageAbility])
       : 0
@@ -127,6 +130,7 @@ export function useDualWield(
       mainHand: {
         weaponName: mainWeapon.name || 'Arme',
         attackDie: mainDie,
+        attackSides: mainSides,
         attackBonus: mainBonus,
         attackTotal: mainDie + mainBonus,
         damageDice: mainWeapon.damageDice,

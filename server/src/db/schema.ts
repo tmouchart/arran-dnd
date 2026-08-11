@@ -99,6 +99,9 @@ export const characters = pgTable(
     /** Points de Récupération courants (max = 5). */
     prCurrent: integer('pr_current').notNull().default(5),
 
+    /** Statut Affaibli : tous les jets se font en d12 au lieu du d20. */
+    affaibli: boolean('affaibli').notNull().default(false),
+
     /** Custom rollable competences: [{ id, name, ability, bonus }] */
     competences: jsonb('competences').notNull().default([]),
     /** ID of the portrait image in generated_images table */
@@ -213,8 +216,9 @@ export const combatParticipants = pgTable('combat_participant', {
   userId: integer('user_id').references(() => users.id),
   name: text('name').notNull(),
   initiative: integer('initiative').notNull(),
-  hpMax: integer('hp_max').notNull(),
-  hpCurrent: integer('hp_current').notNull(),
+  // Null for players: their HP lives on the character sheet (enrichParticipantHp)
+  hpMax: integer('hp_max'),
+  hpCurrent: integer('hp_current'),
   def: integer('def').notNull().default(10),
   // Monster-specific fields (nullable for players)
   nc: real('nc'),
@@ -227,6 +231,34 @@ export const combatParticipants = pgTable('combat_participant', {
   attacks: jsonb('attacks'),
   abilities: jsonb('abilities'),
   monsterDescription: text('monster_description'),
+})
+
+export const codexEntries = pgTable('codex_entry', {
+  id: serial('id').primaryKey(),
+  campaignId: integer('campaign_id')
+    .notNull()
+    .references(() => campaigns.id, { onDelete: 'cascade' }),
+  /** 'personnage' | 'lieu' | 'autre' */
+  type: text('type').notNull(),
+  name: text('name').notNull(),
+  description: text('description').notNull().default(''),
+  createdByUserId: integer('created_by_user_id').notNull().references(() => users.id),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+/** Notes privées d'un joueur (remplace le blob user.notes_perso). */
+export const notes = pgTable('note', {
+  id: serial('id').primaryKey(),
+  ownerUserId: integer('owner_user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  title: text('title').notNull().default(''),
+  /** 'text' | 'drawing' */
+  type: text('type').notNull().default('text'),
+  content: text('content').notNull().default(''),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })
 
 export type UserRow = typeof users.$inferSelect

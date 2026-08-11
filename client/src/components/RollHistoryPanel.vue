@@ -1,18 +1,20 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { Trash2, ChevronDown, ChevronUp } from 'lucide-vue-next'
+import { Trash2, ChevronDown, ChevronUp, X } from 'lucide-vue-next'
 import AppCard from './ui/AppCard.vue'
+import AppButton from './ui/AppButton.vue'
 import AppIconBtn from './ui/AppIconBtn.vue'
-import { useRollHistory, type RollKind } from '../composables/useRollHistory'
+import { useRollHistory, rollHighlight, type RollKind, type RollEntry } from '../composables/useRollHistory'
 
 const props = withDefaults(defineProps<{ alwaysOpen?: boolean }>(), { alwaysOpen: false })
 
 const { history, clearHistory } = useRollHistory()
 
-function confirmClear() {
-  if (confirm(`Effacer les ${history.value.length} jets enregistrés ?`)) {
-    clearHistory()
-  }
+const confirmingClear = ref(false)
+
+function handleClear() {
+  clearHistory()
+  confirmingClear.value = false
 }
 
 const open = ref(false)
@@ -24,14 +26,16 @@ const KIND_LABELS: Record<RollKind, string> = {
   ability: 'Carac.',
   manoeuvre: 'Manoeuvre',
   competence: 'Compétence',
+  libre: 'Libre',
 }
 
-const critCount = computed(() => history.value.filter((e) => e.damage?.critical).length)
-const fumbleCount = computed(() => history.value.filter((e) => e.damage?.fumble || e.die === 1).length)
+const critCount = computed(() => history.value.filter((e) => rollHighlight(e) === 'critical').length)
+const fumbleCount = computed(() => history.value.filter((e) => rollHighlight(e) === 'fumble').length)
 const d20Avg = computed(() => {
-  if (!history.value.length) return null
-  const sum = history.value.reduce((s, e) => s + e.die, 0)
-  return (sum / history.value.length).toFixed(1)
+  const d20Rolls = history.value.filter((e) => e.sides === 20)
+  if (!d20Rolls.length) return null
+  const sum = d20Rolls.reduce((s, e) => s + e.die, 0)
+  return (sum / d20Rolls.length).toFixed(1)
 })
 
 function formatTime(ts: number): string {
@@ -39,9 +43,10 @@ function formatTime(ts: number): string {
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
-function entryClass(entry: { die: number; damage?: { critical: boolean; fumble: boolean } }): string {
-  if (entry.damage?.critical || entry.die === 20) return 'entry--critical'
-  if (entry.damage?.fumble || entry.die === 1) return 'entry--fumble'
+function entryClass(entry: Pick<RollEntry, 'kind' | 'die' | 'sides' | 'damage'>): string {
+  const highlight = rollHighlight(entry)
+  if (highlight === 'critical') return 'entry--critical'
+  if (highlight === 'fumble') return 'entry--fumble'
   return ''
 }
 </script>
@@ -51,12 +56,20 @@ function entryClass(entry: { die: number; damage?: { critical: boolean; fumble: 
     <div class="panel-head" @click="!alwaysOpen && (open = !open)">
       <h2>Historique des jets ({{ history.length }})</h2>
       <div class="panel-head-right">
+        <template v-if="confirmingClear">
+          <AppButton variant="danger" size="small" @click.stop="handleClear">
+            Effacer {{ history.length }} jets ?
+          </AppButton>
+          <AppIconBtn variant="ghost" :size="32" title="Annuler" @click.stop="confirmingClear = false">
+            <X :size="15" />
+          </AppIconBtn>
+        </template>
         <AppIconBtn
-          v-if="history.length"
+          v-else-if="history.length"
           variant="ghost"
           :size="32"
           title="Effacer l'historique"
-          @click.stop="confirmClear"
+          @click.stop="confirmingClear = true"
         >
           <Trash2 :size="15" />
         </AppIconBtn>
@@ -86,7 +99,8 @@ function entryClass(entry: { die: number; damage?: { critical: boolean; fumble: 
           <span class="entry-time">{{ formatTime(entry.timestamp) }}</span>
           <span class="entry-kind">{{ KIND_LABELS[entry.kind] }}</span>
           <span class="entry-label">{{ entry.label }}</span>
-          <span class="entry-die">d20={{ entry.die }}</span>
+          <span v-if="entry.rolls && entry.rolls.length > 1" class="entry-die">{{ entry.rolls.length }}d{{ entry.sides }}={{ entry.rolls.join('+') }}</span>
+          <span v-else class="entry-die">d{{ entry.sides }}={{ entry.die }}</span>
           <span class="entry-total">→ <strong>{{ entry.total }}</strong></span>
           <span v-if="entry.damage" class="entry-dmg">
             <template v-if="entry.damage.fumble">Échec critique</template>

@@ -7,6 +7,7 @@ import AppBadge from "../components/ui/AppBadge.vue";
 import AppEmptyState from "../components/ui/AppEmptyState.vue";
 import AppButton from "../components/ui/AppButton.vue";
 import PassifsCard from "../components/character-sheet/PassifsCard.vue";
+import AffaibliPill from "../components/AffaibliPill.vue";
 import { useCharacter, loadCharacter, PR_MAX } from "../composables/useCharacter";
 import { VOIES_BY_ID, type VoieFamily } from "../data/voies";
 import { PEUPLE_VOIES_BY_ID } from "../data/peuples";
@@ -24,7 +25,7 @@ import AgonieModal from "../components/AgonieModal.vue";
 
 const props = withDefaults(defineProps<{ embedded?: boolean }>(), { embedded: false });
 
-const { character, loading, loadError, computedAttackContact, computedAttackDistance, computedAttackMagique, computedHp, computedMp, computedDef, computedInitiative, computedPcMax, computedHpDv, computedHpConMod, abilityModifier } = useCharacter();
+const { character, loading, loadError, computedAttackContact, computedAttackDistance, computedAttackMagique, computedHp, computedMp, computedDef, computedInitiative, computedPcMax, computedHpDv, computedHpConMod, abilityModifier, attackDieSides } = useCharacter();
 const { addRoll } = useRollHistory();
 const {
   dualWieldRoll, dualWieldError,
@@ -197,7 +198,7 @@ const weaponBubbles = computed(() => {
     const total = incompetent ? baseBonus - 3 : baseBonus;
     return {
       w,
-      hitDisplay: `d20 ${total >= 0 ? "+" : ""}${total} (vs DEF)`,
+      hitDisplay: `d${attackDieSides.value} ${total >= 0 ? "+" : ""}${total} (vs DEF)`,
       damageDisplay: formatWeaponDamage(
         w.damageDice,
         w.damageAbility,
@@ -333,6 +334,7 @@ function familyClass(family?: VoieFamily): string {
 
 interface WeaponRollResult {
   attackDie: number;
+  attackSides: number;
   attackBonus: number;
   attackTotal: number;
   damageDice: string;
@@ -344,6 +346,7 @@ interface WeaponRollResult {
 
 interface ActionRollResult {
   attackDie: number;
+  attackSides: number;
   attackBonus: number;
   attackTotal: number;
   luckUsed: boolean;
@@ -355,11 +358,12 @@ const abilityRolls = reactive<Record<string, ActionRollResult>>({});
 const lastRolledAbilityKey = ref<string | null>(null);
 const manoeuverRolls = reactive<Record<string, ActionRollResult>>({});
 
-function rollWeapon(item: (typeof weaponBubbles.value)[number]) {
+function rollWeapon(item: (typeof weaponBubbles.value)[number], forcedSides?: number) {
+  const attackSides = forcedSides ?? attackDieSides.value;
   const effectiveBonus = weaponAttackBonus(item.w);
   const incompetentPenalty = item.incompetent ? -3 : 0;
   const attackBonus = effectiveBonus + incompetentPenalty;
-  const attackDie = rollDie(20);
+  const attackDie = rollDie(attackSides);
   const attackTotal = attackDie + attackBonus;
 
   const damageAbilityMod = item.w.damageAbility
@@ -369,6 +373,7 @@ function rollWeapon(item: (typeof weaponBubbles.value)[number]) {
 
   weaponRolls[item.w.id] = {
     attackDie,
+    attackSides,
     attackBonus,
     attackTotal,
     damageDice: item.w.damageDice,
@@ -382,9 +387,10 @@ function rollWeapon(item: (typeof weaponBubbles.value)[number]) {
     kind: 'weapon',
     label: item.w.name || 'Arme',
     die: attackDie,
+    sides: attackSides,
     bonus: attackBonus,
     total: attackTotal,
-    damage: { total: dmg.total, critical: attackDie === 20, fumble: attackDie === 1 },
+    damage: { total: dmg.total, critical: attackDie === attackSides, fumble: attackDie === 1 },
   });
 }
 
@@ -398,15 +404,17 @@ function rollDualWield() {
     kind: 'weapon',
     label: `${result.mainHand.weaponName} (main directrice)`,
     die: result.mainHand.attackDie,
+    sides: result.mainHand.attackSides,
     bonus: result.mainHand.attackBonus,
     total: result.mainHand.attackTotal,
-    damage: { total: result.mainHand.damageTotal, critical: result.mainHand.attackDie === 20, fumble: result.mainHand.attackDie === 1 },
+    damage: { total: result.mainHand.damageTotal, critical: result.mainHand.attackDie === result.mainHand.attackSides, fumble: result.mainHand.attackDie === 1 },
   });
   addRoll({
     characterName: c.name,
     kind: 'weapon',
     label: `${result.offHand.weaponName} (main faible)`,
     die: result.offHand.attackDie,
+    sides: 12,
     bonus: result.offHand.attackBonus,
     total: result.offHand.attackTotal,
     damage: { total: result.offHand.damageTotal, critical: false, fumble: result.offHand.attackDie === 1 },
@@ -436,10 +444,12 @@ function rollAction(action: Action) {
     }
   }
 
-  const attackDie = rollDie(20);
+  const attackSides = attackDieSides.value;
+  const attackDie = rollDie(attackSides);
   const key = action.source + '-' + action.name;
   actionRolls[key] = {
     attackDie,
+    attackSides,
     attackBonus: bonus,
     attackTotal: attackDie + bonus,
     luckUsed: false,
@@ -449,6 +459,7 @@ function rollAction(action: Action) {
     kind: 'action',
     label: action.name,
     die: attackDie,
+    sides: attackSides,
     bonus,
     total: attackDie + bonus,
   });
@@ -457,7 +468,7 @@ function rollAction(action: Action) {
 function spendLuck(roll: WeaponRollResult | ActionRollResult | SingleHandRoll, mode: 'reroll' | 'add10'): void {
   if (character.value.pcCurrent <= 0 || roll.luckUsed) return;
   if (mode === 'reroll') {
-    roll.attackDie = rollDie(20);
+    roll.attackDie = rollDie(roll.attackSides);
     roll.attackTotal = roll.attackDie + roll.attackBonus;
   } else {
     roll.attackTotal += 10;
@@ -469,28 +480,32 @@ function spendLuck(roll: WeaponRollResult | ActionRollResult | SingleHandRoll, m
 function rollAbility(key: string) {
   const score = character.value.abilities[key as keyof typeof character.value.abilities];
   const mod = abilityModifier(score);
-  const die = rollDie(20);
-  abilityRolls[key] = { attackDie: die, attackBonus: mod, attackTotal: die + mod, luckUsed: false };
+  const sides = attackDieSides.value;
+  const die = rollDie(sides);
+  abilityRolls[key] = { attackDie: die, attackSides: sides, attackBonus: mod, attackTotal: die + mod, luckUsed: false };
   lastRolledAbilityKey.value = key;
   addRoll({
     characterName: character.value.name,
     kind: 'ability',
     label: ABILITY_LABELS.find((a) => a.key === key)?.label ?? key,
     die,
+    sides,
     bonus: mod,
     total: die + mod,
   });
 }
 
 function rollManoeuvre(name: string) {
-  const die = rollDie(20);
+  const sides = attackDieSides.value;
+  const die = rollDie(sides);
   const bonus = computedAttackContact.value;
-  manoeuverRolls[name] = { attackDie: die, attackBonus: bonus, attackTotal: die + bonus, luckUsed: false };
+  manoeuverRolls[name] = { attackDie: die, attackSides: sides, attackBonus: bonus, attackTotal: die + bonus, luckUsed: false };
   addRoll({
     characterName: character.value.name,
     kind: 'manoeuvre',
     label: name,
     die,
+    sides,
     bonus,
     total: die + bonus,
   });
@@ -503,13 +518,15 @@ function rollCompetence(id: string) {
   if (!comp) return;
   const abilityBonus = comp.ability ? abilityModifier(character.value.abilities[comp.ability]) : 0;
   const bonus = abilityBonus + comp.bonus;
-  const die = rollDie(20);
-  competenceRolls[id] = { attackDie: die, attackBonus: bonus, attackTotal: die + bonus, luckUsed: false };
+  const sides = attackDieSides.value;
+  const die = rollDie(sides);
+  competenceRolls[id] = { attackDie: die, attackSides: sides, attackBonus: bonus, attackTotal: die + bonus, luckUsed: false };
   addRoll({
     characterName: character.value.name,
     kind: 'competence',
     label: comp.name || 'Compétence',
     die,
+    sides,
     bonus,
     total: die + bonus,
   });
@@ -603,6 +620,10 @@ function losePr() {
     />
 
     <div v-if="character.id" class="combat-header">
+      <!-- Statut affaibli -->
+      <div class="ch-affaibli-row">
+        <AffaibliPill v-model="character.affaibli" />
+      </div>
       <!-- PV / PM -->
       <div class="ch-resources">
         <div class="ch-resource ch-resource--hp">
@@ -663,22 +684,22 @@ function losePr() {
           class="roll-result"
           :class="{
             'roll-result--fumble': abilityRolls[lastRolledAbilityKey].attackDie === 1,
-            'roll-result--critical': abilityRolls[lastRolledAbilityKey].attackDie === 20,
+            'roll-result--critical': abilityRolls[lastRolledAbilityKey].attackDie === abilityRolls[lastRolledAbilityKey].attackSides,
           }"
         >
           <span class="roll-result__attack">
             Test {{ ABILITY_LABELS.find(a => a.key === lastRolledAbilityKey)?.label }} :
             <strong>{{ abilityRolls[lastRolledAbilityKey].attackTotal }}</strong>
-            <span class="roll-result__detail">(dé {{ abilityRolls[lastRolledAbilityKey].attackDie }} {{ signedNum(abilityRolls[lastRolledAbilityKey].attackBonus) }})</span>
+            <span class="roll-result__detail">(d{{ abilityRolls[lastRolledAbilityKey].attackSides }} = {{ abilityRolls[lastRolledAbilityKey].attackDie }} {{ signedNum(abilityRolls[lastRolledAbilityKey].attackBonus) }})</span>
           </span>
           <span v-if="abilityRolls[lastRolledAbilityKey].attackDie === 1" class="roll-result__crit-label">Échec critique</span>
-          <span v-else-if="abilityRolls[lastRolledAbilityKey].attackDie === 20" class="roll-result__crit-label">Réussite critique</span>
+          <span v-else-if="abilityRolls[lastRolledAbilityKey].attackDie === abilityRolls[lastRolledAbilityKey].attackSides" class="roll-result__crit-label">Réussite critique</span>
         </div>
         <div v-if="!abilityRolls[lastRolledAbilityKey].luckUsed && character.pcCurrent > 0" class="luck-box">
           <span class="luck-box__title"><Sparkles :size="13" /> Utiliser la chance <span class="luck-box__pc">{{ character.pcCurrent }} PC</span></span>
           <div class="luck-box__actions">
             <button type="button" class="luck-btn" @click.stop="spendLuck(abilityRolls[lastRolledAbilityKey!], 'reroll')">
-              <RefreshCw :size="13" /> Relancer le d20
+              <RefreshCw :size="13" /> Relancer le dé
             </button>
             <button type="button" class="luck-btn" @click.stop="spendLuck(abilityRolls[lastRolledAbilityKey!], 'add10')">
               +10 au résultat
@@ -748,17 +769,17 @@ function losePr() {
             class="roll-result"
             :class="{
               'roll-result--fumble': weaponRolls[item.w.id].attackDie === 1,
-              'roll-result--critical': weaponRolls[item.w.id].attackDie === 20,
+              'roll-result--critical': weaponRolls[item.w.id].attackDie === weaponRolls[item.w.id].attackSides,
             }"
           >
             <span class="roll-result__attack">
               Attaque : <strong>{{ weaponRolls[item.w.id].attackTotal }}</strong>
-              <span class="roll-result__detail">(dé {{ weaponRolls[item.w.id].attackDie }} {{ signedNum(weaponRolls[item.w.id].attackBonus) }})</span>
+              <span class="roll-result__detail">(d{{ weaponRolls[item.w.id].attackSides }} = {{ weaponRolls[item.w.id].attackDie }} {{ signedNum(weaponRolls[item.w.id].attackBonus) }})</span>
             </span>
             <span v-if="weaponRolls[item.w.id].attackDie === 1" class="roll-result__crit-label">
               Échec critique
             </span>
-            <template v-else-if="weaponRolls[item.w.id].attackDie === 20">
+            <template v-else-if="weaponRolls[item.w.id].attackDie === weaponRolls[item.w.id].attackSides">
               <span class="roll-result__crit-label">Réussite critique</span>
               <span class="roll-result__damage">
                 Dégâts : <strong>{{ weaponRolls[item.w.id].damageTotal * 2 }}</strong>
@@ -774,7 +795,7 @@ function losePr() {
             <span class="luck-box__title"><Sparkles :size="13" /> Utiliser la chance <span class="luck-box__pc">{{ character.pcCurrent }} PC</span></span>
             <div class="luck-box__actions">
               <button type="button" class="luck-btn" @click="spendLuck(weaponRolls[item.w.id], 'reroll')">
-                <RefreshCw :size="13" /> Relancer le d20
+                <RefreshCw :size="13" /> Relancer le dé
               </button>
               <button type="button" class="luck-btn" @click="spendLuck(weaponRolls[item.w.id], 'add10')">
                 +10 au résultat
@@ -787,10 +808,20 @@ function losePr() {
           <div class="action-source">
             Arme · {{ MARTIAL_WEAPON_CATEGORY_BY_ID[item.w.martialFamily] }}
           </div>
-          <button type="button" class="roll-btn" @click="rollWeapon(item)">
-            <Dices :size="15" />
-            Lancer les dés
-          </button>
+          <div class="weapon-roll-btns">
+            <button
+              type="button"
+              class="roll-btn roll-btn--d12"
+              title="Attaque en d12 (mêmes bonus et dégâts)"
+              @click="rollWeapon(item, 12)"
+            >
+              d12
+            </button>
+            <button type="button" class="roll-btn" @click="rollWeapon(item)">
+              <Dices :size="15" />
+              Lancer les dés
+            </button>
+          </div>
         </div>
       </div>
 
@@ -815,7 +846,7 @@ function losePr() {
           </span>
           <span class="attack-roll">
             <template v-if="action.attackType">
-              d20 {{ bonusDisplay(computeBonus(action.attackType)) }}
+              d{{ attackDieSides }} {{ bonusDisplay(computeBonus(action.attackType)) }}
             </template>
             <template v-else>
               <span class="no-roll">Aucun jet d'attaque</span>
@@ -836,16 +867,16 @@ function losePr() {
               class="roll-result"
               :class="{
                 'roll-result--fumble': dualWieldRoll.mainHand.attackDie === 1,
-                'roll-result--critical': dualWieldRoll.mainHand.attackDie === 20,
+                'roll-result--critical': dualWieldRoll.mainHand.attackDie === dualWieldRoll.mainHand.attackSides,
               }"
             >
               <span class="roll-result__hand-label">Main directrice · {{ dualWieldRoll.mainHand.weaponName }}</span>
               <span class="roll-result__attack">
                 Attaque : <strong>{{ dualWieldRoll.mainHand.attackTotal }}</strong>
-                <span class="roll-result__detail">(d20 {{ signedNum(dualWieldRoll.mainHand.attackBonus) }})</span>
+                <span class="roll-result__detail">(d{{ dualWieldRoll.mainHand.attackSides }} = {{ dualWieldRoll.mainHand.attackDie }} {{ signedNum(dualWieldRoll.mainHand.attackBonus) }})</span>
               </span>
               <span v-if="dualWieldRoll.mainHand.attackDie === 1" class="roll-result__crit-label">Échec critique</span>
-              <template v-else-if="dualWieldRoll.mainHand.attackDie === 20">
+              <template v-else-if="dualWieldRoll.mainHand.attackDie === dualWieldRoll.mainHand.attackSides">
                 <span class="roll-result__crit-label">Réussite critique</span>
                 <span class="roll-result__damage">
                   Dégâts : <strong>{{ dualWieldRoll.mainHand.damageTotal * 2 }}</strong>
@@ -861,7 +892,7 @@ function losePr() {
               <span class="luck-box__title"><Sparkles :size="13" /> Utiliser la chance <span class="luck-box__pc">{{ character.pcCurrent }} PC</span></span>
               <div class="luck-box__actions">
                 <button type="button" class="luck-btn" @click="spendLuck(dualWieldRoll.mainHand, 'reroll')">
-                  <RefreshCw :size="13" /> Relancer le d20
+                  <RefreshCw :size="13" /> Relancer le dé
                 </button>
                 <button type="button" class="luck-btn" @click="spendLuck(dualWieldRoll.mainHand, 'add10')">
                   +10 au résultat
@@ -876,7 +907,7 @@ function losePr() {
               <span class="roll-result__hand-label">Main faible · {{ dualWieldRoll.offHand.weaponName }}</span>
               <span class="roll-result__attack">
                 Attaque : <strong>{{ dualWieldRoll.offHand.attackTotal }}</strong>
-                <span class="roll-result__detail">(d12 {{ signedNum(dualWieldRoll.offHand.attackBonus) }})</span>
+                <span class="roll-result__detail">(d12 = {{ dualWieldRoll.offHand.attackDie }} {{ signedNum(dualWieldRoll.offHand.attackBonus) }})</span>
               </span>
               <span v-if="dualWieldRoll.offHand.attackDie === 1" class="roll-result__crit-label">Échec critique</span>
               <span v-else class="roll-result__damage">
@@ -892,14 +923,14 @@ function losePr() {
           <div class="roll-result">
             <span class="roll-result__attack">
               Attaque : <strong>{{ actionRolls[action.source + '-' + action.name].attackTotal }}</strong>
-              <span class="roll-result__detail">(dé {{ actionRolls[action.source + '-' + action.name].attackDie }} {{ signedNum(actionRolls[action.source + '-' + action.name].attackBonus) }})</span>
+              <span class="roll-result__detail">(d{{ actionRolls[action.source + '-' + action.name].attackSides }} = {{ actionRolls[action.source + '-' + action.name].attackDie }} {{ signedNum(actionRolls[action.source + '-' + action.name].attackBonus) }})</span>
             </span>
           </div>
           <div v-if="!actionRolls[action.source + '-' + action.name].luckUsed && character.pcCurrent > 0" class="luck-box">
             <span class="luck-box__title"><Sparkles :size="13" /> Utiliser la chance <span class="luck-box__pc">{{ character.pcCurrent }} PC</span></span>
             <div class="luck-box__actions">
               <button type="button" class="luck-btn" @click="spendLuck(actionRolls[action.source + '-' + action.name], 'reroll')">
-                <RefreshCw :size="13" /> Relancer le d20
+                <RefreshCw :size="13" /> Relancer le dé
               </button>
               <button type="button" class="luck-btn" @click="spendLuck(actionRolls[action.source + '-' + action.name], 'add10')">
                 +10 au résultat
@@ -949,7 +980,7 @@ function losePr() {
               <div class="action-header">
                 <span class="action-name">{{ comp.name || 'Compétence' }}</span>
                 <span class="attack-roll">
-                  d20
+                  d{{ attackDieSides }}
                   <template v-if="comp.ability">
                     {{ signedNum(abilityModifier(character.abilities[comp.ability])) }} ({{ { strength: 'FOR', dexterity: 'DEX', constitution: 'CON', intelligence: 'INT', wisdom: 'SAG', charisma: 'CHA' }[comp.ability] }})
                   </template>
@@ -962,21 +993,21 @@ function losePr() {
                   class="roll-result"
                   :class="{
                     'roll-result--fumble': competenceRolls[comp.id].attackDie === 1,
-                    'roll-result--critical': competenceRolls[comp.id].attackDie === 20,
+                    'roll-result--critical': competenceRolls[comp.id].attackDie === competenceRolls[comp.id].attackSides,
                   }"
                 >
                   <span class="roll-result__attack">
                     Test : <strong>{{ competenceRolls[comp.id].attackTotal }}</strong>
-                    <span class="roll-result__detail">(dé {{ competenceRolls[comp.id].attackDie }} {{ signedNum(competenceRolls[comp.id].attackBonus) }})</span>
+                    <span class="roll-result__detail">(d{{ competenceRolls[comp.id].attackSides }} = {{ competenceRolls[comp.id].attackDie }} {{ signedNum(competenceRolls[comp.id].attackBonus) }})</span>
                   </span>
                   <span v-if="competenceRolls[comp.id].attackDie === 1" class="roll-result__crit-label">Échec critique</span>
-                  <span v-else-if="competenceRolls[comp.id].attackDie === 20" class="roll-result__crit-label">Réussite critique</span>
+                  <span v-else-if="competenceRolls[comp.id].attackDie === competenceRolls[comp.id].attackSides" class="roll-result__crit-label">Réussite critique</span>
                 </div>
                 <div v-if="!competenceRolls[comp.id].luckUsed && character.pcCurrent > 0" class="luck-box">
                   <span class="luck-box__title"><Sparkles :size="13" /> Utiliser la chance <span class="luck-box__pc">{{ character.pcCurrent }} PC</span></span>
                   <div class="luck-box__actions">
                     <button type="button" class="luck-btn" @click="spendLuck(competenceRolls[comp.id], 'reroll')">
-                      <RefreshCw :size="13" /> Relancer le d20
+                      <RefreshCw :size="13" /> Relancer le dé
                     </button>
                     <button type="button" class="luck-btn" @click="spendLuck(competenceRolls[comp.id], 'add10')">
                       +10 au résultat
@@ -1027,7 +1058,7 @@ function losePr() {
                   {{ m.name }}<span v-if="m.sizePenalty" class="size-penalty-mark" title="Pénalité de taille : -5 par catégorie de taille si plus petit que la cible">*</span>
                 </span>
                 <span class="attack-type-badge">Contact</span>
-                <span class="attack-roll">d20 {{ bonusDisplay(computedAttackContact) }}</span>
+                <span class="attack-roll">d{{ attackDieSides }} {{ bonusDisplay(computedAttackContact) }}</span>
               </div>
               <div class="manoeuvre-body">
                 <p class="manoeuvre-line"><strong>Effet :</strong> {{ m.effet }}</p>
@@ -1038,14 +1069,14 @@ function losePr() {
                 <div class="roll-result">
                   <span class="roll-result__attack">
                     Attaque : <strong>{{ manoeuverRolls[m.name].attackTotal }}</strong>
-                    <span class="roll-result__detail">(dé {{ manoeuverRolls[m.name].attackDie }} {{ signedNum(manoeuverRolls[m.name].attackBonus) }})</span>
+                    <span class="roll-result__detail">(d{{ manoeuverRolls[m.name].attackSides }} = {{ manoeuverRolls[m.name].attackDie }} {{ signedNum(manoeuverRolls[m.name].attackBonus) }})</span>
                   </span>
                 </div>
                 <div v-if="!manoeuverRolls[m.name].luckUsed && character.pcCurrent > 0" class="luck-box">
                   <span class="luck-box__title"><Sparkles :size="13" /> Utiliser la chance <span class="luck-box__pc">{{ character.pcCurrent }} PC</span></span>
                   <div class="luck-box__actions">
                     <button type="button" class="luck-btn" @click="spendLuck(manoeuverRolls[m.name], 'reroll')">
-                      <RefreshCw :size="13" /> Relancer le d20
+                      <RefreshCw :size="13" /> Relancer le dé
                     </button>
                     <button type="button" class="luck-btn" @click="spendLuck(manoeuverRolls[m.name], 'add10')">
                       +10 au résultat
@@ -1140,7 +1171,7 @@ function losePr() {
                 </span>
                 <span class="attack-roll">
                   <template v-if="action.attackType">
-                    d20 {{ bonusDisplay(computeBonus(action.attackType)) }}
+                    d{{ attackDieSides }} {{ bonusDisplay(computeBonus(action.attackType)) }}
                   </template>
                   <template v-else>
                     <span class="no-roll">Aucun jet d'attaque</span>
@@ -2127,6 +2158,31 @@ function losePr() {
 .roll-btn:hover {
   background: var(--accent);
   color: #fff;
+}
+
+.weapon-roll-btns {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.roll-btn--d12 {
+  border-color: var(--border-strong);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.roll-btn--d12:hover {
+  border-color: var(--accent);
+  background: transparent;
+  color: var(--accent-strong);
+}
+
+.ch-affaibli-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: -0.25rem;
 }
 
 /* ── Résultat du jet ────────────────────────────────────────────────────── */

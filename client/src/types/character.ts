@@ -101,6 +101,8 @@ export interface Character {
   pcCurrent: number
   /** Points de Récupération courants (max = 5). */
   prCurrent: number
+  /** Statut Affaibli : tous les jets se font en d12 au lieu du d20. */
+  affaibli: boolean
   /** Custom rollable competences (nom + carac + bonus). */
   competences: CompetenceRow[]
   /** ID of portrait image in generated_images table. */
