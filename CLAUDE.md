@@ -43,8 +43,7 @@ server/src/
 ├── index.ts              # App bootstrap, AI /api/chat endpoint
 ├── routes/
 │   ├── auth.ts           # Login / logout / Google OAuth callback
-│   ├── characters.ts     # CRUD for character sheets
-│   └── sessions.ts       # Game session management
+│   └── characters.ts     # CRUD for character sheets
 ├── auth/
 │   └── middleware.ts     # requireAuth — protects all non-public routes
 ├── db/
@@ -55,7 +54,6 @@ server/src/
 ├── knowledge/
 │   ├── loadKnowledge.ts  # Reads topics/ at startup
 │   └── tools.ts          # Exposes knowledge as Anthropic/Gemini tool definitions
-└── sessions/             # Session state helpers
 ```
 
 Key env vars (`.env` at root): `DATABASE_URL`, `SESSION_SECRET`, `AI_PROVIDER` (`anthropic` | `gemini`), `ANTHROPIC_MODEL`, `GEMINI_MODEL`.
@@ -71,9 +69,7 @@ client/src/
 │   ├── CharacterListView.vue
 │   ├── CharacterSheetView.vue  # Main character sheet (tabs)
 │   ├── ActionsView.vue         # Combat actions reference
-│   ├── ChatView.vue            # AI chat interface
-│   ├── SessionListView.vue
-│   └── SessionView.vue
+│   └── ChatView.vue            # AI chat interface
 ├── components/
 │   ├── ui/                     # Shared primitives (AppCard, AppBadge…) — see below
 │   └── character-sheet/        # Cards rendered inside CharacterSheetView
@@ -98,8 +94,6 @@ Routes (defined in `client/src/router/index.ts`):
 | `/personnages` | `CharacterListView` | |
 | `/actions` | `ActionsView` | |
 | `/chat` | `ChatView` | |
-| `/sessions` | `SessionListView` | |
-| `/sessions/:id` | `SessionView` | |
 
 ---
 

@@ -10,7 +10,7 @@ type ParticipantRow = typeof combatParticipants.$inferSelect
  * live value from their character. Monsters and players without a character are
  * returned untouched. Exported for unit testing.
  */
-export function applyCharacterHp<T extends { kind: string; userId: number | null; hpCurrent: number; hpMax: number }>(
+export function applyCharacterHp<T extends { kind: string; userId: number | null; hpCurrent: number | null; hpMax: number | null }>(
   participants: T[],
   hpByUserId: Map<number, { hpCurrent: number; hpMax: number }>,
 ): T[] {
@@ -148,7 +148,7 @@ export async function broadcastCombatState(combatId: number, gmUserId: number): 
           def: p.def,
           hpMax: null,
           hpCurrent: null,
-          hpStatus: hpStatus(p.hpCurrent, p.hpMax),
+          hpStatus: hpStatus(p.hpCurrent ?? 0, p.hpMax ?? 1),
           nc: null,
           statFor: null, statDex: null, statCon: null,
           statInt: null, statSag: null, statCha: null,

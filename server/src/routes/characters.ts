@@ -7,7 +7,6 @@ import { requireAuth, type AuthRequest } from '../auth/middleware.js'
 function username(req: unknown): string {
   return (req as AuthRequest).username ?? 'unknown'
 }
-import { syncParticipantHpFromCharacter } from '../sessions/store.js'
 import { broadcastUserCombats } from '../combats/sseStore.js'
 type SkillRow = { name: string; rank: number }
 type CompetenceRow = { id: string; name: string; ability: string | null; bonus: number }
@@ -155,6 +154,7 @@ router.put('/:id', async (req, res) => {
     copperCoins: number
     pcCurrent: number
     prCurrent: number
+    affaibli: boolean
     competences: CompetenceRow[]
   }>
 
@@ -172,7 +172,6 @@ router.put('/:id', async (req, res) => {
     return
   }
   console.log(`[character] updated: user=${username(req)} name="${row.name}"`)
-  syncParticipantHpFromCharacter(row.id, userId, row.hpCurrent, row.hpMax)
   void broadcastUserCombats(userId).catch(() => {})
   res.json(row)
 })
@@ -208,7 +207,6 @@ router.patch('/:id', async (req, res) => {
     res.status(404).json({ error: 'Personnage introuvable' })
     return
   }
-  syncParticipantHpFromCharacter(row.id, userId, row.hpCurrent, row.hpMax)
   void broadcastUserCombats(userId).catch(() => {})
   res.json(row)
 })

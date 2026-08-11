@@ -106,8 +106,8 @@ router.post('/:id/combats', async (req, res) => {
       userId: member.userId,
       name: char.name,
       initiative,
-      hpMax: char.hpMax,
-      hpCurrent: char.hpCurrent,
+      hpMax: null,
+      hpCurrent: null,
       def: char.defense,
     })
   }
@@ -197,7 +197,7 @@ router.get('/:id/combats/:cid', async (req, res) => {
       return {
         id: p.id, combatId: p.combatId, kind: p.kind, userId: p.userId,
         name: p.name, initiative: p.initiative, def: p.def,
-        hpMax: null, hpCurrent: null, hpStatus: hpStatus(p.hpCurrent, p.hpMax),
+        hpMax: null, hpCurrent: null, hpStatus: hpStatus(p.hpCurrent ?? 0, p.hpMax ?? 1),
         nc: null, statFor: null, statDex: null, statCon: null,
         statInt: null, statSag: null, statCha: null,
         attacks: null, abilities: null, monsterDescription: null,
@@ -220,7 +220,7 @@ router.post('/:id/combats/:cid/next-turn', async (req, res) => {
 
   const participants = await db.select().from(combatParticipants).where(eq(combatParticipants.combatId, combatId))
   const sorted = [...participants].sort((a, b) => b.initiative - a.initiative)
-  const alive = sorted.filter((p) => p.kind === 'player' || p.hpCurrent > 0)
+  const alive = sorted.filter((p) => p.kind === 'player' || (p.hpCurrent ?? 0) > 0)
 
   if (alive.length === 0) { res.status(400).json({ error: 'Aucun participant actif' }); return }
 
@@ -239,7 +239,7 @@ router.post('/:id/combats/:cid/next-turn', async (req, res) => {
     nextIndex = (nextIndex + 1) % sorted.length
     if (nextIndex === 0) roundNumber++
     const p = sorted[nextIndex]
-    if (p.kind === 'player' || p.hpCurrent > 0) break
+    if (p.kind === 'player' || (p.hpCurrent ?? 0) > 0) break
   }
 
   await db.update(combats).set({ currentTurnIndex: nextIndex, roundNumber }).where(eq(combats.id, combatId))
@@ -271,7 +271,7 @@ router.post('/:id/combats/:cid/prev-turn', async (req, res) => {
       roundNumber = Math.max(1, roundNumber - 1)
     }
     const p = sorted[prevIndex]
-    if (p.kind === 'player' || p.hpCurrent > 0) break
+    if (p.kind === 'player' || (p.hpCurrent ?? 0) > 0) break
   }
 
   await db.update(combats).set({ currentTurnIndex: prevIndex, roundNumber }).where(eq(combats.id, combatId))
@@ -321,7 +321,7 @@ router.patch('/:id/combats/:cid/participants/:pid', async (req, res) => {
       }
     }
   } else {
-    const clamped = Math.max(0, Math.min(Math.round(hpCurrent), participant.hpMax))
+    const clamped = Math.max(0, Math.min(Math.round(hpCurrent), participant.hpMax ?? 0))
     await db.update(combatParticipants).set({ hpCurrent: clamped }).where(eq(combatParticipants.id, pid))
   }
 
