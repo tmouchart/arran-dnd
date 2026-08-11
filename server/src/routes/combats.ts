@@ -47,6 +47,14 @@ async function verifyMember(campaignId: number, userId: number) {
   return { status: 'ok' as const, gmUserId: campaign.gmUserId }
 }
 
+// Helper: charge un combat en vérifiant qu'il appartient bien à la campagne de l'URL.
+// Sans ce check, un MJ/membre d'une autre campagne pourrait piloter ce combat.
+async function loadCombatInCampaign(combatId: number, campaignId: number) {
+  const [combat] = await db.select().from(combats).where(eq(combats.id, combatId))
+  if (!combat || combat.campaignId !== campaignId) return null
+  return combat
+}
+
 // POST /:id/combats — lancer un combat
 router.post('/:id/combats', async (req, res) => {
   const userId = (req as unknown as AuthRequest).userId
@@ -215,8 +223,9 @@ router.post('/:id/combats/:cid/next-turn', async (req, res) => {
   const check = await verifyMember(campaignId, userId)
   if (check.status !== 'ok') { res.status(403).json({ error: 'Non autorisé' }); return }
 
-  const [combat] = await db.select().from(combats).where(eq(combats.id, combatId))
-  if (!combat || combat.status !== 'active') { res.status(400).json({ error: 'Combat inactif' }); return }
+  const combat = await loadCombatInCampaign(combatId, campaignId)
+  if (!combat) { res.status(404).json({ error: 'Combat introuvable' }); return }
+  if (combat.status !== 'active') { res.status(400).json({ error: 'Combat inactif' }); return }
 
   const participants = await db.select().from(combatParticipants).where(eq(combatParticipants.combatId, combatId))
   const sorted = [...participants].sort((a, b) => b.initiative - a.initiative)
@@ -256,8 +265,9 @@ router.post('/:id/combats/:cid/prev-turn', async (req, res) => {
   const check = await verifyGm(campaignId, userId)
   if (check.status !== 'ok') { res.status(403).json({ error: 'Réservé au MJ' }); return }
 
-  const [combat] = await db.select().from(combats).where(eq(combats.id, combatId))
-  if (!combat || combat.status !== 'active') { res.status(400).json({ error: 'Combat inactif' }); return }
+  const combat = await loadCombatInCampaign(combatId, campaignId)
+  if (!combat) { res.status(404).json({ error: 'Combat introuvable' }); return }
+  if (combat.status !== 'active') { res.status(400).json({ error: 'Combat inactif' }); return }
 
   const participants = await db.select().from(combatParticipants).where(eq(combatParticipants.combatId, combatId))
   const sorted = [...participants].sort((a, b) => b.initiative - a.initiative)
@@ -288,6 +298,9 @@ router.patch('/:id/combats/:cid/participants/:pid', async (req, res) => {
 
   const check = await verifyMember(campaignId, userId)
   if (check.status !== 'ok') { res.status(403).json({ error: 'Non autorisé' }); return }
+
+  const combat = await loadCombatInCampaign(combatId, campaignId)
+  if (!combat) { res.status(404).json({ error: 'Combat introuvable' }); return }
 
   const [participant] = await db.select().from(combatParticipants).where(eq(combatParticipants.id, pid))
   if (!participant || participant.combatId !== combatId) {
@@ -338,8 +351,9 @@ router.post('/:id/combats/:cid/monsters', async (req, res) => {
   const check = await verifyGm(campaignId, userId)
   if (check.status !== 'ok') { res.status(403).json({ error: 'Réservé au MJ' }); return }
 
-  const [combat] = await db.select().from(combats).where(eq(combats.id, combatId))
-  if (!combat || combat.status !== 'active') { res.status(400).json({ error: 'Combat inactif' }); return }
+  const combat = await loadCombatInCampaign(combatId, campaignId)
+  if (!combat) { res.status(404).json({ error: 'Combat introuvable' }); return }
+  if (combat.status !== 'active') { res.status(400).json({ error: 'Combat inactif' }); return }
 
   const body = req.body as Record<string, unknown>
 
@@ -377,6 +391,9 @@ router.delete('/:id/combats/:cid/participants/:pid', async (req, res) => {
   const check = await verifyGm(campaignId, userId)
   if (check.status !== 'ok') { res.status(403).json({ error: 'Réservé au MJ' }); return }
 
+  const combat = await loadCombatInCampaign(combatId, campaignId)
+  if (!combat) { res.status(404).json({ error: 'Combat introuvable' }); return }
+
   const [participant] = await db.select().from(combatParticipants).where(eq(combatParticipants.id, pid))
   if (!participant || participant.combatId !== combatId) {
     res.status(404).json({ error: 'Participant introuvable' }); return
@@ -399,6 +416,9 @@ router.post('/:id/combats/:cid/generate-loot', async (req, res) => {
   const check = await verifyGm(campaignId, userId)
   if (check.status === 'not_found') { res.status(404).json({ error: 'Campagne introuvable' }); return }
   if (check.status === 'forbidden') { res.status(403).json({ error: 'Réservé au MJ' }); return }
+
+  const combat = await loadCombatInCampaign(combatId, campaignId)
+  if (!combat) { res.status(404).json({ error: 'Combat introuvable' }); return }
 
   const participants = await db
     .select({
@@ -439,6 +459,9 @@ router.post('/:id/combats/:cid/finish', async (req, res) => {
   const check = await verifyGm(campaignId, userId)
   if (check.status !== 'ok') { res.status(403).json({ error: 'Réservé au MJ' }); return }
 
+  const combat = await loadCombatInCampaign(combatId, campaignId)
+  if (!combat) { res.status(404).json({ error: 'Combat introuvable' }); return }
+
   await db.update(combats).set({ status: 'finished', finishedAt: new Date() }).where(eq(combats.id, combatId))
   await broadcastCombatState(combatId, check.gmUserId)
 
@@ -454,6 +477,9 @@ router.get('/:id/combats/:cid/events', async (req, res) => {
 
   const check = await verifyMember(campaignId, userId)
   if (check.status !== 'ok') { res.status(403).json({ error: 'Non autorisé' }); return }
+
+  const combat = await loadCombatInCampaign(combatId, campaignId)
+  if (!combat) { res.status(404).json({ error: 'Combat introuvable' }); return }
 
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',

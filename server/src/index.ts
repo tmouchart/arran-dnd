@@ -33,7 +33,13 @@ import { db } from "./db/index.js";
 import { campaigns, campaignMembers, characters, generatedImages, journalCompagnie, journalPages, users } from "./db/schema.js";
 
 const app = express();
-app.use(cors({ origin: true, credentials: true }));
+// En prod le client est servi par ce même serveur (same-origin) ; en dev le proxy
+// Vite rend aussi les requêtes same-origin. On ne whiteliste que CLIENT_URL + dev.
+const ALLOWED_ORIGINS = [
+  process.env.CLIENT_URL ?? "http://localhost:5173",
+  "http://localhost:5173",
+];
+app.use(cors({ origin: ALLOWED_ORIGINS, credentials: true }));
 app.use(express.json({ limit: "5mb" }));
 app.use(cookieParser());
 
@@ -122,9 +128,11 @@ const styleRefBase64 = existsSync(STYLE_REF_PATH)
 if (styleRefBase64) console.log("[image] Style reference loaded from style-reference.jpg");
 
 const MAX_OUTPUT_TOKENS = Number(process.env.MAX_OUTPUT_TOKENS ?? 8192);
-const anthropicClient = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+// Instancié seulement si la clé existe : le SDK jette sinon et tuerait le boot
+// même en mode AI_PROVIDER=gemini. L'endpoint /api/chat re-vérifie avant usage.
+const anthropicClient = process.env.ANTHROPIC_API_KEY
+  ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  : null;
 const geminiClient = process.env.GEMINI_API_KEY
   ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
   : null;
@@ -629,7 +637,9 @@ app.post("/api/chat", requireAuth, async (req, res) => {
             return;
           }
 
-          const [oldRow] = await db.select().from(characters).where(eq(characters.id, charId));
+          // Scopé sur l'utilisateur du chat : on ne modifie jamais la fiche d'un autre joueur
+          const [oldRow] = await db.select().from(characters)
+            .where(and(eq(characters.id, charId), eq(characters.userId, chatUserId)));
           if (!oldRow) {
             writeSse(res, "error", { error: "Personnage introuvable." });
             res.end();
@@ -639,7 +649,7 @@ app.post("/api/chat", requireAuth, async (req, res) => {
           const [updatedRow] = await db
             .update(characters)
             .set({ ...safeChanges, updatedAt: new Date() })
-            .where(eq(characters.id, charId))
+            .where(and(eq(characters.id, charId), eq(characters.userId, chatUserId)))
             .returning();
 
           console.log(`[edit_character] Updated character ${charId}:`, safeChanges);
@@ -900,7 +910,7 @@ app.post("/api/chat", requireAuth, async (req, res) => {
     let calledTopic: TopicName | null = null;
 
     // Turn 1 — streaming: text is emitted live, tool call detected at the end
-    const turn1Stream = anthropicClient.messages.stream({
+    const turn1Stream = anthropicClient!.messages.stream({
       model: ANTHROPIC_MODEL,
       max_tokens: MAX_OUTPUT_TOKENS,
       system,
@@ -974,7 +984,7 @@ app.post("/api/chat", requireAuth, async (req, res) => {
       ];
 
       // Turn 2 — streaming final answer
-      const stream2 = anthropicClient.messages.stream({
+      const stream2 = anthropicClient!.messages.stream({
         model: ANTHROPIC_MODEL,
         max_tokens: MAX_OUTPUT_TOKENS,
         system,
@@ -1091,7 +1101,10 @@ const PORT = Number(process.env.PORT) || 3566;
 
 async function main(): Promise<void> {
   const databaseUrl = getDatabaseUrl();
-  if (databaseUrl) {
+  if (process.env.FLY_APP_NAME) {
+    // Sur Fly, les migrations tournent une seule fois via le release_command (fly.toml),
+    // pas à chaque réveil de machine.
+  } else if (databaseUrl) {
     await runMigrations(databaseUrl);
   } else {
     console.warn(

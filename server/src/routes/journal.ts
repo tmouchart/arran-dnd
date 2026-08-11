@@ -202,7 +202,17 @@ router.put('/pages/:id', async (req, res) => {
 })
 
 router.delete('/pages/:id', async (req, res) => {
+  const { userId } = auth(req)
   const id = Number(req.params.id)
+  const [page] = await db
+    .select({ createdByUserId: journalPages.createdByUserId })
+    .from(journalPages)
+    .where(eq(journalPages.id, id))
+  if (!page) { res.status(404).json({ error: 'Page introuvable' }); return }
+  if (page.createdByUserId !== userId) {
+    res.status(403).json({ error: 'Seul l’auteur de la page peut la supprimer.' })
+    return
+  }
   await db.delete(journalPages).where(eq(journalPages.id, id))
   res.json({ ok: true })
 })

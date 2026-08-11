@@ -473,6 +473,13 @@ router.post('/:id/encounters/:eid/monsters/:mid/duplicate', async (req, res) => 
   if (check === 'not_found') { res.status(404).json({ error: 'Campagne introuvable' }); return }
   if (check === 'forbidden') { res.status(403).json({ error: 'Réservé au MJ' }); return }
 
+  // Verify encounter belongs to campaign
+  const [enc] = await db
+    .select({ id: encounterTemplates.id })
+    .from(encounterTemplates)
+    .where(and(eq(encounterTemplates.id, eid), eq(encounterTemplates.campaignId, campaignId)))
+  if (!enc) { res.status(404).json({ error: 'Rencontre introuvable' }); return }
+
   // Get the monster to duplicate
   const [source] = await db.select().from(encounterMonsters).where(eq(encounterMonsters.id, mid))
   if (!source || source.encounterId !== eid) {
@@ -534,11 +541,24 @@ router.post('/:id/encounters/:eid/monsters/:mid/duplicate', async (req, res) => 
 router.put('/:id/encounters/:eid/monsters/:mid', async (req, res) => {
   const userId = (req as unknown as AuthRequest).userId
   const campaignId = Number(req.params.id)
+  const eid = Number(req.params.eid)
   const mid = Number(req.params.mid)
 
   const check = await verifyGm(campaignId, userId)
   if (check === 'not_found') { res.status(404).json({ error: 'Campagne introuvable' }); return }
   if (check === 'forbidden') { res.status(403).json({ error: 'Réservé au MJ' }); return }
+
+  // Verify monster → encounter → campaign ownership
+  const [target] = await db
+    .select({ id: encounterMonsters.id })
+    .from(encounterMonsters)
+    .innerJoin(encounterTemplates, eq(encounterMonsters.encounterId, encounterTemplates.id))
+    .where(and(
+      eq(encounterMonsters.id, mid),
+      eq(encounterMonsters.encounterId, eid),
+      eq(encounterTemplates.campaignId, campaignId),
+    ))
+  if (!target) { res.status(404).json({ error: 'Monstre introuvable' }); return }
 
   const body = req.body as Record<string, unknown>
 
@@ -573,11 +593,24 @@ router.put('/:id/encounters/:eid/monsters/:mid', async (req, res) => {
 router.delete('/:id/encounters/:eid/monsters/:mid', async (req, res) => {
   const userId = (req as unknown as AuthRequest).userId
   const campaignId = Number(req.params.id)
+  const eid = Number(req.params.eid)
   const mid = Number(req.params.mid)
 
   const check = await verifyGm(campaignId, userId)
   if (check === 'not_found') { res.status(404).json({ error: 'Campagne introuvable' }); return }
   if (check === 'forbidden') { res.status(403).json({ error: 'Réservé au MJ' }); return }
+
+  // Verify monster → encounter → campaign ownership
+  const [target] = await db
+    .select({ id: encounterMonsters.id })
+    .from(encounterMonsters)
+    .innerJoin(encounterTemplates, eq(encounterMonsters.encounterId, encounterTemplates.id))
+    .where(and(
+      eq(encounterMonsters.id, mid),
+      eq(encounterMonsters.encounterId, eid),
+      eq(encounterTemplates.campaignId, campaignId),
+    ))
+  if (!target) { res.status(404).json({ error: 'Monstre introuvable' }); return }
 
   const [row] = await db
     .delete(encounterMonsters)

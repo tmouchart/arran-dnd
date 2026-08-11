@@ -124,8 +124,8 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   const userId = (req as unknown as AuthRequest).userId
   const id = Number(req.params.id)
-  const { attacks: _legacyAttacks, ...rawBody } = (req.body ?? {}) as Record<string, unknown>
-  const body = rawBody as Partial<{
+  const rawBody = (req.body ?? {}) as Record<string, unknown>
+  type UpdatableBody = Partial<{
     name: string
     profile: string
     histoire: string
@@ -140,6 +140,7 @@ router.put('/:id', async (req, res) => {
     attackContactBonus: number
     attackDistanceBonus: number
     attackMagiqueBonus: number
+    defenseBonus: number
     str: number; dex: number; con: number; int: number; wis: number; cha: number
     skills: SkillRow[]
     weapons: WeaponRow[]
@@ -156,7 +157,23 @@ router.put('/:id', async (req, res) => {
     prCurrent: number
     affaibli: boolean
     competences: CompetenceRow[]
+    portraitImageId: number | null
   }>
+
+  // Whitelist : seules ces colonnes sont modifiables par le client.
+  // Bloque le mass-assignment (userId, isActive, createdAt…) et les clés inconnues.
+  const UPDATABLE_FIELDS = [
+    'name', 'profile', 'histoire', 'people', 'level',
+    'hpMax', 'hpCurrent', 'mpMax', 'mpCurrent', 'defense', 'initiativeBonus',
+    'attackContactBonus', 'attackDistanceBonus', 'attackMagiqueBonus', 'defenseBonus',
+    'str', 'dex', 'con', 'int', 'wis', 'cha',
+    'skills', 'weapons', 'martialFormations', 'paths', 'mysticTalent',
+    'armorId', 'shieldId', 'items', 'goldCoins', 'silverCoins', 'copperCoins',
+    'pcCurrent', 'prCurrent', 'affaibli', 'competences', 'portraitImageId',
+  ] as const
+  const body = Object.fromEntries(
+    UPDATABLE_FIELDS.filter((k) => k in rawBody).map((k) => [k, rawBody[k]]),
+  ) as UpdatableBody
 
   const [row] = await db
     .update(characters)

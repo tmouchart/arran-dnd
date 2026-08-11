@@ -42,8 +42,10 @@ router.get('/callback', async (req, res) => {
     const payload = ticket.getPayload()!
 
     const googleId = payload.sub
-    const email = payload.email ?? null
-    const displayName = payload.name ?? email?.split('@')[0] ?? 'Aventurier'
+    // Un email non vérifié ne doit jamais servir à matcher/lier un compte existant
+    // (sinon un compte Google usurpant l'email d'un utilisateur prendrait son compte).
+    const email = payload.email_verified ? (payload.email ?? null) : null
+    const displayName = payload.name ?? payload.email?.split('@')[0] ?? 'Aventurier'
 
     // Find existing user by googleId or email
     const conditions = [eq(users.googleId, googleId)]
