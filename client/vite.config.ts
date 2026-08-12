@@ -7,12 +7,10 @@ export default defineConfig({
   plugins: [
     vue(),
     VitePWA({
-      registerType: 'autoUpdate',
-      workbox: {
-        navigateFallbackDenylist: [/^\/api\//],
-        skipWaiting: true,
-        clientsClaim: true,
-      },
+      // Plus aucun cache du code par service worker : le sw.js genere
+      // desinstalle l'ancien worker, vide les caches et recharge la page.
+      // Le manifest reste genere pour l'installation sur l'ecran d'accueil.
+      selfDestroying: true,
       manifest: {
         name: "Terres d'Arran",
         short_name: 'Arran',
