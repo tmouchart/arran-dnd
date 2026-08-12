@@ -169,11 +169,13 @@ function updateTrigger() {
   const before = (caret.node.textContent ?? '').slice(0, caret.offset)
   const m = /(^|[\s(])@([^\s@\][]{0,30})$/.exec(before)
   if (m) {
+    // Ne reset la sélection clavier que si la requête change vraiment :
+    // le keyup des flèches repasse ici et écraserait activeIndex sinon.
+    if (query.value !== m[2]) activeIndex.value = 0
     query.value = m[2]
     triggerNode = caret.node
     triggerStart = caret.offset - m[2].length - 1
     triggerEnd = caret.offset
-    activeIndex.value = 0
     updateMenuPos()
   } else {
     query.value = null
