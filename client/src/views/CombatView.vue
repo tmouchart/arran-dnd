@@ -18,10 +18,11 @@ import {
   Shield,
   Sparkles,
   Trash2,
+  ScrollText,
 } from "lucide-vue-next";
 import { useCombat } from "../composables/useCombat";
 import { user } from "../composables/useAuth";
-import { generateLoot } from "../api/combats";
+import { generateLoot, postCombatRoll } from "../api/combats";
 import { MONSTERS_CATALOG, type Monster } from "../data/monstersCatalog";
 import { filterCatalog, formatMod } from "../utils/monsterSession";
 import { hpGradientColor } from "../utils/hpGradientColor";
@@ -33,6 +34,8 @@ import AppButton from "../components/ui/AppButton.vue";
 import AppInput from "../components/ui/AppInput.vue";
 import AppEmptyState from "../components/ui/AppEmptyState.vue";
 import ActionsView from "./ActionsView.vue";
+import CombatLogPanel from "../components/combat/CombatLogPanel.vue";
+import DiceSandbox from "../components/DiceSandbox.vue";
 import type { CombatParticipant } from "../api/combats";
 
 const route = useRoute();
@@ -43,6 +46,7 @@ const combatId = Number(route.params.cid);
 
 const {
   combat,
+  rolls,
   connecting,
   error,
   idle,
@@ -59,9 +63,39 @@ const {
   finish,
 } = useCombat();
 
-// Tab: timeline vs actions
-type CombatTab = "timeline" | "actions";
+// Tab: timeline vs actions vs log des jets
+type CombatTab = "timeline" | "actions" | "log";
 const activeTab = ref<CombatTab>("timeline");
+
+// Pastille "nouveau jet" sur l'onglet Jets quand il n'est pas actif
+const hasUnseenRoll = ref(false);
+watch(
+  () => rolls.value.length,
+  (len, oldLen) => {
+    if (len > oldLen && activeTab.value !== "log") hasUnseenRoll.value = true;
+  },
+);
+function openLogTab() {
+  activeTab.value = "log";
+  hasUnseenRoll.value = false;
+}
+
+// ≥900px le log vit en colonne fixe et l'onglet Jets disparaît : si on y était
+// (tablette qui pivote), on retombe sur la timeline pour ne pas rester sur du vide.
+const desktopQuery = window.matchMedia("(min-width: 900px)");
+function handleDesktopChange(e: MediaQueryListEvent) {
+  if (e.matches && activeTab.value === "log") activeTab.value = "timeline";
+}
+
+// Desktop : colonne log type chat, auto-scroll en bas à chaque nouveau jet
+const logAsideRef = ref<HTMLElement | null>(null);
+watch(
+  () => rolls.value.length,
+  async () => {
+    await nextTick();
+    if (logAsideRef.value) logAsideRef.value.scrollTop = logAsideRef.value.scrollHeight;
+  },
+);
 
 // Expanded card (click to toggle)
 const expandedId = ref<number | null>(null);
@@ -130,11 +164,13 @@ onMounted(() => {
   connect(campaignId, combatId);
   document.addEventListener("visibilitychange", handleVisibility);
   window.addEventListener("pointerdown", markActivity);
+  desktopQuery.addEventListener("change", handleDesktopChange);
 });
 onUnmounted(() => {
   disconnect();
   document.removeEventListener("visibilitychange", handleVisibility);
   window.removeEventListener("pointerdown", markActivity);
+  desktopQuery.removeEventListener("change", handleDesktopChange);
 });
 
 // Scroll to active participant on turn change
@@ -206,8 +242,8 @@ function parseDamage(damage: string): { notation: string | null; modifier: numbe
   return { notation: m[1], modifier: mod, fixed: null };
 }
 
-function rollMonsterAttack(participantId: number, atkIndex: number, bonus: number, damage: string) {
-  const key = `${participantId}-${atkIndex}`;
+function rollMonsterAttack(participant: CombatParticipant, atkIndex: number, bonus: number, damage: string, attackName: string) {
+  const key = `${participant.id}-${atkIndex}`;
   const attackDie = rollDie(20);
   const { notation, modifier, fixed } = parseDamage(damage);
   if (fixed !== null) {
@@ -232,6 +268,23 @@ function rollMonsterAttack(participantId: number, atkIndex: number, bonus: numbe
       damageTotal: dmg.total,
     };
   }
+  // Relais vers le log de combat — visible MJ uniquement (asMonster)
+  const roll = monsterRolls.value[key];
+  postCombatRoll(campaignId, combatId, {
+    kind: "weapon",
+    label: attackName,
+    context: "combat",
+    die: attackDie,
+    sides: 20,
+    bonus,
+    total: roll.attackTotal,
+    damage: {
+      total: attackDie === 20 && roll.fixedDamage === null ? roll.damageTotal * 2 : roll.damageTotal,
+      critical: attackDie === 20,
+      fumble: attackDie === 1,
+    },
+    asMonster: participant.name,
+  }).catch(() => { /* silencieux */ });
 }
 
 function signedNum(n: number): string {
@@ -335,8 +388,8 @@ function goBack() {
       </AppEmptyState>
 
       <template v-else-if="combat">
-        <!-- Tabs: Timeline / Actions -->
-        <nav v-if="!isGm" class="tab-bar">
+        <!-- Tabs: Timeline / Actions (joueur) / Jets -->
+        <nav class="tab-bar">
           <button
             type="button"
             class="tab-btn"
@@ -347,6 +400,7 @@ function goBack() {
             <span class="tab-label">Combat</span>
           </button>
           <button
+            v-if="!isGm"
             type="button"
             class="tab-btn"
             :class="{ active: activeTab === 'actions' }"
@@ -355,6 +409,16 @@ function goBack() {
             <Zap :size="16" />
             <span class="tab-label">Mes actions</span>
           </button>
+          <button
+            type="button"
+            class="tab-btn tab-btn--log"
+            :class="{ active: activeTab === 'log' }"
+            @click="openLogTab"
+          >
+            <ScrollText :size="16" />
+            <span class="tab-label">Jets</span>
+            <span v-if="hasUnseenRoll" class="tab-dot" />
+          </button>
         </nav>
 
         <!-- Tab: Actions (player only) -->
@@ -362,9 +426,17 @@ function goBack() {
           <ActionsView :embedded="true" />
         </div>
 
-        <!-- Tab: Timeline (scrollable center zone) -->
+        <!-- Tab: Jets (mobile — plus récent en haut, lanceur collé en bas) -->
+        <div v-if="activeTab === 'log'" class="log-tab">
+          <CombatLogPanel :rolls="rolls" newest-first />
+          <div class="log-sandbox">
+            <DiceSandbox />
+          </div>
+        </div>
+
+        <!-- Timeline + log desktop (2 colonnes ≥900px) -->
+        <div v-show="activeTab === 'timeline'" class="combat-columns">
         <div
-          v-show="activeTab === 'timeline'"
           ref="timelineRef"
           class="timeline"
         >
@@ -471,7 +543,7 @@ function goBack() {
                   <div class="detail-atk-row">
                     <span>{{ atk.name }} {{ formatMod(atk.bonus) }} · {{ atk.damage
                     }}{{ atk.range ? ` · ${atk.range}m` : "" }}</span>
-                    <button class="roll-atk-btn" title="Lancer les dés" @click.stop="rollMonsterAttack(p.id, ai, atk.bonus, atk.damage)">
+                    <button class="roll-atk-btn" title="Lancer les dés" @click.stop="rollMonsterAttack(p, ai, atk.bonus, atk.damage, atk.name)">
                       <Dices :size="14" />
                     </button>
                   </div>
@@ -520,6 +592,17 @@ function goBack() {
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Colonne log desktop (flux chronologique, auto-scroll, lanceur en bas) -->
+        <aside class="log-column">
+          <div ref="logAsideRef" class="log-aside">
+            <CombatLogPanel :rolls="rolls" />
+          </div>
+          <div class="log-sandbox">
+            <DiceSandbox />
+          </div>
+        </aside>
         </div>
 
       </template>
@@ -738,6 +821,82 @@ function goBack() {
 
 .tab-label {
   white-space: nowrap;
+}
+
+.tab-btn--log {
+  position: relative;
+}
+
+.tab-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+/* Layout : 1 colonne mobile, 2 colonnes desktop (ordre à gauche, log à droite) */
+.combat-columns {
+  display: flex;
+  flex-direction: column;
+}
+
+.log-column {
+  display: none;
+}
+
+/* Onglet Jets mobile : liste + lanceur collé en bas (au-dessus du footer sticky) */
+.log-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: calc(100vh - 220px);
+}
+
+.log-sandbox {
+  margin-top: auto;
+  position: sticky;
+  bottom: 4.8rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: 0.5rem 0.8rem 0.8rem;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
+}
+
+@media (min-width: 900px) {
+  .combat-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    align-items: start;
+  }
+
+  .log-column {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    position: sticky;
+    top: 0;
+  }
+
+  .log-aside {
+    max-height: calc(100vh - 480px);
+    min-height: 200px;
+    overflow-y: auto;
+  }
+
+  .log-column .log-sandbox {
+    position: static;
+    box-shadow: none;
+    margin-top: 0;
+  }
+
+  /* Sur desktop le log est toujours visible en colonne — l'onglet devient inutile */
+  .tab-btn--log,
+  .log-tab {
+    display: none;
+  }
 }
 
 .combat-content {

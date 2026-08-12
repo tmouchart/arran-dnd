@@ -94,6 +94,23 @@ function writeSse(res: express.Response, event: string, data: unknown): void {
   res.write(`data: ${JSON.stringify(data)}\n\n`)
 }
 
+/**
+ * Broadcast un jet de dés aux clients SSE du combat.
+ * Les événements `visibility: 'gm'` (jets de monstres) ne sont envoyés qu'au MJ.
+ */
+export function broadcastCombatRoll(
+  combatId: number,
+  gmUserId: number,
+  event: { visibility: string } & Record<string, unknown>,
+): void {
+  const clients = sseClients.get(combatId)
+  if (!clients || clients.size === 0) return
+  for (const client of clients) {
+    if (event.visibility === 'gm' && client.userId !== gmUserId) continue
+    writeSse(client.res, 'combat-roll', event)
+  }
+}
+
 /** Compute qualitative HP status for a monster */
 function hpStatus(hpCurrent: number, hpMax: number): string {
   if (hpCurrent <= 0) return 'mort'

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { applyCharacterHp } from './sseStore.js'
+import type express from 'express'
+import { applyCharacterHp, broadcastCombatRoll, getClientsForCombat } from './sseStore.js'
 
 type P = { kind: string; userId: number | null; hpCurrent: number; hpMax: number; name: string }
 
@@ -38,5 +39,37 @@ describe('applyCharacterHp', () => {
     const out = applyCharacterHp([player(1, 10, 10, 'Aragorn')], new Map([[1, { hpCurrent: 4, hpMax: 10 }]]))
     expect(out[0].name).toBe('Aragorn')
     expect(out[0].kind).toBe('player')
+  })
+})
+
+describe('broadcastCombatRoll', () => {
+  const GM_ID = 1
+  const PLAYER_ID = 2
+
+  function fakeClient(userId: number) {
+    const written: string[] = []
+    const res = { write: (chunk: string) => { written.push(chunk); return true } } as unknown as express.Response
+    return { client: { res, userId }, written }
+  }
+
+  it('sends public rolls to everyone, gm rolls only to the GM', () => {
+    const combatId = 991
+    const gm = fakeClient(GM_ID)
+    const p = fakeClient(PLAYER_ID)
+    const clients = getClientsForCombat(combatId)
+    clients.add(gm.client)
+    clients.add(p.client)
+
+    broadcastCombatRoll(combatId, GM_ID, { visibility: 'public', actorName: 'Thorin' })
+    broadcastCombatRoll(combatId, GM_ID, { visibility: 'gm', actorName: 'Gobelin' })
+
+    const gmData = gm.written.join('')
+    const playerData = p.written.join('')
+    expect(gmData).toContain('Thorin')
+    expect(gmData).toContain('Gobelin')
+    expect(playerData).toContain('Thorin')
+    expect(playerData).not.toContain('Gobelin')
+
+    clients.clear()
   })
 })

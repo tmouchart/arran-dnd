@@ -130,6 +130,59 @@ export function removeCombatParticipant(
   })
 }
 
+export interface CombatRollEvent {
+  id: number
+  combatId: number
+  userId: number
+  actorName: string
+  visibility: 'public' | 'gm'
+  kind: string
+  label: string
+  context: string
+  die: number
+  sides: number
+  bonus: number
+  total: number
+  rolls: number[] | null
+  damage: { total: number; critical: boolean; fumble: boolean } | null
+  createdAt: string
+}
+
+export interface CombatRollInput {
+  kind: string
+  label: string
+  context: string
+  die: number
+  sides: number
+  bonus: number
+  total: number
+  rolls?: number[]
+  damage?: { total: number; critical: boolean; fumble: boolean }
+  /** MJ uniquement : poste le jet au nom d'un monstre (visible MJ seulement) */
+  asMonster?: string
+}
+
+export function postCombatRoll(
+  campaignId: number,
+  combatId: number,
+  roll: CombatRollInput,
+): Promise<CombatRollEvent> {
+  return request(`/${campaignId}/combats/${combatId}/rolls`, {
+    method: 'POST',
+    body: JSON.stringify(roll),
+  })
+}
+
+export function fetchCombatRolls(campaignId: number, combatId: number): Promise<CombatRollEvent[]> {
+  return request(`/${campaignId}/combats/${combatId}/rolls`)
+}
+
+export async function fetchActiveCombat(): Promise<{ combatId: number; campaignId: number; name: string } | null> {
+  const res = await fetch('/api/combats/active', { credentials: 'include' })
+  if (!res.ok) return null
+  return res.json() as Promise<{ combatId: number; campaignId: number; name: string } | null>
+}
+
 export function generateLoot(campaignId: number, combatId: number): Promise<{ loot: string }> {
   return request(`/${campaignId}/combats/${combatId}/generate-loot`, {
     method: 'POST',

@@ -1,15 +1,22 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from "vue-router";
-import { computed } from "vue";
+import { computed, watch } from "vue";
 import { useRoute } from "vue-router";
 import { UserCircle, Loader2, ScrollText, Swords, Backpack, BookOpenText, Map } from "lucide-vue-next";
 import CrystalBall from "./components/icons/CrystalBall.vue";
 import AppToast from "./components/ui/AppToast.vue";
 import { user, authReady } from "./composables/useAuth";
-import { useActiveCombat } from "./composables/useActiveCombat";
+import { useActiveCombat, refreshActiveCombat } from "./composables/useActiveCombat";
 
 const route = useRoute();
 const { activeCombat } = useActiveCombat();
+
+// Resync le combat actif (relais des jets vers le log de combat) : au login
+// et à chaque retour de l'app au premier plan. Pas de polling.
+watch(user, (u) => { if (u) refreshActiveCombat(); }, { immediate: true });
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && user.value) refreshActiveCombat();
+});
 const showCombatBanner = computed(() =>
   activeCombat.value && !route.path.includes('/combat/'),
 );

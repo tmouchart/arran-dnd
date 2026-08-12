@@ -2,10 +2,12 @@ import { ref, computed } from 'vue'
 import { user } from './useAuth'
 import { character } from './useCharacter'
 import * as api from '../api/combats'
-import type { CombatState, CombatParticipant } from '../api/combats'
+import type { CombatState, CombatParticipant, CombatRollEvent } from '../api/combats'
 import { setActiveCombat, clearActiveCombat } from './useActiveCombat'
 
 const combat = ref<CombatState | null>(null)
+const rolls = ref<CombatRollEvent[]>([])
+const MAX_ROLLS = 200
 const connecting = ref(false)
 const error = ref<string | null>(null)
 const idle = ref(false)
@@ -109,6 +111,21 @@ export function useCombat() {
         error.value = 'Erreur de parsing SSE'
       }
     })
+    eventSource.addEventListener('combat-roll', (e: MessageEvent) => {
+      try {
+        const roll = JSON.parse(e.data as string) as CombatRollEvent
+        // Le POST du jet renvoie aussi l'event : dédoublonner par id
+        if (!rolls.value.some((r) => r.id === roll.id)) {
+          rolls.value.push(roll)
+          if (rolls.value.length > MAX_ROLLS) rolls.value = rolls.value.slice(-MAX_ROLLS)
+        }
+        resetIdleTimer()
+      } catch { /* ignore */ }
+    })
+    // Historique du log (le SSE ne porte que le flux live)
+    api.fetchCombatRolls(campaignId, combatId)
+      .then((history) => { rolls.value = history })
+      .catch(() => { /* silencieux */ })
     eventSource.onerror = () => {
       // EventSource reconnecte automatiquement tant qu'il n'est pas CLOSED.
       // On n'affiche l'erreur fatale qu'en cas de fermeture définitive ;
@@ -123,6 +140,7 @@ export function useCombat() {
   function disconnect(): void {
     closeStream()
     combat.value = null
+    rolls.value = []
     connecting.value = false
     error.value = null
     idle.value = false
@@ -167,6 +185,7 @@ export function useCombat() {
 
   return {
     combat,
+    rolls,
     connecting,
     error,
     idle,

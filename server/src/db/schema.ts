@@ -233,6 +233,31 @@ export const combatParticipants = pgTable('combat_participant', {
   monsterDescription: text('monster_description'),
 })
 
+/** Jets de dés loggés pendant un combat (log temps réel). */
+export const combatEvents = pgTable('combat_event', {
+  id: serial('id').primaryKey(),
+  combatId: integer('combat_id')
+    .notNull()
+    .references(() => combats.id, { onDelete: 'cascade' }),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  actorName: text('actor_name').notNull(),
+  /** 'public' | 'gm' — les jets monstres (gm) ne sont envoyés qu'au MJ */
+  visibility: varchar('visibility', { length: 10 }).notNull().default('public'),
+  kind: varchar('kind', { length: 20 }).notNull(),
+  label: text('label').notNull(),
+  /** D'où vient le jet : 'combat' | 'actions' | 'fiche' | 'agonie' | 'sandbox'… */
+  context: varchar('context', { length: 30 }).notNull().default('combat'),
+  die: integer('die').notNull(),
+  sides: integer('sides').notNull(),
+  bonus: integer('bonus').notNull().default(0),
+  total: integer('total').notNull(),
+  rolls: jsonb('rolls'),
+  damage: jsonb('damage'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
 export const codexEntries = pgTable('codex_entry', {
   id: serial('id').primaryKey(),
   campaignId: integer('campaign_id')

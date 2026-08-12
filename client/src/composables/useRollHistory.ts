@@ -1,4 +1,9 @@
 import { ref } from 'vue'
+import { postCombatRoll } from '../api/combats'
+import { useActiveCombat } from './useActiveCombat'
+
+/** D'où vient un jet — contexte affiché dans le log de combat partagé. */
+export type RollContext = 'actions' | 'combat' | 'fiche' | 'agonie' | 'sandbox'
 
 export type RollKind = 'weapon' | 'action' | 'ability' | 'manoeuvre' | 'competence' | 'libre'
 
@@ -57,7 +62,9 @@ function save(entries: RollEntry[]) {
 const history = ref<RollEntry[]>(load())
 
 export function useRollHistory() {
-  function addRoll(entry: Omit<RollEntry, 'id' | 'timestamp'>) {
+  const { activeCombat } = useActiveCombat()
+
+  function addRoll(entry: Omit<RollEntry, 'id' | 'timestamp'>, context: RollContext = 'actions') {
     const full: RollEntry = {
       ...entry,
       id: crypto.randomUUID(),
@@ -66,6 +73,24 @@ export function useRollHistory() {
     history.value.unshift(full)
     if (history.value.length > MAX_ENTRIES) history.value = history.value.slice(0, MAX_ENTRIES)
     save(history.value)
+
+    // Relais vers le log de combat partagé : tout jet fait pendant qu'un combat
+    // est actif est loggé, peu importe la page. Fire-and-forget — le jet local
+    // reste la vérité pour le joueur si le réseau échoue.
+    const combat = activeCombat.value
+    if (combat) {
+      postCombatRoll(combat.campaignId, combat.combatId, {
+        kind: entry.kind,
+        label: entry.label,
+        context,
+        die: entry.die,
+        sides: entry.sides,
+        bonus: entry.bonus,
+        total: entry.total,
+        rolls: entry.rolls,
+        damage: entry.damage,
+      }).catch(() => { /* silencieux */ })
+    }
   }
 
   function clearHistory() {
