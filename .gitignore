@@ -33,3 +33,6 @@ client/dist/
 
 users.txt
 livre_joueur.pdf
+
+# Backups DB (contient des données utilisateurs)
+*.dump
