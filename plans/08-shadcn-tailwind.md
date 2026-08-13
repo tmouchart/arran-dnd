@@ -104,7 +104,17 @@ les badges colorés, les textures de fond radiales.
 
 ## Étapes
 
-> **État** : étapes 0, 1 et 2 ✅ faites. Prochaine : étape 3.
+> **État** : étapes 0 à 3 ✅ faites. Prochaine : étape 4 (primitives reka-ui).
+>
+> Découvertes en cours de route :
+> - `font-size` racine = 18px → il a fallu fixer `--spacing: 4px` sinon toutes
+>   les unités rem de Tailwind sont 12% trop grandes.
+> - Sans preflight, `border-style` vaut `none` → `border-solid` obligatoire
+>   partout où il y a une bordure.
+> - Les 3 thèmes ciblent `.btn` / `.card` / `.badge` / `.icon-btn`. On garde ces
+>   classes sur les composants et on ne supprime que les règles **de base**.
+> - `AppInput` utilise `.app-input`, mais les thèmes ciblent `.input` → **les
+>   inputs ne sont pas thémés**. Bug préexistant, à corriger à l'étape 5.
 
 ### Étape 1 — Installer Tailwind v4 ✅
 - `npm i -D tailwindcss @tailwindcss/vite -w client`
@@ -120,7 +130,7 @@ les badges colorés, les textures de fond radiales.
 - Créer `src/utils/cn.ts` (helper `cn()`).
 - ✅ Vérif : `npx shadcn-vue add button`, l'app compile toujours.
 
-### Étape 3 — Composants "simples" (pas de reka-ui, juste CVA + Tailwind)
+### Étape 3 — Composants "simples" (pas de reka-ui, juste CVA + Tailwind) ✅
 Ordre : du moins risqué au plus utilisé.
 
 | # | Composant | Base shadcn | Note |
