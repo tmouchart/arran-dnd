@@ -5,6 +5,7 @@ import {
   DialogOverlay,
   DialogContent,
   DialogTitle,
+  DialogDescription,
   DialogClose,
 } from 'reka-ui'
 import { X } from 'lucide-vue-next'
@@ -13,6 +14,8 @@ import AppIconBtn from './AppIconBtn.vue'
 defineProps<{
   modelValue: boolean
   title?: string
+  /** Lu par les lecteurs d'ecran a l'ouverture. Jamais affiche. */
+  description?: string
 }>()
 
 const emit = defineEmits<{
@@ -26,14 +29,15 @@ const emit = defineEmits<{
 <template>
   <DialogRoot :open="modelValue" @update:open="emit('update:modelValue', $event)">
     <DialogPortal>
-      <Transition name="sheet-overlay">
-        <DialogOverlay class="sheet-overlay" />
-      </Transition>
-      <Transition name="sheet">
-        <DialogContent class="sheet">
+      <DialogOverlay class="sheet-overlay" />
+      <DialogContent class="sheet">
           <div class="sheet-head">
             <DialogTitle v-if="title" class="sheet-title">{{ title }}</DialogTitle>
             <DialogTitle v-else class="sr-only">Panneau</DialogTitle>
+            <!-- reka-ui exige une description : sans elle il avertit en dev. -->
+            <DialogDescription class="sr-only">
+              {{ description ?? 'Appuyez sur Échap pour fermer.' }}
+            </DialogDescription>
             <span v-if="!title" class="sheet-title-spacer" />
             <DialogClose as-child>
               <AppIconBtn title="Fermer">
@@ -44,8 +48,7 @@ const emit = defineEmits<{
           <div class="sheet-body">
             <slot />
           </div>
-        </DialogContent>
-      </Transition>
+      </DialogContent>
     </DialogPortal>
   </DialogRoot>
 </template>
@@ -117,36 +120,39 @@ const emit = defineEmits<{
 }
 
 /* Transitions */
-.sheet-overlay-enter-active,
-.sheet-overlay-leave-active {
-  transition: opacity 180ms ease;
+/* Animations pilotees par [data-state], PAS par <Transition> de Vue.
+   reka-ui gere lui-meme le montage/demontage : un <Transition> autour
+   bloque la sortie (les deux s'attendent) et l'element reste dans le DOM. */
+@keyframes sheet-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-.sheet-overlay-enter-from,
-.sheet-overlay-leave-to {
-  opacity: 0;
+@keyframes sheet-in {
+  from { transform: translateX(-50%) translateY(100%); }
+  to { transform: translateX(-50%); }
 }
 
-.sheet-enter-active,
-.sheet-leave-active {
-  transition: transform 220ms ease;
+.sheet-overlay[data-state='open'] {
+  animation: sheet-overlay-in 180ms ease;
 }
 
-.sheet-enter-from,
-.sheet-leave-to {
-  transform: translateX(-50%) translateY(100%);
+.sheet[data-state='open'] {
+  animation: sheet-in 220ms ease;
 }
 
+/* Pas d'animation de fermeture : voir le commentaire dans AppModal.vue.
+   reka-ui ne demonterait jamais l'element. */
+
+/* Desktop : le transform de base change, il faut d'autres keyframes */
 @media (min-width: 700px) {
-  .sheet-enter-active,
-  .sheet-leave-active {
-    transition: transform 220ms ease, opacity 180ms ease;
+  @keyframes sheet-in-desktop {
+    from { opacity: 0; transform: translate(-50%, 50%) translateY(24px); }
+    to { opacity: 1; transform: translate(-50%, 50%); }
   }
 
-  .sheet-enter-from,
-  .sheet-leave-to {
-    opacity: 0;
-    transform: translate(-50%, 50%) translateY(24px);
+  .sheet[data-state='open'] {
+    animation: sheet-in-desktop 200ms ease;
   }
 }
 </style>

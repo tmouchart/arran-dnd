@@ -5,6 +5,7 @@ import {
   DialogOverlay,
   DialogContent,
   DialogTitle,
+  DialogDescription,
   DialogClose,
 } from 'reka-ui'
 import { X } from 'lucide-vue-next'
@@ -15,6 +16,8 @@ defineProps<{
   title?: string
   /** Wider box (560px) for content-heavy modals */
   wide?: boolean
+  /** Lu par les lecteurs d'ecran a l'ouverture. Jamais affiche. */
+  description?: string
 }>()
 
 const emit = defineEmits<{
@@ -28,16 +31,18 @@ const emit = defineEmits<{
 <template>
   <DialogRoot :open="modelValue" @update:open="emit('update:modelValue', $event)">
     <DialogPortal>
-      <Transition name="modal-overlay">
-        <DialogOverlay class="modal-overlay" />
-      </Transition>
-      <Transition name="modal-box">
-        <DialogContent class="modal-box" :class="{ 'modal-box--wide': wide }">
+      <DialogOverlay class="modal-overlay" />
+      <DialogContent class="modal-box" :class="{ 'modal-box--wide': wide }">
           <div class="modal-head">
             <DialogTitle v-if="title" class="modal-title">{{ title }}</DialogTitle>
             <!-- DialogTitle est requis pour l'accessibilite : si pas de titre
                  visible, on en met un lu par les lecteurs d'ecran seulement. -->
             <DialogTitle v-else class="sr-only">Boîte de dialogue</DialogTitle>
+            <!-- reka-ui exige une description : sans elle il avertit en dev.
+                 Elle n'est jamais visible, seulement lue a voix haute. -->
+            <DialogDescription class="sr-only">
+              {{ description ?? 'Appuyez sur Échap pour fermer.' }}
+            </DialogDescription>
             <span v-if="!title" class="modal-title-spacer" />
             <DialogClose as-child>
               <AppIconBtn title="Fermer">
@@ -51,8 +56,7 @@ const emit = defineEmits<{
           <div v-if="$slots.footer" class="modal-footer">
             <slot name="footer" />
           </div>
-        </DialogContent>
-      </Transition>
+      </DialogContent>
     </DialogPortal>
   </DialogRoot>
 </template>
@@ -123,24 +127,30 @@ const emit = defineEmits<{
   flex-shrink: 0;
 }
 
-.modal-overlay-enter-active,
-.modal-overlay-leave-active {
-  transition: opacity 160ms ease;
+/* Animations pilotees par [data-state], PAS par <Transition> de Vue.
+   reka-ui gere lui-meme le montage/demontage : un <Transition> autour
+   bloque la sortie (les deux s'attendent) et l'element reste dans le DOM. */
+@keyframes modal-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-.modal-overlay-enter-from,
-.modal-overlay-leave-to {
-  opacity: 0;
+@keyframes modal-box-in {
+  from { opacity: 0; transform: translate(-50%, -50%) translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translate(-50%, -50%); }
 }
 
-.modal-box-enter-active,
-.modal-box-leave-active {
-  transition: opacity 160ms ease, transform 160ms ease;
+.modal-overlay[data-state='open'] {
+  animation: modal-overlay-in 160ms ease;
 }
 
-.modal-box-enter-from,
-.modal-box-leave-to {
-  opacity: 0;
-  transform: translate(-50%, -50%) translateY(10px) scale(0.98);
+.modal-box[data-state='open'] {
+  animation: modal-box-in 160ms ease;
 }
+
+/* Pas d'animation de fermeture, volontairement.
+   reka-ui memorise le nom de l'animation d'entree et ne reconnait pas celle
+   de sortie : l'element reste alors dans le DOM pour toujours (verifie dans
+   le navigateur). Sans animation sur [data-state='closed'], il se demonte
+   immediatement. La fermeture est donc instantanee. */
 </style>
