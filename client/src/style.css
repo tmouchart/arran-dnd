@@ -33,8 +33,8 @@
   --radius-lg: var(--radius-lg);
   --radius-xl: var(--radius-xl);
 
-  /* Notre font-size racine est 18px, pas 16px. Sans ca, toutes les unites rem
-     de Tailwind seraient 12% trop grandes (min-h-10 = 45px au lieu de 40px). */
+  /* Notre font-size racine n'est pas 16px. Sans ca, toutes les unites rem de
+     Tailwind seraient decalees (min-h-10 ne ferait plus 40px). */
   --spacing: 4px;
 
   --font-sans: 'Crimson Pro', 'Iowan Old Style', Georgia, serif;
@@ -43,7 +43,10 @@
 
 :root {
   font-family: 'Crimson Pro', 'Iowan Old Style', Georgia, serif;
-  font-size: 18px;
+  /* 17px plutot que 18. Tout ce qui est en rem se resserre d'environ 6% :
+     textes, paddings, gaps. Les hauteurs de controles restent a 40px car
+     --spacing est en px. */
+  font-size: 17px;
   line-height: 1.6;
   font-weight: 400;
   color-scheme: light;
