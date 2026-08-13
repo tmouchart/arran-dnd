@@ -107,14 +107,14 @@ les badges colorés, les textures de fond radiales.
 > **État** : ✅ terminé (étapes 0 à 6). `AppSelect` reste volontairement natif.
 >
 > Découvertes en cours de route :
-> - `font-size` racine = 18px → il a fallu fixer `--spacing: 4px` sinon toutes
->   les unités rem de Tailwind sont 12% trop grandes.
+> - La `font-size` racine n'est pas 16px → il a fallu fixer `--spacing: 4px`,
+>   sinon les unités rem de Tailwind sont décalées. (Racine passée à 17px en étape 5.)
 > - Sans preflight, `border-style` vaut `none` → `border-solid` obligatoire
 >   partout où il y a une bordure.
 > - Les 3 thèmes ciblent `.btn` / `.card` / `.badge` / `.icon-btn`. On garde ces
 >   classes sur les composants et on ne supprime que les règles **de base**.
-> - `AppInput` utilise `.app-input`, mais les thèmes ciblent `.input` → **les
->   inputs ne sont pas thémés**. Bug préexistant, à corriger à l'étape 5.
+> - `AppInput` utilisait `.app-input` alors que les thèmes ciblent `.input` → les
+>   champs n'étaient pas thémés. Bug préexistant, corrigé à l'étape 6.
 
 ### Étape 1 — Installer Tailwind v4 ✅
 - `npm i -D tailwindcss @tailwindcss/vite -w client`
