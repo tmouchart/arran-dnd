@@ -1,5 +1,13 @@
 {
   "files": [],
+  /* Non utilise pour la compilation (files: []), mais le CLI shadcn-vue
+     lit ce fichier pour resoudre l'alias @. */
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
   "references": [
     { "path": "./tsconfig.app.json" },
     { "path": "./tsconfig.node.json" }

@@ -1,3 +1,42 @@
+/* Tailwind v4 — SANS preflight.
+   Le preflight reset les titres, boutons et marges par defaut. Sur une app
+   existante ca casse tout. On importe donc uniquement le theme + les utilitaires. */
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+/* Pont de tokens : les noms attendus par shadcn pointent sur nos variables.
+   On ne renomme rien, donc le dark mode et les 3 themes continuent de marcher. */
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--text);
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--text);
+  --color-primary: var(--brand);
+  --color-primary-foreground: var(--on-brand);
+  --color-secondary: var(--surface-2);
+  --color-secondary-foreground: var(--text);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--text);
+  --color-muted: var(--surface-2);
+  --color-muted-foreground: var(--muted);
+  --color-destructive: var(--danger);
+  --color-destructive-foreground: #f7f4ef;
+  --color-border: var(--border);
+  --color-input: var(--border);
+  --color-ring: var(--accent);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+
+  --font-sans: 'Crimson Pro', 'Iowan Old Style', Georgia, serif;
+  --font-display: var(--title-font);
+}
+
 :root {
   font-family: 'Crimson Pro', 'Iowan Old Style', Georgia, serif;
   font-size: 18px;
@@ -18,9 +57,12 @@
   --accent: #2d8a5e;
   --accent-strong: #1e6b46;
   --accent-soft: rgba(45, 138, 94, 0.13);
-  --brand: #c9943e;
-  --brand-strong: #a67520;
-  --danger: #943232;
+  --brand: #d9a544;
+  --brand-strong: #c28f2e;
+  /* Texte posé sur un fond --brand. Encre sur l'or clair (8.9:1).
+     Les thèmes à brand sombre le redéfinissent en clair. */
+  --on-brand: #241c10;
+  --danger: #8f2f2f;
   --shadow-soft: 0 5px 16px rgba(35, 33, 30, 0.1);
   --shadow-card: 0 8px 22px rgba(35, 33, 30, 0.11);
   /* Radius scale — always use these, never hardcode border-radius */
@@ -129,8 +171,8 @@ code {
 }
 
 .btn.primary {
-  background: linear-gradient(180deg, var(--brand), var(--brand-strong));
-  color: #f7f4ef;
+  background: var(--brand);
+  color: var(--on-brand);
   border-color: color-mix(in srgb, var(--brand-strong) 65%, black);
   box-shadow: var(--shadow-soft);
 }
