@@ -104,7 +104,8 @@ les badges colorés, les textures de fond radiales.
 
 ## Étapes
 
-> **État** : étapes 0 à 3 ✅ faites. Prochaine : étape 4 (primitives reka-ui).
+> **État** : étapes 0 à 4 ✅ faites (sauf `AppSelect`, décision en attente).
+> Prochaine : étape 5 (passe clean & pro).
 >
 > Découvertes en cours de route :
 > - `font-size` racine = 18px → il a fallu fixer `--spacing: 4px` sinon toutes
@@ -150,16 +151,32 @@ composants (`.hp-btn`, `<select class="input">`…). On les garde jusqu'à l'ét
 ### Étape 4 — Composants avec primitives reka-ui
 Là on gagne vraiment (a11y + comportement).
 
-| # | Composant | Primitive shadcn |
-|---|---|---|
-| 4.1 | `AppSelect` | `select` (reka Select) — remplace le `<select>` natif |
-| 4.2 | `AppTabs` | `tabs` |
-| 4.3 | `AppModal` | `dialog` — supprime notre focus/Escape maison |
-| 4.4 | `AppBottomSheet` | `drawer` (vaul-vue) — vrai swipe-to-close mobile |
-| 4.5 | `AppToast` | `sonner` ou `toast` |
+| # | Composant | Primitive | État |
+|---|---|---|---|
+| 4.1 | `AppModal` | reka `DialogRoot` | ✅ |
+| 4.2 | `AppBottomSheet` | reka `DialogRoot` | ✅ |
+| 4.3 | `AppTabs` | reka `TabsRoot` | ✅ |
+| 4.4 | `AppToast` | — | ⏭️ gardé, voir plus bas |
+| 4.5 | `AppSelect` | — | ⏭️ à décider, voir plus bas |
+
+**On utilise reka-ui directement, pas les wrappers shadcn.** Leur `DialogContent`
+impose un look totalement différent du nôtre et dépend de `tw-animate-css`.
+reka-ui est le moteur *derrière* shadcn-vue — on prend le moteur, pas la carrosserie.
+
+**`AppBottomSheet` n'avait aucune logique de swipe** (contrairement à ce que le plan
+supposait). C'est un simple dialogue ancré en bas → pas besoin de `vaul-vue`.
+
+**`AppToast` gardé tel quel.** Passer à `sonner` obligerait à réécrire le composable
+`useToast` et tous ses appelants, pour un gain nul. Le vrai manque était l'annonce
+vocale → `role="status"` + `aria-live="polite"` ajoutés. 2 attributs au lieu d'une dép.
+
+**`AppSelect` : décision en attente.** Le remplacer par une liste custom fait perdre
+le picker natif du téléphone (roue iOS / liste Android), qui est une très bonne UX.
+L'app est pensée mobile d'abord. Coût de migration : 26 `<option>` dans 6 fichiers.
+→ Recommandation : **garder le `<select>` natif**, et n'introduire une liste custom
+que si on a besoin d'une recherche dans les longues listes (armes, races).
 
 Vérif par composant : ouverture/fermeture, Escape, clic dehors, focus au clavier, mobile.
-`AppModal` et `AppBottomSheet` sont les plus risqués → tester chaque écran qui les utilise.
 
 ### Étape 5 — Passe "clean & pro"
 Une fois la base en place, une seule PR de polish :
