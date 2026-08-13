@@ -39,6 +39,10 @@ export const router = createRouter({
     { path: '/campagnes/:id/rencontres/:eid', name: 'encounter-edit', component: EncounterEditView },
     { path: '/campagnes/:id/combat/:cid', name: 'combat', component: CombatView },
     { path: '/options', name: 'options', component: OptionsView },
+    // Kitchen sink du design system — dev uniquement, absent du build de prod
+    ...(import.meta.env.DEV
+      ? [{ path: '/component-library', name: 'component-library', component: () => import('../views/ComponentLibraryView.vue') }]
+      : []),
   ],
 })
 

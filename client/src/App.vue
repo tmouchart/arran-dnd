@@ -2,12 +2,13 @@
 import { RouterLink, RouterView } from "vue-router";
 import { computed, watch } from "vue";
 import { useRoute } from "vue-router";
-import { UserCircle, Loader2, ScrollText, Swords, Backpack, BookOpenText, Map } from "lucide-vue-next";
+import { UserCircle, Loader2, ScrollText, Swords, Backpack, BookOpenText, Map, Palette } from "lucide-vue-next";
 import CrystalBall from "./components/icons/CrystalBall.vue";
 import AppToast from "./components/ui/AppToast.vue";
 import { user, authReady } from "./composables/useAuth";
 import { useActiveCombat, refreshActiveCombat } from "./composables/useActiveCombat";
 
+const isDev = import.meta.env.DEV;
 const route = useRoute();
 const { activeCombat } = useActiveCombat();
 
@@ -64,6 +65,13 @@ if (savedStyle) {
           /></RouterLink>
           <RouterLink to="/campagnes" class="nav-link" title="Campagnes"
             ><Map :size="20"
+          /></RouterLink>
+          <RouterLink
+            v-if="isDev"
+            to="/component-library"
+            class="nav-link nav-link--dev"
+            title="Bibliothèque de composants (dev)"
+            ><Palette :size="20"
           /></RouterLink>
         </nav>
         <RouterLink v-if="user" to="/options" class="nav-user" title="Options">
@@ -211,7 +219,7 @@ if (savedStyle) {
   gap: 0.45rem;
   text-decoration: none;
   padding: 0.22rem 0.6rem 0.22rem 0.28rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--border);
   background: var(--surface-2);
   transition:
@@ -275,7 +283,7 @@ if (savedStyle) {
 .nav-link {
   width: 40px;
   height: 40px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   color: var(--muted);
   text-decoration: none;
   font-size: 1.15rem;
@@ -300,6 +308,12 @@ if (savedStyle) {
   color: var(--accent-strong);
   border-color: var(--accent);
   background: color-mix(in srgb, var(--accent-soft) 72%, var(--surface));
+}
+
+/* Dev-only entry: tinted so it never gets mistaken for a real feature */
+.nav-link--dev {
+  color: var(--brand);
+  border-color: color-mix(in srgb, var(--brand) 45%, transparent);
 }
 
 .main {

@@ -52,9 +52,9 @@ function onInput(e: Event) {
 
 <style scoped>
 .app-input {
-  min-height: 42px;
-  padding: 0.5rem 0.64rem;
-  border-radius: 10px;
+  min-height: 38px;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--surface-2);
   color: var(--text);

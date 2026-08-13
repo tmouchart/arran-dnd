@@ -46,7 +46,7 @@ function runAction(toast: Toast) {
   justify-content: space-between;
   gap: 0.75rem;
   padding: 0.7rem 1rem;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--surface-3);
   border: 1px solid var(--border-strong);
   box-shadow: var(--shadow-card);

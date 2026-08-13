@@ -6,6 +6,8 @@ import AppIconBtn from './AppIconBtn.vue'
 const props = defineProps<{
   modelValue: boolean
   title?: string
+  /** Wider box (560px) for content-heavy modals */
+  wide?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -13,7 +15,7 @@ const emit = defineEmits<{
 }>()
 
 function close(e?: Event) {
-  // Stop propagation so the closing click never reaches elements behind the sheet
+  // Stop propagation so the closing click never reaches elements behind the modal
   e?.stopPropagation()
   emit('update:modelValue', false)
 }
@@ -36,18 +38,21 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 
 <template>
   <Teleport to="body">
-    <Transition name="sheet">
-      <div v-if="modelValue" class="sheet-overlay" @click.self.stop="close">
-        <div class="sheet" role="dialog" aria-modal="true">
-          <div class="sheet-head">
-            <h3 v-if="title" class="sheet-title">{{ title }}</h3>
-            <span v-else class="sheet-title-spacer" />
+    <Transition name="modal">
+      <div v-if="modelValue" class="modal-overlay" @click.self.stop="close">
+        <div class="modal-box" :class="{ 'modal-box--wide': wide }" role="dialog" aria-modal="true">
+          <div class="modal-head">
+            <h3 v-if="title" class="modal-title">{{ title }}</h3>
+            <span v-else class="modal-title-spacer" />
             <AppIconBtn :size="34" title="Fermer" @click.stop="close">
               <X :size="18" />
             </AppIconBtn>
           </div>
-          <div class="sheet-body">
+          <div class="modal-body">
             <slot />
+          </div>
+          <div v-if="$slots.footer" class="modal-footer">
+            <slot name="footer" />
           </div>
         </div>
       </div>
@@ -56,39 +61,43 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 </template>
 
 <style scoped>
-.sheet-overlay {
+.modal-overlay {
   position: fixed;
   inset: 0;
   z-index: 1000;
   background: rgba(0, 0, 0, 0.45);
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
+  padding: var(--space-md);
 }
 
-.sheet {
+.modal-box {
   background: var(--surface);
   border: 1px solid var(--border-strong);
-  border-bottom: none;
-  border-radius: var(--radius-xxl) var(--radius-xxl) 0 0;
+  border-radius: var(--radius-xl);
   width: 100%;
-  max-height: 85dvh;
+  max-width: 420px;
+  max-height: 88dvh;
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-card);
-  padding-bottom: env(safe-area-inset-bottom);
 }
 
-.sheet-head {
+.modal-box--wide {
+  max-width: 560px;
+}
+
+.modal-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.6rem;
+  gap: var(--space-md);
   padding: var(--space-md) var(--space-lg) var(--space-sm);
   flex-shrink: 0;
 }
 
-.sheet-title {
+.modal-title {
   margin: 0;
   font-size: 1.05rem;
   font-weight: 600;
@@ -96,62 +105,42 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
   color: var(--accent-strong);
 }
 
-.sheet-title-spacer {
+.modal-title-spacer {
   flex: 1;
 }
 
-.sheet-body {
+.modal-body {
   padding: var(--space-sm) var(--space-lg) var(--space-lg);
   overflow-y: auto;
   min-height: 0;
 }
 
-/* Desktop: centered dialog */
-@media (min-width: 700px) {
-  .sheet-overlay {
-    align-items: center;
-    padding: 1rem;
-  }
-
-  .sheet {
-    max-width: 440px;
-    border-radius: var(--radius-xxl);
-    border-bottom: 1px solid var(--border-strong);
-    max-height: 80dvh;
-  }
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-lg) var(--space-lg);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
 }
 
-/* Transitions */
-.sheet-enter-active,
-.sheet-leave-active {
-  transition: opacity 180ms ease;
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 160ms ease;
 }
 
-/* Keep capturing pointer events while the sheet fades out,
-   so nothing behind can be clicked during the leave transition. */
-.sheet-leave-active {
-  pointer-events: auto;
+.modal-enter-active .modal-box,
+.modal-leave-active .modal-box {
+  transition: transform 160ms ease;
 }
 
-.sheet-enter-active .sheet,
-.sheet-leave-active .sheet {
-  transition: transform 220ms ease;
-}
-
-.sheet-enter-from,
-.sheet-leave-to {
+.modal-enter-from,
+.modal-leave-to {
   opacity: 0;
 }
 
-.sheet-enter-from .sheet,
-.sheet-leave-to .sheet {
-  transform: translateY(100%);
-}
-
-@media (min-width: 700px) {
-  .sheet-enter-from .sheet,
-  .sheet-leave-to .sheet {
-    transform: translateY(24px);
-  }
+.modal-enter-from .modal-box,
+.modal-leave-to .modal-box {
+  transform: translateY(10px) scale(0.98);
 }
 </style>

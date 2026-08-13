@@ -19,9 +19,9 @@ defineProps<{
 .card {
   background: var(--surface);
   border: 1px solid var(--border-strong);
-  border-radius: 16px;
-  padding: 0.95rem;
-  margin-bottom: 0.85rem;
+  border-radius: var(--radius-xl);
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
   box-shadow: var(--shadow-card);
 }
 
@@ -29,8 +29,8 @@ defineProps<{
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.8rem;
-  gap: 0.6rem;
+  margin-bottom: var(--space-md);
+  gap: var(--space-md);
 }
 
 .card-head h2,

@@ -23,6 +23,19 @@
   --danger: #943232;
   --shadow-soft: 0 5px 16px rgba(35, 33, 30, 0.1);
   --shadow-card: 0 8px 22px rgba(35, 33, 30, 0.11);
+  /* Radius scale — always use these, never hardcode border-radius */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-xxl: 20px;
+  --radius-pill: 999px;
+  /* Spacing scale — dense, mobile-first. Prefer these for padding/gap */
+  --space-xs: 0.25rem;
+  --space-sm: 0.4rem;
+  --space-md: 0.6rem;
+  --space-lg: 0.85rem;
   background-color: var(--bg);
   color: var(--text);
 }
@@ -84,7 +97,7 @@ body {
 code {
   font-size: 0.88em;
   padding: 0.1em 0.35em;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   border: 1px solid var(--border);
   background: var(--surface-2);
 }
@@ -92,12 +105,12 @@ code {
 .btn {
   cursor: pointer;
   border: 1px solid transparent;
-  border-radius: 12px;
-  padding: 0.62rem 1.05rem;
-  font-size: 0.98rem;
+  border-radius: var(--radius-lg);
+  padding: 0.5rem 0.85rem;
+  font-size: 0.95rem;
   font-weight: 600;
   font-family: inherit;
-  min-height: 44px;
+  min-height: 40px;
   transition:
     transform 120ms ease,
     box-shadow 160ms ease,
@@ -143,7 +156,7 @@ code {
   padding: 0.3rem 0.7rem;
   font-size: 0.82rem;
   min-height: unset;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 .btn.danger.ghost {
@@ -173,9 +186,9 @@ select:focus-visible {
 /* Text fields — shared base for selects, textareas, readonly displays.
    For <input> elements, prefer AppInput component instead. */
 .input {
-  min-height: 42px;
-  padding: 0.5rem 0.64rem;
-  border-radius: 10px;
+  min-height: 38px;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--surface-2);
   color: var(--text);

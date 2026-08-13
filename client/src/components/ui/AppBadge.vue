@@ -17,7 +17,7 @@ defineProps<{
   letter-spacing: 0.04em;
   text-transform: uppercase;
   padding: 0.18em 0.65em;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   white-space: nowrap;
   flex-shrink: 0;
 }

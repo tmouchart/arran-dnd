@@ -103,7 +103,8 @@ This is a **roleplay game tool**, not a corporate app. Design must feel fun, imm
 
 ### Principles
 - **Style**: Fun, medieval fantasy, colorful, curvy, bold. Think tavern signs, spell tomes, and adventure maps — not dashboards.
-- **Responsive**: All UI must work well on mobile (phone-first).
+- **Responsive**: All UI must work well on mobile (phone-first). The app is used almost exclusively on phones.
+- **Dense**: Compact spacing everywhere. Use the `--space-*` tokens; avoid paddings above `--space-lg` (0.85rem) on list items, cards, and controls. Generous whitespace is a bug, not a feature.
 - **Buttons**: Prefer icon-only buttons. Avoid text labels on action buttons whenever an icon clearly conveys the intent.
 - **Icons**: Use [Lucide](https://lucide.dev/icons) exclusively for all icons (`lucide-vue-next`).
 
@@ -112,9 +113,19 @@ We are building a tool people use to *have fun*. Every design decision should re
 
 ## UI Components
 
-All shared UI primitives live in `client/src/components/ui/`. **Always use these components** when writing new code — never use raw HTML elements with manual styling for inputs, buttons, or other primitives that have a component equivalent.
+All shared UI primitives live in `client/src/components/ui/`.
 
-If a new recurring UI pattern emerges (e.g. select, textarea, modal) that doesn't have a component yet, **create a new `App*` component** in `client/src/components/ui/` rather than styling raw elements inline.
+**THE RULE — no exceptions: ALWAYS use the shared `App*` components. NEVER re-implement an existing pattern (modal, tabs, button, input, select, textarea, badge, empty state…) with raw HTML + scoped CSS.** Historically this app accumulated 17 hand-rolled modals and 8 hand-rolled tab bars because each feature re-created its own — that variance is exactly what we are eliminating. Before writing any piece of UI, check the catalog below and the live showcase at `/component-library` (dev only).
+
+If a recurring UI pattern has no component yet, **first create a new `App*` component** in `client/src/components/ui/` (dense, token-based, mobile-first), add it to the catalog below and to `ComponentLibraryView.vue`, then use it. Creating new shared components is encouraged; re-styling raw elements inline is not.
+
+### Design tokens
+
+All defined in `client/src/style.css` and overridden by themes. Never hardcode what a token covers:
+- **Colors**: `--bg`, `--surface(-2/-3)`, `--text`, `--muted`, `--border(-strong)`, `--accent(-strong/-soft)`, `--brand(-strong)`, `--danger`. No raw hex in scoped CSS unless the color is genuinely unique.
+- **Radius**: `--radius-xs/sm/md/lg/xl/xxl/pill`. Never hardcode `border-radius` (only `50%` for circles is fine).
+- **Spacing**: `--space-xs/sm/md/lg` for padding/gap.
+- **Shadows**: `--shadow-soft`, `--shadow-card`.
 
 ### Component catalog
 
@@ -128,15 +139,24 @@ If a new recurring UI pattern emerges (e.g. select, textarea, modal) that doesn'
 | `AppCard` | Any bordered surface card. Use `title` prop for a simple heading, `#titleActions` slot for buttons next to the title, or place a manual `.card-head` div in the default slot for complex headers. |
 | `AppBadge` | Colored pill badges. Variants: `attaque`, `limitée`, `gratuite`, `info`, `pm`, `active`. |
 | `AppEmptyState` | Loading / empty / error feedback. Variants: `loading`, `empty` (default), `error`. Slot `#actions` for retry buttons. |
+| `AppModal` | **Every centered dialog** (confirmations, forms, pickers). `v-model` boolean, props `title`, `wide` (560px). Slots: default, `#footer` (action buttons). Handles Teleport, overlay, Escape, click-outside. |
+| `AppBottomSheet` | **Every bottom sheet** (mobile-first panels; centered dialog on desktop). `v-model` + `title`. Same family as AppModal — pick sheet for mobile flows, modal for confirmations. |
+| `AppTabs` | **Every tab bar.** `v-model` string + `tabs: { value, label, icon? }[]` (icon = emoji string or Lucide component). Prop `iconOnlyMobile` hides labels on phones. |
+| `AppSelect` | All `<select>` fields. `v-model` + `<option>` in default slot. Same look as AppInput. |
+| `AppTextarea` | All `<textarea>` fields. `v-model`, `rows`, `placeholder`. Same look as AppInput. |
+| `AppToast` | Global toasts — never instantiate; call `showToast(message, options?)` from `composables/useToast.ts`. |
 
 ### Rules
 
 - **Never** create a new view without wrapping it in `<AppPageLayout>`. Place `<AppPageHead>` in the `#top-bar` slot.
 - **Never** set `max-width`, `margin: 0 auto`, or `height: calc(100vh - ...)` in a view's scoped CSS — `AppPageLayout` handles this.
 - **Never** use `<input class="input">` — use `<AppInput>` instead.
-- **Never** use `<button class="btn ...">Text</button>` — use `<AppButton>` instead. Exception: highly specialized buttons (`.hp-btn`, `.dice-btn`, `.mode-tab`, etc.) with unique visual treatment.
+- **Never** use `<button class="btn ...">Text</button>` — use `<AppButton>` instead. Exception: highly specialized buttons (`.hp-btn`, `.dice-btn`, etc.) with unique visual treatment.
 - **Never** redefine `.btn` or `.input` styles in scoped CSS. If a variant is missing, extend the component.
-- `<select>` and `<textarea>` still use `class="input"` from `style.css` — these don't have components yet.
+- **Never** use raw `<select class="input">` or `<textarea class="input">` — use `<AppSelect>` / `<AppTextarea>`.
+- **Never** hand-roll a modal, overlay, bottom sheet, or tab bar — use `<AppModal>`, `<AppBottomSheet>`, `<AppTabs>`.
+- **Never** hardcode `border-radius`, paddings, or colors a token covers — use `--radius-*`, `--space-*`, and the color tokens.
+- When adding a new `App*` component, showcase it in `client/src/views/ComponentLibraryView.vue` (`/component-library`, dev only).
 
 ## Code Quality
 

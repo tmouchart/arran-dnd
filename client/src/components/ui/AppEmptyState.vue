@@ -17,14 +17,14 @@ defineProps<{
 .state-block {
   text-align: center;
   color: var(--muted);
-  padding: 2.5rem 1rem;
+  padding: 1.5rem 1rem;
   font-size: 0.95rem;
 }
 
 .state-block.error {
   text-align: left;
-  padding: 1.25rem 1.1rem;
-  border-radius: 12px;
+  padding: var(--space-lg);
+  border-radius: var(--radius-lg);
   border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--border));
   background: color-mix(in srgb, var(--danger) 8%, var(--surface-2));
   color: var(--text);

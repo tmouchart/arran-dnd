@@ -42,7 +42,7 @@ const classes = computed(() => [
   max-width: 640px;
   margin: 0 auto;
   width: 100%;
-  padding: 1rem 0.78rem 1.5rem;
+  padding: var(--space-md) var(--space-md) 1.25rem;
   display: flex;
   flex-direction: column;
 }
