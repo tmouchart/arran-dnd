@@ -233,16 +233,23 @@ export const combatParticipants = pgTable('combat_participant', {
   monsterDescription: text('monster_description'),
 })
 
-/** Jets de dés loggés pendant un combat (log temps réel). */
-export const combatEvents = pgTable('combat_event', {
+/**
+ * Jets de dés loggés en temps réel. Portée = la campagne : un jet fait hors
+ * combat est loggé lui aussi, le combat n'est qu'un tag (`combatId` nullable).
+ */
+export const rollEvents = pgTable('roll_event', {
   id: serial('id').primaryKey(),
-  combatId: integer('combat_id')
+  campaignId: integer('campaign_id')
     .notNull()
-    .references(() => combats.id, { onDelete: 'cascade' }),
+    .references(() => campaigns.id, { onDelete: 'cascade' }),
+  /** Combat pendant lequel le jet a été fait, NULL si hors combat. */
+  combatId: integer('combat_id').references(() => combats.id, { onDelete: 'cascade' }),
   userId: integer('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
   actorName: text('actor_name').notNull(),
+  /** 'player' | 'monster' — sert au filtre PJ/PNJ du log */
+  actorKind: varchar('actor_kind', { length: 10 }).notNull().default('player'),
   /** 'public' | 'gm' — les jets monstres (gm) ne sont envoyés qu'au MJ */
   visibility: varchar('visibility', { length: 10 }).notNull().default('public'),
   kind: varchar('kind', { length: 20 }).notNull(),

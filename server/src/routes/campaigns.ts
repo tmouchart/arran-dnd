@@ -1,8 +1,9 @@
-import { and, eq, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, sql } from 'drizzle-orm'
 import { Router } from 'express'
 import { db } from '../db/index.js'
-import { campaigns, campaignMembers, characters, users, generatedImages, encounterTemplates, encounterMonsters } from '../db/schema.js'
+import { campaigns, campaignMembers, characters, users, generatedImages, encounterTemplates, encounterMonsters, combats, rollEvents } from '../db/schema.js'
 import { requireAuth, type AuthRequest } from '../auth/middleware.js'
+import { broadcastCampaignRoll, getClientsForCampaign, type SseClient } from '../campaigns/sseStore.js'
 
 const router = Router()
 router.use(requireAuth)
@@ -19,6 +20,7 @@ router.get('/', async (_req, res) => {
     })
     .from(campaigns)
     .innerJoin(users, eq(users.id, campaigns.gmUserId))
+    .orderBy(asc(campaigns.id))
 
   // Count members per campaign
   const memberCounts = await db
@@ -107,6 +109,7 @@ router.get('/:id', async (req, res) => {
     .leftJoin(characters, eq(characters.id, campaignMembers.characterId))
     .leftJoin(generatedImages, eq(generatedImages.id, characters.portraitImageId))
     .where(eq(campaignMembers.campaignId, id))
+    .orderBy(asc(campaignMembers.joinedAt), asc(campaignMembers.id))
 
   const membersWithPortrait = members.map((m) => ({
     userId: m.userId,
@@ -312,6 +315,7 @@ router.get('/:id/encounters', async (req, res) => {
     })
     .from(encounterTemplates)
     .where(eq(encounterTemplates.campaignId, campaignId))
+    .orderBy(asc(encounterTemplates.id))
 
   // Count monsters per encounter
   const counts = await db
@@ -367,6 +371,7 @@ router.get('/:id/encounters/:eid', async (req, res) => {
     .select()
     .from(encounterMonsters)
     .where(eq(encounterMonsters.encounterId, eid))
+    .orderBy(asc(encounterMonsters.id))
 
   res.json({ ...encounter, monsters })
 })
@@ -533,6 +538,7 @@ router.post('/:id/encounters/:eid/monsters/:mid/duplicate', async (req, res) => 
     .select()
     .from(encounterMonsters)
     .where(eq(encounterMonsters.encounterId, eid))
+    .orderBy(asc(encounterMonsters.id))
 
   res.status(201).json(updatedMonsters)
 })
@@ -619,6 +625,144 @@ router.delete('/:id/encounters/:eid/monsters/:mid', async (req, res) => {
 
   if (!row) { res.status(404).json({ error: 'Monstre introuvable' }); return }
   res.json({ ok: true })
+})
+
+// ── Log de jets (portée campagne) ───────────────────────────────────────────
+
+// Helper: membre (MJ ou joueur) — renvoie aussi le gmUserId pour le filtrage.
+async function verifyMember(campaignId: number, userId: number) {
+  const [campaign] = await db
+    .select({ gmUserId: campaigns.gmUserId })
+    .from(campaigns)
+    .where(eq(campaigns.id, campaignId))
+  if (!campaign) return { status: 'not_found' as const, gmUserId: 0 }
+  if (campaign.gmUserId === userId) return { status: 'ok' as const, gmUserId: campaign.gmUserId }
+  const [membership] = await db
+    .select({ id: campaignMembers.id })
+    .from(campaignMembers)
+    .where(and(eq(campaignMembers.campaignId, campaignId), eq(campaignMembers.userId, userId)))
+  if (!membership) return { status: 'forbidden' as const, gmUserId: campaign.gmUserId }
+  return { status: 'ok' as const, gmUserId: campaign.gmUserId }
+}
+
+// POST /api/campaigns/:id/rolls — logger un jet (en combat ou non)
+router.post('/:id/rolls', async (req, res) => {
+  const userId = (req as unknown as AuthRequest).userId
+  const campaignId = Number(req.params.id)
+
+  const check = await verifyMember(campaignId, userId)
+  if (check.status !== 'ok') { res.status(403).json({ error: 'Non autorisé' }); return }
+
+  const body = req.body as {
+    kind?: string; label?: string; context?: string
+    die?: number; sides?: number; bonus?: number; total?: number
+    rolls?: number[]; damage?: { total: number; critical: boolean; fumble: boolean }
+    asMonster?: string
+  }
+  if (typeof body.die !== 'number' || typeof body.sides !== 'number' || typeof body.total !== 'number') {
+    res.status(400).json({ error: 'Jet invalide' }); return
+  }
+
+  const isGm = userId === check.gmUserId
+
+  // actorName imposé par le serveur (anti-usurpation) : nom du personnage du
+  // membre, ou nom du monstre pour le MJ (jet visible MJ seulement).
+  let actorName: string
+  let actorKind: 'player' | 'monster' = 'player'
+  let visibility: 'public' | 'gm' = 'public'
+  if (body.asMonster) {
+    if (!isGm) { res.status(403).json({ error: 'Réservé au MJ' }); return }
+    actorName = String(body.asMonster)
+    actorKind = 'monster'
+    visibility = 'gm'
+  } else {
+    const [member] = await db
+      .select({ characterName: characters.name })
+      .from(campaignMembers)
+      .leftJoin(characters, eq(characters.id, campaignMembers.characterId))
+      .where(and(eq(campaignMembers.campaignId, campaignId), eq(campaignMembers.userId, userId)))
+    actorName = member?.characterName ?? (isGm ? 'MJ' : '')
+    if (!actorName) { res.status(403).json({ error: 'Aucun personnage dans cette campagne' }); return }
+  }
+
+  // Le combat n'est qu'un tag : le serveur le résout lui-même, le client
+  // n'a rien à savoir du combat en cours.
+  const [activeCombat] = await db
+    .select({ id: combats.id })
+    .from(combats)
+    .where(and(eq(combats.campaignId, campaignId), eq(combats.status, 'active')))
+    .orderBy(desc(combats.createdAt))
+    .limit(1)
+
+  const [event] = await db.insert(rollEvents).values({
+    campaignId,
+    combatId: activeCombat?.id ?? null,
+    userId,
+    actorName,
+    actorKind,
+    visibility,
+    kind: String(body.kind ?? 'libre').slice(0, 20),
+    label: String(body.label ?? 'Jet'),
+    context: String(body.context ?? 'libre').slice(0, 30),
+    die: Math.round(body.die),
+    sides: Math.round(body.sides),
+    bonus: Math.round(body.bonus ?? 0),
+    total: Math.round(body.total),
+    rolls: Array.isArray(body.rolls) ? body.rolls : null,
+    damage: body.damage ?? null,
+  }).returning()
+
+  broadcastCampaignRoll(campaignId, check.gmUserId, event)
+  res.status(201).json(event)
+})
+
+// GET /api/campaigns/:id/rolls — historique (les non-MJ ne voient pas les jets PNJ)
+router.get('/:id/rolls', async (req, res) => {
+  const userId = (req as unknown as AuthRequest).userId
+  const campaignId = Number(req.params.id)
+
+  const check = await verifyMember(campaignId, userId)
+  if (check.status !== 'ok') { res.status(403).json({ error: 'Non autorisé' }); return }
+
+  const isGm = userId === check.gmUserId
+  const where = isGm
+    ? eq(rollEvents.campaignId, campaignId)
+    : and(eq(rollEvents.campaignId, campaignId), eq(rollEvents.visibility, 'public'))
+
+  // Les 200 plus récents, renvoyés en ordre chronologique.
+  const rows = await db.select().from(rollEvents)
+    .where(where)
+    .orderBy(desc(rollEvents.createdAt), desc(rollEvents.id))
+    .limit(200)
+
+  res.json(rows.reverse())
+})
+
+// GET /api/campaigns/:id/events — flux SSE des jets de la campagne
+router.get('/:id/events', async (req, res) => {
+  const userId = (req as unknown as AuthRequest).userId
+  const campaignId = Number(req.params.id)
+
+  const check = await verifyMember(campaignId, userId)
+  if (check.status !== 'ok') { res.status(403).json({ error: 'Non autorisé' }); return }
+
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    Connection: 'keep-alive',
+  })
+
+  const client: SseClient = { res, userId }
+  const clients = getClientsForCampaign(campaignId)
+  clients.add(client)
+
+  // Heartbeat : le proxy Fly coupe une connexion inactive (~60s).
+  const heartbeat = setInterval(() => { res.write(': ping\n\n') }, 25000)
+
+  req.on('close', () => {
+    clearInterval(heartbeat)
+    clients.delete(client)
+  })
 })
 
 export default router

@@ -2,10 +2,10 @@ import { and, eq, desc, asc, or, inArray } from 'drizzle-orm'
 import { Router } from 'express'
 import { db } from '../db/index.js'
 import {
-  combats, combatParticipants, combatEvents, campaigns, campaignMembers, characters, encounterTemplates, encounterMonsters,
+  combats, combatParticipants, campaigns, campaignMembers, characters, encounterTemplates, encounterMonsters,
 } from '../db/schema.js'
 import { requireAuth, type AuthRequest } from '../auth/middleware.js'
-import { broadcastCombatState, broadcastCombatRoll, enrichParticipantHp, getClientsForCombat, type SseClient } from '../combats/sseStore.js'
+import { broadcastCombatState, enrichParticipantHp, getClientsForCombat, type SseClient } from '../combats/sseStore.js'
 import { generateText } from '../ai/client.js'
 
 // Armor/shield lookup for initiative calculation (mirrors client armorsCatalog.ts)
@@ -122,7 +122,7 @@ router.post('/:id/combats', async (req, res) => {
 
   // Add monsters from encounter template
   if (encounterId) {
-    const monsters = await db.select().from(encounterMonsters).where(eq(encounterMonsters.encounterId, encounterId))
+    const monsters = await db.select().from(encounterMonsters).where(eq(encounterMonsters.encounterId, encounterId)).orderBy(asc(encounterMonsters.id))
     for (const m of monsters) {
       await db.insert(combatParticipants).values({
         combatId: combat.id,
@@ -183,9 +183,9 @@ router.get('/:id/combats/:cid', async (req, res) => {
     res.status(404).json({ error: 'Combat introuvable' }); return
   }
 
-  const participants = await db.select().from(combatParticipants).where(eq(combatParticipants.combatId, combatId))
+  const participants = await db.select().from(combatParticipants).where(eq(combatParticipants.combatId, combatId)).orderBy(asc(combatParticipants.id))
   const enriched = await enrichParticipantHp(campaignId, participants)
-  const sorted = [...enriched].sort((a, b) => b.initiative - a.initiative)
+  const sorted = [...enriched].sort((a, b) => b.initiative - a.initiative || a.id - b.id)
 
   const isGm = userId === check.gmUserId
 
@@ -227,8 +227,8 @@ router.post('/:id/combats/:cid/next-turn', async (req, res) => {
   if (!combat) { res.status(404).json({ error: 'Combat introuvable' }); return }
   if (combat.status !== 'active') { res.status(400).json({ error: 'Combat inactif' }); return }
 
-  const participants = await db.select().from(combatParticipants).where(eq(combatParticipants.combatId, combatId))
-  const sorted = [...participants].sort((a, b) => b.initiative - a.initiative)
+  const participants = await db.select().from(combatParticipants).where(eq(combatParticipants.combatId, combatId)).orderBy(asc(combatParticipants.id))
+  const sorted = [...participants].sort((a, b) => b.initiative - a.initiative || a.id - b.id)
   const alive = sorted.filter((p) => p.kind === 'player' || (p.hpCurrent ?? 0) > 0)
 
   if (alive.length === 0) { res.status(400).json({ error: 'Aucun participant actif' }); return }
@@ -269,8 +269,8 @@ router.post('/:id/combats/:cid/prev-turn', async (req, res) => {
   if (!combat) { res.status(404).json({ error: 'Combat introuvable' }); return }
   if (combat.status !== 'active') { res.status(400).json({ error: 'Combat inactif' }); return }
 
-  const participants = await db.select().from(combatParticipants).where(eq(combatParticipants.combatId, combatId))
-  const sorted = [...participants].sort((a, b) => b.initiative - a.initiative)
+  const participants = await db.select().from(combatParticipants).where(eq(combatParticipants.combatId, combatId)).orderBy(asc(combatParticipants.id))
+  const sorted = [...participants].sort((a, b) => b.initiative - a.initiative || a.id - b.id)
 
   let prevIndex = combat.currentTurnIndex
   let roundNumber = combat.roundNumber
@@ -467,98 +467,6 @@ router.post('/:id/combats/:cid/finish', async (req, res) => {
 
   console.log(`[combat] finished: id=${combatId}`)
   res.json({ ok: true })
-})
-
-// POST /:id/combats/:cid/rolls — logger un jet de dés
-router.post('/:id/combats/:cid/rolls', async (req, res) => {
-  const userId = (req as unknown as AuthRequest).userId
-  const campaignId = Number(req.params.id)
-  const combatId = Number(req.params.cid)
-
-  const check = await verifyMember(campaignId, userId)
-  if (check.status !== 'ok') { res.status(403).json({ error: 'Non autorisé' }); return }
-
-  const combat = await loadCombatInCampaign(combatId, campaignId)
-  if (!combat) { res.status(404).json({ error: 'Combat introuvable' }); return }
-  if (combat.status !== 'active') { res.status(400).json({ error: 'Combat inactif' }); return }
-
-  const body = req.body as {
-    kind?: string; label?: string; context?: string
-    die?: number; sides?: number; bonus?: number; total?: number
-    rolls?: number[]; damage?: { total: number; critical: boolean; fumble: boolean }
-    asMonster?: string
-  }
-  if (typeof body.die !== 'number' || typeof body.sides !== 'number' || typeof body.total !== 'number') {
-    res.status(400).json({ error: 'Jet invalide' }); return
-  }
-
-  const isGm = userId === check.gmUserId
-
-  // actorName imposé par le serveur (anti-usurpation) : nom du perso du joueur,
-  // ou nom du monstre pour le MJ (jet visible MJ seulement).
-  let actorName: string
-  let visibility: 'public' | 'gm' = 'public'
-  if (body.asMonster) {
-    if (!isGm) { res.status(403).json({ error: 'Réservé au MJ' }); return }
-    actorName = String(body.asMonster)
-    visibility = 'gm'
-  } else {
-    const [participant] = await db
-      .select({ name: combatParticipants.name })
-      .from(combatParticipants)
-      .where(and(eq(combatParticipants.combatId, combatId), eq(combatParticipants.userId, userId)))
-    if (participant) {
-      actorName = participant.name
-    } else if (isGm) {
-      actorName = 'MJ'
-    } else {
-      res.status(403).json({ error: 'Tu ne participes pas à ce combat' }); return
-    }
-  }
-
-  const [event] = await db.insert(combatEvents).values({
-    combatId,
-    userId,
-    actorName,
-    visibility,
-    kind: String(body.kind ?? 'libre').slice(0, 20),
-    label: String(body.label ?? 'Jet'),
-    context: String(body.context ?? 'combat').slice(0, 30),
-    die: Math.round(body.die),
-    sides: Math.round(body.sides),
-    bonus: Math.round(body.bonus ?? 0),
-    total: Math.round(body.total),
-    rolls: Array.isArray(body.rolls) ? body.rolls : null,
-    damage: body.damage ?? null,
-  }).returning()
-
-  broadcastCombatRoll(combatId, check.gmUserId, event)
-  res.status(201).json(event)
-})
-
-// GET /:id/combats/:cid/rolls — historique des jets (filtré selon le rôle)
-router.get('/:id/combats/:cid/rolls', async (req, res) => {
-  const userId = (req as unknown as AuthRequest).userId
-  const campaignId = Number(req.params.id)
-  const combatId = Number(req.params.cid)
-
-  const check = await verifyMember(campaignId, userId)
-  if (check.status !== 'ok') { res.status(403).json({ error: 'Non autorisé' }); return }
-
-  const combat = await loadCombatInCampaign(combatId, campaignId)
-  if (!combat) { res.status(404).json({ error: 'Combat introuvable' }); return }
-
-  const isGm = userId === check.gmUserId
-  const where = isGm
-    ? eq(combatEvents.combatId, combatId)
-    : and(eq(combatEvents.combatId, combatId), eq(combatEvents.visibility, 'public'))
-
-  const rows = await db.select().from(combatEvents)
-    .where(where)
-    .orderBy(asc(combatEvents.createdAt), asc(combatEvents.id))
-    .limit(200)
-
-  res.json(rows)
 })
 
 // GET /:id/combats/:cid/events — SSE stream
