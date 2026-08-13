@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm'
+import { and, asc, eq } from 'drizzle-orm'
 import { Router } from 'express'
 import { db } from '../db/index.js'
 import { characters, generatedImages } from '../db/schema.js'
@@ -31,7 +31,7 @@ router.use(requireAuth)
 // GET /api/characters — liste les personnages de l'utilisateur
 router.get('/', async (req, res) => {
   const userId = (req as unknown as AuthRequest).userId
-  const rows = await db.select().from(characters).where(eq(characters.userId, userId))
+  const rows = await db.select().from(characters).where(eq(characters.userId, userId)).orderBy(asc(characters.id))
   res.json(rows)
 })
 
