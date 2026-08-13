@@ -5,6 +5,7 @@ import AppPageLayout from "../components/ui/AppPageLayout.vue";
 import AppPageHead from "../components/ui/AppPageHead.vue";
 import AppBadge from "../components/ui/AppBadge.vue";
 import AppEmptyState from "../components/ui/AppEmptyState.vue";
+import { RouterLink } from "vue-router";
 import AppButton from "../components/ui/AppButton.vue";
 import AppModal from "../components/ui/AppModal.vue";
 import PassifsCard from "../components/character-sheet/PassifsCard.vue";
@@ -607,7 +608,7 @@ function losePr() {
         <Swords :size="22" />
         Mes actions
         <template #actions>
-          <RouterLink to="/personnage" class="btn ghost small">← Fiche</RouterLink>
+          <AppButton :as="RouterLink" to="/personnage" size="small">← Fiche</AppButton>
         </template>
       </AppPageHead>
     </template>

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import AppButton from './AppButton.vue'
+
 defineProps<{
   variant?: 'ghost' | 'primary' | 'danger'
   size?: number
@@ -9,27 +11,15 @@ defineProps<{
 </script>
 
 <template>
-  <button
-    :type="type ?? 'button'"
-    class="icon-btn btn"
-    :class="[`${variant ?? 'ghost'}`, variant === 'danger' ? 'danger ghost' : '']"
-    :style="size ? { width: `${size}px`, height: `${size}px`, minHeight: `${size}px` } : undefined"
-    :title="title"
+  <!-- `icon-btn` reste : les 3 themes ciblent `.icon-btn.primary`. -->
+  <AppButton
+    :variant="variant ?? 'ghost'"
+    :type="type"
     :disabled="disabled"
+    :title="title"
+    class="icon-btn shrink-0 p-0 w-10 h-10 min-h-10"
+    :style="size ? { width: `${size}px`, height: `${size}px`, minHeight: `${size}px` } : undefined"
   >
     <slot />
-  </button>
+  </AppButton>
 </template>
-
-<style scoped>
-.icon-btn {
-  width: 40px;
-  height: 40px;
-  min-height: 40px;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-</style>

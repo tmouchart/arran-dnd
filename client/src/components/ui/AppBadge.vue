@@ -1,27 +1,39 @@
 <script setup lang="ts">
+import { cva } from 'class-variance-authority'
+import { cn } from '@/utils/cn'
+
 defineProps<{
   variant: 'attaque' | 'limitée' | 'gratuite' | 'info' | 'pm' | 'active'
 }>()
+
+// Les classes `badge` / `badge-*` restent : les 3 themes les ciblent,
+// et les couleurs custom vivent dans le <style> plus bas.
+const badgeVariants = cva(
+  'inline-block whitespace-nowrap shrink-0 rounded-full px-[0.65em] py-[0.18em] text-[0.7rem] font-bold',
+  {
+    variants: {
+      variant: {
+        attaque: 'uppercase tracking-[0.04em]',
+        limitée: 'uppercase tracking-[0.04em]',
+        gratuite: 'uppercase tracking-[0.04em]',
+        active: 'uppercase tracking-[0.04em]',
+        info: 'tracking-[0.02em]',
+        pm: 'tracking-[0.02em] tabular-nums',
+      },
+    },
+  },
+)
 </script>
 
 <template>
-  <span class="badge" :class="`badge-${variant}`">
+  <span :class="cn(badgeVariants({ variant }), 'badge', `badge-${variant}`)">
     <slot />
   </span>
 </template>
 
 <style scoped>
-.badge {
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  padding: 0.18em 0.65em;
-  border-radius: var(--radius-pill);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
+/* Couleurs uniquement. Le color-mix reste plus lisible ici qu'en
+   valeurs arbitraires Tailwind. */
 .badge-limitée {
   background: color-mix(in srgb, #8e44ad 18%, transparent);
   color: #8e44ad;
@@ -44,17 +56,12 @@ defineProps<{
   background: color-mix(in srgb, var(--muted) 14%, transparent);
   color: var(--muted);
   border: 1px solid color-mix(in srgb, var(--muted) 35%, transparent);
-  text-transform: none;
-  letter-spacing: 0.02em;
 }
 
 .badge-pm {
   background: color-mix(in srgb, #2980b9 20%, transparent);
   color: #2471a3;
   border: 1px solid color-mix(in srgb, #2980b9 38%, transparent);
-  text-transform: none;
-  letter-spacing: 0.02em;
-  font-variant-numeric: tabular-nums;
 }
 
 .badge-active {
