@@ -140,6 +140,8 @@ Four things that will bite you if you don't know them:
 2. **`--spacing: 4px`.** The root font-size is 17px, not 16px, so Tailwind's rem-based spacing would be off. It's forced to px. `min-h-10` really is 40px.
 3. **Class names are theme hooks.** `.btn`, `.card`, `.card-head`, `.badge`, `.icon-btn`, `.input` are still set on the components because the 3 themes target `html[data-style=...] .btn.primary` etc. **Never remove them.** Their *base* styles live in the component (CVA + Tailwind), not in `style.css`.
 4. **App CSS is unlayered, so it beats Tailwind utilities.** If a Tailwind class seems ignored, a plain CSS rule is winning. Don't fight it with `!important` — move the base style into the component.
+5. **Never wrap a reka-ui component in Vue's `<Transition>`.** reka controls mounting itself; the two deadlock and the element stays in the DOM forever. Animate with CSS keyframes on `[data-state='open']` instead — and **only on open**: reka doesn't recognise a different exit animation, so a `[data-state='closed']` animation leaks the element too.
+6. **Every dialog needs a `DialogDescription`**, or reka warns on every open. The React `aria-describedby={undefined}` trick does not work in Vue. `AppModal` / `AppBottomSheet` already ship an sr-only one with an optional `description` prop.
 
 Use `cn()` from `@/utils/cn` to merge classes, and `cva` for variants. The `@` alias points to `client/src`.
 Add a shadcn component with `npx shadcn-vue@latest add <name> -y -o` (writes into `client/src/components/shadcn/`), but **prefer reka-ui primitives directly** — the shadcn wrappers ship their own look and depend on `tw-animate-css`.
