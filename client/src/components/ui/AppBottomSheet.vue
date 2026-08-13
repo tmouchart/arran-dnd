@@ -1,9 +1,16 @@
 <script setup lang="ts">
-import { watch, onUnmounted } from 'vue'
+import {
+  DialogRoot,
+  DialogPortal,
+  DialogOverlay,
+  DialogContent,
+  DialogTitle,
+  DialogClose,
+} from 'reka-ui'
 import { X } from 'lucide-vue-next'
 import AppIconBtn from './AppIconBtn.vue'
 
-const props = defineProps<{
+defineProps<{
   modelValue: boolean
   title?: string
 }>()
@@ -12,61 +19,52 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void
 }>()
 
-function close(e?: Event) {
-  // Stop propagation so the closing click never reaches elements behind the sheet
-  e?.stopPropagation()
-  emit('update:modelValue', false)
-}
-
-// Close on Escape
-watch(
-  () => props.modelValue,
-  (open) => {
-    if (open) document.addEventListener('keydown', onKeydown)
-    else document.removeEventListener('keydown', onKeydown)
-  },
-)
-
-function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') close()
-}
-
-onUnmounted(() => document.removeEventListener('keydown', onKeydown))
+// Meme moteur que AppModal (reka-ui Dialog) : focus trap, Escape, clic
+// dehors, scroll lock. Seul le positionnement change (ancre en bas).
 </script>
 
 <template>
-  <Teleport to="body">
-    <Transition name="sheet">
-      <div v-if="modelValue" class="sheet-overlay" @click.self.stop="close">
-        <div class="sheet" role="dialog" aria-modal="true">
+  <DialogRoot :open="modelValue" @update:open="emit('update:modelValue', $event)">
+    <DialogPortal>
+      <Transition name="sheet-overlay">
+        <DialogOverlay class="sheet-overlay" />
+      </Transition>
+      <Transition name="sheet">
+        <DialogContent class="sheet">
           <div class="sheet-head">
-            <h3 v-if="title" class="sheet-title">{{ title }}</h3>
-            <span v-else class="sheet-title-spacer" />
-            <AppIconBtn :size="34" title="Fermer" @click.stop="close">
-              <X :size="18" />
-            </AppIconBtn>
+            <DialogTitle v-if="title" class="sheet-title">{{ title }}</DialogTitle>
+            <DialogTitle v-else class="sr-only">Panneau</DialogTitle>
+            <span v-if="!title" class="sheet-title-spacer" />
+            <DialogClose as-child>
+              <AppIconBtn :size="34" title="Fermer">
+                <X :size="18" />
+              </AppIconBtn>
+            </DialogClose>
           </div>
           <div class="sheet-body">
             <slot />
           </div>
-        </div>
-      </div>
-    </Transition>
-  </Teleport>
+        </DialogContent>
+      </Transition>
+    </DialogPortal>
+  </DialogRoot>
 </template>
 
-<style scoped>
+<style>
+/* Non scoped : DialogContent est teleporte dans <body>. */
 .sheet-overlay {
   position: fixed;
   inset: 0;
   z-index: 1000;
   background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
 }
 
 .sheet {
+  position: fixed;
+  z-index: 1001;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
   background: var(--surface);
   border: 1px solid var(--border-strong);
   border-bottom: none;
@@ -106,14 +104,11 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
   min-height: 0;
 }
 
-/* Desktop: centered dialog */
+/* Desktop : dialogue centre */
 @media (min-width: 700px) {
-  .sheet-overlay {
-    align-items: center;
-    padding: 1rem;
-  }
-
   .sheet {
+    bottom: 50%;
+    transform: translate(-50%, 50%);
     max-width: 440px;
     border-radius: var(--radius-xxl);
     border-bottom: 1px solid var(--border-strong);
@@ -122,36 +117,36 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 }
 
 /* Transitions */
-.sheet-enter-active,
-.sheet-leave-active {
+.sheet-overlay-enter-active,
+.sheet-overlay-leave-active {
   transition: opacity 180ms ease;
 }
 
-/* Keep capturing pointer events while the sheet fades out,
-   so nothing behind can be clicked during the leave transition. */
-.sheet-leave-active {
-  pointer-events: auto;
+.sheet-overlay-enter-from,
+.sheet-overlay-leave-to {
+  opacity: 0;
 }
 
-.sheet-enter-active .sheet,
-.sheet-leave-active .sheet {
+.sheet-enter-active,
+.sheet-leave-active {
   transition: transform 220ms ease;
 }
 
 .sheet-enter-from,
 .sheet-leave-to {
-  opacity: 0;
-}
-
-.sheet-enter-from .sheet,
-.sheet-leave-to .sheet {
-  transform: translateY(100%);
+  transform: translateX(-50%) translateY(100%);
 }
 
 @media (min-width: 700px) {
-  .sheet-enter-from .sheet,
-  .sheet-leave-to .sheet {
-    transform: translateY(24px);
+  .sheet-enter-active,
+  .sheet-leave-active {
+    transition: transform 220ms ease, opacity 180ms ease;
+  }
+
+  .sheet-enter-from,
+  .sheet-leave-to {
+    opacity: 0;
+    transform: translate(-50%, 50%) translateY(24px);
   }
 }
 </style>

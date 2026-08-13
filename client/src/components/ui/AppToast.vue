@@ -9,7 +9,14 @@ function runAction(toast: Toast) {
 
 <template>
   <Teleport to="body">
-    <TransitionGroup name="toast" tag="div" class="toast-stack">
+    <!-- aria-live : les lecteurs d'ecran annoncent le toast a son apparition -->
+    <TransitionGroup
+      name="toast"
+      tag="div"
+      class="toast-stack"
+      role="status"
+      aria-live="polite"
+    >
       <div v-for="toast in toasts" :key="toast.id" class="toast">
         <span class="toast-message">{{ toast.message }}</span>
         <button

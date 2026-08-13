@@ -1,9 +1,16 @@
 <script setup lang="ts">
-import { watch, onUnmounted } from 'vue'
+import {
+  DialogRoot,
+  DialogPortal,
+  DialogOverlay,
+  DialogContent,
+  DialogTitle,
+  DialogClose,
+} from 'reka-ui'
 import { X } from 'lucide-vue-next'
 import AppIconBtn from './AppIconBtn.vue'
 
-const props = defineProps<{
+defineProps<{
   modelValue: boolean
   title?: string
   /** Wider box (560px) for content-heavy modals */
@@ -14,39 +21,29 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void
 }>()
 
-function close(e?: Event) {
-  // Stop propagation so the closing click never reaches elements behind the modal
-  e?.stopPropagation()
-  emit('update:modelValue', false)
-}
-
-// Close on Escape
-watch(
-  () => props.modelValue,
-  (open) => {
-    if (open) document.addEventListener('keydown', onKeydown)
-    else document.removeEventListener('keydown', onKeydown)
-  },
-)
-
-function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') close()
-}
-
-onUnmounted(() => document.removeEventListener('keydown', onKeydown))
+// reka-ui s'occupe de : focus trap, Escape, clic dehors, scroll lock,
+// aria-modal et restitution du focus a la fermeture.
 </script>
 
 <template>
-  <Teleport to="body">
-    <Transition name="modal">
-      <div v-if="modelValue" class="modal-overlay" @click.self.stop="close">
-        <div class="modal-box" :class="{ 'modal-box--wide': wide }" role="dialog" aria-modal="true">
+  <DialogRoot :open="modelValue" @update:open="emit('update:modelValue', $event)">
+    <DialogPortal>
+      <Transition name="modal-overlay">
+        <DialogOverlay class="modal-overlay" />
+      </Transition>
+      <Transition name="modal-box">
+        <DialogContent class="modal-box" :class="{ 'modal-box--wide': wide }">
           <div class="modal-head">
-            <h3 v-if="title" class="modal-title">{{ title }}</h3>
-            <span v-else class="modal-title-spacer" />
-            <AppIconBtn :size="34" title="Fermer" @click.stop="close">
-              <X :size="18" />
-            </AppIconBtn>
+            <DialogTitle v-if="title" class="modal-title">{{ title }}</DialogTitle>
+            <!-- DialogTitle est requis pour l'accessibilite : si pas de titre
+                 visible, on en met un lu par les lecteurs d'ecran seulement. -->
+            <DialogTitle v-else class="sr-only">Boîte de dialogue</DialogTitle>
+            <span v-if="!title" class="modal-title-spacer" />
+            <DialogClose as-child>
+              <AppIconBtn :size="34" title="Fermer">
+                <X :size="18" />
+              </AppIconBtn>
+            </DialogClose>
           </div>
           <div class="modal-body">
             <slot />
@@ -54,29 +51,31 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
           <div v-if="$slots.footer" class="modal-footer">
             <slot name="footer" />
           </div>
-        </div>
-      </div>
-    </Transition>
-  </Teleport>
+        </DialogContent>
+      </Transition>
+    </DialogPortal>
+  </DialogRoot>
 </template>
 
-<style scoped>
+<style>
+/* Non scoped : DialogContent est teleporte dans <body>, hors du scope du composant. */
 .modal-overlay {
   position: fixed;
   inset: 0;
   z-index: 1000;
   background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-md);
 }
 
 .modal-box {
+  position: fixed;
+  z-index: 1001;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   background: var(--surface);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-xl);
-  width: 100%;
+  width: calc(100% - 2 * var(--space-md));
   max-width: 420px;
   max-height: 88dvh;
   display: flex;
@@ -124,23 +123,24 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
   flex-shrink: 0;
 }
 
-.modal-enter-active,
-.modal-leave-active {
+.modal-overlay-enter-active,
+.modal-overlay-leave-active {
   transition: opacity 160ms ease;
 }
 
-.modal-enter-active .modal-box,
-.modal-leave-active .modal-box {
-  transition: transform 160ms ease;
-}
-
-.modal-enter-from,
-.modal-leave-to {
+.modal-overlay-enter-from,
+.modal-overlay-leave-to {
   opacity: 0;
 }
 
-.modal-enter-from .modal-box,
-.modal-leave-to .modal-box {
-  transform: translateY(10px) scale(0.98);
+.modal-box-enter-active,
+.modal-box-leave-active {
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.modal-box-enter-from,
+.modal-box-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -50%) translateY(10px) scale(0.98);
 }
 </style>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Component } from 'vue'
+import { TabsRoot, TabsList, TabsTrigger } from 'reka-ui'
 
 export interface AppTab {
   value: string
@@ -17,29 +18,25 @@ defineProps<{
   iconOnlyMobile?: boolean
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void
 }>()
+
+// reka-ui apporte la navigation au clavier (fleches, Home/End) et le
+// cablage aria-selected / roving tabindex.
 </script>
 
 <template>
-  <nav class="tab-bar" role="tablist">
-    <button
-      v-for="tab in tabs"
-      :key="tab.value"
-      type="button"
-      role="tab"
-      class="tab-btn"
-      :class="{ active: modelValue === tab.value }"
-      :aria-selected="modelValue === tab.value"
-      @click="$emit('update:modelValue', tab.value)"
-    >
-      <span v-if="typeof tab.icon === 'string'" class="tab-icon" aria-hidden="true">{{ tab.icon }}</span>
-      <component :is="tab.icon" v-else-if="tab.icon" class="tab-icon" :size="16" aria-hidden="true" />
-      <span class="tab-label" :class="{ 'tab-label--hide-mobile': iconOnlyMobile }">{{ tab.label }}</span>
-      <span v-if="tab.dot" class="tab-dot" aria-hidden="true" />
-    </button>
-  </nav>
+  <TabsRoot :model-value="modelValue" @update:model-value="emit('update:modelValue', String($event))">
+    <TabsList class="tab-bar">
+      <TabsTrigger v-for="tab in tabs" :key="tab.value" :value="tab.value" class="tab-btn">
+        <span v-if="typeof tab.icon === 'string'" class="tab-icon" aria-hidden="true">{{ tab.icon }}</span>
+        <component :is="tab.icon" v-else-if="tab.icon" class="tab-icon" :size="16" aria-hidden="true" />
+        <span class="tab-label" :class="{ 'tab-label--hide-mobile': iconOnlyMobile }">{{ tab.label }}</span>
+        <span v-if="tab.dot" class="tab-dot" aria-hidden="true" />
+      </TabsTrigger>
+    </TabsList>
+  </TabsRoot>
 </template>
 
 <style scoped>
@@ -75,7 +72,8 @@ defineEmits<{
   color: var(--accent-strong);
 }
 
-.tab-btn.active {
+/* reka-ui expose l'etat via data-state plutot qu'une classe */
+.tab-btn[data-state='active'] {
   background: var(--surface);
   color: var(--accent-strong);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
