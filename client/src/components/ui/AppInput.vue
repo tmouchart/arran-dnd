@@ -20,12 +20,6 @@ const emit = defineEmits<{
   'update:modelValue': [value: string | number]
 }>()
 
-// Base partagee avec AppTextarea. `border-solid` obligatoire : sans le
-// preflight Tailwind, border-style vaut `none` et la bordure disparait.
-const FIELD =
-  'px-[var(--space-md)] py-[var(--space-sm)] rounded-md border border-solid ' +
-  'border-border bg-[var(--surface-2)] text-foreground font-[inherit] text-[0.92rem]'
-
 function onInput(e: Event) {
   const raw = (e.target as HTMLInputElement).value
   if (props.type === 'number') {
@@ -40,7 +34,7 @@ function onInput(e: Event) {
   <input
     :type="type ?? 'text'"
     :value="modelValue"
-    :class="[FIELD, 'min-h-10', textAlign === 'center' && 'text-center tabular-nums', 'app-input']"
+    :class="['input', textAlign === 'center' && 'text-center tabular-nums']"
     :placeholder="placeholder"
     :min="min"
     :max="max"

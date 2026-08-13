@@ -12,11 +12,6 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void
 }>()
 
-// Meme base que AppInput
-const FIELD =
-  'px-[var(--space-md)] py-[var(--space-sm)] rounded-md border border-solid ' +
-  'border-border bg-[var(--surface-2)] text-foreground font-[inherit] text-[0.92rem]'
-
 function onInput(event: Event) {
   emit('update:modelValue', (event.target as HTMLTextAreaElement).value)
 }
@@ -24,7 +19,7 @@ function onInput(event: Event) {
 
 <template>
   <textarea
-    :class="[FIELD, 'leading-[1.45] resize-y', 'app-textarea']"
+    class="input leading-[1.45] resize-y"
     :value="modelValue ?? ''"
     :placeholder="placeholder"
     :rows="rows"

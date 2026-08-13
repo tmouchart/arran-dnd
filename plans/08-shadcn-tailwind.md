@@ -104,8 +104,7 @@ les badges colorés, les textures de fond radiales.
 
 ## Étapes
 
-> **État** : étapes 0 à 4 ✅ faites (sauf `AppSelect`, décision en attente).
-> Prochaine : étape 5 (passe clean & pro).
+> **État** : ✅ terminé (étapes 0 à 6). `AppSelect` reste volontairement natif.
 >
 > Découvertes en cours de route :
 > - `font-size` racine = 18px → il a fallu fixer `--spacing: 4px` sinon toutes
@@ -178,7 +177,7 @@ que si on a besoin d'une recherche dans les longues listes (armes, races).
 
 Vérif par composant : ouverture/fermeture, Escape, clic dehors, focus au clavier, mobile.
 
-### Étape 5 — Passe "clean & pro"
+### Étape 5 — Passe "clean & pro" ✅
 Une fois la base en place, une seule PR de polish :
 - Réduire l'échelle de rayons à 3 valeurs.
 - Une ombre unique, plus douce.
@@ -187,7 +186,7 @@ Une fois la base en place, une seule PR de polish :
 
 À faire **avec l'agent `ux-designer`** avant de coder, pour avoir une proposition concrète.
 
-### Étape 6 — Nettoyage
+### Étape 6 — Nettoyage ✅
 - Supprimer de `style.css` ce qui est devenu mort (`.btn`, `.input`) une fois les derniers
   usages hors-composants migrés (`<select class="input">`, `.hp-btn`, `.dice-btn`, `.mode-tab`).
 - Mettre à jour le catalogue de composants dans `CLAUDE.md`.

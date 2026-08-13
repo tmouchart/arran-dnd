@@ -122,27 +122,44 @@ If a recurring UI pattern has no component yet, **first create a new `App*` comp
 ### Design tokens
 
 All defined in `client/src/style.css` and overridden by themes. Never hardcode what a token covers:
-- **Colors**: `--bg`, `--surface(-2/-3)`, `--text`, `--muted`, `--border(-strong)`, `--accent(-strong/-soft)`, `--brand(-strong)`, `--danger`. No raw hex in scoped CSS unless the color is genuinely unique.
-- **Radius**: `--radius-xs/sm/md/lg/xl/xxl/pill`. Never hardcode `border-radius` (only `50%` for circles is fine).
+- **Colors**: `--bg`, `--surface(-2/-3)`, `--text`, `--muted`, `--border(-strong)`, `--accent(-strong/-soft)`, `--brand(-strong)`, `--on-brand`, `--danger`. No raw hex in scoped CSS unless the color is genuinely unique.
+  - `--on-brand` is the text color to use **on top of** a `--brand` background. Never hardcode a text color on a brand surface — the 3 alternate themes redefine it.
+- **Radius**: `--radius-xs/sm/md/lg/xl/xxl/pill`. The 7 names map to only **3 real values** (8 / 12 / 16px) + pill. Never hardcode `border-radius` (only `50%` for circles is fine).
 - **Spacing**: `--space-xs/sm/md/lg` for padding/gap.
-- **Shadows**: `--shadow-soft`, `--shadow-card`.
+- **Shadows**: `--shadow-soft`, `--shadow-card`. Both are deliberately near-invisible (`0 1px 3px`). Don't reintroduce heavy drop shadows.
+- **Heights**: every interactive control is **40px**. Don't invent 34/38/44px variants.
+
+### Tailwind + shadcn-vue
+
+The `App*` components run on **Tailwind v4** and **reka-ui** (the engine behind shadcn-vue).
+See `plans/08-shadcn-tailwind.md` for the full rationale.
+
+Four things that will bite you if you don't know them:
+
+1. **No Tailwind preflight.** `style.css` imports only `theme.css` + `utilities.css`. Consequence: `border-style` defaults to `none`, so a bare `border` class draws nothing — **always add `border-solid`**.
+2. **`--spacing: 4px`.** The root font-size is 17px, not 16px, so Tailwind's rem-based spacing would be off. It's forced to px. `min-h-10` really is 40px.
+3. **Class names are theme hooks.** `.btn`, `.card`, `.card-head`, `.badge`, `.icon-btn`, `.input` are still set on the components because the 3 themes target `html[data-style=...] .btn.primary` etc. **Never remove them.** Their *base* styles live in the component (CVA + Tailwind), not in `style.css`.
+4. **App CSS is unlayered, so it beats Tailwind utilities.** If a Tailwind class seems ignored, a plain CSS rule is winning. Don't fight it with `!important` — move the base style into the component.
+
+Use `cn()` from `@/utils/cn` to merge classes, and `cva` for variants. The `@` alias points to `client/src`.
+Add a shadcn component with `npx shadcn-vue@latest add <name> -y -o` (writes into `client/src/components/shadcn/`), but **prefer reka-ui primitives directly** — the shadcn wrappers ship their own look and depend on `tw-animate-css`.
 
 ### Component catalog
 
 | Component | Usage |
 |---|---|
 | `AppInput` | All `<input>` fields (text, number, password). Fixed `font-size: 0.92rem` for consistent height. Props: `modelValue`, `type`, `placeholder`, `min`, `max`, `step`, `required`, `autofocus`, `autocomplete`, `disabled`, `textAlign` (`left`/`center`), `id`. Emits numbers automatically for `type="number"`. Layout sizing (width, flex) is controlled by the parent via `class`. |
-| `AppButton` | All text buttons. Props: `variant` (`ghost` (default), `primary`, `danger`), `size` (`normal`/`small`), `type` (`button`/`submit`), `disabled`, `block` (full-width). Uses global `.btn` styles. |
+| `AppButton` | All text buttons. Props: `variant` (`ghost` (default), `primary`, `danger`), `size` (`normal`/`small`), `type` (`button`/`submit`), `disabled`, `block` (full-width), `as` (render as another tag/component, e.g. `RouterLink`). |
 | `AppIconBtn` | 40×40 px icon-only button. Variants: `ghost` (default), `primary`, `danger`. Use `size` prop to override dimensions. |
 | `AppPageLayout` | **Every page wrapper.** Provides consistent layout with 3 slots: `#top-bar` (header), default (main content), `#bottom-bar` (optional footer). Props: `mode` (`scroll` (default) / `full` — full-height viewport), `width` (`default` (640px) / `wide` (800px)). All views except LoginView must use this. |
 | `AppPageHead` | Every page header with an `<h1>`. Slot `#actions` for buttons on the right. Goes inside `AppPageLayout`'s `#top-bar` slot. |
 | `AppCard` | Any bordered surface card. Use `title` prop for a simple heading, `#titleActions` slot for buttons next to the title, or place a manual `.card-head` div in the default slot for complex headers. |
 | `AppBadge` | Colored pill badges. Variants: `attaque`, `limitée`, `gratuite`, `info`, `pm`, `active`. |
 | `AppEmptyState` | Loading / empty / error feedback. Variants: `loading`, `empty` (default), `error`. Slot `#actions` for retry buttons. |
-| `AppModal` | **Every centered dialog** (confirmations, forms, pickers). `v-model` boolean, props `title`, `wide` (560px). Slots: default, `#footer` (action buttons). Handles Teleport, overlay, Escape, click-outside. |
-| `AppBottomSheet` | **Every bottom sheet** (mobile-first panels; centered dialog on desktop). `v-model` + `title`. Same family as AppModal — pick sheet for mobile flows, modal for confirmations. |
-| `AppTabs` | **Every tab bar.** `v-model` string + `tabs: { value, label, icon? }[]` (icon = emoji string or Lucide component). Prop `iconOnlyMobile` hides labels on phones. |
-| `AppSelect` | All `<select>` fields. `v-model` + `<option>` in default slot. Same look as AppInput. |
+| `AppModal` | **Every centered dialog** (confirmations, forms, pickers). `v-model` boolean, props `title`, `wide` (560px). Slots: default, `#footer` (action buttons). Built on reka-ui `Dialog`: focus trap, Escape, click-outside, scroll lock and focus restore come for free. |
+| `AppBottomSheet` | **Every bottom sheet** (mobile-first panels; centered dialog on desktop). `v-model` + `title`. Same reka-ui `Dialog` engine as AppModal — pick sheet for mobile flows, modal for confirmations. |
+| `AppTabs` | **Every tab bar.** `v-model` string + `tabs: { value, label, icon?, dot? }[]` (icon = emoji string or Lucide component). Prop `iconOnlyMobile` hides labels on phones. Built on reka-ui `Tabs`: arrow-key navigation included. Active state is `[data-state="active"]`, not `.active`. |
+| `AppSelect` | All `<select>` fields. `v-model` + `<option>` in default slot. Stays a **native** `<select>` on purpose — the OS picker is better UX on phones. |
 | `AppTextarea` | All `<textarea>` fields. `v-model`, `rows`, `placeholder`. Same look as AppInput. |
 | `AppToast` | Global toasts — never instantiate; call `showToast(message, options?)` from `composables/useToast.ts`. |
 
@@ -153,6 +170,7 @@ All defined in `client/src/style.css` and overridden by themes. Never hardcode w
 - **Never** use `<input class="input">` — use `<AppInput>` instead.
 - **Never** use `<button class="btn ...">Text</button>` — use `<AppButton>` instead. Exception: highly specialized buttons (`.hp-btn`, `.dice-btn`, etc.) with unique visual treatment.
 - **Never** redefine `.btn` or `.input` styles in scoped CSS. If a variant is missing, extend the component.
+- Need a link that looks like a button? `<AppButton :as="RouterLink" to="/...">` — don't hand-style a `RouterLink`.
 - **Never** use raw `<select class="input">` or `<textarea class="input">` — use `<AppSelect>` / `<AppTextarea>`.
 - **Never** hand-roll a modal, overlay, bottom sheet, or tab bar — use `<AppModal>`, `<AppBottomSheet>`, `<AppTabs>`.
 - **Never** hardcode `border-radius`, paddings, or colors a token covers — use `--radius-*`, `--space-*`, and the color tokens.

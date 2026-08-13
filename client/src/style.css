@@ -172,8 +172,10 @@ select:focus-visible {
   outline-offset: 1px;
 }
 
-/* Text fields — shared base for selects, textareas, readonly displays.
-   For <input> elements, prefer AppInput component instead. */
+/* Base commune a tous les champs. Portee par AppInput, AppSelect et
+   AppTextarea, et par les quelques elements bruts qui doivent y ressembler
+   (affichage en lecture seule, textarea auto-resize).
+   Sert aussi de crochet aux 3 themes, qui ciblent `.input`. */
 .input {
   min-height: 40px;
   padding: var(--space-sm) var(--space-md);
@@ -185,14 +187,5 @@ select:focus-visible {
   font-size: 0.92rem;
 }
 
-/* Page padding is now handled by AppPageLayout component.
-   Legacy views that haven't migrated yet still get padding: */
-.main > *:not(.page-layout) {
-  padding: 1rem 0.78rem 1.5rem;
-}
-
-@media (min-width: 740px) {
-  .main > *:not(.page-layout) {
-    padding: 1.25rem 1rem 2rem;
-  }
-}
+/* Le padding des pages est gere par AppPageLayout. Toutes les vues l'utilisent
+   sauf LoginView, qui a son propre centrage. La regle de repli est supprimee. */

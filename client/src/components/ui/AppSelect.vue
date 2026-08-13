@@ -11,20 +11,8 @@ defineProps<{
 </script>
 
 <template>
-  <select v-model="model" class="app-select" :disabled="disabled" :required="required" :id="id">
+  <!-- `input` porte la base commune (style.css) et sert de crochet aux 3 themes -->
+  <select v-model="model" class="input" :disabled="disabled" :required="required" :id="id">
     <slot />
   </select>
 </template>
-
-<style scoped>
-.app-select {
-  min-height: 40px;
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  color: var(--text);
-  font-family: inherit;
-  font-size: 0.92rem;
-}
-</style>
