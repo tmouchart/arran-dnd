@@ -134,7 +134,7 @@ function openPage(id: number) {
   flex-direction: column;
   gap: 0.15rem;
   padding: 0.6rem 0.8rem;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   background: var(--surface);
   cursor: pointer;

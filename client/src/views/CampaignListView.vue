@@ -16,6 +16,7 @@ import AppIconBtn from '../components/ui/AppIconBtn.vue'
 import AppInput from '../components/ui/AppInput.vue'
 import AppButton from '../components/ui/AppButton.vue'
 import AppEmptyState from '../components/ui/AppEmptyState.vue'
+import AppModal from '../components/ui/AppModal.vue'
 
 const router = useRouter()
 
@@ -159,17 +160,17 @@ function isGm(c: CampaignSummary) {
     </div>
 
     <!-- Modal de confirmation suppression -->
-    <Teleport to="body">
-      <div v-if="confirmDeleteId" class="modal-overlay" @click.self="confirmDeleteId = null">
-        <div class="modal-box">
-          <p>Supprimer cette campagne ? Cette action est irréversible.</p>
-          <div class="modal-actions">
-            <AppButton variant="ghost" @click="confirmDeleteId = null">Annuler</AppButton>
-            <AppButton variant="danger" @click="handleDelete(confirmDeleteId!)">Supprimer</AppButton>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+    <AppModal
+      :model-value="confirmDeleteId !== null"
+      title="Supprimer la campagne"
+      @update:model-value="confirmDeleteId = null"
+    >
+      <p class="confirm-text">Supprimer cette campagne ? Cette action est irréversible.</p>
+      <template #footer>
+        <AppButton variant="ghost" @click="confirmDeleteId = null">Annuler</AppButton>
+        <AppButton variant="danger" @click="handleDelete(confirmDeleteId!)">Supprimer</AppButton>
+      </template>
+    </AppModal>
   </AppPageLayout>
 </template>
 
@@ -182,7 +183,7 @@ function isGm(c: CampaignSummary) {
   padding: 0.85rem 1rem;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 1rem;
+  border-radius: var(--radius-xl);
 }
 
 .create-form .create-name {
@@ -203,7 +204,7 @@ function isGm(c: CampaignSummary) {
   padding: 0.85rem 1rem;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 1.1rem;
+  border-radius: var(--radius-xxl);
   gap: 0.75rem;
   transition: border-color 160ms ease;
 }
@@ -261,36 +262,9 @@ function isGm(c: CampaignSummary) {
   margin: 0;
 }
 
-/* Modal */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-box {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 1.2rem;
-  padding: 1.5rem;
-  max-width: 360px;
-  width: 90%;
-  text-align: center;
-}
-
-.modal-box p {
-  margin: 0 0 1.2rem;
+.confirm-text {
+  margin: 0;
   font-size: 0.95rem;
   color: var(--text);
-}
-
-.modal-actions {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: center;
 }
 </style>

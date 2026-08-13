@@ -290,7 +290,7 @@ const defDexTooltip = computed(() => {
   align-items: center;
   gap: 0.1rem;
   padding: 0.35rem 0.6rem;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--surface-2);
   min-width: 2.8rem;

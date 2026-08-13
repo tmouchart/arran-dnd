@@ -269,7 +269,7 @@ onMounted(load)
   align-items: center;
   gap: 0.6rem;
   padding: 0.7rem 0.9rem;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   background: var(--surface);
   cursor: pointer;
@@ -322,7 +322,7 @@ onMounted(load)
   gap: 0.35rem;
   align-self: flex-start;
   padding: 0.25rem 0.7rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--surface-2);
   border: 1px solid var(--border);
   color: var(--muted);

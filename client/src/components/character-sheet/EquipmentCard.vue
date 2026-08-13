@@ -2,6 +2,7 @@
 import { ref } from "vue";
 import { ChevronDown, ChevronUp } from "lucide-vue-next";
 import AppCard from "../ui/AppCard.vue";
+import AppSelect from "../ui/AppSelect.vue";
 import { ARMORS_CATALOG, SHIELDS_CATALOG } from "../../data/armorsCatalog";
 import type { Character } from "../../types/character";
 
@@ -36,7 +37,7 @@ function shieldOptionLabel(s: (typeof SHIELDS_CATALOG)[number]): string {
     <div v-if="!collapsed" class="armor-row">
       <div class="field">
         <span>Armure</span>
-        <select v-model="character.armorId" class="input select">
+        <AppSelect v-model="character.armorId" class="select">
           <option value="">— Aucune —</option>
           <optgroup v-for="group in ARMOR_GROUPS" :key="group.type" :label="group.label">
             <option
@@ -45,14 +46,14 @@ function shieldOptionLabel(s: (typeof SHIELDS_CATALOG)[number]): string {
               :value="a.id"
             >{{ armorOptionLabel(a) }}</option>
           </optgroup>
-        </select>
+        </AppSelect>
       </div>
       <div class="field">
         <span>Bouclier</span>
-        <select v-model="character.shieldId" class="input select">
+        <AppSelect v-model="character.shieldId" class="select">
           <option value="">— Aucun —</option>
           <option v-for="s in SHIELDS_CATALOG" :key="s.id" :value="s.id">{{ shieldOptionLabel(s) }}</option>
-        </select>
+        </AppSelect>
       </div>
     </div>
   </AppCard>
@@ -82,7 +83,7 @@ function shieldOptionLabel(s: (typeof SHIELDS_CATALOG)[number]): string {
   width: 28px;
   height: 28px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--surface-2);
   color: var(--muted);
   cursor: pointer;
@@ -113,7 +114,7 @@ function shieldOptionLabel(s: (typeof SHIELDS_CATALOG)[number]): string {
 
 .field > span:first-child { font-weight: 600; }
 
-.input.select {
+select.select {
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;

@@ -537,7 +537,7 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   border: 1px solid var(--border);
   overflow: hidden;
   background: #fff;
@@ -579,7 +579,7 @@ onBeforeUnmount(() => {
 .tool-btn {
   width: 34px;
   height: 34px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid transparent;
   background: transparent;
   cursor: pointer;
@@ -637,7 +637,7 @@ onBeforeUnmount(() => {
   z-index: 20;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
   padding: 0.45rem;
 }
@@ -685,7 +685,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 0.5rem;
   padding: 0.35rem 0.5rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid transparent;
   background: transparent;
   cursor: pointer;

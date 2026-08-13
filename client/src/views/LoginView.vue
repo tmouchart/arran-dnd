@@ -6,6 +6,7 @@ import { register as apiRegister } from "../api/auth";
 import { user } from "../composables/useAuth";
 import AppInput from "../components/ui/AppInput.vue";
 import AppButton from "../components/ui/AppButton.vue";
+import AppTabs from "../components/ui/AppTabs.vue";
 
 const router = useRouter();
 const route = useRoute();
@@ -16,6 +17,11 @@ const passwordConfirm = ref("");
 const error = ref("");
 const loading = ref(false);
 const mode = ref<"login" | "register">("login");
+
+const MODE_TABS = [
+  { value: "login", label: "Se connecter" },
+  { value: "register", label: "Créer un compte" },
+];
 
 function firstQueryString(q: unknown): string | undefined {
   if (q == null) return undefined;
@@ -101,20 +107,12 @@ async function submit() {
     <div class="login-card">
       <h1 class="login-title">Terres d'Arran</h1>
 
-      <div class="mode-tabs">
-        <button
-          class="mode-tab"
-          :class="{ active: mode === 'login' }"
-          type="button"
-          @click="switchMode('login')"
-        >Se connecter</button>
-        <button
-          class="mode-tab"
-          :class="{ active: mode === 'register' }"
-          type="button"
-          @click="switchMode('register')"
-        >Créer un compte</button>
-      </div>
+      <AppTabs
+        class="mode-tabs"
+        :model-value="mode"
+        :tabs="MODE_TABS"
+        @update:model-value="switchMode($event as 'login' | 'register')"
+      />
 
       <form class="login-form" @submit.prevent="submit">
         <label class="field-label" for="username">Identifiant</label>
@@ -181,7 +179,7 @@ async function submit() {
   max-width: 360px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   padding: 2rem 1.75rem;
   box-shadow: var(--shadow-card);
 }
@@ -195,29 +193,7 @@ async function submit() {
 }
 
 .mode-tabs {
-  display: flex;
-  gap: 0;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  overflow: hidden;
   margin-bottom: 1.5rem;
-}
-
-.mode-tab {
-  flex: 1;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  background: transparent;
-  border: none;
-  color: var(--muted);
-  cursor: pointer;
-  transition: background 140ms, color 140ms;
-}
-
-.mode-tab.active {
-  background: var(--accent);
-  color: #fff;
 }
 
 .login-form {
@@ -278,7 +254,7 @@ async function submit() {
   gap: 0.6rem;
   padding: 0.6rem;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--surface-2);
   color: var(--text);
   font-size: 0.9rem;

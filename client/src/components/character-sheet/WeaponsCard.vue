@@ -3,8 +3,9 @@ import { computed, ref } from "vue";
 import AppCard from "../ui/AppCard.vue";
 import AppInput from "../ui/AppInput.vue";
 import AppButton from "../ui/AppButton.vue";
+import AppSelect from "../ui/AppSelect.vue";
 import { WEAPONS_CATALOG } from "../../data/weaponsCatalog";
-import { MARTIAL_WEAPON_CATEGORIES } from "../../data/martialWeaponCategories";
+import { MARTIAL_WEAPON_CATEGORIES, type MartialWeaponCategoryId } from "../../data/martialWeaponCategories";
 import type { Character, WeaponRow } from "../../types/character";
 
 const props = defineProps<{ character: Character }>();
@@ -68,16 +69,16 @@ function setDamageAbilityFromSelect(w: WeaponRow, v: string) {
     <div class="card-head">
       <h2>Armes</h2>
       <div class="card-head-actions">
-        <select
+        <AppSelect
           v-model="catalogPick"
-          class="input select weapon-catalog-select"
-          @change="onCatalogWeaponChange"
+          class="select weapon-catalog-select"
+          @update:model-value="onCatalogWeaponChange"
         >
           <option value="">Ajouter depuis le livre</option>
           <optgroup v-for="g in weaponsByCategory" :key="g.id" :label="g.label">
             <option v-for="w in g.weapons" :key="w.id" :value="w.id">{{ w.name }}</option>
           </optgroup>
-        </select>
+        </AppSelect>
         <AppButton size="small" @click="addCustomWeapon">+ Perso</AppButton>
       </div>
     </div>
@@ -88,16 +89,24 @@ function setDamageAbilityFromSelect(w: WeaponRow, v: string) {
         <div class="grid-2 tight">
           <label class="field">
             <span>Type</span>
-            <select v-model="w.attackType" class="input select">
+            <AppSelect
+              class="select"
+              :model-value="w.attackType"
+              @update:model-value="w.attackType = $event as 'contact' | 'distance'"
+            >
               <option value="contact">Contact</option>
               <option value="distance">Distance</option>
-            </select>
+            </AppSelect>
           </label>
           <label class="field">
             <span>Catégorie martiale</span>
-            <select v-model="w.martialFamily" class="input select">
+            <AppSelect
+              class="select"
+              :model-value="w.martialFamily"
+              @update:model-value="w.martialFamily = $event as MartialWeaponCategoryId"
+            >
               <option v-for="c in MARTIAL_WEAPON_CATEGORIES" :key="c.id" :value="c.id">{{ c.label }}</option>
-            </select>
+            </AppSelect>
           </label>
         </div>
         <div class="grid-2 tight">
@@ -107,15 +116,15 @@ function setDamageAbilityFromSelect(w: WeaponRow, v: string) {
           </label>
           <label class="field">
             <span>Mod. dégâts</span>
-            <select
-              class="input select"
-              :value="damageAbilitySelectValue(w)"
-              @change="setDamageAbilityFromSelect(w, ($event.target as HTMLSelectElement).value)"
+            <AppSelect
+              class="select"
+              :model-value="damageAbilitySelectValue(w)"
+              @update:model-value="setDamageAbilityFromSelect(w, $event)"
             >
               <option value="">Aucun (—)</option>
               <option value="strength">FOR</option>
               <option value="dexterity">DEX</option>
-            </select>
+            </AppSelect>
           </label>
         </div>
         <div class="grid-2 tight">
@@ -167,7 +176,7 @@ function setDamageAbilityFromSelect(w: WeaponRow, v: string) {
 
 .weapon-sheet-card {
   padding: 0.68rem;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 1px dashed var(--border-strong);
   display: flex;
   flex-direction: column;
@@ -186,7 +195,7 @@ function setDamageAbilityFromSelect(w: WeaponRow, v: string) {
 .field { display: flex; flex-direction: column; gap: 0.32rem; font-size: 0.83rem; color: var(--muted); }
 .field > span:first-child { font-weight: 600; }
 
-.input.select {
+select.select {
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;

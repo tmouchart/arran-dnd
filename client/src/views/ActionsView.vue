@@ -6,6 +6,7 @@ import AppPageHead from "../components/ui/AppPageHead.vue";
 import AppBadge from "../components/ui/AppBadge.vue";
 import AppEmptyState from "../components/ui/AppEmptyState.vue";
 import AppButton from "../components/ui/AppButton.vue";
+import AppModal from "../components/ui/AppModal.vue";
 import PassifsCard from "../components/character-sheet/PassifsCard.vue";
 import AffaibliPill from "../components/AffaibliPill.vue";
 import { useCharacter, loadCharacter, PR_MAX } from "../composables/useCharacter";
@@ -1192,67 +1193,64 @@ function losePr() {
     </div>
 
     <!-- Modal PR -->
-    <Teleport to="body">
-      <div v-if="showReposConfirm" class="modal-backdrop" @click.self="showReposConfirm = false">
-        <div class="modal-box">
-          <p class="modal-question">Points de récupération</p>
+    <AppModal v-model="showReposConfirm" title="Points de récupération">
+      <div class="repos-modal-body">
+        <!-- PR dots -->
+        <div class="pr-dots-modal">
+          <div
+            v-for="i in PR_MAX"
+            :key="i"
+            class="pr-dot-modal"
+            :class="{ used: i > character.prCurrent }"
+          />
+        </div>
+        <p class="pr-count-label">{{ character.prCurrent }} / {{ PR_MAX }}</p>
 
-          <!-- PR dots -->
-          <div class="pr-dots-modal">
-            <div
-              v-for="i in PR_MAX"
-              :key="i"
-              class="pr-dot-modal"
-              :class="{ used: i > character.prCurrent }"
-            />
-          </div>
-          <p class="pr-count-label">{{ character.prCurrent }} / {{ PR_MAX }}</p>
+        <!-- Rest button -->
+        <AppButton
+          variant="primary"
+          block
+          :disabled="character.prCurrent <= 0"
+          @click="confirmerRepos"
+        >
+          <Bandage :size="16" />
+          Se reposer
+        </AppButton>
+        <p class="modal-hint">Dépense 1 PR — regagne 1d{{ computedHpDv }} + Mod. CON + Niv.</p>
 
-          <!-- Rest button -->
-          <button
-            class="btn-modal btn-modal--primary btn-modal--rest"
-            :disabled="character.prCurrent <= 0"
-            @click="confirmerRepos"
-          >
-            <Bandage :size="16" />
-            Se reposer
+        <!-- +/- PR manual -->
+        <div class="pr-manual-row">
+          <button class="pr-round-btn" :disabled="character.prCurrent <= 0" @click="losePr">
+            <CircleMinus :size="20" />
           </button>
-          <p class="modal-hint">Dépense 1 PR — regagne 1d{{ computedHpDv }} + Mod. CON + Niv.</p>
-
-          <!-- +/- PR manual -->
-          <div class="pr-manual-row">
-            <button class="btn-modal btn-modal--round" :disabled="character.prCurrent <= 0" @click="losePr">
-              <CircleMinus :size="20" />
-            </button>
-            <span class="pr-manual-label">Ajuster les PR</span>
-            <button class="btn-modal btn-modal--round" :disabled="character.prCurrent >= PR_MAX" @click="gainPr">
-              <CirclePlus :size="20" />
-            </button>
-          </div>
-
-          <div class="modal-actions">
-            <button class="btn-modal btn-modal--ghost" @click="showReposConfirm = false">Fermer</button>
-          </div>
+          <span class="pr-manual-label">Ajuster les PR</span>
+          <button class="pr-round-btn" :disabled="character.prCurrent >= PR_MAX" @click="gainPr">
+            <CirclePlus :size="20" />
+          </button>
         </div>
       </div>
-    </Teleport>
+      <template #footer>
+        <AppButton @click="showReposConfirm = false">Fermer</AppButton>
+      </template>
+    </AppModal>
 
     <!-- Résultat repos -->
-    <Teleport to="body">
-      <div v-if="reposResult" class="modal-backdrop" @click.self="reposResult = null">
-        <div class="modal-box">
-          <p class="modal-question">Repos — soin</p>
-          <p class="modal-heal">
-            +{{ reposResult!.total }} PV
-            <span class="modal-detail">({{ reposResult!.roll }} {{ reposResult!.conMod >= 0 ? '+' : '' }}{{ reposResult!.conMod }} CON + {{ reposResult!.level }} niv.)</span>
-          </p>
-          <p class="modal-hp-change">{{ reposResult!.hpBefore }} → <strong>{{ reposResult!.hpAfter }}</strong> PV</p>
-          <div class="modal-actions">
-            <button class="btn-modal btn-modal--primary" @click="reposResult = null">OK</button>
-          </div>
-        </div>
+    <AppModal
+      :model-value="reposResult !== null"
+      title="Repos — soin"
+      @update:model-value="reposResult = null"
+    >
+      <div class="repos-modal-body">
+        <p class="modal-heal">
+          +{{ reposResult!.total }} PV
+          <span class="modal-detail">({{ reposResult!.roll }} {{ reposResult!.conMod >= 0 ? '+' : '' }}{{ reposResult!.conMod }} CON + {{ reposResult!.level }} niv.)</span>
+        </p>
+        <p class="modal-hp-change">{{ reposResult!.hpBefore }} → <strong>{{ reposResult!.hpAfter }}</strong> PV</p>
       </div>
-    </Teleport>
+      <template #footer>
+        <AppButton variant="primary" @click="reposResult = null">OK</AppButton>
+      </template>
+    </AppModal>
 
   </component>
 </template>
@@ -1272,7 +1270,7 @@ function losePr() {
   gap: 0.6rem;
   margin-bottom: 0.9rem;
   padding: 0.75rem 1rem;
-  border-radius: 1.2rem;
+  border-radius: var(--radius-xxl);
   border: 1.5px solid var(--border);
   background: var(--surface-2);
 }
@@ -1289,7 +1287,7 @@ function losePr() {
   align-items: center;
   gap: 0.45rem;
   padding: 0.45rem 0.5rem;
-  border-radius: 0.75rem;
+  border-radius: var(--radius-xl);
   border: 1.5px solid var(--border);
 }
 
@@ -1375,7 +1373,7 @@ function losePr() {
   justify-content: center;
   gap: 0.4rem;
   padding: 0.3rem 0.5rem;
-  border-radius: 0.65rem;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   background: var(--surface);
 }
@@ -1427,38 +1425,12 @@ function losePr() {
 }
 
 /* ── Modals repos ── */
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 1rem;
-}
-
-.modal-box {
-  background: var(--surface);
-  border: 1.5px solid var(--border-strong);
-  border-radius: 16px;
-  padding: 1.5rem 1.5rem 1.25rem;
-  width: 100%;
-  max-width: 320px;
+.repos-modal-body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.6rem;
+  gap: var(--space-md);
   text-align: center;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.35);
-}
-
-.modal-question {
-  margin: 0;
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--text);
-  font-style: italic;
 }
 
 .modal-hint {
@@ -1489,46 +1461,7 @@ function losePr() {
 }
 .modal-hp-change strong { color: var(--text); }
 
-.modal-actions {
-  display: flex;
-  gap: 0.6rem;
-  margin-top: 0.4rem;
-}
-
-.btn-modal {
-  padding: 0.5rem 1.4rem;
-  border-radius: 10px;
-  border: none;
-  font-weight: 700;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.btn-modal--primary {
-  background: var(--accent);
-  color: #fff;
-}
-.btn-modal--primary:hover { background: var(--accent-strong); }
-.btn-modal--ghost {
-  background: var(--surface-2);
-  color: var(--muted);
-  border: 1px solid var(--border);
-}
-.btn-modal--ghost:hover { color: var(--text); }
-
-.btn-modal--rest {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  width: 100%;
-  justify-content: center;
-}
-.btn-modal--rest:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.btn-modal--round {
+.pr-round-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1542,11 +1475,11 @@ function losePr() {
   padding: 0;
   transition: background 0.15s, border-color 0.15s;
 }
-.btn-modal--round:hover:not(:disabled) {
+.pr-round-btn:hover:not(:disabled) {
   border-color: var(--accent);
   background: color-mix(in srgb, var(--accent) 12%, var(--surface-2));
 }
-.btn-modal--round:disabled {
+.pr-round-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
 }
@@ -1607,7 +1540,7 @@ function losePr() {
   align-items: center;
   gap: 0.1rem;
   padding: 0.35rem 0.2rem;
-  border-radius: 0.65rem;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   background: var(--surface);
 }
@@ -1670,7 +1603,7 @@ function losePr() {
 /* ── Bulle ──────────────────────────────────────────────────────────────── */
 
 .action-bubble {
-  border-radius: 1.2rem;
+  border-radius: var(--radius-xxl);
   border: 1.5px solid var(--border);
   padding: 1rem 1.1rem 0.85rem;
   background: var(--surface-2);
@@ -1747,7 +1680,7 @@ function losePr() {
   background: var(--surface);
   border: 1px solid var(--border);
   padding: 0.15em 0.55em;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 .attack-roll {
@@ -1855,7 +1788,7 @@ function losePr() {
   color: var(--muted);
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 0.1rem 0.5rem;
   margin-left: auto;
 }
@@ -1899,7 +1832,7 @@ function losePr() {
   background: var(--surface);
   border: 1px solid var(--border);
   padding: 0.1em 0.55em;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 .manoeuvres-chevron {
@@ -1914,7 +1847,7 @@ function losePr() {
 .manoeuvres-rule {
   font-size: 0.8rem;
   background: color-mix(in srgb, #e67e22 8%, var(--surface));
-  border-radius: 0.6rem;
+  border-radius: var(--radius-md);
   padding: 0.55rem 0.7rem;
   border: 1px solid color-mix(in srgb, #e67e22 20%, var(--border));
 }
@@ -1996,7 +1929,7 @@ function losePr() {
   background: var(--surface);
   border: 1px solid var(--border);
   padding: 0.1em 0.55em;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 .defensive-chevron {
@@ -2035,7 +1968,7 @@ function losePr() {
   color: #3498db;
   background: color-mix(in srgb, #3498db 10%, var(--surface));
   border: 1px solid color-mix(in srgb, #3498db 25%, var(--border));
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
   padding: 0.25rem 0.6rem;
   margin-top: 0.2rem;
 }
@@ -2069,7 +2002,7 @@ function losePr() {
   background: var(--surface);
   border: 1px solid var(--border);
   padding: 0.1em 0.55em;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 .divers-chevron {
@@ -2143,7 +2076,7 @@ function losePr() {
   align-items: center;
   gap: 0.35rem;
   padding: 0.3em 0.75em;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1.5px solid var(--accent);
   background: transparent;
   color: var(--accent-strong);
@@ -2192,7 +2125,7 @@ function losePr() {
   flex-wrap: wrap;
   gap: 0.5rem 1rem;
   padding: 0.5rem 0.7rem;
-  border-radius: 0.7rem;
+  border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--accent) 10%, var(--surface));
   border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
   font-size: 0.85rem;
@@ -2271,7 +2204,7 @@ function losePr() {
 .hand-role-btn {
   flex: 1;
   padding: 2px 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--border);
   font-size: 0.72rem;
   cursor: pointer;
@@ -2308,7 +2241,7 @@ function losePr() {
   flex-direction: column;
   gap: 0.45rem;
   padding: 0.55rem 0.75rem;
-  border-radius: 0.7rem;
+  border-radius: var(--radius-lg);
   background: color-mix(in srgb, #d4ac0d 10%, var(--surface));
   border: 1.5px solid color-mix(in srgb, #d4ac0d 45%, var(--border));
 }
@@ -2330,7 +2263,7 @@ function losePr() {
   background: var(--surface);
   border: 1px solid var(--border);
   padding: 0.1em 0.5em;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 .luck-box__actions {
@@ -2344,7 +2277,7 @@ function losePr() {
   align-items: center;
   gap: 0.3rem;
   padding: 0.3em 0.7em;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1.5px solid color-mix(in srgb, #d4ac0d 60%, var(--border));
   background: transparent;
   color: color-mix(in srgb, #d4ac0d 80%, var(--text));

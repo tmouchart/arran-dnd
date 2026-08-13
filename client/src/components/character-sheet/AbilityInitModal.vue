@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { X, GripVertical, Dices, Shuffle } from 'lucide-vue-next'
+import { GripVertical, Dices, Shuffle } from 'lucide-vue-next'
 import AppButton from '../ui/AppButton.vue'
+import AppModal from '../ui/AppModal.vue'
+import AppTabs from '../ui/AppTabs.vue'
 import type { Character, CharacterAbilities } from '../../types/character'
 import { getRacialMods, ABILITY_LABELS, type AbilityMods } from '../../data/racialAbilityMods'
 
@@ -145,36 +147,23 @@ watch(() => props.show, (shown) => {
 </script>
 
 <template>
-  <Teleport to="body">
-    <div v-if="show" class="modal-backdrop" @click.self="close">
-      <div class="modal" role="dialog" aria-modal="true">
-        <!-- Header -->
-        <div class="modal-header">
-          <span class="modal-title">Initialiser les caractéristiques</span>
-          <button class="close-btn" @click="close" title="Fermer">
-            <X :size="18" />
-          </button>
-        </div>
+  <AppModal
+    :model-value="show"
+    title="Initialiser les caractéristiques"
+    @update:model-value="emit('update:show', $event)"
+  >
+    <!-- Method tabs -->
+    <AppTabs
+      class="method-tabs"
+      :model-value="method"
+      :tabs="[
+        { value: 'aleatoire', label: 'Aléatoire' },
+        { value: 'distribution', label: 'Distribution' },
+      ]"
+      @update:model-value="method = $event as Method"
+    />
 
-        <!-- Method tabs -->
-        <div class="method-tabs">
-          <button
-            class="tab-btn"
-            :class="{ active: method === 'aleatoire' }"
-            @click="method = 'aleatoire'"
-          >
-            Aléatoire
-          </button>
-          <button
-            class="tab-btn"
-            :class="{ active: method === 'distribution' }"
-            @click="method = 'distribution'"
-          >
-            Distribution
-          </button>
-        </div>
-
-        <div class="modal-body">
+        <div class="init-body">
           <!-- ── Méthode aléatoire ── -->
           <template v-if="method === 'aleatoire'">
             <p class="method-desc">
@@ -261,104 +250,26 @@ watch(() => props.show, (shown) => {
           </div>
         </div>
 
-        <!-- Footer -->
-        <div class="modal-footer">
-          <AppButton @click="close">Annuler</AppButton>
-          <AppButton variant="primary" @click="confirm">Confirmer</AppButton>
-        </div>
-      </div>
-    </div>
-  </Teleport>
+    <template #footer>
+      <AppButton @click="close">Annuler</AppButton>
+      <AppButton variant="primary" @click="confirm">Confirmer</AppButton>
+    </template>
+  </AppModal>
 </template>
 
 <style scoped>
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 1rem;
-}
-
-.modal {
-  background: var(--surface);
-  border: 1px solid var(--border-strong);
-  border-radius: 16px;
-  width: 100%;
-  max-width: 420px;
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
-}
-
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1.25rem 0.75rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.modal-title {
-  font-weight: 700;
-  font-size: 1rem;
-  color: var(--text);
-}
-
-.close-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  background: none;
-  color: var(--muted);
-  cursor: pointer;
-  padding: 0.25rem;
-  border-radius: 6px;
-  transition: color 0.15s, background 0.15s;
-}
-.close-btn:hover { color: var(--text); background: var(--surface-2); }
-
 /* ── Tabs ─────────────────────────────────────────────────────────────────── */
 
 .method-tabs {
-  display: flex;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface-2);
-}
-
-.tab-btn {
-  flex: 1;
-  padding: 0.6rem 1rem;
-  border: none;
-  background: none;
-  color: var(--muted);
-  font-weight: 600;
-  font-size: 0.88rem;
-  cursor: pointer;
-  transition: color 0.15s, background 0.15s;
-  border-bottom: 2px solid transparent;
-}
-
-.tab-btn.active {
-  color: var(--accent-strong);
-  background: var(--surface);
-  border-bottom-color: var(--accent-strong);
+  margin-bottom: var(--space-md);
 }
 
 /* ── Body ─────────────────────────────────────────────────────────────────── */
 
-.modal-body {
-  padding: 1rem 1.25rem;
-  overflow-y: auto;
+.init-body {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: var(--space-lg);
 }
 
 .method-desc {
@@ -377,7 +288,7 @@ watch(() => props.show, (shown) => {
   border: 1px solid var(--border);
   background: var(--surface-2);
   color: var(--text);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 0.35rem 0.75rem;
   font-size: 0.82rem;
   font-weight: 600;
@@ -398,7 +309,7 @@ watch(() => props.show, (shown) => {
   align-items: center;
   gap: 0.6rem;
   padding: 0.35rem 0.6rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--surface-2);
   border: 1px solid var(--border);
 }
@@ -410,7 +321,7 @@ watch(() => props.show, (shown) => {
   align-items: center;
   gap: 0.6rem;
   padding: 0.45rem 0.6rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--surface-2);
   border: 1px solid var(--border);
   cursor: default;
@@ -474,7 +385,7 @@ watch(() => props.show, (shown) => {
   text-align: center;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   color: var(--text);
   padding: 0.2rem 0.3rem;
 }
@@ -503,7 +414,7 @@ watch(() => props.show, (shown) => {
   gap: 0.4rem;
   background: color-mix(in srgb, var(--accent) 8%, var(--surface-2));
   border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border));
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 0.55rem 0.75rem;
 }
 
@@ -515,7 +426,7 @@ watch(() => props.show, (shown) => {
 }
 
 .racial-chip {
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   padding: 0.15rem 0.5rem;
   font-size: 0.82rem;
   font-weight: 700;
@@ -560,7 +471,7 @@ watch(() => props.show, (shown) => {
   align-items: center;
   gap: 0.15rem;
   padding: 0.4rem 0.2rem 0.3rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--surface-2);
   border: 1px solid var(--border);
 }
@@ -576,15 +487,5 @@ watch(() => props.show, (shown) => {
   font-size: 0.65rem;
   color: var(--muted);
   white-space: nowrap;
-}
-
-/* ── Footer ─────────────────────────────────────────────────────────────── */
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
-  border-top: 1px solid var(--border);
 }
 </style>

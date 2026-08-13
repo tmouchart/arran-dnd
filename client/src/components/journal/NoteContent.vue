@@ -34,7 +34,7 @@ function onClick(e: MouseEvent) {
   min-height: 0;
   overflow-y: auto;
   padding: 1rem;
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   border: 1px solid var(--border);
   background: var(--surface);
   font-size: 0.95rem;
@@ -76,7 +76,7 @@ function onClick(e: MouseEvent) {
   color: var(--accent-strong);
   font-weight: 600;
   background: color-mix(in srgb, var(--accent) 12%, transparent);
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   padding: 0.05rem 0.3rem;
   cursor: pointer;
 }

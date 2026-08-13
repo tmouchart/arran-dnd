@@ -226,7 +226,7 @@ function addPath(voie: Voie) {
   font-size: 0.78rem;
   font-weight: 700;
   padding: 0.2rem 0.55rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--accent-soft);
   color: var(--accent-strong);
   border: 1px solid var(--border);
@@ -243,7 +243,7 @@ function addPath(voie: Voie) {
 
 .voie-card {
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--surface-2);
   overflow: hidden;
 }
@@ -317,7 +317,7 @@ function addPath(voie: Voie) {
 .rank-btn {
   width: 28px;
   height: 28px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
@@ -338,7 +338,7 @@ function addPath(voie: Voie) {
 .remove-btn {
   width: 28px;
   height: 28px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid transparent;
   background: transparent;
   color: var(--muted);
@@ -400,7 +400,7 @@ function addPath(voie: Voie) {
   letter-spacing: 0.07em;
   text-transform: uppercase;
   padding: 0.15rem 0.45rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   flex-shrink: 0;
 }
 

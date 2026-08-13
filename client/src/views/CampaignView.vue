@@ -11,6 +11,9 @@ import AppIconBtn from '../components/ui/AppIconBtn.vue'
 import AppButton from '../components/ui/AppButton.vue'
 import AppInput from '../components/ui/AppInput.vue'
 import AppEmptyState from '../components/ui/AppEmptyState.vue'
+import AppBottomSheet from '../components/ui/AppBottomSheet.vue'
+import AppTabs, { type AppTab } from '../components/ui/AppTabs.vue'
+import AppSelect from '../components/ui/AppSelect.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -27,6 +30,12 @@ const isMember = computed(() =>
 // Tabs
 type TabId = 'joueurs' | 'rencontres' | 'combat'
 const activeTab = ref<TabId>('joueurs')
+
+const tabs = computed<AppTab[]>(() => [
+  { value: 'joueurs', label: 'Joueurs', icon: User },
+  ...(isGm.value ? [{ value: 'rencontres', label: 'Rencontres', icon: Swords }] : []),
+  ...(activeCombat.value ? [{ value: 'combat', label: 'Combat', icon: Play }] : []),
+])
 
 // Encounters
 const encounters = ref<EncounterSummary[]>([])
@@ -166,37 +175,11 @@ async function handleLaunchCombat() {
       </div>
 
       <!-- Tabs -->
-      <nav class="tab-bar">
-        <button
-          type="button"
-          class="tab-btn"
-          :class="{ active: activeTab === 'joueurs' }"
-          @click="activeTab = 'joueurs'"
-        >
-          <User :size="16" />
-          <span class="tab-label">Joueurs</span>
-        </button>
-        <button
-          v-if="isGm"
-          type="button"
-          class="tab-btn"
-          :class="{ active: activeTab === 'rencontres' }"
-          @click="activeTab = 'rencontres'"
-        >
-          <Swords :size="16" />
-          <span class="tab-label">Rencontres</span>
-        </button>
-        <button
-          v-if="activeCombat"
-          type="button"
-          class="tab-btn"
-          :class="{ active: activeTab === 'combat' }"
-          @click="activeTab = 'combat'"
-        >
-          <Play :size="16" />
-          <span class="tab-label">Combat</span>
-        </button>
-      </nav>
+      <AppTabs
+        :model-value="activeTab"
+        :tabs="tabs"
+        @update:model-value="activeTab = $event as TabId"
+      />
 
       <!-- Tab: Joueurs -->
       <template v-if="activeTab === 'joueurs'">
@@ -298,64 +281,54 @@ async function handleLaunchCombat() {
     </template>
 
     <!-- Bottom sheet: Settings -->
-    <Teleport to="body">
-      <div v-if="showSettings" class="sheet-overlay" @click.self="showSettings = false">
-        <div class="sheet-panel">
-          <h2 class="sheet-title">Options</h2>
-          <AppButton variant="danger" block @click="handleLeave">
-            <LogOut :size="16" />
-            Quitter la campagne
-          </AppButton>
-          <AppButton variant="ghost" block @click="showSettings = false">Fermer</AppButton>
-        </div>
-      </div>
-    </Teleport>
+    <AppBottomSheet v-model="showSettings" title="Options">
+      <AppButton variant="danger" block @click="handleLeave">
+        <LogOut :size="16" />
+        Quitter la campagne
+      </AppButton>
+    </AppBottomSheet>
 
     <!-- Bottom sheet: Lancer un combat -->
-    <Teleport to="body">
-      <div v-if="showLaunchSheet" class="sheet-overlay" @click.self="showLaunchSheet = false">
-        <div class="sheet-panel">
-          <h2 class="sheet-title">Lancer un combat</h2>
+    <AppBottomSheet v-model="showLaunchSheet" title="Lancer un combat">
+      <div class="sheet-content">
+        <!-- Choix de la rencontre -->
+        <div class="sheet-section">
+          <label class="sheet-label">Rencontre</label>
+          <AppSelect v-model="selectedEncounterId">
+            <option :value="null">Combat vide</option>
+            <option v-for="enc in encounters" :key="enc.id" :value="enc.id">
+              {{ enc.name }} ({{ enc.monsterCount }} monstres)
+            </option>
+          </AppSelect>
+        </div>
 
-          <!-- Choix de la rencontre -->
-          <div class="sheet-section">
-            <label class="sheet-label">Rencontre</label>
-            <select v-model="selectedEncounterId" class="input">
-              <option :value="null">Combat vide</option>
-              <option v-for="enc in encounters" :key="enc.id" :value="enc.id">
-                {{ enc.name }} ({{ enc.monsterCount }} monstres)
-              </option>
-            </select>
-          </div>
-
-          <!-- Sélection des joueurs -->
-          <div class="sheet-section">
-            <label class="sheet-label">Joueurs</label>
-            <div class="player-toggles">
-              <div
-                v-for="m in campaign!.members"
-                :key="m.userId"
-                class="player-toggle"
-                :class="{ excluded: excludedUserIds.has(m.userId) }"
-                @click="togglePlayer(m.userId)"
-              >
-                <span class="player-toggle-name">{{ m.characterName ?? m.username }}</span>
-              </div>
+        <!-- Sélection des joueurs -->
+        <div class="sheet-section">
+          <label class="sheet-label">Joueurs</label>
+          <div class="player-toggles">
+            <div
+              v-for="m in campaign!.members"
+              :key="m.userId"
+              class="player-toggle"
+              :class="{ excluded: excludedUserIds.has(m.userId) }"
+              @click="togglePlayer(m.userId)"
+            >
+              <span class="player-toggle-name">{{ m.characterName ?? m.username }}</span>
             </div>
           </div>
+        </div>
 
-          <p v-if="launchError" class="form-error">{{ launchError }}</p>
+        <p v-if="launchError" class="form-error">{{ launchError }}</p>
 
-          <div class="sheet-actions">
-            <AppButton variant="ghost" @click="showLaunchSheet = false">Annuler</AppButton>
-            <AppButton variant="primary" @click="handleLaunchCombat">
-              <Play :size="16" />
-              Lancer !
-            </AppButton>
-          </div>
+        <div class="sheet-actions">
+          <AppButton variant="ghost" @click="showLaunchSheet = false">Annuler</AppButton>
+          <AppButton variant="primary" @click="handleLaunchCombat">
+            <Play :size="16" />
+            Lancer !
+          </AppButton>
         </div>
       </div>
-    </Teleport>
+    </AppBottomSheet>
   </AppPageLayout>
 </template>
 
@@ -368,52 +341,12 @@ async function handleLaunchCombat() {
   padding: 0.6rem 1rem;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 0.8rem;
+  border-radius: var(--radius-xl);
   font-size: 0.9rem;
   color: var(--muted);
 }
 
 .gm-icon { color: var(--accent); }
-
-/* Tab bar */
-.tab-bar {
-  display: flex;
-  gap: 0.35rem;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 0.3rem;
-}
-
-.tab-btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  padding: 0.42rem 0.5rem;
-  border: none;
-  border-radius: 10px;
-  background: transparent;
-  cursor: pointer;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--muted);
-  transition: background 150ms ease, color 150ms ease;
-}
-
-.tab-btn:hover {
-  background: color-mix(in srgb, var(--accent-soft) 60%, transparent);
-  color: var(--accent-strong);
-}
-
-.tab-btn.active {
-  background: var(--surface);
-  color: var(--accent-strong);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-}
-
-.tab-label { white-space: nowrap; }
 
 .section-title {
   font-size: 1rem;
@@ -436,7 +369,7 @@ async function handleLaunchCombat() {
   padding: 1rem 0.75rem;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 1.1rem;
+  border-radius: var(--radius-xxl);
   transition: border-color 160ms ease, transform 160ms ease;
 }
 
@@ -471,7 +404,7 @@ async function handleLaunchCombat() {
 .create-form {
   display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;
   padding: 0.85rem 1rem; background: var(--surface-2);
-  border: 1px solid var(--border); border-radius: 1rem;
+  border: 1px solid var(--border); border-radius: var(--radius-xl);
 }
 
 .create-form .create-name { flex: 1; min-width: 0; }
@@ -483,7 +416,7 @@ async function handleLaunchCombat() {
 .encounter-card {
   display: flex; align-items: center; justify-content: space-between;
   padding: 0.85rem 1rem; background: var(--surface-2);
-  border: 1px solid var(--border); border-radius: 1.1rem;
+  border: 1px solid var(--border); border-radius: var(--radius-xxl);
   gap: 0.75rem; cursor: pointer; transition: border-color 160ms ease;
 }
 
@@ -502,7 +435,7 @@ async function handleLaunchCombat() {
 .active-combat-card {
   display: flex; align-items: center; justify-content: space-between;
   padding: 1rem 1.2rem; background: var(--surface-2);
-  border: 2px solid var(--accent); border-radius: 1.2rem;
+  border: 2px solid var(--accent); border-radius: var(--radius-xxl);
   cursor: pointer; gap: 1rem;
 }
 
@@ -516,29 +449,10 @@ async function handleLaunchCombat() {
 .combat-round { font-size: 0.8rem; color: var(--muted); }
 
 /* Bottom sheet */
-.sheet-overlay {
-  position: fixed; inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  display: flex; align-items: flex-end; justify-content: center;
-  z-index: 1000;
-}
-
-.sheet-panel {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 1.4rem 1.4rem 0 0;
-  padding: 1.5rem;
-  width: 100%;
-  max-width: 500px;
-  max-height: 80vh;
-  overflow-y: auto;
+.sheet-content {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-}
-
-.sheet-title {
-  font-size: 1.1rem; font-weight: 700; margin: 0; color: var(--text); text-align: center;
 }
 
 .sheet-section { display: flex; flex-direction: column; gap: 0.4rem; }
@@ -554,7 +468,7 @@ async function handleLaunchCombat() {
   padding: 0.45rem 0.8rem;
   background: var(--accent-soft);
   border: 1px solid var(--accent);
-  border-radius: 2rem;
+  border-radius: var(--radius-pill);
   cursor: pointer;
   font-size: 0.85rem;
   font-weight: 600;

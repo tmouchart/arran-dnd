@@ -8,6 +8,7 @@ import { useTtsQueue } from "../composables/useTtsQueue";
 import AppPageLayout from "../components/ui/AppPageLayout.vue";
 import AppIconBtn from "../components/ui/AppIconBtn.vue";
 import AppEmptyState from "../components/ui/AppEmptyState.vue";
+import AppTabs from "../components/ui/AppTabs.vue";
 import { useCharacter, loadCharacter } from "../composables/useCharacter";
 import {
   loadChatMessages,
@@ -231,6 +232,11 @@ function clearChat() {
 type Tab = "chat" | "images";
 const activeTab = ref<Tab>("chat");
 
+const TABS = [
+  { value: "chat", label: "Chat", icon: "💬" },
+  { value: "images", label: "Images", icon: "🎨" },
+];
+
 // ── Image gallery ─────────────────────────────────────────────────────────────
 interface GalleryImage {
   id: number;
@@ -376,14 +382,13 @@ async function downloadImage() {
           <span class="chat-title-short">🔮 Isilwen</span>
           <span class="chat-title-full">🔮 Isilwen, miroir astral</span>
         </h1>
-        <nav class="isilwen-tabs">
-          <button class="isilwen-tab" :class="{ active: activeTab === 'chat' }" @click="switchTab('chat')">
-            <span class="tab-icon">💬</span><span class="tab-text"> Chat</span>
-          </button>
-          <button class="isilwen-tab" :class="{ active: activeTab === 'images' }" @click="switchTab('images')">
-            <span class="tab-icon">🎨</span><span class="tab-text"> Images</span>
-          </button>
-        </nav>
+        <AppTabs
+          class="isilwen-tabs"
+          :model-value="activeTab"
+          :tabs="TABS"
+          :icon-only-mobile="true"
+          @update:model-value="switchTab($event as Tab)"
+        />
       </header>
     </template>
 
@@ -613,7 +618,7 @@ async function downloadImage() {
   margin-bottom: 0.85rem;
   padding: 0.85rem;
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   background: var(--surface);
   box-shadow: var(--shadow-card);
   overflow-y: auto;
@@ -628,7 +633,7 @@ async function downloadImage() {
 
 .bubble {
   padding: 0.76rem 0.9rem;
-  border-radius: 13px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   background: var(--surface-2);
   box-sizing: border-box;
@@ -701,7 +706,7 @@ async function downloadImage() {
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
     "Courier New", monospace;
   background: color-mix(in srgb, var(--surface) 70%, black 12%);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   padding: 0.08rem 0.25rem;
 }
 
@@ -717,7 +722,7 @@ async function downloadImage() {
   align-items: center;
   gap: 0.3rem;
   padding: 0.2rem 0.6rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: 0.72rem;
   font-weight: 600;
   color: color-mix(in srgb, var(--brand-strong) 80%, var(--muted));
@@ -744,7 +749,7 @@ async function downloadImage() {
 
 .generated-image {
   max-width: 100%;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
   display: block;
 }
@@ -767,7 +772,7 @@ async function downloadImage() {
   resize: vertical;
   min-height: 4rem;
   padding: 0.55rem 0.8rem;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--surface-2);
   color: var(--text);
@@ -786,7 +791,7 @@ async function downloadImage() {
   align-items: center;
   gap: 0.35rem;
   padding: 0.25rem 0.65rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--brand) 18%, var(--surface-2));
   border: 1px solid color-mix(in srgb, var(--brand) 40%, var(--border));
   font-size: 0.78rem;
@@ -813,7 +818,7 @@ async function downloadImage() {
   justify-content: center;
   width: 2rem;
   height: 2rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: none;
   background: var(--brand);
   color: #fff;
@@ -845,42 +850,7 @@ async function downloadImage() {
 /* ── Tabs ──────────────────────────────────────────────────────────────────── */
 
 .isilwen-tabs {
-  display: flex;
-  gap: 0.35rem;
   flex-shrink: 0;
-}
-
-.isilwen-tab {
-  padding: 0.35rem 0.85rem;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  color: var(--muted);
-  font-weight: 600;
-  font-size: 0.82rem;
-  cursor: pointer;
-  transition: background 120ms, color 120ms, border-color 120ms;
-}
-
-.isilwen-tab:hover {
-  color: var(--text);
-  border-color: var(--accent);
-}
-
-.isilwen-tab.active {
-  background: var(--accent);
-  color: #fff;
-  border-color: var(--accent);
-}
-
-.tab-text {
-  display: none;
-}
-
-@media (min-width: 500px) {
-  .tab-text {
-    display: inline;
-  }
 }
 
 /* ── Gallery ───────────────────────────────────────────────────────────────── */
@@ -907,7 +877,7 @@ async function downloadImage() {
 
 .gallery-card {
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--surface-2);
   overflow: hidden;
   cursor: pointer;
@@ -970,7 +940,7 @@ async function downloadImage() {
   justify-content: center;
   width: 36px;
   height: 36px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid rgba(255, 255, 255, 0.25);
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
@@ -985,7 +955,7 @@ async function downloadImage() {
 .img-modal-full {
   max-width: 100%;
   max-height: calc(90vh - 3rem);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   object-fit: contain;
 }
 
@@ -1009,7 +979,7 @@ async function downloadImage() {
   justify-content: center;
   width: 2rem;
   height: 2rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: transparent;
   color: var(--muted);
@@ -1042,7 +1012,7 @@ async function downloadImage() {
   justify-content: center;
   width: 2rem;
   height: 2rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: transparent;
   color: var(--muted);
@@ -1080,7 +1050,7 @@ async function downloadImage() {
   width: 26px;
   height: 26px;
   margin-top: 0.35rem;
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: transparent;
   color: var(--muted);

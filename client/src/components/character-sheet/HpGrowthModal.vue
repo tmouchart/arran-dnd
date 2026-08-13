@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { X, Dices } from "lucide-vue-next";
+import { Dices } from "lucide-vue-next";
+import AppModal from "../ui/AppModal.vue";
 import type { VoieFamily } from "../../data/voies";
 import { FAMILY_DIE_MAX } from "../../composables/useCharacter";
 
@@ -54,23 +55,15 @@ function rollDie(levelIndex: number) {
   setRoll(levelIndex, Math.ceil(Math.random() * dieMax.value));
 }
 
-function close() {
-  emit("update:show", false);
-}
 </script>
 
 <template>
-  <Teleport to="body">
-    <div v-if="show" class="modal-backdrop" @click.self="close">
-      <div class="modal" role="dialog" aria-modal="true">
-        <div class="modal-header">
-          <span class="modal-title">Progression des PV</span>
-          <button class="close-btn" @click="close" title="Fermer">
-            <X :size="18" />
-          </button>
-        </div>
-
-        <div class="modal-body">
+  <AppModal
+    :model-value="show"
+    title="Progression des PV"
+    @update:model-value="emit('update:show', $event)"
+  >
+    <div class="hp-body">
           <div class="family-note">{{ familyLabel }} — Mod. CON : {{ conSign }}{{ conMod }}</div>
 
           <div class="level-list">
@@ -111,71 +104,11 @@ function close() {
             </div>
           </div>
         </div>
-      </div>
-    </div>
-  </Teleport>
+  </AppModal>
 </template>
 
 <style scoped>
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 1rem;
-}
-
-.modal {
-  background: var(--surface);
-  border: 1px solid var(--border-strong);
-  border-radius: 16px;
-  width: 100%;
-  max-width: 420px;
-  max-height: 80vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
-}
-
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1.25rem 0.75rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.modal-title {
-  font-weight: 700;
-  font-size: 1rem;
-  color: var(--text);
-}
-
-.close-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  background: none;
-  color: var(--muted);
-  cursor: pointer;
-  padding: 0.25rem;
-  border-radius: 6px;
-  transition: color 0.15s, background 0.15s;
-}
-
-.close-btn:hover {
-  color: var(--text);
-  background: var(--surface-2);
-}
-
-.modal-body {
-  padding: 1rem 1.25rem;
-  overflow-y: auto;
+.hp-body {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -185,7 +118,7 @@ function close() {
   font-size: 0.78rem;
   color: var(--muted);
   background: var(--surface-2);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 0.4rem 0.75rem;
 }
 
@@ -200,7 +133,7 @@ function close() {
   align-items: center;
   gap: 0.4rem;
   padding: 0.4rem 0.6rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--surface-2);
   border: 1px solid var(--border);
   flex-wrap: nowrap;
@@ -241,7 +174,7 @@ function close() {
   text-align: center;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   color: var(--text);
   padding: 0.2rem 0.3rem;
   flex-shrink: 0;
@@ -269,7 +202,7 @@ function close() {
   color: var(--accent-strong);
   cursor: pointer;
   padding: 0.2rem;
-  border-radius: 5px;
+  border-radius: var(--radius-xs);
   transition: background 0.15s, color 0.15s;
   flex-shrink: 0;
 }

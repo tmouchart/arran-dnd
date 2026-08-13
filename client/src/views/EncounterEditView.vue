@@ -20,6 +20,7 @@ import AppPageLayout from '../components/ui/AppPageLayout.vue'
 import AppPageHead from '../components/ui/AppPageHead.vue'
 import AppIconBtn from '../components/ui/AppIconBtn.vue'
 import AppInput from '../components/ui/AppInput.vue'
+import AppTextarea from '../components/ui/AppTextarea.vue'
 import AppEmptyState from '../components/ui/AppEmptyState.vue'
 import AppCard from '../components/ui/AppCard.vue'
 
@@ -254,7 +255,7 @@ function goBack() {
           </div>
           <div class="field-row">
             <label class="field-label">Description</label>
-            <textarea v-model="descValue" class="input" placeholder="Description (optionnel)" rows="2" />
+            <AppTextarea v-model="descValue" placeholder="Description (optionnel)" :rows="2" />
           </div>
         </div>
       </AppCard>
@@ -476,7 +477,7 @@ function goBack() {
   padding: 0.85rem 1rem;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 1rem;
+  border-radius: var(--radius-xl);
 }
 
 .bestiary-results {
@@ -492,7 +493,7 @@ function goBack() {
   justify-content: space-between;
   align-items: center;
   padding: 0.5rem 0.6rem;
-  border-radius: 0.6rem;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: background 120ms ease;
 }
@@ -531,7 +532,7 @@ function goBack() {
 .monster-card {
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 1.1rem;
+  border-radius: var(--radius-xxl);
   overflow: hidden;
   transition: border-color 160ms ease;
 }
@@ -638,7 +639,7 @@ function goBack() {
   gap: 0.2rem;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 0.3rem 0.3rem 0.3rem 0.4rem;
   width: 100%;
   box-sizing: border-box;
@@ -696,7 +697,7 @@ function goBack() {
   background: transparent;
   color: var(--muted);
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   transition: background 100ms ease, color 100ms ease;
 }
 

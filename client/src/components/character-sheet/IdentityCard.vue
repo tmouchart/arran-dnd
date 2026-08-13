@@ -3,6 +3,8 @@ import { computed, ref, watch } from "vue";
 import { Pencil, PencilOff, TrendingUp, Upload, Trash2 } from "lucide-vue-next";
 import AppCard from "../ui/AppCard.vue";
 import AppInput from "../ui/AppInput.vue";
+import AppSelect from "../ui/AppSelect.vue";
+import AppTextarea from "../ui/AppTextarea.vue";
 import LevelUpModal from "./LevelUpModal.vue";
 import { PEUPLES, PEUPLES_BY_ID, PEUPLE_VOIES_BY_ID } from "../../data/peuples";
 import { FAMILY_LABELS, VOIES_BY_ID } from "../../data/voies";
@@ -245,43 +247,39 @@ function onProfileSelect(value: string) {
     <div class="grid-2">
       <div class="field">
         <span>Peuple</span>
-        <select
-          class="input select"
-          :value="character.people"
-          @change="
-            applyPeupleUserChange(($event.target as HTMLSelectElement).value)
-          "
+        <AppSelect
+          class="select"
+          :model-value="character.people"
+          @update:model-value="applyPeupleUserChange($event)"
         >
           <option value="">— Choisir —</option>
           <option v-for="p in PEUPLES" :key="p.id" :value="p.id">
             {{ p.name }}
           </option>
-        </select>
+        </AppSelect>
       </div>
       <div v-if="availableCultures.length" class="field">
         <span>Voie culturelle</span>
-        <select
-          :value="selectedCultureId"
-          class="input select"
-          @change="selectCulture(($event.target as HTMLSelectElement).value)"
+        <AppSelect
+          :model-value="selectedCultureId"
+          class="select"
+          @update:model-value="selectCulture($event)"
         >
           <option value="">— Choisir —</option>
           <option v-for="c in availableCultures" :key="c.id" :value="c.id">
             {{ c.name }}
           </option>
-        </select>
+        </AppSelect>
       </div>
 
       <!-- Profil : liste déroulante groupée par famille si le peuple est choisi -->
       <div class="field">
         <span>Profil</span>
         <template v-if="profileGroups.length">
-          <select
-            class="input select"
-            :value="profileSelectValue"
-            @change="
-              onProfileSelect(($event.target as HTMLSelectElement).value)
-            "
+          <AppSelect
+            class="select"
+            :model-value="profileSelectValue"
+            @update:model-value="onProfileSelect($event)"
           >
             <option value="">— Choisir —</option>
             <optgroup
@@ -293,7 +291,7 @@ function onProfileSelect(value: string) {
                 {{ p.name }}
               </option>
             </optgroup>
-          </select>
+          </AppSelect>
           <p v-if="character.profile" class="profile-hint">
             ✓ Voies et formations pré-sélectionnées
           </p>
@@ -317,12 +315,12 @@ function onProfileSelect(value: string) {
       </div>
       <div v-if="inferredProfileFamily === 'mystiques'" class="field span-2">
         <span>Talent magique</span>
-        <select v-model="character.mysticTalent" class="input select">
+        <AppSelect v-model="character.mysticTalent" class="select">
           <option value="">— Choisir —</option>
           <option v-for="t in MYSTIC_TALENTS" :key="t.id" :value="t.id">
             {{ t.name }}
           </option>
-        </select>
+        </AppSelect>
       </div>
 
       <!-- Histoire avec toggle affiché/caché -->
@@ -343,10 +341,10 @@ function onProfileSelect(value: string) {
             <Pencil v-else :size="16" :stroke-width="2" />
           </button>
         </div>
-        <textarea
+        <AppTextarea
           v-if="histoireVisible"
           v-model="character.histoire"
-          class="input input-textarea"
+          class="input-textarea"
           :rows="8"
           placeholder="L'histoire de ton personnage…"
         />
@@ -402,7 +400,7 @@ function onProfileSelect(value: string) {
 .portrait {
   width: 96px;
   height: 96px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 2px solid var(--border);
   overflow: hidden;
   cursor: pointer;
@@ -516,7 +514,7 @@ function onProfileSelect(value: string) {
   width: 32px;
   height: 32px;
   flex-shrink: 0;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--accent);
   background: color-mix(in srgb, var(--accent) 12%, transparent);
   color: var(--accent-strong);
@@ -537,7 +535,7 @@ function onProfileSelect(value: string) {
   transform: translateY(0);
 }
 
-.input.select {
+select.select {
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
@@ -578,7 +576,7 @@ function onProfileSelect(value: string) {
   width: 32px;
   height: 32px;
   padding: 0;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--surface-2);
   color: var(--muted);
@@ -603,13 +601,10 @@ function onProfileSelect(value: string) {
   padding: 0.3rem 0;
 }
 
-.input-textarea {
+textarea.input-textarea {
   width: 100%;
   min-height: 5.5rem;
-  line-height: 1.45;
-  resize: vertical;
   box-sizing: border-box;
-  font-family: inherit;
   font-size: inherit;
 }
 

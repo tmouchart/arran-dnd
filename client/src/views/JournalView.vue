@@ -8,6 +8,7 @@ import AppButton from "../components/ui/AppButton.vue";
 import AppInput from "../components/ui/AppInput.vue";
 import AppEmptyState from "../components/ui/AppEmptyState.vue";
 import AppBottomSheet from "../components/ui/AppBottomSheet.vue";
+import AppTabs from "../components/ui/AppTabs.vue";
 import NotesTab from "../components/journal/NotesTab.vue";
 import MentionTextarea from "../components/journal/MentionTextarea.vue";
 import CodexTab from "../components/journal/CodexTab.vue";
@@ -27,6 +28,13 @@ const initialTab = ["compagnie", "notes", "dessins", "fiches"].includes(String(r
   ? (String(route.query.tab) as Tab)
   : "compagnie";
 const activeTab = ref<Tab>(initialTab);
+
+const TABS = [
+  { value: "compagnie", label: "Journal de bord", icon: Users },
+  { value: "notes", label: "Notes", icon: StickyNote },
+  { value: "dessins", label: "Dessins", icon: Brush },
+  { value: "fiches", label: "Fiches", icon: BookUser },
+];
 
 // ── Journal compagnie (live) ─────────────────────────────────────────────────
 
@@ -165,24 +173,13 @@ onMounted(load);
     <AppEmptyState v-else-if="error" variant="error">{{ error }}</AppEmptyState>
 
     <template v-else>
-      <nav class="tab-bar">
-        <button class="tab-btn" :class="{ active: activeTab === 'compagnie' }" @click="activeTab = 'compagnie'">
-          <Users :size="15" />
-          <span class="tab-text">Journal de bord</span>
-        </button>
-        <button class="tab-btn" :class="{ active: activeTab === 'notes' }" @click="activeTab = 'notes'">
-          <StickyNote :size="15" />
-          <span class="tab-text">Notes</span>
-        </button>
-        <button class="tab-btn" :class="{ active: activeTab === 'dessins' }" @click="activeTab = 'dessins'">
-          <Brush :size="15" />
-          <span class="tab-text">Dessins</span>
-        </button>
-        <button class="tab-btn" :class="{ active: activeTab === 'fiches' }" @click="activeTab = 'fiches'">
-          <BookUser :size="15" />
-          <span class="tab-text">Fiches</span>
-        </button>
-      </nav>
+      <AppTabs
+        class="journal-tabs"
+        :model-value="activeTab"
+        :tabs="TABS"
+        :icon-only-mobile="true"
+        @update:model-value="activeTab = $event as Tab"
+      />
 
       <!-- ── Journal de bord ── -->
       <div v-if="activeTab === 'compagnie'" class="tab-content">
@@ -239,47 +236,9 @@ onMounted(load);
 
 <style scoped>
 
-.tab-bar {
-  display: flex;
-  gap: 0.4rem;
-  padding: 0.5rem 0;
+.journal-tabs {
+  margin: 0.5rem 0;
   flex-shrink: 0;
-}
-
-.tab-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.45rem 1rem;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  color: var(--muted);
-  font-weight: 600;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: background 120ms, color 120ms, border-color 120ms;
-}
-
-.tab-btn:hover {
-  color: var(--text);
-  border-color: var(--accent);
-}
-
-.tab-btn.active {
-  background: var(--accent);
-  color: #fff;
-  border-color: var(--accent);
-}
-
-.tab-text {
-  display: none;
-}
-
-@media (min-width: 500px) {
-  .tab-text {
-    display: inline;
-  }
 }
 
 .tab-content {
@@ -314,7 +273,7 @@ onMounted(load);
   font-weight: 600;
   color: var(--accent-strong);
   padding: 0.3rem 0.7rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AppCard from '../ui/AppCard.vue'
 import AppInput from '../ui/AppInput.vue'
+import AppSelect from '../ui/AppSelect.vue'
 import AppIconBtn from '../ui/AppIconBtn.vue'
 import { Plus, Trash2 } from 'lucide-vue-next'
 import type { Character, CharacterAbilities } from '../../types/character'
@@ -52,15 +53,15 @@ function setAbility(i: number, val: string) {
           placeholder="Nom"
           class="comp-name"
         />
-        <select
-          class="input comp-ability"
-          :value="comp.ability ?? ''"
-          @change="setAbility(i, ($event.target as HTMLSelectElement).value)"
+        <AppSelect
+          class="comp-ability"
+          :model-value="comp.ability ?? ''"
+          @update:model-value="setAbility(i, $event)"
         >
           <option v-for="opt in ABILITY_OPTIONS" :key="opt.value" :value="opt.value">
             {{ opt.label }}
           </option>
-        </select>
+        </AppSelect>
         <AppInput
           v-model="comp.bonus"
           type="number"
@@ -102,7 +103,7 @@ function setAbility(i: number, val: string) {
 }
 
 .comp-name    { flex: 1; min-width: 0; }
-.comp-ability { width: 4.5rem; flex-shrink: 0; padding: 0.38rem 0.3rem; }
+select.comp-ability { width: 4.5rem; flex-shrink: 0; padding: 0.38rem 0.3rem; }
 .comp-bonus   { width: 3.5rem; text-align: center; flex-shrink: 0; }
 
 .muted { color: var(--muted); font-size: 0.9rem; margin: 0; }

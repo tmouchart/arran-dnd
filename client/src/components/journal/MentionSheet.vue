@@ -152,7 +152,7 @@ function openCharacter() {
   align-items: center;
   gap: 0.35rem;
   padding: 0.25rem 0.7rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--surface-2);
   border: 1px solid var(--border);
   color: var(--muted);

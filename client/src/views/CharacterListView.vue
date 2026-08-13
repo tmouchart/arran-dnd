@@ -178,7 +178,7 @@ function listMetaLine(c: ServerCharacter): string {
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 0.95rem;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   background: var(--surface);
   transition: border-color 160ms ease;
@@ -266,7 +266,7 @@ function listMetaLine(c: ServerCharacter): string {
   cursor: pointer;
   font-size: 1.1rem;
   padding: 0.3rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   line-height: 1;
   opacity: 0.5;
   transition:

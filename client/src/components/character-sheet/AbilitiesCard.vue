@@ -103,7 +103,7 @@ function modDisplay(score: number): string {
   gap: 0.2rem;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 0.3rem 0.3rem 0.3rem 0.4rem;
   min-width: 0;
   width: 100%;
@@ -153,7 +153,7 @@ function modDisplay(score: number): string {
   background: transparent;
   color: var(--muted);
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   transition: background 100ms ease, color 100ms ease;
 }
 

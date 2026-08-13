@@ -160,7 +160,7 @@ function entryClass(entry: Pick<RollEntry, 'kind' | 'die' | 'sides' | 'damage'>)
   gap: 0.4rem;
   font-size: 0.82rem;
   padding: 0.22rem 0.4rem;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
   flex-wrap: wrap;
 }
 
@@ -168,7 +168,7 @@ function entryClass(entry: Pick<RollEntry, 'kind' | 'die' | 'sides' | 'damage'>)
 .entry--fumble   { background: color-mix(in srgb, var(--danger, #e05252) 12%, transparent); }
 
 .entry-time   { color: var(--muted); font-size: 0.72rem; flex-shrink: 0; }
-.entry-kind   { background: var(--surface-2); padding: 0.05rem 0.35rem; border-radius: 0.4rem; font-size: 0.72rem; flex-shrink: 0; }
+.entry-kind   { background: var(--surface-2); padding: 0.05rem 0.35rem; border-radius: var(--radius-sm); font-size: 0.72rem; flex-shrink: 0; }
 .entry-label  { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .entry-die    { color: var(--muted); font-size: 0.75rem; flex-shrink: 0; }
 .entry-total  { flex-shrink: 0; }

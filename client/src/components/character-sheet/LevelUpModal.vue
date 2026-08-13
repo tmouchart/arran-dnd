@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import { Dices, TrendingUp, Star, Shield, Swords, Wand2, Heart } from "lucide-vue-next";
+import AppModal from "../ui/AppModal.vue";
+import AppButton from "../ui/AppButton.vue";
 import type { Character } from "../../types/character";
 import { inferProfileFamily } from "../../utils/inferProfileFamily";
 import {
@@ -100,13 +102,15 @@ const conSign = computed(() => (conMod.value >= 0 ? "+" : ""));
 </script>
 
 <template>
-  <Teleport to="body">
-    <div v-if="show" class="modal-backdrop" @click.self="close">
-      <div class="modal" role="dialog" aria-modal="true">
+  <AppModal
+    :model-value="show"
+    :title="step === 'recap' ? '↑ Montée en niveau' : undefined"
+    @update:model-value="close"
+  >
 
         <!-- ── ÉTAPE 1 : Confirmation ── -->
         <template v-if="step === 'confirm'">
-          <div class="modal-body confirm-body">
+          <div class="confirm-body">
             <div class="confirm-badge">
               <TrendingUp :size="28" />
             </div>
@@ -115,18 +119,15 @@ const conSign = computed(() => (conMod.value >= 0 ? "+" : ""));
               Voulez-vous passer au niveau <strong>{{ nextLevel }}</strong>&nbsp;?
             </p>
             <div class="confirm-actions">
-              <button class="btn btn-primary" @click="openRecap">Oui</button>
-              <button class="btn btn-ghost" @click="close">Non</button>
+              <AppButton variant="primary" @click="openRecap">Oui</AppButton>
+              <AppButton @click="close">Non</AppButton>
             </div>
           </div>
         </template>
 
         <!-- ── ÉTAPE 2 : Récap des gains ── -->
         <template v-else>
-          <div class="modal-header">
-            <span class="modal-title">↑ Montée en niveau</span>
-          </div>
-          <div class="modal-body recap-body">
+          <div class="recap-body">
 
             <!-- PV max -->
             <div class="gain-row">
@@ -214,49 +215,24 @@ const conSign = computed(() => (conMod.value >= 0 ? "+" : ""));
             </div>
 
           </div>
-          <div class="modal-footer">
-            <button class="btn btn-accept" :disabled="hpRoll == null" @click="accept">
-              ✦ Accepter la montée en niveau ✦
-            </button>
-          </div>
         </template>
 
-      </div>
-    </div>
-  </Teleport>
+    <template v-if="step === 'recap'" #footer>
+      <AppButton variant="primary" block :disabled="hpRoll == null" @click="accept">
+        ✦ Accepter la montée en niveau ✦
+      </AppButton>
+    </template>
+  </AppModal>
 </template>
 
 <style scoped>
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 1rem;
-}
-
-.modal {
-  background: var(--surface);
-  border: 1.5px solid var(--border-strong);
-  border-radius: 18px;
-  width: 100%;
-  max-width: 360px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.45);
-}
-
 /* ── Confirmation step ── */
 .confirm-body {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.75rem;
-  padding: 2rem 1.5rem 1.75rem;
+  padding: var(--space-md) 0;
   text-align: center;
 }
 
@@ -300,24 +276,7 @@ const conSign = computed(() => (conMod.value >= 0 ? "+" : ""));
 }
 
 /* ── Recap step ── */
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.85rem 1.25rem 0.65rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.modal-title {
-  font-weight: 700;
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--muted);
-}
-
 .recap-body {
-  padding: 0.85rem 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
@@ -328,7 +287,7 @@ const conSign = computed(() => (conMod.value >= 0 ? "+" : ""));
   align-items: center;
   gap: 0.65rem;
   padding: 0.5rem 0.65rem;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--surface-2);
   border: 1px solid var(--border);
 }
@@ -339,7 +298,7 @@ const conSign = computed(() => (conMod.value >= 0 ? "+" : ""));
   justify-content: center;
   width: 28px;
   height: 28px;
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   flex-shrink: 0;
 }
 
@@ -398,7 +357,7 @@ const conSign = computed(() => (conMod.value >= 0 ? "+" : ""));
   text-align: center;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   color: var(--text);
   padding: 0.15rem 0.2rem;
 }
@@ -425,79 +384,11 @@ const conSign = computed(() => (conMod.value >= 0 ? "+" : ""));
   color: var(--accent-strong);
   cursor: pointer;
   padding: 0.2rem;
-  border-radius: 5px;
+  border-radius: var(--radius-xs);
   transition: background 0.12s, color 0.12s;
 }
 
 .inline-dice-btn:hover {
   background: color-mix(in srgb, var(--accent) 30%, transparent);
-}
-
-/* ── Footer ── */
-.modal-footer {
-  padding: 0.75rem 1rem 1rem;
-  border-top: 1px solid var(--border);
-}
-
-.btn-accept {
-  width: 100%;
-  padding: 0.7rem 1rem;
-  border-radius: 10px;
-  border: none;
-  background: var(--accent);
-  color: #fff;
-  font-weight: 700;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: background 0.15s, transform 0.1s;
-  letter-spacing: 0.04em;
-}
-
-.btn-accept:hover {
-  background: var(--accent-strong);
-  transform: translateY(-1px);
-}
-
-.btn-accept:active {
-  transform: translateY(0);
-}
-
-.btn-accept:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* ── Shared buttons ── */
-.btn {
-  padding: 0.55rem 1.4rem;
-  border-radius: 10px;
-  border: none;
-  font-weight: 700;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: background 0.15s, transform 0.1s;
-  letter-spacing: 0.03em;
-}
-
-.btn-primary {
-  background: var(--accent);
-  color: #fff;
-}
-
-.btn-primary:hover {
-  background: var(--accent-strong);
-  transform: translateY(-1px);
-}
-
-.btn-ghost {
-  background: var(--surface-2);
-  color: var(--muted);
-  border: 1px solid var(--border);
-}
-
-.btn-ghost:hover {
-  background: var(--surface-3, var(--border));
-  color: var(--text);
 }
 </style>

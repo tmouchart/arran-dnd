@@ -8,6 +8,7 @@ import AppButton from "../components/ui/AppButton.vue";
 import AppInput from "../components/ui/AppInput.vue";
 import AppIconBtn from "../components/ui/AppIconBtn.vue";
 import AppEmptyState from "../components/ui/AppEmptyState.vue";
+import AppModal from "../components/ui/AppModal.vue";
 import DrawingCanvas from "../components/DrawingCanvas.vue";
 import MentionTextarea from "../components/journal/MentionTextarea.vue";
 import NoteContent from "../components/journal/NoteContent.vue";
@@ -302,20 +303,15 @@ onMounted(load);
     <MentionSheet v-model="showMention" :kind="mentionKind" :id="mentionId" />
 
     <!-- Delete confirmation -->
-    <Teleport to="body">
-      <div v-if="showDeleteConfirm" class="modal-backdrop" @click.self="showDeleteConfirm = false">
-        <div class="modal-box">
-          <h3 class="modal-title">Supprimer cette page ?</h3>
-          <p class="modal-hint">Cette action est irréversible.</p>
-          <div class="modal-actions">
-            <AppButton variant="danger" :disabled="deleting" @click="handleDelete">
-              {{ deleting ? "Suppression…" : "Supprimer" }}
-            </AppButton>
-            <AppButton @click="showDeleteConfirm = false">Annuler</AppButton>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+    <AppModal v-model="showDeleteConfirm" title="Supprimer cette page ?">
+      <p class="modal-hint">Cette action est irréversible.</p>
+      <template #footer>
+        <AppButton @click="showDeleteConfirm = false">Annuler</AppButton>
+        <AppButton variant="danger" :disabled="deleting" @click="handleDelete">
+          {{ deleting ? "Suppression…" : "Supprimer" }}
+        </AppButton>
+      </template>
+    </AppModal>
   </AppPageLayout>
 </template>
 
@@ -355,7 +351,7 @@ onMounted(load);
   font-weight: 600;
   color: var(--accent-strong);
   padding: 0.3rem 0.7rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
@@ -375,43 +371,9 @@ onMounted(load);
 
 /* ── Modal ── */
 
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 1rem;
-}
-
-.modal-box {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 1.5rem;
-  width: 100%;
-  max-width: 400px;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.modal-title {
-  margin: 0;
-  font-size: 1.1rem;
-}
-
 .modal-hint {
   margin: 0;
   font-size: 0.85rem;
   color: var(--muted);
-}
-
-.modal-actions {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
 }
 </style>

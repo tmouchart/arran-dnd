@@ -4,6 +4,7 @@ import AppPageLayout from "../components/ui/AppPageLayout.vue";
 import AppPageHead from "../components/ui/AppPageHead.vue";
 import AppEmptyState from "../components/ui/AppEmptyState.vue";
 import AppButton from "../components/ui/AppButton.vue";
+import AppTabs from "../components/ui/AppTabs.vue";
 import { useCharacter, loadCharacter } from "../composables/useCharacter";
 import { useSheetEffects } from "../composables/useSheetEffects";
 import { inferProfileFamily } from "../utils/inferProfileFamily";
@@ -38,10 +39,10 @@ function retryLoadSheet() {
 type TabId = 'identite' | 'voies' | 'combat'
 const activeTab = ref<TabId>('identite')
 
-const TABS: { id: TabId; label: string; icon: string }[] = [
-  { id: 'identite', label: 'Identité', icon: '⚔️' },
-  { id: 'voies', label: 'Voies', icon: '✨' },
-  { id: 'combat', label: 'Combat', icon: '🗡️' },
+const TABS: { value: TabId; label: string; icon: string }[] = [
+  { value: 'identite', label: 'Identité', icon: '⚔️' },
+  { value: 'voies', label: 'Voies', icon: '✨' },
+  { value: 'combat', label: 'Combat', icon: '🗡️' },
 ]
 </script>
 
@@ -68,20 +69,12 @@ const TABS: { id: TabId; label: string; icon: string }[] = [
     </AppEmptyState>
 
     <template v-else-if="!loading && !loadError">
-      <!-- Tab bar -->
-      <nav class="tab-bar">
-        <button
-          v-for="tab in TABS"
-          :key="tab.id"
-          type="button"
-          class="tab-btn"
-          :class="{ active: activeTab === tab.id }"
-          @click="activeTab = tab.id"
-        >
-          <span class="tab-icon" aria-hidden="true">{{ tab.icon }}</span>
-          <span class="tab-label">{{ tab.label }}</span>
-        </button>
-      </nav>
+      <AppTabs
+        class="sheet-tabs"
+        :model-value="activeTab"
+        :tabs="TABS"
+        @update:model-value="activeTab = $event as TabId"
+      />
 
       <!-- Onglet 1 : Identité + Carac + PV & Ressources -->
       <template v-if="activeTab === 'identite'">
@@ -142,52 +135,8 @@ const TABS: { id: TabId; label: string; icon: string }[] = [
   color: var(--danger);
 }
 
-/* ── Tab bar ─────────────────────────────────────────────────────────────── */
-.tab-bar {
-  display: flex;
-  gap: 0.35rem;
+.sheet-tabs {
   margin-bottom: 0.85rem;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 0.3rem;
-}
-
-.tab-btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  padding: 0.42rem 0.5rem;
-  border: none;
-  border-radius: 10px;
-  background: transparent;
-  cursor: pointer;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--muted);
-  transition: background 150ms ease, color 150ms ease;
-}
-
-.tab-btn:hover {
-  background: color-mix(in srgb, var(--accent-soft) 60%, transparent);
-  color: var(--accent-strong);
-}
-
-.tab-btn.active {
-  background: var(--surface);
-  color: var(--accent-strong);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-}
-
-.tab-icon {
-  font-size: 1rem;
-  line-height: 1;
-}
-
-.tab-label {
-  white-space: nowrap;
 }
 
 .btn.small {

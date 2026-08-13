@@ -54,7 +54,7 @@ const passiveAbilities = computed(() => {
 
 .passif-card {
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--surface-2);
   padding: 0.62rem 0.75rem;
   display: flex;
@@ -83,7 +83,7 @@ const passiveAbilities = computed(() => {
   text-align: right;
   line-height: 1.25;
   padding: 0.2rem 0.45rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--accent-soft);
   color: var(--accent-strong);
   border: 1px solid var(--border);

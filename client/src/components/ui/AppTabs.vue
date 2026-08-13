@@ -6,6 +6,8 @@ export interface AppTab {
   label: string
   /** Emoji string or Lucide component */
   icon?: string | Component
+  /** Unread indicator (e.g. new activity while the tab is inactive) */
+  dot?: boolean
 }
 
 defineProps<{
@@ -35,6 +37,7 @@ defineEmits<{
       <span v-if="typeof tab.icon === 'string'" class="tab-icon" aria-hidden="true">{{ tab.icon }}</span>
       <component :is="tab.icon" v-else-if="tab.icon" class="tab-icon" :size="16" aria-hidden="true" />
       <span class="tab-label" :class="{ 'tab-label--hide-mobile': iconOnlyMobile }">{{ tab.label }}</span>
+      <span v-if="tab.dot" class="tab-dot" aria-hidden="true" />
     </button>
   </nav>
 </template>
@@ -86,6 +89,14 @@ defineEmits<{
 
 .tab-label {
   white-space: nowrap;
+}
+
+.tab-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--brand);
+  flex-shrink: 0;
 }
 
 @media (max-width: 520px) {

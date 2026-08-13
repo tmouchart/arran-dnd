@@ -335,7 +335,7 @@ onMounted(() => {
   align-items: center;
   gap: 0.35rem;
   padding: 0.4rem 0.85rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--border);
   background: var(--surface-2);
   color: var(--muted);
@@ -371,9 +371,9 @@ onMounted(() => {
 .note-item {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.7rem 0.9rem;
-  border-radius: 12px;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   background: var(--surface);
   cursor: pointer;
@@ -450,7 +450,7 @@ onMounted(() => {
   gap: 0.75rem;
   padding: 0.8rem 0.6rem;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: none;
   color: var(--text);
   font-size: 0.95rem;

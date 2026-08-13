@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Lock } from "lucide-vue-next";
+import AppModal from "../ui/AppModal.vue";
 import type { Voie } from "../../data/voies";
 
 defineProps<{
@@ -14,14 +15,12 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <Teleport to="body">
-    <div v-if="show" class="picker-overlay" @click.self="emit('close')">
-      <div class="picker-panel">
-        <div class="picker-head">
-          <h3>Choisir une voie</h3>
-          <button type="button" class="btn ghost small" @click="emit('close')">✕</button>
-        </div>
-        <div class="picker-body">
+  <AppModal
+    :model-value="show"
+    title="Choisir une voie"
+    @update:model-value="emit('close')"
+  >
+    <div class="picker-body">
           <div v-for="group in groups" :key="group.family" class="picker-group">
             <h4 class="picker-family" :class="'family-' + group.family">{{ group.label }}</h4>
             <p v-if="group.locked" class="lock-reason">
@@ -44,68 +43,12 @@ const emit = defineEmits<{
           <p v-if="groups.length === 0" class="muted picker-empty">
             Toutes les voies sont déjà ajoutées.
           </p>
-        </div>
-      </div>
     </div>
-  </Teleport>
+  </AppModal>
 </template>
 
 <style scoped>
-.picker-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  z-index: 200;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding: 0;
-}
-
-@media (min-width: 540px) {
-  .picker-overlay { align-items: center; padding: 1.5rem; }
-}
-
-.picker-panel {
-  background: var(--surface);
-  border: 1px solid var(--border-strong);
-  border-radius: 20px 20px 0 0;
-  width: 100%;
-  max-width: 480px;
-  max-height: 82svh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.28);
-  overflow: hidden;
-}
-
-@media (min-width: 540px) {
-  .picker-panel {
-    border-radius: 20px;
-    max-height: 80vh;
-    box-shadow: var(--shadow-card);
-  }
-}
-
-.picker-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1.1rem 0.7rem;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-
-.picker-head h3 {
-  margin: 0;
-  font-family: var(--title-font);
-  font-size: 1.1rem;
-  color: var(--brand-strong);
-}
-
 .picker-body {
-  overflow-y: auto;
-  padding: 0.7rem 1.1rem 1.2rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -120,7 +63,7 @@ const emit = defineEmits<{
   text-transform: uppercase;
   margin: 0 0 0.35rem;
   padding: 0.22rem 0.6rem;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   display: inline-block;
 }
 
@@ -128,7 +71,7 @@ const emit = defineEmits<{
 
 .picker-voie {
   padding: 0.58rem 0.6rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 0.93rem;
   color: var(--text);
@@ -165,6 +108,4 @@ const emit = defineEmits<{
 
 :root[data-theme="dark"] .family-aventuriers { color: #7bcf8a; }
 :root[data-theme="dark"] .family-prestige { color: #d4a843; }
-
-.btn.small { min-height: 38px; padding: 0.3rem 0.58rem; font-size: 0.82rem; }
 </style>

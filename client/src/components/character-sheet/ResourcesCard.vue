@@ -229,7 +229,7 @@ const mpIsMystique = computed(() => props.family === "mystiques");
   align-items: center;
   gap: 0.1rem;
   padding: 0.35rem 0.6rem;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--surface-2);
   cursor: default;
@@ -272,7 +272,7 @@ const mpIsMystique = computed(() => props.family === "mystiques");
 .hp-btn {
   width: 36px;
   height: 36px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);

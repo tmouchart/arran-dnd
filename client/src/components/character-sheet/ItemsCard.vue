@@ -202,7 +202,7 @@ function removeItem(i: number) {
 
 .item-label {
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   padding: 0.15rem 0.3rem;
   min-width: 0;
   overflow: hidden;
@@ -235,7 +235,7 @@ function removeItem(i: number) {
   color: var(--muted);
   cursor: pointer;
   padding: 0.2rem;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   display: flex;
   align-items: center;
   opacity: 0;

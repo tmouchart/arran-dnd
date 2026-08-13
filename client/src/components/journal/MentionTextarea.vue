@@ -561,7 +561,7 @@ onBeforeUnmount(() => {
   white-space: pre-wrap;
   overflow-wrap: break-word;
   padding: 1rem;
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
@@ -602,7 +602,7 @@ onBeforeUnmount(() => {
   vertical-align: baseline;
   padding: 0.05rem 0.3rem 0.05rem 0.5rem;
   margin: 0 1px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
   background: color-mix(in srgb, var(--accent) 14%, var(--surface-2));
   color: var(--accent-strong);
@@ -652,7 +652,7 @@ onBeforeUnmount(() => {
   padding: 0.3rem;
   background: var(--surface);
   border: 1px solid var(--border-strong);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
 }
 
@@ -662,7 +662,7 @@ onBeforeUnmount(() => {
   gap: 0.45rem;
   padding: 0.45rem 0.6rem;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text);
   font-size: 0.88rem;
@@ -706,7 +706,7 @@ onBeforeUnmount(() => {
   gap: 0.35rem;
   flex-shrink: 0;
   padding: 0.4rem 0.8rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--border);
   background: var(--surface-2);
   color: var(--text);

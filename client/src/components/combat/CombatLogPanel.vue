@@ -114,7 +114,7 @@ function time(r: CombatRollEvent): string {
 .log-entry {
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 0.9rem;
+  border-radius: var(--radius-xl);
   padding: 0.5rem 0.7rem;
   display: flex;
   flex-direction: column;
@@ -229,7 +229,7 @@ function time(r: CombatRollEvent): string {
   font-weight: 700;
   color: var(--muted);
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 0.05rem 0.4rem;
   margin-left: auto;
   flex-shrink: 0;

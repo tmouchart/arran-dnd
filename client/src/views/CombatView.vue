@@ -7,7 +7,6 @@ import {
   ChevronLeft,
   Plus,
   Minus,
-  X,
   Heart,
   HeartCrack,
   Skull,
@@ -33,6 +32,9 @@ import AppIconBtn from "../components/ui/AppIconBtn.vue";
 import AppButton from "../components/ui/AppButton.vue";
 import AppInput from "../components/ui/AppInput.vue";
 import AppEmptyState from "../components/ui/AppEmptyState.vue";
+import AppModal from "../components/ui/AppModal.vue";
+import AppBottomSheet from "../components/ui/AppBottomSheet.vue";
+import AppTabs, { type AppTab } from "../components/ui/AppTabs.vue";
 import ActionsView from "./ActionsView.vue";
 import CombatLogPanel from "../components/combat/CombatLogPanel.vue";
 import DiceSandbox from "../components/DiceSandbox.vue";
@@ -80,10 +82,28 @@ function openLogTab() {
   hasUnseenRoll.value = false;
 }
 
+// L'onglet Actions n'existe que pour les joueurs ; la pastille signale un jet
+// arrivé pendant qu'on regardait ailleurs. Sur desktop le log a sa propre
+// colonne, l'onglet Jets n'a plus lieu d'être.
+const combatTabs = computed<AppTab[]>(() => [
+  { value: "timeline", label: "Combat", icon: LayoutList },
+  ...(isGm.value ? [] : [{ value: "actions", label: "Mes actions", icon: Zap }]),
+  ...(isDesktop.value
+    ? []
+    : [{ value: "log", label: "Jets", icon: ScrollText, dot: hasUnseenRoll.value }]),
+]);
+
+function selectTab(tab: CombatTab) {
+  if (tab === "log") openLogTab();
+  else activeTab.value = tab;
+}
+
 // ≥900px le log vit en colonne fixe et l'onglet Jets disparaît : si on y était
 // (tablette qui pivote), on retombe sur la timeline pour ne pas rester sur du vide.
 const desktopQuery = window.matchMedia("(min-width: 900px)");
+const isDesktop = ref(desktopQuery.matches);
 function handleDesktopChange(e: MediaQueryListEvent) {
+  isDesktop.value = e.matches;
   if (e.matches && activeTab.value === "log") activeTab.value = "timeline";
 }
 
@@ -318,6 +338,11 @@ function openCustomForm() {
   showCustomForm.value = true;
 }
 
+function setAddMonsterOpen(open: boolean) {
+  showAddMonster.value = open;
+  if (!open) showCustomForm.value = false;
+}
+
 async function handleSubmitCustomMonster() {
   const f = customForm.value;
   await addMonster({
@@ -389,37 +414,7 @@ function goBack() {
 
       <template v-else-if="combat">
         <!-- Tabs: Timeline / Actions (joueur) / Jets -->
-        <nav class="tab-bar">
-          <button
-            type="button"
-            class="tab-btn"
-            :class="{ active: activeTab === 'timeline' }"
-            @click="activeTab = 'timeline'"
-          >
-            <LayoutList :size="16" />
-            <span class="tab-label">Combat</span>
-          </button>
-          <button
-            v-if="!isGm"
-            type="button"
-            class="tab-btn"
-            :class="{ active: activeTab === 'actions' }"
-            @click="activeTab = 'actions'"
-          >
-            <Zap :size="16" />
-            <span class="tab-label">Mes actions</span>
-          </button>
-          <button
-            type="button"
-            class="tab-btn tab-btn--log"
-            :class="{ active: activeTab === 'log' }"
-            @click="openLogTab"
-          >
-            <ScrollText :size="16" />
-            <span class="tab-label">Jets</span>
-            <span v-if="hasUnseenRoll" class="tab-dot" />
-          </button>
-        </nav>
+        <AppTabs :model-value="activeTab" :tabs="combatTabs" @update:model-value="selectTab($event as CombatTab)" />
 
         <!-- Tab: Actions (player only) -->
         <div v-if="activeTab === 'actions' && !isGm" class="actions-tab">
@@ -656,18 +651,12 @@ function goBack() {
     </Teleport>
 
     <!-- Bottom sheet: Add monster -->
-    <Teleport to="body">
-      <div
-        v-if="showAddMonster"
-        class="sheet-overlay"
-        @click.self="showAddMonster = false; showCustomForm = false"
-      >
-        <div class="sheet-panel">
-          <div class="sheet-header">
-            <h2 class="sheet-title">{{ showCustomForm ? 'Monstre custom' : 'Ajouter un renfort' }}</h2>
-            <AppIconBtn @click="showAddMonster = false; showCustomForm = false"><X :size="18" /></AppIconBtn>
-          </div>
-
+    <AppBottomSheet
+      :model-value="showAddMonster"
+      :title="showCustomForm ? 'Monstre custom' : 'Ajouter un renfort'"
+      @update:model-value="setAddMonsterOpen"
+    >
+      <div class="add-monster-body">
           <!-- Custom form -->
           <template v-if="showCustomForm">
             <div class="custom-form-grid">
@@ -723,118 +712,50 @@ function goBack() {
               Monstre custom
             </AppButton>
           </template>
-        </div>
       </div>
-    </Teleport>
+    </AppBottomSheet>
 
     <!-- Delete confirmation -->
-    <Teleport to="body">
-      <div v-if="confirmDeleteId !== null" class="sheet-overlay" @click.self="confirmDeleteId = null">
-        <div class="modal-box">
-          <p>Supprimer ce monstre du combat ?</p>
-          <div class="modal-actions">
-            <AppButton variant="ghost" @click="confirmDeleteId = null">Annuler</AppButton>
-            <AppButton variant="danger" @click="handleConfirmDelete">Supprimer</AppButton>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+    <AppModal
+      :model-value="confirmDeleteId !== null"
+      title="Supprimer ce monstre du combat ?"
+      @update:model-value="confirmDeleteId = null"
+    >
+      <template #footer>
+        <AppButton variant="ghost" @click="confirmDeleteId = null">Annuler</AppButton>
+        <AppButton variant="danger" @click="handleConfirmDelete">Supprimer</AppButton>
+      </template>
+    </AppModal>
 
     <!-- Finish confirmation -->
-    <Teleport to="body">
-      <div
-        v-if="showFinishConfirm"
-        class="sheet-overlay"
-        @click.self="showFinishConfirm = false"
-      >
-        <div class="modal-box">
-          <p>Terminer ce combat ?</p>
-
-          <!-- Loot generation (GM only) -->
-          <div v-if="isGm" class="loot-section">
-            <AppButton
-              variant="ghost"
-              :disabled="lootLoading"
-              @click="handleGenerateLoot"
-            >
-              <Sparkles :size="16" />
-              {{ lootLoading ? "Génération…" : "Génère le loot" }}
-            </AppButton>
-            <p v-if="lootError" class="loot-error">{{ lootError }}</p>
-            <div v-if="lootText" class="loot-result">{{ lootText }}</div>
-          </div>
-
-          <div class="modal-actions">
-            <AppButton variant="ghost" @click="showFinishConfirm = false"
-              >Annuler</AppButton
-            >
-            <AppButton variant="danger" @click="handleFinish"
-              >Terminer</AppButton
-            >
-          </div>
-        </div>
+    <AppModal v-model="showFinishConfirm" title="Terminer ce combat ?">
+      <!-- Loot generation (GM only) -->
+      <div v-if="isGm" class="loot-section">
+        <AppButton
+          variant="ghost"
+          :disabled="lootLoading"
+          @click="handleGenerateLoot"
+        >
+          <Sparkles :size="16" />
+          {{ lootLoading ? "Génération…" : "Génère le loot" }}
+        </AppButton>
+        <p v-if="lootError" class="loot-error">{{ lootError }}</p>
+        <div v-if="lootText" class="loot-result">{{ lootText }}</div>
       </div>
-    </Teleport>
+
+      <template #footer>
+        <AppButton variant="ghost" @click="showFinishConfirm = false"
+          >Annuler</AppButton
+        >
+        <AppButton variant="danger" @click="handleFinish"
+          >Terminer</AppButton
+        >
+      </template>
+    </AppModal>
   </AppPageLayout>
 </template>
 
 <style scoped>
-/* Tab bar */
-.tab-bar {
-  display: flex;
-  gap: 0.35rem;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 0.3rem;
-}
-
-.tab-btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  padding: 0.42rem 0.5rem;
-  border: none;
-  border-radius: 10px;
-  background: transparent;
-  cursor: pointer;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--muted);
-  transition:
-    background 150ms ease,
-    color 150ms ease;
-}
-
-.tab-btn:hover {
-  background: color-mix(in srgb, var(--accent-soft) 60%, transparent);
-  color: var(--accent-strong);
-}
-
-.tab-btn.active {
-  background: var(--surface);
-  color: var(--accent-strong);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-}
-
-.tab-label {
-  white-space: nowrap;
-}
-
-.tab-btn--log {
-  position: relative;
-}
-
-.tab-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent);
-  flex-shrink: 0;
-}
-
 /* Layout : 1 colonne mobile, 2 colonnes desktop (ordre à gauche, log à droite) */
 .combat-columns {
   display: flex;
@@ -892,8 +813,8 @@ function goBack() {
     margin-top: 0;
   }
 
-  /* Sur desktop le log est toujours visible en colonne — l'onglet devient inutile */
-  .tab-btn--log,
+  /* Sur desktop le log est toujours visible en colonne (l'onglet Jets est
+     retiré de combatTabs) */
   .log-tab {
     display: none;
   }
@@ -916,7 +837,7 @@ function goBack() {
 .participant-card {
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 0.9rem;
+  border-radius: var(--radius-xl);
   overflow: hidden;
   transition:
     border-color 150ms ease,
@@ -1023,7 +944,7 @@ function goBack() {
   width: 26px;
   height: 26px;
   border: 1px solid var(--border);
-  border-radius: 0.4rem;
+  border-radius: var(--radius-sm);
   background: var(--surface);
   color: var(--text);
   cursor: pointer;
@@ -1051,7 +972,7 @@ function goBack() {
   width: 36px;
   height: 32px;
   border: 1px solid var(--border);
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
   background: var(--surface);
   color: var(--text);
   font-weight: 700;
@@ -1131,7 +1052,7 @@ function goBack() {
   width: 28px;
   height: 28px;
   border: 1px solid var(--border);
-  border-radius: 0.4rem;
+  border-radius: var(--radius-sm);
   background: var(--surface);
   color: var(--accent-strong);
   cursor: pointer;
@@ -1149,7 +1070,7 @@ function goBack() {
   flex-wrap: wrap;
   gap: 0.25rem 0.6rem;
   padding: 0.3rem 0.5rem;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--accent) 10%, var(--surface));
   border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
   font-size: 0.78rem;
@@ -1241,42 +1162,11 @@ function goBack() {
   align-items: center;
 }
 
-/* Bottom sheet */
-.sheet-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.sheet-panel {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 1.4rem 1.4rem 0 0;
-  padding: 1.2rem;
-  width: 100%;
-  max-width: 500px;
-  max-height: 70vh;
-  overflow-y: auto;
+/* Add monster sheet */
+.add-monster-body {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-}
-
-.sheet-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.sheet-title {
-  font-size: 1rem;
-  font-weight: 700;
-  margin: 0;
-  color: var(--text);
 }
 
 .bestiary-results {
@@ -1292,7 +1182,7 @@ function goBack() {
   justify-content: space-between;
   align-items: center;
   padding: 0.5rem 0.6rem;
-  border-radius: 0.6rem;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: background 120ms ease;
 }
@@ -1312,31 +1202,7 @@ function goBack() {
   white-space: nowrap;
 }
 
-/* Modal */
-.modal-box {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 1.2rem;
-  padding: 1.5rem;
-  max-width: 360px;
-  width: 90%;
-  text-align: center;
-  margin: auto;
-}
-
-.modal-box p {
-  margin: 0 0 1.2rem;
-  font-size: 0.95rem;
-  color: var(--text);
-}
-.modal-actions {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: center;
-}
-
 .loot-section {
-  margin-bottom: 1.2rem;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1346,8 +1212,8 @@ function goBack() {
 .loot-result {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 0.75rem;
-  padding: 0.85rem 1rem;
+  border-radius: var(--radius-xl);
+  padding: var(--space-lg);
   font-size: 0.85rem;
   color: var(--text);
   text-align: left;
@@ -1374,7 +1240,7 @@ function goBack() {
   background: transparent;
   color: var(--muted);
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   padding: 0;
   transition: color 120ms, background 120ms;
 }

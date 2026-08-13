@@ -27,7 +27,7 @@ const model = defineModel<boolean>({ required: true })
   letter-spacing: 0.04em;
   text-transform: uppercase;
   padding: 0.28em 0.75em;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   white-space: nowrap;
   flex-shrink: 0;
   cursor: pointer;
@@ -62,7 +62,7 @@ const model = defineModel<boolean>({ required: true })
 
 .affaibli-die {
   background: color-mix(in srgb, #8e44ad 22%, transparent);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 0.05em 0.5em;
   font-variant-numeric: tabular-nums;
   text-transform: none;

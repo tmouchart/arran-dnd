@@ -113,7 +113,7 @@ function stepCount(delta: number) {
   align-items: center;
   gap: 0.15rem;
   padding: 0.4rem 0.1rem;
-  border-radius: 0.7rem;
+  border-radius: var(--radius-lg);
   border: 1.5px solid var(--border-strong);
   background: var(--surface-2);
   color: var(--text);
@@ -201,7 +201,7 @@ function stepCount(delta: number) {
 .result {
   margin-top: 0.9rem;
   padding: 0.9rem 0.7rem;
-  border-radius: 1rem;
+  border-radius: var(--radius-xl);
   border: 1.5px solid color-mix(in srgb, var(--accent) 35%, var(--border));
   background: color-mix(in srgb, var(--accent) 8%, var(--surface));
   text-align: center;

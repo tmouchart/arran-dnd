@@ -4,6 +4,7 @@ import { User, MapPin, FileText } from 'lucide-vue-next'
 import AppBottomSheet from '../ui/AppBottomSheet.vue'
 import AppInput from '../ui/AppInput.vue'
 import AppButton from '../ui/AppButton.vue'
+import AppTextarea from '../ui/AppTextarea.vue'
 import {
   createCodexEntry,
   updateCodexEntry,
@@ -106,11 +107,11 @@ async function submit() {
         </button>
       </div>
 
-      <textarea
+      <AppTextarea
         v-model="description"
-        class="input codex-description"
+        class="codex-description"
         placeholder="Description (optionnelle)…"
-        rows="5"
+        :rows="5"
       />
 
       <label v-if="convertMode" class="delete-note-check">
@@ -146,7 +147,7 @@ async function submit() {
   justify-content: center;
   gap: 0.35rem;
   padding: 0.5rem 0.4rem;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--surface-2);
   color: var(--muted);

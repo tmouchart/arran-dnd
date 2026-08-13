@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { Skull, Heart, RefreshCw, X } from 'lucide-vue-next'
+import { Skull, Heart, RefreshCw } from 'lucide-vue-next'
+import AppModal from './ui/AppModal.vue'
+import AppButton from './ui/AppButton.vue'
 import { rollDie } from '../utils/dice'
 import { attackDieSides } from '../composables/useCharacter'
 
@@ -52,12 +54,8 @@ function confirm() {
 </script>
 
 <template>
-  <div class="modal-overlay" @click.self="emit('close')">
-    <div class="modal" :class="verdict !== 'none' ? `modal--${verdict}` : ''">
-      <button type="button" class="modal-close" @click="emit('close')">
-        <X :size="18" />
-      </button>
-
+  <AppModal :model-value="true" @update:model-value="emit('close')">
+    <div class="agonie-body">
       <div class="modal-icon">
         <Skull :size="36" />
       </div>
@@ -109,70 +107,27 @@ function confirm() {
         <Skull :size="18" /> Mort — le personnage décède.
       </div>
 
-      <!-- Actions -->
-      <div class="modal-actions">
-        <button
-          v-if="verdict === 'none'"
-          type="button"
-          class="btn-roll"
-          @click="roll"
-        >
-          Lancer le d{{ attackDieSides }}
-        </button>
-        <button
-          v-if="verdict !== 'none'"
-          type="button"
-          class="btn-confirm"
-          @click="confirm"
-        >
-          Confirmer
-        </button>
-        <button type="button" class="btn-reset" @click="reset">
-          <RefreshCw :size="14" /> Recommencer
-        </button>
-      </div>
     </div>
-  </div>
+
+    <!-- Actions -->
+    <template #footer>
+      <AppButton @click="reset">
+        <RefreshCw :size="14" /> Recommencer
+      </AppButton>
+      <AppButton v-if="verdict === 'none'" variant="primary" @click="roll">
+        Lancer le d{{ attackDieSides }}
+      </AppButton>
+      <AppButton v-if="verdict !== 'none'" variant="primary" @click="confirm">
+        Confirmer
+      </AppButton>
+    </template>
+  </AppModal>
 </template>
 
 <style scoped>
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 200;
-  padding: 1rem;
-}
-
-.modal {
-  background: var(--surface);
-  border: 2px solid var(--border-strong);
-  border-radius: 1.4rem;
-  padding: 1.5rem 1.2rem;
-  max-width: 22rem;
-  width: 100%;
-  position: relative;
+.agonie-body {
   text-align: center;
-  transition: border-color 0.2s;
 }
-
-.modal--stabilise { border-color: #4caf82; }
-.modal--death     { border-color: var(--danger, #e05252); }
-
-.modal-close {
-  position: absolute;
-  top: 0.7rem;
-  right: 0.7rem;
-  background: none;
-  border: none;
-  cursor: pointer;
-  opacity: 0.5;
-  padding: 0.2rem;
-}
-.modal-close:hover { opacity: 1; }
 
 .modal-icon {
   font-size: 2rem;
@@ -209,8 +164,8 @@ function confirm() {
   font-weight: 600;
 }
 
-.tracker--success { color: #4caf82; }
-.tracker--failure  { color: var(--danger, #e05252); }
+.tracker--success { color: var(--accent); }
+.tracker--failure  { color: var(--danger); }
 
 .pips {
   display: flex;
@@ -246,13 +201,13 @@ function confirm() {
   gap: 0.5rem;
   font-size: 0.85rem;
   padding: 0.22rem 0.6rem;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
 }
 
-.roll-entry--success        { background: color-mix(in srgb, #4caf82 15%, transparent); }
-.roll-entry--critical-save  { background: color-mix(in srgb, #4caf82 25%, transparent); font-weight: 700; }
-.roll-entry--failure         { background: color-mix(in srgb, var(--danger, #e05252) 15%, transparent); }
-.roll-entry--critical-death  { background: color-mix(in srgb, var(--danger, #e05252) 25%, transparent); font-weight: 700; }
+.roll-entry--success        { background: color-mix(in srgb, var(--accent) 15%, transparent); }
+.roll-entry--critical-save  { background: color-mix(in srgb, var(--accent) 25%, transparent); font-weight: 700; }
+.roll-entry--failure         { background: color-mix(in srgb, var(--danger) 15%, transparent); }
+.roll-entry--critical-death  { background: color-mix(in srgb, var(--danger) 25%, transparent); font-weight: 700; }
 
 .roll-label { opacity: 0.85; }
 
@@ -265,56 +220,8 @@ function confirm() {
   font-size: 0.95rem;
   margin-bottom: 0.8rem;
   padding: 0.5rem 0.8rem;
-  border-radius: 0.7rem;
+  border-radius: var(--radius-lg);
 }
-.verdict--stabilise { background: color-mix(in srgb, #4caf82 18%, transparent); color: #4caf82; }
-.verdict--death     { background: color-mix(in srgb, var(--danger, #e05252) 18%, transparent); color: var(--danger, #e05252); }
-
-.modal-actions {
-  display: flex;
-  gap: 0.6rem;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.btn-roll {
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: 2rem;
-  padding: 0.55rem 1.4rem;
-  font-size: 0.95rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: opacity 0.15s;
-}
-.btn-roll:hover { opacity: 0.85; }
-
-.btn-confirm {
-  background: #4caf82;
-  color: #fff;
-  border: none;
-  border-radius: 2rem;
-  padding: 0.55rem 1.4rem;
-  font-size: 0.95rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: opacity 0.15s;
-}
-.btn-confirm:hover { opacity: 0.85; }
-
-.btn-reset {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  background: none;
-  border: 1.5px solid var(--border);
-  border-radius: 2rem;
-  padding: 0.5rem 1rem;
-  font-size: 0.85rem;
-  cursor: pointer;
-  color: var(--text);
-  transition: border-color 0.15s;
-}
-.btn-reset:hover { border-color: var(--accent); }
+.verdict--stabilise { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); }
+.verdict--death     { background: color-mix(in srgb, var(--danger) 18%, transparent); color: var(--danger); }
 </style>
