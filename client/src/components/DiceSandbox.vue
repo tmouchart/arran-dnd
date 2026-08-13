@@ -8,6 +8,9 @@ import { useCharacter } from '../composables/useCharacter'
 
 const DICE = [4, 6, 8, 10, 12, 20, 100]
 
+/** `compact` : version barre — résultat sur la même ligne que les options. */
+defineProps<{ compact?: boolean }>()
+
 const { character } = useCharacter()
 const { addRoll } = useRollHistory()
 
@@ -56,7 +59,7 @@ function stepCount(delta: number) {
 </script>
 
 <template>
-  <div class="sandbox-body">
+  <div class="sandbox-body" :class="{ compact }">
     <div class="dice-row">
       <button
         v-for="sides in DICE"
@@ -84,9 +87,21 @@ function stepCount(delta: number) {
         <span class="mod-label">Modif.</span>
         <AppInput v-model="modifier" type="number" text-align="center" class="mod-input" />
       </label>
+
+      <!-- Compact : le résultat vit dans la barre, pas dans un bloc en dessous -->
+      <div v-if="compact && result" :key="result.key" class="inline-result">
+        <span class="inline-total">{{ result.total }}</span>
+        <span class="inline-detail">
+          {{ result.rolls.length }}d{{ result.sides }}{{ signedMod(result.modifier) }}
+          <template v-if="result.rolls.length > 1">= {{ result.rolls.join(" + ") }}</template>
+        </span>
+      </div>
+
+      <!-- Bouton du log, collé à droite dans la barre -->
+      <slot name="trailing" />
     </div>
 
-    <div v-if="result" :key="result.key" class="result">
+    <div v-if="!compact && result" :key="result.key" class="result">
       <div class="result-total">{{ result.total }}</div>
       <div class="result-detail">
         {{ result.rolls.length }}d{{ result.sides }}{{ signedMod(result.modifier) }}
@@ -196,6 +211,56 @@ function stepCount(delta: number) {
 
 .mod-input {
   width: 4.2rem;
+}
+
+/* ── Mode compact (barre de dés globale) ─────────────────────────────────── */
+.compact .dice-row {
+  margin-top: 0;
+}
+
+.compact .options-row {
+  margin-top: var(--space-sm);
+  gap: var(--space-md);
+  flex-wrap: nowrap;
+}
+
+/* Tout ce qui suit le champ Modif. est poussé à droite de la barre */
+.compact .mod-field {
+  margin-right: auto;
+}
+
+.inline-result {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  min-width: 0;
+  animation: result-pop 0.25s ease;
+}
+
+.inline-total {
+  font-family: var(--title-font);
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--accent-strong);
+}
+
+.inline-detail {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 400px) {
+  .compact .mod-label {
+    display: none;
+  }
+  .inline-detail {
+    display: none;
+  }
 }
 
 .result {

@@ -17,11 +17,11 @@ import {
   Shield,
   Sparkles,
   Trash2,
-  ScrollText,
 } from "lucide-vue-next";
 import { useCombat } from "../composables/useCombat";
 import { user } from "../composables/useAuth";
-import { generateLoot, postCombatRoll } from "../api/combats";
+import { generateLoot } from "../api/combats";
+import { postCampaignRoll } from "../api/campaigns";
 import { MONSTERS_CATALOG, type Monster } from "../data/monstersCatalog";
 import { filterCatalog, formatMod } from "../utils/monsterSession";
 import { hpGradientColor } from "../utils/hpGradientColor";
@@ -36,8 +36,6 @@ import AppModal from "../components/ui/AppModal.vue";
 import AppBottomSheet from "../components/ui/AppBottomSheet.vue";
 import AppTabs, { type AppTab } from "../components/ui/AppTabs.vue";
 import ActionsView from "./ActionsView.vue";
-import CombatLogPanel from "../components/combat/CombatLogPanel.vue";
-import DiceSandbox from "../components/DiceSandbox.vue";
 import type { CombatParticipant } from "../api/combats";
 
 const route = useRoute();
@@ -48,7 +46,6 @@ const combatId = Number(route.params.cid);
 
 const {
   combat,
-  rolls,
   connecting,
   error,
   idle,
@@ -65,57 +62,16 @@ const {
   finish,
 } = useCombat();
 
-// Tab: timeline vs actions vs log des jets
-type CombatTab = "timeline" | "actions" | "log";
+// Tab: timeline vs actions
+type CombatTab = "timeline" | "actions";
 const activeTab = ref<CombatTab>("timeline");
 
-// Pastille "nouveau jet" sur l'onglet Jets quand il n'est pas actif
-const hasUnseenRoll = ref(false);
-watch(
-  () => rolls.value.length,
-  (len, oldLen) => {
-    if (len > oldLen && activeTab.value !== "log") hasUnseenRoll.value = true;
-  },
-);
-function openLogTab() {
-  activeTab.value = "log";
-  hasUnseenRoll.value = false;
-}
-
-// L'onglet Actions n'existe que pour les joueurs ; la pastille signale un jet
-// arrivé pendant qu'on regardait ailleurs. Sur desktop le log a sa propre
-// colonne, l'onglet Jets n'a plus lieu d'être.
+// L'onglet Actions n'existe que pour les joueurs. Le log des jets vit dans le
+// tiroir global (App.vue), il n'a plus d'onglet ici.
 const combatTabs = computed<AppTab[]>(() => [
   { value: "timeline", label: "Combat", icon: LayoutList },
   ...(isGm.value ? [] : [{ value: "actions", label: "Mes actions", icon: Zap }]),
-  ...(isDesktop.value
-    ? []
-    : [{ value: "log", label: "Jets", icon: ScrollText, dot: hasUnseenRoll.value }]),
 ]);
-
-function selectTab(tab: CombatTab) {
-  if (tab === "log") openLogTab();
-  else activeTab.value = tab;
-}
-
-// ≥900px le log vit en colonne fixe et l'onglet Jets disparaît : si on y était
-// (tablette qui pivote), on retombe sur la timeline pour ne pas rester sur du vide.
-const desktopQuery = window.matchMedia("(min-width: 900px)");
-const isDesktop = ref(desktopQuery.matches);
-function handleDesktopChange(e: MediaQueryListEvent) {
-  isDesktop.value = e.matches;
-  if (e.matches && activeTab.value === "log") activeTab.value = "timeline";
-}
-
-// Desktop : colonne log type chat, auto-scroll en bas à chaque nouveau jet
-const logAsideRef = ref<HTMLElement | null>(null);
-watch(
-  () => rolls.value.length,
-  async () => {
-    await nextTick();
-    if (logAsideRef.value) logAsideRef.value.scrollTop = logAsideRef.value.scrollHeight;
-  },
-);
 
 // Expanded card (click to toggle)
 const expandedId = ref<number | null>(null);
@@ -180,17 +136,30 @@ function resumeCombat(): void {
   connect(campaignId, combatId);
 }
 
+// Le footer de combat est `fixed` : on publie sa hauteur réelle pour que le
+// shell réserve la place (barre de dés en bas sur mobile).
+const footerRef = ref<HTMLElement | null>(null);
+watch(
+  () => [combat.value?.status, footerRef.value] as const,
+  async () => {
+    await nextTick();
+    const h = footerRef.value?.offsetHeight;
+    if (h) document.documentElement.style.setProperty("--bottom-dock", `${h}px`);
+    else document.documentElement.style.removeProperty("--bottom-dock");
+  },
+  { immediate: true },
+);
+
 onMounted(() => {
   connect(campaignId, combatId);
   document.addEventListener("visibilitychange", handleVisibility);
   window.addEventListener("pointerdown", markActivity);
-  desktopQuery.addEventListener("change", handleDesktopChange);
 });
 onUnmounted(() => {
+  document.documentElement.style.removeProperty("--bottom-dock");
   disconnect();
   document.removeEventListener("visibilitychange", handleVisibility);
   window.removeEventListener("pointerdown", markActivity);
-  desktopQuery.removeEventListener("change", handleDesktopChange);
 });
 
 // Scroll to active participant on turn change
@@ -288,9 +257,9 @@ function rollMonsterAttack(participant: CombatParticipant, atkIndex: number, bon
       damageTotal: dmg.total,
     };
   }
-  // Relais vers le log de combat — visible MJ uniquement (asMonster)
+  // Relais vers le log de la campagne — visible MJ uniquement (asMonster)
   const roll = monsterRolls.value[key];
-  postCombatRoll(campaignId, combatId, {
+  postCampaignRoll(campaignId, {
     kind: "weapon",
     label: attackName,
     context: "combat",
@@ -413,23 +382,15 @@ function goBack() {
       </AppEmptyState>
 
       <template v-else-if="combat">
-        <!-- Tabs: Timeline / Actions (joueur) / Jets -->
-        <AppTabs :model-value="activeTab" :tabs="combatTabs" @update:model-value="selectTab($event as CombatTab)" />
+        <!-- Tabs: Timeline / Actions (joueur) -->
+        <AppTabs :model-value="activeTab" :tabs="combatTabs" @update:model-value="activeTab = $event as CombatTab" />
 
         <!-- Tab: Actions (player only) -->
         <div v-if="activeTab === 'actions' && !isGm" class="actions-tab">
           <ActionsView :embedded="true" />
         </div>
 
-        <!-- Tab: Jets (mobile — plus récent en haut, lanceur collé en bas) -->
-        <div v-if="activeTab === 'log'" class="log-tab">
-          <CombatLogPanel :rolls="rolls" newest-first />
-          <div class="log-sandbox">
-            <DiceSandbox />
-          </div>
-        </div>
-
-        <!-- Timeline + log desktop (2 colonnes ≥900px) -->
+        <!-- Timeline -->
         <div v-show="activeTab === 'timeline'" class="combat-columns">
         <div
           ref="timelineRef"
@@ -589,22 +550,13 @@ function goBack() {
           </div>
         </div>
 
-        <!-- Colonne log desktop (flux chronologique, auto-scroll, lanceur en bas) -->
-        <aside class="log-column">
-          <div ref="logAsideRef" class="log-aside">
-            <CombatLogPanel :rolls="rolls" />
-          </div>
-          <div class="log-sandbox">
-            <DiceSandbox />
-          </div>
-        </aside>
         </div>
 
       </template>
     </div>
 
     <Teleport to="body">
-    <div v-if="combat && combat.status === 'active'" class="combat-footer">
+    <div v-if="combat && combat.status === 'active'" ref="footerRef" class="combat-footer">
       <div class="footer-left">
         <AppIconBtn v-if="isGm" title="Précédent" @click="prevTurn">
           <ChevronLeft :size="18" />
@@ -756,75 +708,16 @@ function goBack() {
 </template>
 
 <style scoped>
-/* Layout : 1 colonne mobile, 2 colonnes desktop (ordre à gauche, log à droite) */
+/* Layout : la colonne log a disparu (tiroir global), une seule colonne */
 .combat-columns {
   display: flex;
   flex-direction: column;
-}
-
-.log-column {
-  display: none;
-}
-
-/* Onglet Jets mobile : liste + lanceur collé en bas (au-dessus du footer sticky) */
-.log-tab {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  min-height: calc(100vh - 220px);
-}
-
-.log-sandbox {
-  margin-top: auto;
-  position: sticky;
-  bottom: 4.8rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 1rem;
-  padding: 0.5rem 0.8rem 0.8rem;
-  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
-}
-
-@media (min-width: 900px) {
-  .combat-columns {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    align-items: start;
-  }
-
-  .log-column {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    position: sticky;
-    top: 0;
-  }
-
-  .log-aside {
-    max-height: calc(100vh - 480px);
-    min-height: 200px;
-    overflow-y: auto;
-  }
-
-  .log-column .log-sandbox {
-    position: static;
-    box-shadow: none;
-    margin-top: 0;
-  }
-
-  /* Sur desktop le log est toujours visible en colonne (l'onglet Jets est
-     retiré de combatTabs) */
-  .log-tab {
-    display: none;
-  }
 }
 
 .combat-content {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  padding-bottom: 4.5rem; /* space for sticky footer */
 }
 
 /* Timeline */

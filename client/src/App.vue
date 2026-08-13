@@ -2,21 +2,41 @@
 import { RouterLink, RouterView } from "vue-router";
 import { computed, watch } from "vue";
 import { useRoute } from "vue-router";
-import { UserCircle, Loader2, ScrollText, Swords, Backpack, BookOpenText, Map, Palette } from "lucide-vue-next";
+import { UserCircle, Loader2, ScrollText, Swords, Backpack, BookOpenText, Map, Palette, Dices, ChevronUp, ChevronDown } from "lucide-vue-next";
 import CrystalBall from "./components/icons/CrystalBall.vue";
 import AppToast from "./components/ui/AppToast.vue";
+import DiceBar from "./components/DiceBar.vue";
+import RollLogDrawer from "./components/roll-log/RollLogDrawer.vue";
 import { user, authReady } from "./composables/useAuth";
 import { useActiveCombat, refreshActiveCombat } from "./composables/useActiveCombat";
+import { useDiceBar } from "./composables/useDiceBar";
+import { useCampaignRolls } from "./composables/useCampaignRolls";
 
 const isDev = import.meta.env.DEV;
 const route = useRoute();
 const { activeCombat } = useActiveCombat();
+const { diceBarOpen, toggleDiceBar } = useDiceBar();
+const {
+  unread,
+  panelOpen,
+  connect: connectRolls,
+  disconnect: disconnectRolls,
+  wake: wakeRolls,
+} = useCampaignRolls();
 
-// Resync le combat actif (relais des jets vers le log de combat) : au login
-// et à chaque retour de l'app au premier plan. Pas de polling.
-watch(user, (u) => { if (u) refreshActiveCombat(); }, { immediate: true });
+// Resync le combat actif (bannière « Combat en cours ») et branche le log de
+// jets sur la campagne active : au login et au retour au premier plan.
+watch(user, (u) => {
+  if (!u) { disconnectRolls(); return; }
+  refreshActiveCombat();
+  if (u.activeCampaignId) connectRolls(u.activeCampaignId);
+  else disconnectRolls();
+}, { immediate: true });
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible" && user.value) refreshActiveCombat();
+  if (document.visibilityState === "visible" && user.value) {
+    refreshActiveCombat();
+    wakeRolls();
+  }
 });
 const showCombatBanner = computed(() =>
   activeCombat.value && !route.path.includes('/combat/'),
@@ -43,7 +63,7 @@ if (savedStyle) {
     <Loader2 :size="36" class="boot-spinner" />
     <p class="boot-text">Chargement en cours</p>
   </div>
-  <div v-else class="app-shell">
+  <div v-else class="app-shell" :class="{ 'shell-docked': panelOpen }">
     <header class="top-nav">
       <RouterLink to="/personnage" class="brand">Terres d'Arran</RouterLink>
       <div class="top-nav-actions">
@@ -54,6 +74,18 @@ if (savedStyle) {
           <RouterLink to="/actions" class="nav-link" title="Mes actions"
             ><Swords :size="20"
           /></RouterLink>
+          <button
+            type="button"
+            class="nav-link"
+            :class="{ 'nav-link--on': diceBarOpen }"
+            :title="diceBarOpen ? 'Ranger les dés' : 'Lancer des dés'"
+            @click="toggleDiceBar()"
+          >
+            <Dices :size="20" />
+            <ChevronUp v-if="diceBarOpen" :size="12" class="nav-chevron" />
+            <ChevronDown v-else :size="12" class="nav-chevron" />
+            <span v-if="unread > 0 && !panelOpen" class="nav-badge" />
+          </button>
           <RouterLink to="/inventaire" class="nav-link" title="Inventaire"
             ><Backpack :size="20"
           /></RouterLink>
@@ -93,9 +125,11 @@ if (savedStyle) {
       <span class="banner-text">Combat en cours</span>
       <span class="banner-action">Retour &rarr;</span>
     </RouterLink>
+    <DiceBar />
     <main class="main">
       <RouterView />
     </main>
+    <RollLogDrawer />
     <AppToast />
   </div>
 </template>
@@ -158,6 +192,9 @@ if (savedStyle) {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  /* Réservé par les vues qui posent une barre fixe en bas (footer de combat).
+     Sans ça la barre de dés, dernier élément du flux, passerait dessous. */
+  padding-bottom: var(--bottom-dock, 0px);
 }
 
 @media (min-width: 740px) {
@@ -203,6 +240,42 @@ if (savedStyle) {
 .nav-links {
   display: flex;
   gap: 0.35rem;
+}
+
+/* 7 icônes tiennent tout juste sur un téléphone. Filet de sécurité : on scrolle
+   plutôt que de rétrécir les boutons (tous les contrôles restent à 40px). */
+@media (max-width: 739px) {
+  .nav-links {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .nav-links::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Le tiroir de log est docké sur desktop : il ne recouvre pas le contenu */
+@media (min-width: 900px) {
+  .shell-docked {
+    padding-right: 400px;
+  }
+}
+
+/* Mobile : la barre de dés passe en bas de l'écran, sous le pouce */
+@media (max-width: 739px) {
+  .top-nav {
+    order: 0;
+  }
+  .combat-banner {
+    order: 1;
+  }
+  .main {
+    order: 2;
+  }
+  .app-shell > .dice-bar {
+    order: 3;
+  }
 }
 
 .top-nav-actions {
@@ -292,6 +365,7 @@ if (savedStyle) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
   transition:
     border-color 160ms ease,
     color 160ms ease,
@@ -304,6 +378,33 @@ if (savedStyle) {
   background: var(--accent-soft);
 }
 
+/* Les deux outils de séance sont des <button>, pas des liens */
+button.nav-link {
+  position: relative;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  flex-shrink: 0;
+}
+
+.nav-chevron {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  opacity: 0.7;
+}
+
+.nav-badge {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-strong);
+}
+
+.nav-link--on,
 .nav-link.router-link-active {
   color: var(--accent-strong);
   border-color: var(--accent);
