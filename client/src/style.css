@@ -104,8 +104,11 @@
   --surface-3: #322c22;
   --text: #ede4d2;
   --muted: #b5a88f;
-  --border: #453e2f;
-  --border-strong: #625843;
+  /* En sombre, l'equivalent de "bordures plus claires" c'est de les
+     RAPPROCHER de la surface. Avant, la bordure etait plus claire que la
+     carte : chaque carte etait une boite detouree. */
+  --border: #322c24;
+  --border-strong: #453e31;
   --accent: #4db882;
   --accent-strong: #7ad4a6;
   --accent-soft: rgba(77, 184, 130, 0.18);
