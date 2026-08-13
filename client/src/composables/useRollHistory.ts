@@ -1,8 +1,9 @@
 import { ref } from 'vue'
-import { postCombatRoll } from '../api/combats'
-import { useActiveCombat } from './useActiveCombat'
+import { postCampaignRoll } from '../api/campaigns'
+import { user } from './useAuth'
+import { useCampaignRolls } from './useCampaignRolls'
 
-/** D'où vient un jet — contexte affiché dans le log de combat partagé. */
+/** D'où vient un jet — contexte affiché dans le log partagé. */
 export type RollContext = 'actions' | 'combat' | 'fiche' | 'agonie' | 'sandbox'
 
 export type RollKind = 'weapon' | 'action' | 'ability' | 'manoeuvre' | 'competence' | 'libre'
@@ -62,7 +63,7 @@ function save(entries: RollEntry[]) {
 const history = ref<RollEntry[]>(load())
 
 export function useRollHistory() {
-  const { activeCombat } = useActiveCombat()
+  const { wake } = useCampaignRolls()
 
   function addRoll(entry: Omit<RollEntry, 'id' | 'timestamp'>, context: RollContext = 'actions') {
     const full: RollEntry = {
@@ -74,12 +75,13 @@ export function useRollHistory() {
     if (history.value.length > MAX_ENTRIES) history.value = history.value.slice(0, MAX_ENTRIES)
     save(history.value)
 
-    // Relais vers le log de combat partagé : tout jet fait pendant qu'un combat
-    // est actif est loggé, peu importe la page. Fire-and-forget — le jet local
-    // reste la vérité pour le joueur si le réseau échoue.
-    const combat = activeCombat.value
-    if (combat) {
-      postCombatRoll(combat.campaignId, combat.combatId, {
+    // Relais vers le log partagé de la campagne : tout jet part, en combat ou
+    // non. C'est le serveur qui décide s'il le tague avec un combat.
+    // Fire-and-forget — le jet local reste la vérité si le réseau échoue.
+    const campaignId = user.value?.activeCampaignId
+    if (campaignId) {
+      wake()
+      postCampaignRoll(campaignId, {
         kind: entry.kind,
         label: entry.label,
         context,

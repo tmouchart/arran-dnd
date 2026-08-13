@@ -177,3 +177,48 @@ export function updateEncounterMonster(campaignId: number, eid: number, mid: num
 export function deleteEncounterMonster(campaignId: number, eid: number, mid: number): Promise<void> {
   return request(`/${campaignId}/encounters/${eid}/monsters/${mid}`, { method: 'DELETE' })
 }
+
+// ── Log de jets (portée campagne) ───────────────────────────────────────────
+
+export interface RollEvent {
+  id: number
+  campaignId: number
+  /** NULL quand le jet a été fait hors combat. */
+  combatId: number | null
+  userId: number
+  actorName: string
+  actorKind: 'player' | 'monster'
+  visibility: 'public' | 'gm'
+  kind: string
+  label: string
+  context: string
+  die: number
+  sides: number
+  bonus: number
+  total: number
+  rolls: number[] | null
+  damage: { total: number; critical: boolean; fumble: boolean } | null
+  createdAt: string
+}
+
+export interface RollInput {
+  kind: string
+  label: string
+  context: string
+  die: number
+  sides: number
+  bonus: number
+  total: number
+  rolls?: number[]
+  damage?: { total: number; critical: boolean; fumble: boolean }
+  /** MJ uniquement : poste le jet au nom d'un monstre (visible MJ seulement) */
+  asMonster?: string
+}
+
+export function postCampaignRoll(campaignId: number, roll: RollInput): Promise<RollEvent> {
+  return request(`/${campaignId}/rolls`, { method: 'POST', body: JSON.stringify(roll) })
+}
+
+export function fetchCampaignRolls(campaignId: number): Promise<RollEvent[]> {
+  return request(`/${campaignId}/rolls`)
+}
