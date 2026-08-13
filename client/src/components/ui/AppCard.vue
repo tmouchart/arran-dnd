@@ -29,12 +29,12 @@ const CARD_HEAD =
 /* Cible du contenu slotte -> doit rester en CSS */
 .card-head h2,
 :slotted(h2) {
-  font-size: 1.02rem;
+  font-size: 0.96rem;
   margin: 0 0 0.8rem;
   font-weight: 600;
   font-family: var(--title-font);
   color: var(--accent-strong);
-  letter-spacing: 0.01em;
+  letter-spacing: 0;
 }
 
 .card-head h2 {

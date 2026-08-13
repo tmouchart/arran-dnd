@@ -40,7 +40,7 @@ function onInput(e: Event) {
   <input
     :type="type ?? 'text'"
     :value="modelValue"
-    :class="[FIELD, 'min-h-[38px]', textAlign === 'center' && 'text-center tabular-nums', 'app-input']"
+    :class="[FIELD, 'min-h-10', textAlign === 'center' && 'text-center tabular-nums', 'app-input']"
     :placeholder="placeholder"
     :min="min"
     :max="max"

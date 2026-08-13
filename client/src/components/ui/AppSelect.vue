@@ -18,7 +18,7 @@ defineProps<{
 
 <style scoped>
 .app-select {
-  min-height: 38px;
+  min-height: 40px;
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-md);
   border: 1px solid var(--border);

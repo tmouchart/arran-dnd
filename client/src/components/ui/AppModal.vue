@@ -40,7 +40,7 @@ const emit = defineEmits<{
             <DialogTitle v-else class="sr-only">Boîte de dialogue</DialogTitle>
             <span v-if="!title" class="modal-title-spacer" />
             <DialogClose as-child>
-              <AppIconBtn :size="34" title="Fermer">
+              <AppIconBtn title="Fermer">
                 <X :size="18" />
               </AppIconBtn>
             </DialogClose>
@@ -98,7 +98,7 @@ const emit = defineEmits<{
 
 .modal-title {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 600;
   font-family: var(--title-font);
   color: var(--accent-strong);

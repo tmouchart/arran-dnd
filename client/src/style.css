@@ -56,8 +56,10 @@
   --surface-3: #dfdcd4;
   --text: #1f1b17;
   --muted: #5a554d;
-  --border: #aaa396;
-  --border-strong: #756d62;
+  /* Bordures nettement plus claires : c'est ce qui allege le plus le rendu.
+     L'ancien #aaa396 decoupait trop fort sur le fond parchemin. */
+  --border: #c4bfb5;
+  --border-strong: #a29c8f;
   --accent: #2d8a5e;
   --accent-strong: #1e6b46;
   --accent-soft: rgba(45, 138, 94, 0.13);
@@ -67,15 +69,18 @@
      Les thèmes à brand sombre le redéfinissent en clair. */
   --on-brand: #241c10;
   --danger: #8f2f2f;
-  --shadow-soft: 0 5px 16px rgba(35, 33, 30, 0.1);
-  --shadow-card: 0 8px 22px rgba(35, 33, 30, 0.11);
-  /* Radius scale — always use these, never hardcode border-radius */
-  --radius-xs: 6px;
+  /* Ombres quasi invisibles. Les grosses ombres portees font "template 2015". */
+  --shadow-soft: 0 1px 2px rgba(35, 33, 30, 0.07);
+  --shadow-card: 0 1px 3px rgba(35, 33, 30, 0.07), 0 1px 2px rgba(35, 33, 30, 0.04);
+  /* Echelle de rayons : 3 valeurs reelles (8 / 12 / 16) + pill.
+     Les 7 anciens noms restent pour ne pas toucher 57 fichiers, mais ils
+     pointent desormais sur ces 3 valeurs. A consolider plus tard. */
+  --radius-xs: 8px;
   --radius-sm: 8px;
-  --radius-md: 10px;
+  --radius-md: 12px;
   --radius-lg: 12px;
   --radius-xl: 16px;
-  --radius-xxl: 20px;
+  --radius-xxl: 16px;
   --radius-pill: 999px;
   /* Spacing scale — dense, mobile-first. Prefer these for padding/gap */
   --space-xs: 0.25rem;
@@ -96,16 +101,16 @@
   --surface-3: #322c22;
   --text: #ede4d2;
   --muted: #b5a88f;
-  --border: #4f4737;
-  --border-strong: #73664e;
+  --border: #453e2f;
+  --border-strong: #625843;
   --accent: #4db882;
   --accent-strong: #7ad4a6;
   --accent-soft: rgba(77, 184, 130, 0.18);
   --brand: #d4a94e;
   --brand-strong: #e8c472;
   --danger: #e98e8e;
-  --shadow-soft: 0 8px 20px rgba(0, 0, 0, 0.4);
-  --shadow-card: 0 10px 26px rgba(0, 0, 0, 0.42);
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.25);
 }
 
 *,
@@ -129,8 +134,7 @@ body {
 /* Light: soft highlight + cool haze (offsets warm surfaces, less “yellow room”) */
 :root:not([data-theme='dark']) body {
   background:
-    radial-gradient(circle at 16% 4%, rgba(255, 255, 255, 0.42), transparent 38%),
-    radial-gradient(ellipse 90% 45% at 50% -5%, rgba(74, 91, 118, 0.06), transparent 52%),
+    radial-gradient(circle at 16% 4%, rgba(255, 255, 255, 0.22), transparent 42%),
     linear-gradient(180deg, var(--bg), var(--bg-alt));
 }
 
@@ -168,7 +172,7 @@ select:focus-visible {
 /* Text fields — shared base for selects, textareas, readonly displays.
    For <input> elements, prefer AppInput component instead. */
 .input {
-  min-height: 38px;
+  min-height: 40px;
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-md);
   border: 1px solid var(--border);

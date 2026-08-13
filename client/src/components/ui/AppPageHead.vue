@@ -20,7 +20,8 @@
 
 .page-head-title {
   margin: 0;
-  font-size: clamp(1.1rem, 4.5vw, 1.95rem);
+  font-size: clamp(1.05rem, 4vw, 1.65rem);
+  letter-spacing: -0.005em;
   font-family: var(--title-font);
   color: var(--brand-strong);
   display: flex;
