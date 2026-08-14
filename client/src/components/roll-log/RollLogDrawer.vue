@@ -71,8 +71,9 @@ const shown = computed(() => filterRolls(rolls.value, filter.value))
   position: fixed;
   top: 0;
   right: 0;
-  /* S'arrête au-dessus d'une barre fixe posée par la vue (footer de combat) */
-  bottom: var(--bottom-dock, 0px);
+  /* S'arrête au-dessus de la barre du bas (dés + outils) et d'une barre fixe
+     posée par la vue (footer de combat) */
+  bottom: calc(var(--bottom-dock, 0px) + var(--bottom-bars, 0px));
   z-index: 20;
   width: min(400px, 90vw);
   display: flex;
@@ -153,10 +154,15 @@ const shown = computed(() => filterRolls(rolls.value, filter.value))
   padding: var(--space-sm) var(--space-md) var(--space-lg);
 }
 
-/* Desktop : le tiroir est docké, il ne recouvre plus le contenu */
+/* Desktop : le tiroir est docké, il ne recouvre plus le contenu — la barre du
+   bas est décalée à sa gauche, le tiroir peut donc descendre jusqu'en bas. */
 @media (min-width: 900px) {
   .drawer-backdrop {
     display: none;
+  }
+
+  .drawer {
+    bottom: var(--bottom-dock, 0px);
   }
 }
 </style>

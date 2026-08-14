@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from "vue-router";
-import { computed, watch } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useRoute } from "vue-router";
-import { UserCircle, Loader2, ScrollText, Swords, Backpack, BookOpenText, Map, Palette, Dices, ChevronUp, ChevronDown } from "lucide-vue-next";
+import { UserCircle, Loader2, ScrollText, Swords, Backpack, BookOpenText, Map, Palette, Dices, History } from "lucide-vue-next";
 import CrystalBall from "./components/icons/CrystalBall.vue";
 import AppToast from "./components/ui/AppToast.vue";
 import DiceBar from "./components/DiceBar.vue";
@@ -19,10 +19,26 @@ const { diceBarOpen, toggleDiceBar } = useDiceBar();
 const {
   unread,
   panelOpen,
+  togglePanel,
   connect: connectRolls,
   disconnect: disconnectRolls,
   wake: wakeRolls,
 } = useCampaignRolls();
+
+// La barre du bas (dés + log + profil) est en flux mais recouvre le tiroir de
+// log : on publie sa hauteur réelle pour que le tiroir s'arrête juste au-dessus.
+const bottomDockRef = ref<HTMLElement | null>(null);
+const observer = new ResizeObserver(([entry]) => {
+  document.documentElement.style.setProperty(
+    "--bottom-bars",
+    `${entry.target.getBoundingClientRect().height}px`,
+  );
+});
+watch(bottomDockRef, (el, prev) => {
+  if (prev) observer.unobserve(prev);
+  if (el) observer.observe(el);
+});
+onBeforeUnmount(() => observer.disconnect());
 
 // Resync le combat actif (bannière « Combat en cours ») et branche le log de
 // jets sur la campagne active : au login et au retour au premier plan.
@@ -66,14 +82,46 @@ if (savedStyle) {
   <div v-else class="app-shell" :class="{ 'shell-docked': panelOpen }">
     <header class="top-nav">
       <RouterLink to="/personnage" class="brand">Terres d'Arran</RouterLink>
-      <div class="top-nav-actions">
         <nav class="nav-links">
-          <RouterLink to="/personnage" class="nav-link" title="Personnage"
-            ><ScrollText :size="20"
-          /></RouterLink>
-          <RouterLink to="/actions" class="nav-link" title="Mes actions"
-            ><Swords :size="20"
-          /></RouterLink>
+        <RouterLink to="/personnage" class="nav-link" title="Personnage"
+          ><ScrollText :size="20"
+        /></RouterLink>
+        <RouterLink to="/actions" class="nav-link" title="Mes actions"
+          ><Swords :size="20"
+        /></RouterLink>
+        <RouterLink to="/inventaire" class="nav-link" title="Inventaire"
+          ><Backpack :size="20"
+        /></RouterLink>
+        <RouterLink to="/chat" class="nav-link" title="Isilwen"
+          ><CrystalBall :size="20"
+        /></RouterLink>
+        <RouterLink to="/journal" class="nav-link" title="Journal"
+          ><BookOpenText :size="20"
+        /></RouterLink>
+        <RouterLink to="/campagnes" class="nav-link" title="Campagnes"
+          ><Map :size="20"
+        /></RouterLink>
+        <RouterLink
+          v-if="isDev"
+          to="/component-library"
+          class="nav-link nav-link--dev"
+          title="Bibliothèque de composants (dev)"
+          ><Palette :size="20"
+        /></RouterLink>
+      </nav>
+    </header>
+    <RouterLink v-if="showCombatBanner" :to="activeCombat!.url" class="combat-banner">
+      <Swords :size="16" class="banner-icon" />
+      <span class="banner-text">Combat en cours</span>
+      <span class="banner-action">Retour &rarr;</span>
+    </RouterLink>
+    <main class="main">
+      <RouterView />
+    </main>
+    <div ref="bottomDockRef" class="bottom-dock">
+      <DiceBar />
+      <nav class="bottom-nav">
+        <div class="bottom-nav-tools">
           <button
             type="button"
             class="nav-link"
@@ -82,30 +130,18 @@ if (savedStyle) {
             @click="toggleDiceBar()"
           >
             <Dices :size="20" />
-            <ChevronUp v-if="diceBarOpen" :size="12" class="nav-chevron" />
-            <ChevronDown v-else :size="12" class="nav-chevron" />
+          </button>
+          <button
+            type="button"
+            class="nav-link"
+            :class="{ 'nav-link--on': panelOpen }"
+            title="Historique des jets"
+            @click="togglePanel()"
+          >
+            <History :size="20" />
             <span v-if="unread > 0 && !panelOpen" class="nav-badge" />
           </button>
-          <RouterLink to="/inventaire" class="nav-link" title="Inventaire"
-            ><Backpack :size="20"
-          /></RouterLink>
-          <RouterLink to="/chat" class="nav-link" title="Isilwen"
-            ><CrystalBall :size="20"
-          /></RouterLink>
-          <RouterLink to="/journal" class="nav-link" title="Journal"
-            ><BookOpenText :size="20"
-          /></RouterLink>
-          <RouterLink to="/campagnes" class="nav-link" title="Campagnes"
-            ><Map :size="20"
-          /></RouterLink>
-          <RouterLink
-            v-if="isDev"
-            to="/component-library"
-            class="nav-link nav-link--dev"
-            title="Bibliothèque de composants (dev)"
-            ><Palette :size="20"
-          /></RouterLink>
-        </nav>
+        </div>
         <RouterLink v-if="user" to="/options" class="nav-user" title="Options">
           <div class="nav-avatar">
             <img
@@ -118,17 +154,8 @@ if (savedStyle) {
           </div>
           <span class="nav-username">{{ user.username }}</span>
         </RouterLink>
-      </div>
-    </header>
-    <RouterLink v-if="showCombatBanner" :to="activeCombat!.url" class="combat-banner">
-      <Swords :size="16" class="banner-icon" />
-      <span class="banner-text">Combat en cours</span>
-      <span class="banner-action">Retour &rarr;</span>
-    </RouterLink>
-    <DiceBar />
-    <main class="main">
-      <RouterView />
-    </main>
+      </nav>
+    </div>
     <RollLogDrawer />
     <AppToast />
   </div>
@@ -262,27 +289,32 @@ if (savedStyle) {
   }
 }
 
-/* Mobile : la barre de dés passe en bas de l'écran, sous le pouce */
-@media (max-width: 739px) {
-  .top-nav {
-    order: 0;
-  }
-  .combat-banner {
-    order: 1;
-  }
-  .main {
-    order: 2;
-  }
-  .app-shell > .dice-bar {
-    order: 3;
-  }
+/* ── Barre du bas ───────────────────────────────────────────────────────── */
+/* Outils de séance (dés, log, profil), sous le pouce. Passe au-dessus du
+   tiroir de log : on doit pouvoir lancer un dé en lisant l'historique. */
+.bottom-dock {
+  flex-shrink: 0;
+  z-index: 21;
 }
 
-.top-nav-actions {
+.bottom-nav {
   display: flex;
-  flex-direction: row;
   align-items: center;
+  justify-content: space-between;
   gap: 0.5rem;
+  padding: 0.55rem 0.75rem;
+  padding-bottom: max(0.55rem, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border-strong);
+  background: linear-gradient(
+    0deg,
+    color-mix(in srgb, var(--surface) 92%, white),
+    var(--surface)
+  );
+}
+
+.bottom-nav-tools {
+  display: flex;
+  gap: 0.35rem;
 }
 
 /* ── User pill ──────────────────────────────────────────────────────────── */
@@ -346,11 +378,6 @@ if (savedStyle) {
     border-radius: 50%;
     max-width: none;
   }
-
-  .top-nav-actions {
-    flex: 1;
-    justify-content: space-between;
-  }
 }
 
 .nav-link {
@@ -387,13 +414,8 @@ button.nav-link {
   flex-shrink: 0;
 }
 
-.nav-chevron {
-  position: absolute;
-  right: 3px;
-  bottom: 3px;
-  opacity: 0.7;
-}
-
+/* Pastille « jets non lus » : elle doit se poser sur le coin de l'icône, aucun
+   flux ne peut le faire — cas légitime de position: absolute. */
 .nav-badge {
   position: absolute;
   top: 5px;
@@ -426,13 +448,9 @@ button.nav-link {
 }
 
 @media (min-width: 740px) {
-  .top-nav {
+  .top-nav,
+  .bottom-nav {
     padding-inline: 1.35rem;
   }
-
-  .top-nav-actions {
-    gap: 0.7rem;
-  }
-
 }
 </style>

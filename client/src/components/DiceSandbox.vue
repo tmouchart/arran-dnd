@@ -96,9 +96,6 @@ function stepCount(delta: number) {
           <template v-if="result.rolls.length > 1">= {{ result.rolls.join(" + ") }}</template>
         </span>
       </div>
-
-      <!-- Bouton du log, collé à droite dans la barre -->
-      <slot name="trailing" />
     </div>
 
     <div v-if="!compact && result" :key="result.key" class="result">
