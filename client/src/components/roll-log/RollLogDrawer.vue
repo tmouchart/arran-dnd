@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { X } from 'lucide-vue-next'
 import AppIconBtn from '../ui/AppIconBtn.vue'
 import RollLogPanel from './RollLogPanel.vue'
@@ -25,6 +25,13 @@ const visibleFilters = computed(() =>
     .filter((f) => f.value !== 'monster' || hasMonsterRolls.value)
     .map((f) => ({ ...f, count: filterRolls(rolls.value, f.value).length })),
 )
+
+// Le filtre PNJ est mémorisé, mais sa puce disparaît dès qu'il n'y a plus de
+// jets de monstres : sans ce reset le MJ reste bloqué sur un log vide, sans
+// aucune puce active pour lui dire pourquoi.
+watch(hasMonsterRolls, (has) => {
+  if (!has && filter.value === 'monster') setFilter('all')
+}, { immediate: true })
 
 const shown = computed(() => filterRolls(rolls.value, filter.value))
 </script>
