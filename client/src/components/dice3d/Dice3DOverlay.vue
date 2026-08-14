@@ -22,9 +22,12 @@ const canvas = ref<HTMLCanvasElement | null>(null)
 const visible = ref(false)
 const fading = ref(false)
 
-/** Temps d'affichage du résultat avant de rendre l'écran. */
-const HOLD_MS = 420
-const FADE_MS = 260
+/**
+ * Temps d'affichage du dé posé avant de rendre l'écran. Doit laisser le temps
+ * de lire le chiffre sur la face. `FADE_MS` suit la transition CSS du canvas.
+ */
+const HOLD_MS = 1100
+const FADE_MS = 400
 
 let three: Three | null = null
 let motionApi: typeof import('../../utils/dice3d/motion') | null = null
@@ -221,22 +224,32 @@ function finish() {
   cancelAnimationFrame(frame)
   settleDiceRoll(currentId)
   clearTimers()
+  timers.push(window.setTimeout(fadeOut, HOLD_MS))
+}
+
+function fadeOut() {
+  fading.value = true
   timers.push(
     window.setTimeout(() => {
-      fading.value = true
-      timers.push(
-        window.setTimeout(() => {
-          visible.value = false
-          releaseMeshes()
-        }, FADE_MS),
-      )
-    }, HOLD_MS),
+      visible.value = false
+      releaseMeshes()
+    }, FADE_MS),
   )
 }
 
-/** Saute la fin de l'animation : le dé se pose tout de suite sur son résultat. */
-function skip() {
+/**
+ * Un clic pendant que le dé est là : il se pose sur son résultat et s'efface
+ * aussitôt, sans le temps de pause.
+ *
+ * Le clic n'est pas consommé : le canvas ne capte jamais les pointeurs, donc il
+ * atteint le bouton visé en dessous. Cliquer sur un dé relance donc un jet tout
+ * en effaçant le précédent.
+ */
+function dismiss() {
   if (!running.length) return
+  cancelAnimationFrame(frame)
+
+  // On montre la bonne face pendant le fondu plutôt qu'un dé encore en vol
   for (const die of running) {
     const sample = motionApi!.sampleMotion(die.motion, 1)
     die.mesh.position.copy(sample.position)
@@ -244,7 +257,15 @@ function skip() {
     die.mesh.scale.setScalar(die.scale)
   }
   renderer!.render(scene!, camera!)
-  finish()
+
+  settleDiceRoll(currentId)
+  clearTimers()
+  fadeOut()
+}
+
+function onPointerDown() {
+  if (!visible.value || fading.value) return
+  dismiss()
 }
 
 function releaseMeshes() {
@@ -259,9 +280,12 @@ watch(diceRequest, (request) => {
 })
 
 window.addEventListener('resize', resize)
+// En capture : on efface le dé avant même que la cible ne traite le clic
+window.addEventListener('pointerdown', onPointerDown, true)
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', resize)
+  window.removeEventListener('pointerdown', onPointerDown, true)
   clearTimers()
   cancelAnimationFrame(frame)
   releaseMeshes()
@@ -289,7 +313,6 @@ onBeforeUnmount(() => {
     class="dice-canvas"
     :class="{ 'is-visible': visible, 'is-fading': fading }"
     aria-hidden="true"
-    @pointerdown="skip"
   />
 </template>
 
@@ -301,18 +324,19 @@ onBeforeUnmount(() => {
   height: 100%;
   z-index: 60;
   opacity: 0;
+  /* Jamais cliquable : le dé est une décoration posée sur l'app, il ne doit
+     jamais avaler un clic destiné à un bouton en dessous. C'est la fenêtre qui
+     écoute le pointeur pour l'effacer. */
   pointer-events: none;
-  transition: opacity 0.26s ease;
+  /* Doit rester aligné sur FADE_MS */
+  transition: opacity 0.4s ease;
 }
 
 .dice-canvas.is-visible {
   opacity: 1;
-  /* Le tap doit atteindre le dé pour pouvoir passer l'animation */
-  pointer-events: auto;
 }
 
 .dice-canvas.is-fading {
   opacity: 0;
-  pointer-events: none;
 }
 </style>
