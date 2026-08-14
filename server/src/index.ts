@@ -109,8 +109,7 @@ app.get("/api/images", requireAuth, async (req, res) => {
 });
 
 const AI_PROVIDER = process.env.AI_PROVIDER ?? "gemini";
-const ANTHROPIC_MODEL =
-  process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-20250514";
+const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-5";
 const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
 /** Available image generation models (best first). Override with GEMINI_IMAGE_MODEL env var. */
 const GEMINI_IMAGE_MODELS = [
@@ -914,6 +913,9 @@ app.post("/api/chat", requireAuth, async (req, res) => {
     const turn1Stream = anthropicClient!.messages.stream({
       model: ANTHROPIC_MODEL,
       max_tokens: MAX_OUTPUT_TOKENS,
+      // Sonnet 5 réfléchit par défaut, et ce thinking mange le budget de max_tokens.
+      // "low" garde la latence d'un chat sans couper le tool use (pendant de thinkingBudget: 0 côté Gemini).
+      output_config: { effort: "low" },
       system,
       tools: [anthropicTool],
       tool_choice: { type: "auto" },
@@ -988,6 +990,7 @@ app.post("/api/chat", requireAuth, async (req, res) => {
       const stream2 = anthropicClient!.messages.stream({
         model: ANTHROPIC_MODEL,
         max_tokens: MAX_OUTPUT_TOKENS,
+        output_config: { effort: "low" },
         system,
         tools: [anthropicTool],
         messages: messagesWithTool,

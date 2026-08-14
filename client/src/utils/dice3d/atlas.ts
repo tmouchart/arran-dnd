@@ -14,7 +14,7 @@ export interface DiceAtlas {
 }
 
 /** Lit un token de thème, avec repli si la variable n'existe pas. */
-function token(name: string, fallback: string): string {
+export function token(name: string, fallback: string): string {
   if (typeof document === 'undefined') return fallback
   const value = getComputedStyle(document.documentElement).getPropertyValue(name)
   return value.trim() || fallback
@@ -86,6 +86,45 @@ export function buildAtlas(labels: string[], fitRatio: number): DiceAtlas {
   texture.colorSpace = THREE.SRGBColorSpace
   texture.anisotropy = 4
   return { texture, columns, rows }
+}
+
+/**
+ * L'étincelle d'un critique : une étoile à quatre branches, blanche au centre.
+ * Dessinée en blanc — c'est le matériau des particules qui la teinte.
+ */
+export function buildSparkTexture(): THREE.Texture {
+  const size = 64
+  const canvas = document.createElement('canvas')
+  canvas.width = canvas.height = size
+  const ctx = canvas.getContext('2d')!
+  const mid = size / 2
+
+  const glow = ctx.createRadialGradient(mid, mid, 0, mid, mid, mid)
+  glow.addColorStop(0, 'rgba(255,255,255,1)')
+  glow.addColorStop(0.35, 'rgba(255,255,255,0.35)')
+  glow.addColorStop(1, 'rgba(255,255,255,0)')
+  ctx.fillStyle = glow
+  ctx.fillRect(0, 0, size, size)
+
+  // Les quatre branches, en losanges effilés
+  ctx.fillStyle = '#ffffff'
+  for (const rotation of [0, Math.PI / 2]) {
+    ctx.save()
+    ctx.translate(mid, mid)
+    ctx.rotate(rotation)
+    ctx.beginPath()
+    ctx.moveTo(0, -mid)
+    ctx.lineTo(mid * 0.16, 0)
+    ctx.lineTo(0, mid)
+    ctx.lineTo(-mid * 0.16, 0)
+    ctx.closePath()
+    ctx.fill()
+    ctx.restore()
+  }
+
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.colorSpace = THREE.SRGBColorSpace
+  return texture
 }
 
 /** Les chiffres portés par chaque type de dé. */

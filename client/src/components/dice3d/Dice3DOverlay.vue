@@ -2,6 +2,7 @@
 import { onBeforeUnmount, ref, watch } from 'vue'
 import { diceRequest, settleDiceRoll, type DiceRequest } from '../../composables/useDice3D'
 import { landingLayout, planDice, type DieInstance } from '../../utils/dice3d/plan'
+import type { RollOutcome } from '../../utils/rollOutcome'
 
 /**
  * Le dé 3D, monté une seule fois pour toute l'app.
@@ -28,6 +29,8 @@ const fading = ref(false)
  */
 const HOLD_MS = 1100
 const FADE_MS = 400
+/** Durée des étoiles / de l'onde. Doit rester sous HOLD_MS. */
+const EFFECT_MS = 900
 
 let three: Three | null = null
 let motionApi: typeof import('../../utils/dice3d/motion') | null = null
@@ -42,11 +45,20 @@ const materials = new Map<string, import('three').Material>()
 let outlineMaterial: import('three').MeshBasicMaterial | null = null
 const pool: Mesh[] = []
 
-let running: { mesh: Mesh; motion: Motion; scale: number }[] = []
+let running: { mesh: Mesh; motion: Motion; scale: number; outcome: RollOutcome }[] = []
 let frame = 0
 let startedAt = 0
+let landedAt = 0
+let landed = false
 let currentId = 0
 let timers: number[] = []
+
+/** Étoiles d'un critique et onde d'un échec, montées le temps de l'effet. */
+let effects: {
+  update: (t: number) => void
+  dispose: () => void
+}[] = []
+let sparkTexture: import('three').Texture | null = null
 
 function clearTimers() {
   timers.forEach((t) => window.clearTimeout(t))
@@ -154,6 +166,118 @@ async function faceNormals(die: DieInstance): Promise<import('three').Vector3[]>
   return normalCache.get(cacheKey)!
 }
 
+/**
+ * Gerbe d'étoiles d'un critique. Un seul objet Points, mélange additif : un
+ * appel de rendu quelle que soit la quantité d'étincelles.
+ */
+async function spawnSparks(origin: import('three').Vector3, scale: number) {
+  const T = three!
+  const [{ createSparks, sampleSpark, burstOpacity }, { buildSparkTexture, token }] =
+    await Promise.all([
+      import('../../utils/dice3d/burst'),
+      import('../../utils/dice3d/atlas'),
+    ])
+
+  const sparks = createSparks(44)
+  sparkTexture ??= buildSparkTexture()
+
+  const geometry = new T.BufferGeometry()
+  geometry.setAttribute('position', new T.Float32BufferAttribute(new Array(sparks.length * 3).fill(0), 3))
+  const material = new T.PointsMaterial({
+    map: sparkTexture,
+    color: new T.Color(token('--brand', '#d9a544')),
+    size: scale * 0.85,
+    transparent: true,
+    depthWrite: false,
+    blending: T.AdditiveBlending,
+  })
+
+  const points = new T.Points(geometry, material)
+  points.position.copy(origin)
+  scene!.add(points)
+
+  const attribute = geometry.getAttribute('position') as import('three').BufferAttribute
+
+  effects.push({
+    update(t) {
+      for (let i = 0; i < sparks.length; i++) {
+        const p = sampleSpark(sparks[i], t)
+        attribute.setXYZ(i, p.x * scale * 4, p.y * scale * 4, p.z * scale * 4)
+      }
+      attribute.needsUpdate = true
+      material.opacity = burstOpacity(t)
+    },
+    dispose() {
+      scene?.remove(points)
+      geometry.dispose()
+      material.dispose()
+    },
+  })
+}
+
+/** Onde rouge d'un échec : un anneau qui s'écarte et s'efface. */
+async function spawnShockwave(origin: import('three').Vector3, scale: number) {
+  const T = three!
+  const [{ shockwave }, { token }] = await Promise.all([
+    import('../../utils/dice3d/burst'),
+    import('../../utils/dice3d/atlas'),
+  ])
+
+  const geometry = new T.RingGeometry(0.82, 1, 44)
+  const material = new T.MeshBasicMaterial({
+    color: new T.Color(token('--danger', '#e05252')),
+    transparent: true,
+    side: T.DoubleSide,
+    depthWrite: false,
+  })
+  const ring = new T.Mesh(geometry, material)
+  ring.position.copy(origin)
+  scene!.add(ring)
+
+  effects.push({
+    update(t) {
+      const { scale: s, opacity } = shockwave(t)
+      ring.scale.setScalar(s * scale * 4)
+      material.opacity = opacity
+    },
+    dispose() {
+      scene?.remove(ring)
+      geometry.dispose()
+      material.dispose()
+    },
+  })
+}
+
+/**
+ * Éclat de la face touchée. Le matériau est partagé entre tous les dés d'une
+ * même forme : on le clone, sinon les trois dés d'un jet flasheraient parce
+ * qu'un seul a fait 20.
+ */
+async function flashDie(mesh: Mesh, outcome: Exclude<RollOutcome, null>) {
+  const T = three!
+  const [{ flashIntensity }, { token }] = await Promise.all([
+    import('../../utils/dice3d/burst'),
+    import('../../utils/dice3d/atlas'),
+  ])
+
+  const original = mesh.material as import('three').MeshStandardMaterial
+  const flashing = original.clone()
+  flashing.emissive = new T.Color(
+    outcome === 'critical' ? token('--brand', '#d9a544') : token('--danger', '#e05252'),
+  )
+  mesh.material = flashing
+
+  effects.push({
+    update(t) {
+      flashing.emissiveIntensity = flashIntensity(t) * (outcome === 'critical' ? 1.3 : 0.9)
+    },
+    dispose() {
+      mesh.material = original
+      flashing.dispose()
+    },
+  })
+}
+
 async function start(request: DiceRequest) {
   const dice = planDice(request.rolls)
   if (!dice.length) {
@@ -169,8 +293,10 @@ async function start(request: DiceRequest) {
 
   clearTimers()
   cancelAnimationFrame(frame)
+  frame = 0
   releaseMeshes()
 
+  landed = false
   currentId = request.id
   resize()
   const { halfWidth, halfHeight } = viewport()
@@ -191,7 +317,7 @@ async function start(request: DiceRequest) {
     mesh.scale.setScalar(scale)
     scene!.add(mesh)
     pool.push(mesh)
-    running.push({ mesh, motion, scale })
+    running.push({ mesh, motion, scale, outcome: die.outcome })
   }
 
   visible.value = true
@@ -202,21 +328,48 @@ async function start(request: DiceRequest) {
 
 function tick(now: number) {
   const elapsed = now - startedAt
-  let settled = true
+  let flying = false
 
   for (const die of running) {
     const t = Math.min(1, elapsed / die.motion.duration)
-    if (t < 1) settled = false
+    if (t < 1) flying = true
     const sample = motionApi!.sampleMotion(die.motion, t)
     die.mesh.position.copy(sample.position)
     die.mesh.quaternion.copy(sample.quaternion)
     die.mesh.scale.setScalar(die.scale * sample.scale)
   }
 
+  // Le dernier dé vient de se poser : on libère le résultat et on allume les
+  // étoiles au même instant.
+  if (!flying && !landed) {
+    landed = true
+    landedAt = now
+    finish()
+    void triggerEffects()
+  }
+
+  const effectAge = landed ? now - landedAt : 0
+  for (const effect of effects) effect.update(effectAge / EFFECT_MS)
+
   renderer!.render(scene!, camera!)
 
-  if (settled) finish()
-  else frame = requestAnimationFrame(tick)
+  // On continue de rendre tant qu'un dé vole ou qu'un effet joue
+  if (flying || (landed && effectAge < EFFECT_MS)) frame = requestAnimationFrame(tick)
+  else frame = 0
+}
+
+/** Allume les effets des dés qui ont fait un max ou un 1. */
+async function triggerEffects() {
+  for (const die of running) {
+    if (!die.outcome) continue
+    const origin = die.mesh.position.clone()
+    await flashDie(die.mesh, die.outcome)
+    if (die.outcome === 'critical') await spawnSparks(origin, die.scale)
+    else await spawnShockwave(origin, die.scale)
+  }
+  // Les effets sont montés après le début de la boucle : on la relance si elle
+  // s'était arrêtée entre-temps.
+  if (effects.length && !frame) frame = requestAnimationFrame(tick)
 }
 
 /** Le dé s'est posé : on libère le résultat, puis on rend l'écran. */
@@ -269,6 +422,8 @@ function onPointerDown() {
 }
 
 function releaseMeshes() {
+  for (const effect of effects) effect.dispose()
+  effects = []
   // Géométries, textures et liseré sont partagés : on ne détache que les objets
   for (const mesh of pool) scene?.remove(mesh)
   pool.length = 0
@@ -292,6 +447,7 @@ onBeforeUnmount(() => {
   geometries.forEach((g) => g.dispose())
   materials.forEach((m) => m.dispose())
   outlineMaterial?.dispose()
+  sparkTexture?.dispose()
   renderer?.dispose()
 
   // Les caches vivent au niveau du module, pas de l'instance : sans ce ménage,
@@ -300,6 +456,7 @@ onBeforeUnmount(() => {
   materials.clear()
   normalCache.clear()
   outlineMaterial = null
+  sparkTexture = null
   renderer = null
   scene = null
   camera = null

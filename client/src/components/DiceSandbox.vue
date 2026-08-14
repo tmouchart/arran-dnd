@@ -42,7 +42,7 @@ function roll(sides: number) {
 
   // Le résultat n'apparaît qu'une fois le dé posé — le log aussi, sinon il
   // vend la mèche pendant que le dé roule encore.
-  revealAfterDice(dice(sides, rolls), () => {
+  revealAfterDice(dice(sides, rolls, 'libre'), () => {
     result.value = { sides, rolls, modifier: mod, total, key: (result.value?.key ?? 0) + 1 }
 
     addRoll({

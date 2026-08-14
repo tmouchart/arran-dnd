@@ -3,6 +3,7 @@ import * as THREE from 'three'
 import { buildFaces, buildDieGeometry, faceFitRatio, SUPPORTED_SIDES } from './polyhedra'
 import { fontSizeFor } from './atlas'
 import { landingLayout, planDice } from './plan'
+import { burstOpacity, createSparks, flashIntensity, sampleSpark, shockwave } from './burst'
 import { createMotion, faceTargetQuaternion, sampleMotion } from './motion'
 
 describe('buildFaces', () => {
@@ -107,7 +108,7 @@ describe('buildDieGeometry', () => {
 describe('planDice', () => {
   it('un dé par valeur', () => {
     expect(planDice([{ sides: 20, value: 14 }])).toEqual([
-      { sides: 20, kind: 'normal', faceIndex: 13 },
+      { sides: 20, kind: 'normal', faceIndex: 13, outcome: null },
     ])
   })
 
@@ -127,8 +128,8 @@ describe('planDice', () => {
     [10, 0, 9],
   ])('le d100 sur %i donne les dizaines %i et les unités %i', (value, tens, units) => {
     expect(planDice([{ sides: 100, value }])).toEqual([
-      { sides: 10, kind: 'tens', faceIndex: tens },
-      { sides: 10, kind: 'normal', faceIndex: units },
+      { sides: 10, kind: 'tens', faceIndex: tens, outcome: null },
+      { sides: 10, kind: 'normal', faceIndex: units, outcome: null },
     ])
   })
 
@@ -139,6 +140,76 @@ describe('planDice', () => {
   it('plafonne le nombre de dés à l’écran', () => {
     const many = Array.from({ length: 30 }, () => ({ sides: 6, value: 3 }))
     expect(planDice(many)).toHaveLength(10)
+  })
+})
+
+describe('planDice — critiques et échecs', () => {
+  it('marque un 20 et un 1 sur le d20', () => {
+    expect(planDice([{ sides: 20, value: 20 }])[0].outcome).toBe('critical')
+    expect(planDice([{ sides: 20, value: 1 }])[0].outcome).toBe('fumble')
+  })
+
+  it('marque aussi un d20 lancé librement', () => {
+    expect(planDice([{ sides: 20, value: 20, kind: 'libre' }])[0].outcome).toBe('critical')
+    expect(planDice([{ sides: 20, value: 1, kind: 'libre' }])[0].outcome).toBe('fumble')
+  })
+
+  it('ne marque jamais les petits dés, même au max', () => {
+    for (const sides of [4, 6, 8, 10]) {
+      expect(planDice([{ sides, value: sides }])[0].outcome).toBeNull()
+      expect(planDice([{ sides, value: 1 }])[0].outcome).toBeNull()
+    }
+  })
+
+  it('le d12 ne compte qu’en jet d’attaque (affaibli)', () => {
+    expect(planDice([{ sides: 12, value: 12 }])[0].outcome).toBe('critical')
+    expect(planDice([{ sides: 12, value: 12, kind: 'libre' }])[0].outcome).toBeNull()
+  })
+
+  it('le d100 ne critique pas', () => {
+    expect(planDice([{ sides: 100, value: 100 }]).every((d) => d.outcome === null)).toBe(true)
+  })
+})
+
+describe('effets de critique et d’échec', () => {
+  it('les étincelles partent du dé et retombent', () => {
+    const sparks = createSparks(20)
+    expect(sparks).toHaveLength(20)
+    for (const spark of sparks) {
+      const start = sampleSpark(spark, 0)
+      expect(start.x).toBeCloseTo(0, 6)
+      expect(start.y).toBeCloseTo(0, 6)
+      // La gerbe monte d'abord…
+      expect(sampleSpark(spark, 0.15).y).toBeGreaterThan(0)
+      // …puis la gravité l'emporte
+      expect(sampleSpark(spark, 1).y).toBeLessThan(sampleSpark(spark, 0.5).y)
+    }
+  })
+
+  it('la gerbe s’éteint complètement', () => {
+    expect(burstOpacity(0)).toBe(1)
+    expect(burstOpacity(1)).toBe(0)
+    expect(burstOpacity(0.5)).toBeLessThan(burstOpacity(0.2))
+  })
+
+  it('l’onde s’écarte et s’efface', () => {
+    expect(shockwave(1).scale).toBeGreaterThan(shockwave(0).scale)
+    expect(shockwave(1).opacity).toBe(0)
+    expect(shockwave(0).opacity).toBeGreaterThan(0)
+  })
+
+  it('l’éclat monte d’un coup puis retombe', () => {
+    expect(flashIntensity(0)).toBe(0)
+    expect(flashIntensity(1)).toBe(0)
+    // Le pic est atteint très tôt : c'est un impact, pas une lueur
+    expect(flashIntensity(0.14)).toBeCloseTo(1, 5)
+    expect(flashIntensity(0.07)).toBeGreaterThan(flashIntensity(0.6))
+  })
+
+  it('borne le temps en dehors de [0, 1]', () => {
+    expect(burstOpacity(2)).toBe(0)
+    expect(flashIntensity(-1)).toBe(0)
+    expect(shockwave(2).opacity).toBe(0)
   })
 })
 
