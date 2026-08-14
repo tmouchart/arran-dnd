@@ -7,6 +7,7 @@ import CrystalBall from "./components/icons/CrystalBall.vue";
 import AppToast from "./components/ui/AppToast.vue";
 import DiceBar from "./components/DiceBar.vue";
 import RollLogDrawer from "./components/roll-log/RollLogDrawer.vue";
+import Dice3DOverlay from "./components/dice3d/Dice3DOverlay.vue";
 import { user, authReady } from "./composables/useAuth";
 import { useActiveCombat, refreshActiveCombat } from "./composables/useActiveCombat";
 import { useDiceBar } from "./composables/useDiceBar";
@@ -157,6 +158,7 @@ if (savedStyle) {
       </nav>
     </div>
     <RollLogDrawer />
+    <Dice3DOverlay />
     <AppToast />
   </div>
 </template>

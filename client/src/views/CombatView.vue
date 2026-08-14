@@ -26,6 +26,7 @@ import { MONSTERS_CATALOG, type Monster } from "../data/monstersCatalog";
 import { filterCatalog, formatMod } from "../utils/monsterSession";
 import { hpGradientColor } from "../utils/hpGradientColor";
 import { rollDie, rollDiceNotation } from "../utils/dice";
+import { dice, revealAfterDice } from "../composables/useDice3D";
 import AppPageLayout from "../components/ui/AppPageLayout.vue";
 import AppPageHead from "../components/ui/AppPageHead.vue";
 import AppIconBtn from "../components/ui/AppIconBtn.vue";
@@ -235,45 +236,36 @@ function rollMonsterAttack(participant: CombatParticipant, atkIndex: number, bon
   const key = `${participant.id}-${atkIndex}`;
   const attackDie = rollDie(20);
   const { notation, modifier, fixed } = parseDamage(damage);
-  if (fixed !== null) {
-    monsterRolls.value[key] = {
-      attackDie,
-      attackBonus: bonus,
-      attackTotal: attackDie + bonus,
-      fixedDamage: fixed,
-      damageRolls: [],
-      damageModifier: 0,
-      damageTotal: fixed,
-    };
-  } else {
-    const dmg = rollDiceNotation(notation!, modifier);
-    monsterRolls.value[key] = {
-      attackDie,
-      attackBonus: bonus,
-      attackTotal: attackDie + bonus,
-      fixedDamage: null,
-      damageRolls: dmg.rolls,
-      damageModifier: dmg.modifier,
-      damageTotal: dmg.total,
-    };
-  }
-  // Relais vers le log de la campagne — visible MJ uniquement (asMonster)
-  const roll = monsterRolls.value[key];
-  postCampaignRoll(campaignId, {
-    kind: "weapon",
-    label: attackName,
-    context: "combat",
-    die: attackDie,
-    sides: 20,
-    bonus,
-    total: roll.attackTotal,
-    damage: {
-      total: attackDie === 20 && roll.fixedDamage === null ? roll.damageTotal * 2 : roll.damageTotal,
-      critical: attackDie === 20,
-      fumble: attackDie === 1,
-    },
-    asMonster: participant.name,
-  }).catch(() => { /* silencieux */ });
+  const dmg = fixed !== null ? null : rollDiceNotation(notation!, modifier);
+  const roll = {
+    attackDie,
+    attackBonus: bonus,
+    attackTotal: attackDie + bonus,
+    fixedDamage: fixed,
+    damageRolls: dmg?.rolls ?? [],
+    damageModifier: dmg?.modifier ?? 0,
+    damageTotal: dmg ? dmg.total : fixed!,
+  };
+
+  revealAfterDice(dice(20, [attackDie]), () => {
+    monsterRolls.value[key] = roll;
+    // Relais vers le log de la campagne — visible MJ uniquement (asMonster)
+    postCampaignRoll(campaignId, {
+      kind: "weapon",
+      label: attackName,
+      context: "combat",
+      die: attackDie,
+      sides: 20,
+      bonus,
+      total: roll.attackTotal,
+      damage: {
+        total: attackDie === 20 && roll.fixedDamage === null ? roll.damageTotal * 2 : roll.damageTotal,
+        critical: attackDie === 20,
+        fumble: attackDie === 1,
+      },
+      asMonster: participant.name,
+    }).catch(() => { /* silencieux */ });
+  });
 }
 
 function signedNum(n: number): string {

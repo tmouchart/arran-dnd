@@ -5,6 +5,7 @@ import AppInput from './ui/AppInput.vue'
 import { rollDie } from '../utils/dice'
 import { useRollHistory } from '../composables/useRollHistory'
 import { useCharacter } from '../composables/useCharacter'
+import { dice, revealAfterDice } from '../composables/useDice3D'
 
 const DICE = [4, 6, 8, 10, 12, 20, 100]
 
@@ -39,18 +40,22 @@ function roll(sides: number) {
   const rolls = Array.from({ length: n }, () => rollDie(sides))
   const total = rolls.reduce((a, b) => a + b, 0) + mod
 
-  result.value = { sides, rolls, modifier: mod, total, key: (result.value?.key ?? 0) + 1 }
+  // Le résultat n'apparaît qu'une fois le dé posé — le log aussi, sinon il
+  // vend la mèche pendant que le dé roule encore.
+  revealAfterDice(dice(sides, rolls), () => {
+    result.value = { sides, rolls, modifier: mod, total, key: (result.value?.key ?? 0) + 1 }
 
-  addRoll({
-    characterName: character.value.name,
-    kind: 'libre',
-    label: `${n}d${sides}${signedMod(mod)}`,
-    die: n === 1 ? rolls[0] : 0,
-    sides,
-    bonus: mod,
-    total,
-    rolls: n > 1 ? rolls : undefined,
-  }, 'sandbox')
+    addRoll({
+      characterName: character.value.name,
+      kind: 'libre',
+      label: `${n}d${sides}${signedMod(mod)}`,
+      die: n === 1 ? rolls[0] : 0,
+      sides,
+      bonus: mod,
+      total,
+      rolls: n > 1 ? rolls : undefined,
+    }, 'sandbox')
+  })
 }
 
 function stepCount(delta: number) {

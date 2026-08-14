@@ -20,6 +20,7 @@ import {
   isMartialWeaponProficient,
 } from "../utils/attackBonus";
 import { rollDie, rollDiceNotation } from "../utils/dice";
+import { dice, revealAfterDice } from "../composables/useDice3D";
 import { MARTIAL_WEAPON_CATEGORY_BY_ID } from "../data/martialWeaponCategories";
 import { useRollHistory } from "../composables/useRollHistory";
 import { useDualWield, type SingleHandRoll } from "../composables/useDualWield";
@@ -373,26 +374,28 @@ function rollWeapon(item: (typeof weaponBubbles.value)[number], forcedSides?: nu
     : 0;
   const dmg = rollDiceNotation(item.w.damageDice, damageAbilityMod);
 
-  weaponRolls[item.w.id] = {
-    attackDie,
-    attackSides,
-    attackBonus,
-    attackTotal,
-    damageDice: item.w.damageDice,
-    damageRolls: dmg.rolls,
-    damageModifier: damageAbilityMod,
-    damageTotal: dmg.total,
-    luckUsed: false,
-  };
-  addRoll({
-    characterName: character.value.name,
-    kind: 'weapon',
-    label: item.w.name || 'Arme',
-    die: attackDie,
-    sides: attackSides,
-    bonus: attackBonus,
-    total: attackTotal,
-    damage: { total: dmg.total, critical: attackDie === attackSides, fumble: attackDie === 1 },
+  revealAfterDice(dice(attackSides, [attackDie]), () => {
+    weaponRolls[item.w.id] = {
+      attackDie,
+      attackSides,
+      attackBonus,
+      attackTotal,
+      damageDice: item.w.damageDice,
+      damageRolls: dmg.rolls,
+      damageModifier: damageAbilityMod,
+      damageTotal: dmg.total,
+      luckUsed: false,
+    };
+    addRoll({
+      characterName: character.value.name,
+      kind: 'weapon',
+      label: item.w.name || 'Arme',
+      die: attackDie,
+      sides: attackSides,
+      bonus: attackBonus,
+      total: attackTotal,
+      damage: { total: dmg.total, critical: attackDie === attackSides, fumble: attackDie === 1 },
+    });
   });
 }
 
@@ -400,27 +403,40 @@ function rollDualWield() {
   const result = rollDualWieldAction();
   if (!result) return;
 
+  // Le composable publie le résultat tout de suite : on le remasque le temps
+  // que les deux dés roulent.
+  dualWieldRoll.value = null;
+
   const c = character.value;
-  addRoll({
-    characterName: c.name,
-    kind: 'weapon',
-    label: `${result.mainHand.weaponName} (main directrice)`,
-    die: result.mainHand.attackDie,
-    sides: result.mainHand.attackSides,
-    bonus: result.mainHand.attackBonus,
-    total: result.mainHand.attackTotal,
-    damage: { total: result.mainHand.damageTotal, critical: result.mainHand.attackDie === result.mainHand.attackSides, fumble: result.mainHand.attackDie === 1 },
-  });
-  addRoll({
-    characterName: c.name,
-    kind: 'weapon',
-    label: `${result.offHand.weaponName} (main faible)`,
-    die: result.offHand.attackDie,
-    sides: 12,
-    bonus: result.offHand.attackBonus,
-    total: result.offHand.attackTotal,
-    damage: { total: result.offHand.damageTotal, critical: false, fumble: result.offHand.attackDie === 1 },
-  });
+  revealAfterDice(
+    [
+      { sides: result.mainHand.attackSides, value: result.mainHand.attackDie },
+      { sides: 12, value: result.offHand.attackDie },
+    ],
+    () => {
+      dualWieldRoll.value = result;
+      addRoll({
+        characterName: c.name,
+        kind: 'weapon',
+        label: `${result.mainHand.weaponName} (main directrice)`,
+        die: result.mainHand.attackDie,
+        sides: result.mainHand.attackSides,
+        bonus: result.mainHand.attackBonus,
+        total: result.mainHand.attackTotal,
+        damage: { total: result.mainHand.damageTotal, critical: result.mainHand.attackDie === result.mainHand.attackSides, fumble: result.mainHand.attackDie === 1 },
+      });
+      addRoll({
+        characterName: c.name,
+        kind: 'weapon',
+        label: `${result.offHand.weaponName} (main faible)`,
+        die: result.offHand.attackDie,
+        sides: 12,
+        bonus: result.offHand.attackBonus,
+        total: result.offHand.attackTotal,
+        damage: { total: result.offHand.damageTotal, critical: false, fumble: result.offHand.attackDie === 1 },
+      });
+    },
+  );
 }
 
 function rollAction(action: Action) {
@@ -449,34 +465,41 @@ function rollAction(action: Action) {
   const attackSides = attackDieSides.value;
   const attackDie = rollDie(attackSides);
   const key = action.source + '-' + action.name;
-  actionRolls[key] = {
-    attackDie,
-    attackSides,
-    attackBonus: bonus,
-    attackTotal: attackDie + bonus,
-    luckUsed: false,
-  };
-  addRoll({
-    characterName: character.value.name,
-    kind: 'action',
-    label: action.name,
-    die: attackDie,
-    sides: attackSides,
-    bonus,
-    total: attackDie + bonus,
+  revealAfterDice(dice(attackSides, [attackDie]), () => {
+    actionRolls[key] = {
+      attackDie,
+      attackSides,
+      attackBonus: bonus,
+      attackTotal: attackDie + bonus,
+      luckUsed: false,
+    };
+    addRoll({
+      characterName: character.value.name,
+      kind: 'action',
+      label: action.name,
+      die: attackDie,
+      sides: attackSides,
+      bonus,
+      total: attackDie + bonus,
+    });
   });
 }
 
 function spendLuck(roll: WeaponRollResult | ActionRollResult | SingleHandRoll, mode: 'reroll' | 'add10'): void {
   if (character.value.pcCurrent <= 0 || roll.luckUsed) return;
+  // Le point de chance est dépensé tout de suite, le nouveau dé s'affiche après
+  roll.luckUsed = true;
+  character.value.pcCurrent = Math.max(0, character.value.pcCurrent - 1);
+
   if (mode === 'reroll') {
-    roll.attackDie = rollDie(roll.attackSides);
-    roll.attackTotal = roll.attackDie + roll.attackBonus;
+    const die = rollDie(roll.attackSides);
+    revealAfterDice(dice(roll.attackSides, [die]), () => {
+      roll.attackDie = die;
+      roll.attackTotal = die + roll.attackBonus;
+    });
   } else {
     roll.attackTotal += 10;
   }
-  roll.luckUsed = true;
-  character.value.pcCurrent = Math.max(0, character.value.pcCurrent - 1);
 }
 
 function rollAbility(key: string) {
@@ -484,16 +507,18 @@ function rollAbility(key: string) {
   const mod = abilityModifier(score);
   const sides = attackDieSides.value;
   const die = rollDie(sides);
-  abilityRolls[key] = { attackDie: die, attackSides: sides, attackBonus: mod, attackTotal: die + mod, luckUsed: false };
-  lastRolledAbilityKey.value = key;
-  addRoll({
-    characterName: character.value.name,
-    kind: 'ability',
-    label: ABILITY_LABELS.find((a) => a.key === key)?.label ?? key,
-    die,
-    sides,
-    bonus: mod,
-    total: die + mod,
+  revealAfterDice(dice(sides, [die]), () => {
+    abilityRolls[key] = { attackDie: die, attackSides: sides, attackBonus: mod, attackTotal: die + mod, luckUsed: false };
+    lastRolledAbilityKey.value = key;
+    addRoll({
+      characterName: character.value.name,
+      kind: 'ability',
+      label: ABILITY_LABELS.find((a) => a.key === key)?.label ?? key,
+      die,
+      sides,
+      bonus: mod,
+      total: die + mod,
+    });
   });
 }
 
@@ -501,15 +526,17 @@ function rollManoeuvre(name: string) {
   const sides = attackDieSides.value;
   const die = rollDie(sides);
   const bonus = computedAttackContact.value;
-  manoeuverRolls[name] = { attackDie: die, attackSides: sides, attackBonus: bonus, attackTotal: die + bonus, luckUsed: false };
-  addRoll({
-    characterName: character.value.name,
-    kind: 'manoeuvre',
-    label: name,
-    die,
-    sides,
-    bonus,
-    total: die + bonus,
+  revealAfterDice(dice(sides, [die]), () => {
+    manoeuverRolls[name] = { attackDie: die, attackSides: sides, attackBonus: bonus, attackTotal: die + bonus, luckUsed: false };
+    addRoll({
+      characterName: character.value.name,
+      kind: 'manoeuvre',
+      label: name,
+      die,
+      sides,
+      bonus,
+      total: die + bonus,
+    });
   });
 }
 
@@ -522,15 +549,17 @@ function rollCompetence(id: string) {
   const bonus = abilityBonus + comp.bonus;
   const sides = attackDieSides.value;
   const die = rollDie(sides);
-  competenceRolls[id] = { attackDie: die, attackSides: sides, attackBonus: bonus, attackTotal: die + bonus, luckUsed: false };
-  addRoll({
-    characterName: character.value.name,
-    kind: 'competence',
-    label: comp.name || 'Compétence',
-    die,
-    sides,
-    bonus,
-    total: die + bonus,
+  revealAfterDice(dice(sides, [die]), () => {
+    competenceRolls[id] = { attackDie: die, attackSides: sides, attackBonus: bonus, attackTotal: die + bonus, luckUsed: false };
+    addRoll({
+      characterName: character.value.name,
+      kind: 'competence',
+      label: comp.name || 'Compétence',
+      die,
+      sides,
+      bonus,
+      total: die + bonus,
+    });
   });
 }
 
@@ -587,9 +616,13 @@ function confirmerRepos() {
   const gain = Math.max(1, roll + conMod + c.level)
   const hpBefore = c.hpCurrent
   c.prCurrent -= 1
-  c.hpCurrent = Math.min(computedHp.value, c.hpCurrent + gain)
-  reposResult.value = { roll, conMod, level: c.level, total: gain, hpBefore, hpAfter: c.hpCurrent }
   showReposConfirm.value = false
+
+  // Les PV ne remontent qu'une fois le dé de vie posé
+  revealAfterDice(dice(dv, [roll]), () => {
+    c.hpCurrent = Math.min(computedHp.value, c.hpCurrent + gain)
+    reposResult.value = { roll, conMod, level: c.level, total: gain, hpBefore, hpAfter: c.hpCurrent }
+  })
 }
 
 function gainPr() {

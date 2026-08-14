@@ -5,6 +5,7 @@ import AppModal from './ui/AppModal.vue'
 import AppButton from './ui/AppButton.vue'
 import { rollDie } from '../utils/dice'
 import { attackDieSides } from '../composables/useCharacter'
+import { dice, revealAfterDice } from '../composables/useDice3D'
 
 defineProps<{ characterName: string }>()
 const emit = defineEmits<{
@@ -40,7 +41,7 @@ function roll() {
   else if (die === 1) result = 'critical-death'
   else if (die >= 11) result = 'success'
   else result = 'failure'
-  rolls.value.push({ die, result })
+  revealAfterDice(dice(sides, [die]), () => rolls.value.push({ die, result }))
 }
 
 function reset() {
