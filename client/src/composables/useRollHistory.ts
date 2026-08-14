@@ -26,20 +26,6 @@ export interface RollEntry {
   damage?: { total: number; critical: boolean; fumble: boolean }
 }
 
-/**
- * Highlight critique/fumble d'une entrée d'historique.
- * Les jets libres (sandbox) n'ont JAMAIS de critique ni de fumble :
- * le crit ne garde son sens que pour les jets d'attaque/carac (d20, ou d12 en affaibli).
- */
-export function rollHighlight(
-  entry: Pick<RollEntry, 'kind' | 'die' | 'sides' | 'damage'>,
-): 'critical' | 'fumble' | null {
-  if (entry.kind === 'libre') return null
-  if (entry.damage?.critical || entry.die === entry.sides) return 'critical'
-  if (entry.damage?.fumble || entry.die === 1) return 'fumble'
-  return null
-}
-
 const STORAGE_KEY = 'arran-roll-history'
 const MAX_ENTRIES = 200
 

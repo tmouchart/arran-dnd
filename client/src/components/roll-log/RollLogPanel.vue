@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { EyeOff, Swords, ScrollText, Dices, HeartCrack, Zap } from 'lucide-vue-next'
+import { EyeOff, Swords, ScrollText, Dices, HeartCrack, Zap, Star, Skull } from 'lucide-vue-next'
 import AppEmptyState from '../ui/AppEmptyState.vue'
 import type { RollEvent } from '../../api/campaigns'
+import { rollOutcome } from '../../utils/rollOutcome'
 
 // Composant unique MJ/joueurs : il affiche la liste reçue telle quelle.
 // Le MJ voit plus d'entrées uniquement parce que le serveur lui en envoie plus.
@@ -65,13 +66,6 @@ const groups = computed<Group[]>(() => {
   return out
 })
 
-function highlight(r: RollEvent): 'critical' | 'fumble' | null {
-  if (r.kind === 'libre') return null
-  if (r.damage?.critical || r.die === r.sides) return 'critical'
-  if (r.damage?.fumble || r.die === 1) return 'fumble'
-  return null
-}
-
 function signed(n: number): string {
   return n >= 0 ? `+${n}` : String(n)
 }
@@ -128,8 +122,8 @@ function absoluteTime(r: RollEvent): string {
           :key="r.id"
           class="log-entry"
           :class="{
-            'log-entry--critical': highlight(r) === 'critical',
-            'log-entry--fumble': highlight(r) === 'fumble',
+            'log-entry--critical': rollOutcome(r) === 'critical',
+            'log-entry--fumble': rollOutcome(r) === 'fumble',
           }"
         >
           <div class="log-body">
@@ -148,7 +142,11 @@ function absoluteTime(r: RollEvent): string {
               {{ detail(r) }}<template v-if="r.damage"> · dégâts {{ r.damage.total }}</template>
             </div>
           </div>
-          <div class="log-total">{{ r.total }}</div>
+          <div class="log-total">
+            <Star v-if="rollOutcome(r) === 'critical'" :size="14" class="log-mark" />
+            <Skull v-else-if="rollOutcome(r) === 'fumble'" :size="14" class="log-mark" />
+            {{ r.total }}
+          </div>
         </div>
       </div>
     </template>
@@ -247,12 +245,17 @@ function absoluteTime(r: RollEvent): string {
   border-left: 2px solid transparent;
 }
 
-/* Crit/fumble : liseré + total coloré, sans casser le rythme de la liste */
+/* Crit/fumble : liseré épais, fond teinté et total marqué — un 20 doit se
+   repérer en survolant la liste, sans casser son rythme */
 .log-entry--critical {
-  border-left-color: #d4ac0d;
+  border-left-color: var(--brand);
+  border-left-width: 3px;
+  background: color-mix(in srgb, var(--brand) 10%, transparent);
 }
 .log-entry--fumble {
-  border-left-color: #c95f56;
+  border-left-color: var(--danger);
+  border-left-width: 3px;
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
 }
 
 .log-body {
@@ -297,6 +300,9 @@ function absoluteTime(r: RollEvent): string {
 
 .log-total {
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
   font-family: var(--title-font);
   font-size: 1.25rem;
   font-weight: 800;
@@ -307,9 +313,9 @@ function absoluteTime(r: RollEvent): string {
 }
 
 .log-entry--critical .log-total {
-  color: #c8950a;
+  color: var(--brand);
 }
 .log-entry--fumble .log-total {
-  color: #c95f56;
+  color: var(--danger);
 }
 </style>

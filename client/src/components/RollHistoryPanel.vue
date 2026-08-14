@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { Trash2, ChevronDown, ChevronUp, X } from 'lucide-vue-next'
+import { Trash2, ChevronDown, ChevronUp, X, Star, Skull } from 'lucide-vue-next'
 import AppCard from './ui/AppCard.vue'
 import AppButton from './ui/AppButton.vue'
 import AppIconBtn from './ui/AppIconBtn.vue'
-import { useRollHistory, rollHighlight, type RollKind, type RollEntry } from '../composables/useRollHistory'
+import { useRollHistory, type RollKind, type RollEntry } from '../composables/useRollHistory'
+import { rollOutcome } from '../utils/rollOutcome'
 
 const props = withDefaults(defineProps<{ alwaysOpen?: boolean }>(), { alwaysOpen: false })
 
@@ -29,8 +30,8 @@ const KIND_LABELS: Record<RollKind, string> = {
   libre: 'Libre',
 }
 
-const critCount = computed(() => history.value.filter((e) => rollHighlight(e) === 'critical').length)
-const fumbleCount = computed(() => history.value.filter((e) => rollHighlight(e) === 'fumble').length)
+const critCount = computed(() => history.value.filter((e) => rollOutcome(e) === 'critical').length)
+const fumbleCount = computed(() => history.value.filter((e) => rollOutcome(e) === 'fumble').length)
 const d20Avg = computed(() => {
   const d20Rolls = history.value.filter((e) => e.sides === 20)
   if (!d20Rolls.length) return null
@@ -44,9 +45,9 @@ function formatTime(ts: number): string {
 }
 
 function entryClass(entry: Pick<RollEntry, 'kind' | 'die' | 'sides' | 'damage'>): string {
-  const highlight = rollHighlight(entry)
-  if (highlight === 'critical') return 'entry--critical'
-  if (highlight === 'fumble') return 'entry--fumble'
+  const outcome = rollOutcome(entry)
+  if (outcome === 'critical') return 'entry--critical'
+  if (outcome === 'fumble') return 'entry--fumble'
   return ''
 }
 </script>
@@ -101,7 +102,12 @@ function entryClass(entry: Pick<RollEntry, 'kind' | 'die' | 'sides' | 'damage'>)
           <span class="entry-label">{{ entry.label }}</span>
           <span v-if="entry.rolls && entry.rolls.length > 1" class="entry-die">{{ entry.rolls.length }}d{{ entry.sides }}={{ entry.rolls.join('+') }}</span>
           <span v-else class="entry-die">d{{ entry.sides }}={{ entry.die }}</span>
-          <span class="entry-total">→ <strong>{{ entry.total }}</strong></span>
+          <span class="entry-total">
+            →
+            <Star v-if="rollOutcome(entry) === 'critical'" :size="13" class="entry-mark" />
+            <Skull v-else-if="rollOutcome(entry) === 'fumble'" :size="13" class="entry-mark" />
+            <strong>{{ entry.total }}</strong>
+          </span>
           <span v-if="entry.damage" class="entry-dmg">
             <template v-if="entry.damage.fumble">Échec critique</template>
             <template v-else-if="entry.damage.critical">Réussite critique · {{ entry.damage.total * 2 }} dmg</template>
@@ -140,8 +146,8 @@ function entryClass(entry: Pick<RollEntry, 'kind' | 'die' | 'sides' | 'damage'>)
   font-size: 0.82rem;
 }
 .stat-label { font-size: 0.72rem; opacity: 0.65; text-transform: uppercase; letter-spacing: 0.04em; }
-.stat--crit strong { color: #c9a227; }
-.stat--fumble strong { color: var(--danger, #e05252); }
+.stat--crit strong { color: var(--brand); }
+.stat--fumble strong { color: var(--danger); }
 
 .entry-list {
   list-style: none;
@@ -164,14 +170,27 @@ function entryClass(entry: Pick<RollEntry, 'kind' | 'die' | 'sides' | 'damage'>)
   flex-wrap: wrap;
 }
 
-.entry--critical { background: color-mix(in srgb, #c9a227 12%, transparent); }
-.entry--fumble   { background: color-mix(in srgb, var(--danger, #e05252) 12%, transparent); }
+/* Un 20 et un 1 doivent sauter aux yeux dans la liste */
+.entry--critical {
+  background: color-mix(in srgb, var(--brand) 16%, transparent);
+  box-shadow: inset 2px 0 0 var(--brand);
+}
+.entry--fumble {
+  background: color-mix(in srgb, var(--danger) 16%, transparent);
+  box-shadow: inset 2px 0 0 var(--danger);
+}
+
+.entry-mark { vertical-align: -2px; }
+.entry--critical .entry-mark,
+.entry--critical .entry-total strong { color: var(--brand); }
+.entry--fumble .entry-mark,
+.entry--fumble .entry-total strong { color: var(--danger); }
 
 .entry-time   { color: var(--muted); font-size: 0.72rem; flex-shrink: 0; }
 .entry-kind   { background: var(--surface-2); padding: 0.05rem 0.35rem; border-radius: var(--radius-sm); font-size: 0.72rem; flex-shrink: 0; }
 .entry-label  { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .entry-die    { color: var(--muted); font-size: 0.75rem; flex-shrink: 0; }
-.entry-total  { flex-shrink: 0; }
+.entry-total  { flex-shrink: 0; display: inline-flex; align-items: center; gap: 0.2rem; }
 .entry-dmg    { font-size: 0.75rem; opacity: 0.8; flex-shrink: 0; }
 
 .muted { color: var(--muted); font-size: 0.9rem; margin: 0.6rem 0 0; }

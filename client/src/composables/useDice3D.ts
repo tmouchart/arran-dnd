@@ -81,6 +81,6 @@ export function revealAfterDice(rolls: DieRoll[], reveal: () => void) {
 }
 
 /** Raccourci pour le cas courant : plusieurs dés de la même taille. */
-export function dice(sides: number, values: number[]): DieRoll[] {
-  return values.map((value) => ({ sides, value }))
+export function dice(sides: number, values: number[], kind = 'weapon'): DieRoll[] {
+  return values.map((value) => ({ sides, value, kind }))
 }
