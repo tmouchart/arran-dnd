@@ -106,6 +106,7 @@ This is a **roleplay game tool**, not a corporate app. Design must feel fun, imm
 - **Responsive**: All UI must work well on mobile (phone-first). The app is used almost exclusively on phones.
 - **Dense**: Compact spacing everywhere. Use the `--space-*` tokens; avoid paddings above `--space-lg` (0.85rem) on list items, cards, and controls. Generous whitespace is a bug, not a feature.
 - **Buttons**: Prefer icon-only buttons. Avoid text labels on action buttons whenever an icon clearly conveys the intent.
+- **Max 7 buttons per bar**: a horizontal bar (nav, toolbar, action row) holds **at most 7 icon buttons** on a phone — that's what fits on a OnePlus 10 without scrolling or shrinking. Past 7, move the extras to another bar (the app has a top bar *and* a bottom bar) or to a sheet. Never shrink buttons below 40px to squeeze more in.
 - **Icons**: Use [Lucide](https://lucide.dev/icons) exclusively for all icons (`lucide-vue-next`).
 
 ### Tone
@@ -176,6 +177,7 @@ Add a shadcn component with `npx shadcn-vue@latest add <name> -y -o` (writes int
 - **Never** use raw `<select class="input">` or `<textarea class="input">` — use `<AppSelect>` / `<AppTextarea>`.
 - **Never** hand-roll a modal, overlay, bottom sheet, or tab bar — use `<AppModal>`, `<AppBottomSheet>`, `<AppTabs>`.
 - **Never** hardcode `border-radius`, paddings, or colors a token covers — use `--radius-*`, `--space-*`, and the color tokens.
+- **Never** use `position: absolute` to build layout. Structure is flexbox and grid, full stop. Absolute positioning to place a bar, align a column, offset a panel or nudge an element into place is banned — it breaks on the next screen size and hides the real layout bug. Four narrow exceptions, each anchored to an explicit `position: relative` parent: a badge/pastille on the corner of an icon, an overlay covering its parent (`inset: 0`), a floating popup/menu anchored to a trigger, and `.visually-hidden` / hidden native inputs. If you reach for it outside those four, the flex/grid structure is wrong — fix that instead.
 - When adding a new `App*` component, showcase it in `client/src/views/ComponentLibraryView.vue` (`/component-library`, dev only).
 
 ## Code Quality
