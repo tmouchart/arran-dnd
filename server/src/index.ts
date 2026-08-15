@@ -1116,6 +1116,7 @@ async function main(): Promise<void> {
     );
   }
   app.listen(PORT, () => {
+    console.log("🌍✨ Hello World ! 🐉🎲");
     console.log(`arran-dnd API listening on http://localhost:${PORT}`);
   });
 }
