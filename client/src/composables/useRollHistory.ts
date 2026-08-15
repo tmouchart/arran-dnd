@@ -2,6 +2,8 @@ import { ref } from 'vue'
 import { postCampaignRoll } from '../api/campaigns'
 import { user } from './useAuth'
 import { useCampaignRolls } from './useCampaignRolls'
+import { celebrate } from './useCriticalMoment'
+import { rollOutcome } from '../utils/rollOutcome'
 
 /** D'où vient un jet — contexte affiché dans le log partagé. */
 export type RollContext = 'actions' | 'combat' | 'fiche' | 'agonie' | 'sandbox'
@@ -60,6 +62,12 @@ export function useRollHistory() {
     history.value.unshift(full)
     if (history.value.length > MAX_ENTRIES) history.value = history.value.slice(0, MAX_ENTRIES)
     save(history.value)
+
+    // Le moment critique part d'ici : addRoll est appelé une fois le dé posé,
+    // donc le halo tombe pile avec les étincelles. Les autres joueurs le
+    // reçoivent par SSE au même instant, puisque le POST part juste après.
+    const outcome = rollOutcome(full)
+    if (outcome) celebrate(outcome, full.characterName)
 
     // Relais vers le log partagé de la campagne : tout jet part, en combat ou
     // non. C'est le serveur qui décide s'il le tague avec un combat.

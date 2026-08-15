@@ -15,6 +15,15 @@ import AppEmptyState from '../components/ui/AppEmptyState.vue'
 import AppModal from '../components/ui/AppModal.vue'
 import AppBottomSheet from '../components/ui/AppBottomSheet.vue'
 import { showToast } from '../composables/useToast'
+import { dice, revealAfterDice } from '../composables/useDice3D'
+import {
+  celebrate,
+  resetCriticalCooldown,
+  criticalSoundEnabled,
+  criticalVibrationEnabled,
+  setCriticalSoundEnabled,
+  setCriticalVibrationEnabled,
+} from '../composables/useCriticalMoment'
 
 const inputText = ref('Gimli')
 const inputNumber = ref(12)
@@ -35,6 +44,21 @@ const colorTokens = [
   'brand', 'brand-strong', 'danger',
 ]
 const badgeVariants = ['attaque', 'limitée', 'gratuite', 'info', 'pm', 'active'] as const
+
+// Banc d'essai du moment critique. Le cooldown est remis à zéro à chaque clic :
+// ici on veut pouvoir réessayer trois fois de suite pour régler l'animation.
+function fireMoment(outcome: 'critical' | 'fumble') {
+  resetCriticalCooldown()
+  celebrate(outcome, 'Théos')
+}
+
+function forceRoll(value: number) {
+  resetCriticalCooldown()
+  revealAfterDice(dice(20, [value], 'weapon'), () => {
+    resetCriticalCooldown()
+    celebrate(value === 20 ? 'critical' : 'fumble', 'Théos')
+  })
+}
 </script>
 
 <template>
@@ -149,6 +173,35 @@ const badgeVariants = ['attaque', 'limitée', 'gratuite', 'info', 'pm', 'active'
       </AppEmptyState>
     </AppCard>
 
+    <AppCard title="Moment critique">
+      <p class="demo-note">
+        Les deux premiers jouent l'effet seul. Les deux suivants lancent un vrai d20 3D
+        avec la valeur forcée : dé → étincelles → effet, comme en séance.
+      </p>
+      <div class="demo-row">
+        <AppButton @click="fireMoment('critical')">✨ Critique</AppButton>
+        <AppButton @click="fireMoment('fumble')">💀 Échec critique</AppButton>
+        <AppButton @click="forceRoll(20)">🎲 Jet forcé : 20</AppButton>
+        <AppButton @click="forceRoll(1)">🎲 Jet forcé : 1</AppButton>
+      </div>
+      <div class="demo-row">
+        <AppButton
+          size="small"
+          :variant="criticalSoundEnabled ? 'primary' : 'ghost'"
+          @click="setCriticalSoundEnabled(!criticalSoundEnabled)"
+        >
+          Son : {{ criticalSoundEnabled ? 'on' : 'off' }}
+        </AppButton>
+        <AppButton
+          size="small"
+          :variant="criticalVibrationEnabled ? 'primary' : 'ghost'"
+          @click="setCriticalVibrationEnabled(!criticalVibrationEnabled)"
+        >
+          Vibration : {{ criticalVibrationEnabled ? 'on' : 'off' }}
+        </AppButton>
+      </div>
+    </AppCard>
+
     <AppModal v-model="modalOpen" title="Titre de la modal">
       <p>Contenu de la modal. Fermeture par Échap, clic dehors ou le bouton.</p>
       <template #footer>
@@ -168,6 +221,12 @@ const badgeVariants = ['attaque', 'limitée', 'gratuite', 'info', 'pm', 'active'
 </template>
 
 <style scoped>
+.demo-note {
+  margin: 0 0 var(--space-sm);
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
 .demo-row {
   display: flex;
   flex-wrap: wrap;

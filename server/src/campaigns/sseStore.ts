@@ -16,10 +16,29 @@ export function getClientsForCampaign(campaignId: number): Set<SseClient> {
   return clientsByCampaign.get(campaignId)!
 }
 
+/** Un 20 ou un 1 naturel sur un dé qui compte (d20 toujours, d12 hors jet libre). */
+export function criticalOutcome(event: Record<string, unknown>): 'critical' | 'fumble' | null {
+  const damage = event.damage as { critical?: boolean; fumble?: boolean } | null | undefined
+  if (damage?.critical) return 'critical'
+  if (damage?.fumble) return 'fumble'
+
+  const sides = Number(event.sides)
+  const die = Number(event.die)
+  const graded = sides === 20 || (sides === 12 && event.kind !== 'libre')
+  if (!graded) return null
+  if (die === sides) return 'critical'
+  if (die === 1) return 'fumble'
+  return null
+}
+
 /**
  * Diffuse un jet aux clients de la campagne.
  * Les jets `visibility: 'gm'` (monstres) ne partent qu'au MJ — tout le filtrage
  * de visibilité vit ici et dans le GET, jamais côté client.
+ *
+ * Exception : quand un jet caché est un critique, les joueurs reçoivent quand
+ * même un event `critical` allégé (issue + nom de l'acteur, sans le chiffre).
+ * Le 20 du dragon fait vibrer la table sans vendre la mèche.
  */
 export function broadcastCampaignRoll(
   campaignId: number,
@@ -28,8 +47,20 @@ export function broadcastCampaignRoll(
 ): void {
   const clients = clientsByCampaign.get(campaignId)
   if (!clients || clients.size === 0) return
+
+  const hidden = event.visibility === 'gm'
+  const outcome = hidden ? criticalOutcome(event) : null
+  const teaser = outcome
+    ? JSON.stringify({ outcome, actorName: event.actorName })
+    : null
+
   for (const client of clients) {
-    if (event.visibility === 'gm' && client.userId !== gmUserId) continue
+    if (hidden && client.userId !== gmUserId) {
+      if (!teaser) continue
+      client.res.write('event: critical\n')
+      client.res.write(`data: ${teaser}\n\n`)
+      continue
+    }
     client.res.write('event: roll\n')
     client.res.write(`data: ${JSON.stringify(event)}\n\n`)
   }

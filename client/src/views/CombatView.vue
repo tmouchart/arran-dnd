@@ -27,6 +27,7 @@ import { filterCatalog, formatMod } from "../utils/monsterSession";
 import { hpGradientColor } from "../utils/hpGradientColor";
 import { rollDie, rollDiceNotation } from "../utils/dice";
 import { dice, revealAfterDice } from "../composables/useDice3D";
+import { celebrate } from "../composables/useCriticalMoment";
 import AppPageLayout from "../components/ui/AppPageLayout.vue";
 import AppPageHead from "../components/ui/AppPageHead.vue";
 import AppIconBtn from "../components/ui/AppIconBtn.vue";
@@ -249,6 +250,10 @@ function rollMonsterAttack(participant: CombatParticipant, atkIndex: number, bon
 
   revealAfterDice(dice(20, [attackDie]), () => {
     monsterRolls.value[key] = roll;
+    // Le MJ n'a pas de log local : sa fanfare part d'ici. Les joueurs, eux,
+    // reçoivent l'event `critical` allégé (sans le chiffre) par le SSE.
+    if (attackDie === 20) celebrate("critical", participant.name);
+    else if (attackDie === 1) celebrate("fumble", participant.name);
     // Relais vers le log de la campagne — visible MJ uniquement (asMonster)
     postCampaignRoll(campaignId, {
       kind: "weapon",

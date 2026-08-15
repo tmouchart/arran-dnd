@@ -8,10 +8,12 @@ import AppToast from "./components/ui/AppToast.vue";
 import DiceBar from "./components/DiceBar.vue";
 import RollLogDrawer from "./components/roll-log/RollLogDrawer.vue";
 import Dice3DOverlay from "./components/dice3d/Dice3DOverlay.vue";
+import CriticalMomentOverlay from "./components/CriticalMomentOverlay.vue";
 import { user, authReady } from "./composables/useAuth";
 import { useActiveCombat, refreshActiveCombat } from "./composables/useActiveCombat";
 import { useDiceBar } from "./composables/useDiceBar";
 import { useCampaignRolls } from "./composables/useCampaignRolls";
+import { primeAudio } from "./utils/sfx";
 
 const isDev = import.meta.env.DEV;
 const route = useRoute();
@@ -55,6 +57,10 @@ document.addEventListener("visibilitychange", () => {
     wakeRolls();
   }
 });
+// L'AudioContext démarre suspendu tant que l'utilisateur n'a rien tapé : on le
+// réveille au tout premier geste, sinon le premier critique de la séance est muet.
+document.addEventListener("pointerdown", () => primeAudio(), { once: true });
+
 const showCombatBanner = computed(() =>
   activeCombat.value && !route.path.includes('/combat/'),
 );
@@ -159,6 +165,7 @@ if (savedStyle) {
     </div>
     <RollLogDrawer />
     <Dice3DOverlay />
+    <CriticalMomentOverlay />
     <AppToast />
   </div>
 </template>

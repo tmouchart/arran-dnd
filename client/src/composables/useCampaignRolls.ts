@@ -1,5 +1,8 @@
 import { ref } from 'vue'
 import { fetchCampaignRolls, type RollEvent } from '../api/campaigns'
+import { user } from './useAuth'
+import { celebrate } from './useCriticalMoment'
+import { rollOutcome, type RollOutcome } from '../utils/rollOutcome'
 
 /** Filtre du panneau de log. */
 export type RollFilter = 'all' | 'combat' | 'player' | 'monster'
@@ -70,7 +73,24 @@ function connect(campaignId: number): void {
   resetIdleTimer()
   eventSource.addEventListener('roll', (e: MessageEvent) => {
     try {
-      appendRoll(JSON.parse(e.data as string) as RollEvent)
+      const roll = JSON.parse(e.data as string) as RollEvent
+      appendRoll(roll)
+      // Mes propres jets me reviennent par ce flux : la fanfare a déjà joué au
+      // moment où mon dé s'est posé, on ne la rejoue pas.
+      if (roll.userId !== user.value?.id) {
+        const outcome = rollOutcome(roll)
+        if (outcome) celebrate(outcome, roll.actorName)
+      }
+      resetIdleTimer()
+    } catch { /* ignore */ }
+  })
+
+  // Jets que je n'ai pas le droit de voir (monstres du MJ) : le serveur n'envoie
+  // que l'issue et le nom. La table vibre, personne n'apprend le chiffre.
+  eventSource.addEventListener('critical', (e: MessageEvent) => {
+    try {
+      const moment = JSON.parse(e.data as string) as { outcome: RollOutcome; actorName: string }
+      if (moment.outcome) celebrate(moment.outcome, moment.actorName)
       resetIdleTimer()
     } catch { /* ignore */ }
   })
