@@ -231,6 +231,45 @@ Any new feature that contains non-trivial logic (game mechanics, calculations, s
 - Test pure functions first; for Vue composables, mutate `character.value` directly and read computed `.value`
 - Use `/write-tests` to generate tests interactively
 
+## Debug en local
+
+### Logs de `npm run dev`
+
+`npm run dev` écrit **tout** (API + client, stdout et stderr) dans `dev.log` à la racine, en plus de l'affichage terminal. Le fichier est vidé à chaque démarrage et il est gitignoré.
+
+**Pour lire les logs, lis `dev.log`.** Ne relance jamais `npm run dev` toi-même : le dev tourne déjà dans le terminal de l'utilisateur, et un second lancement écraserait le fichier.
+
+```
+Read dev.log                       # tout le log
+Grep "Error|ECONNREFUSED" dev.log  # filtrer
+```
+
+### Ports
+
+| Service | URL |
+|---|---|
+| API (Express) | `http://localhost:3566` |
+| Client (Vite) | `http://localhost:5173` — proxy `/api` vers l'API |
+| PostgreSQL | `localhost:5432`, base `arrandnd` |
+
+### Appeler l'API authentifiée
+
+Toutes les routes hors `/api/auth/*` passent par `requireAuth` : il faut un JWT dans le cookie `token`, signé avec `JWT_SECRET` (`server/.env`). Le plus simple est de le fabriquer :
+
+```js
+// à lancer depuis server/ pour que les dépendances résolvent
+require('dotenv').config({ path: __dirname + '/.env' })
+const jwt = require('jsonwebtoken')
+const token = jwt.sign({ sub: 1, username: 'thomas' }, process.env.JWT_SECRET, { expiresIn: '7d' })
+await fetch('http://localhost:3566/api/characters', { headers: { cookie: 'token=' + token } })
+```
+
+### Requêter la DB locale
+
+`psql` n'est pas installé. Passe par un script Node dans `server/` avec le driver `postgres` déjà présent, et `DATABASE_URL` depuis `server/.env`.
+
+Attention : la table des utilisateurs s'appelle `"user"` (singulier, mot réservé SQL → guillemets obligatoires).
+
 ## Plans
 
 All implementation plans must be saved as Markdown files in the `plans/` directory at the project root. Use numbered prefixes for ordering (e.g., `01-campagnes.md`, `02-rencontres.md`). Always write the plan to this directory — never only in `.claude/plans/`.
