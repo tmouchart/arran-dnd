@@ -1,8 +1,9 @@
 import { and, asc, desc, eq, sql } from 'drizzle-orm'
 import { Router } from 'express'
 import { db } from '../db/index.js'
-import { campaigns, campaignMembers, characters, users, generatedImages, encounterTemplates, encounterMonsters, combats, rollEvents } from '../db/schema.js'
+import { campaigns, campaignMembers, characters, users, encounterTemplates, encounterMonsters, combats, rollEvents } from '../db/schema.js'
 import { requireAuth, type AuthRequest } from '../auth/middleware.js'
+import { avatarKind, toAvatarLink } from '../avatarUrl.js'
 import { broadcastCampaignRoll, getClientsForCampaign, type SseClient } from '../campaigns/sseStore.js'
 
 const router = Router()
@@ -96,28 +97,25 @@ router.get('/:id', async (req, res) => {
     .select({
       userId: campaignMembers.userId,
       username: users.username,
-      avatarUrl: users.avatarUrl,
+      avatarUrl: avatarKind,
       characterId: campaignMembers.characterId,
       characterName: characters.name,
       portraitImageId: characters.portraitImageId,
-      portraitData: generatedImages.data,
-      portraitMimeType: generatedImages.mimeType,
       joinedAt: campaignMembers.joinedAt,
     })
     .from(campaignMembers)
     .innerJoin(users, eq(users.id, campaignMembers.userId))
     .leftJoin(characters, eq(characters.id, campaignMembers.characterId))
-    .leftJoin(generatedImages, eq(generatedImages.id, characters.portraitImageId))
     .where(eq(campaignMembers.campaignId, id))
     .orderBy(asc(campaignMembers.joinedAt), asc(campaignMembers.id))
 
   const membersWithPortrait = members.map((m) => ({
     userId: m.userId,
     username: m.username,
-    avatarUrl: m.avatarUrl,
+    avatarUrl: toAvatarLink(m.userId, m.avatarUrl),
     characterId: m.characterId,
     characterName: m.characterName,
-    portraitUrl: m.portraitData ? `data:${m.portraitMimeType};base64,${m.portraitData}` : null,
+    portraitUrl: m.portraitImageId ? `/api/images/${m.portraitImageId}` : null,
     joinedAt: m.joinedAt,
   }))
 
@@ -269,17 +267,8 @@ router.get('/:id/members/:userId/character', async (req, res) => {
     return
   }
 
-  // Build portrait data URL so the GM can see it (bypassing owner-only /api/images)
-  let portraitDataUrl: string | null = null
-  if (character.portraitImageId) {
-    const [img] = await db
-      .select({ data: generatedImages.data, mimeType: generatedImages.mimeType })
-      .from(generatedImages)
-      .where(eq(generatedImages.id, character.portraitImageId))
-    if (img) {
-      portraitDataUrl = `data:${img.mimeType};base64,${img.data}`
-    }
-  }
+  // Lien vers l'image : /api/images autorise déjà le portrait d'un camarade de campagne
+  const portraitDataUrl = character.portraitImageId ? `/api/images/${character.portraitImageId}` : null
 
   res.json({ ...character, portraitDataUrl })
 })

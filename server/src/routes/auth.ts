@@ -4,6 +4,7 @@ import { Router } from 'express'
 import { db } from '../db/index.js'
 import { users } from '../db/schema.js'
 import { signToken } from '../auth/jwt.js'
+import { avatarKind, toAvatarLink } from '../avatarUrl.js'
 import { requireAuth, type AuthRequest } from '../auth/middleware.js'
 import googleAuthRouter from './googleAuth.js'
 
@@ -41,7 +42,7 @@ router.post('/login', async (req, res) => {
     maxAge: 365 * 24 * 60 * 60 * 1000,
   })
   console.log(`[auth] login: user=${user.username}`)
-  res.json({ user: { id: user.id, username: user.username, avatarUrl: user.avatarUrl ?? null } })
+  res.json({ user: { id: user.id, username: user.username, avatarUrl: toAvatarLink(user.id, user.avatarUrl) } })
 })
 
 router.post('/register', async (req, res) => {
@@ -82,7 +83,7 @@ router.post('/logout', requireAuth, (_req, res) => {
 
 router.get('/me', requireAuth, async (req, res) => {
   const userId = (req as AuthRequest).userId
-  const [user] = await db.select({ id: users.id, username: users.username, avatarUrl: users.avatarUrl, activeCampaignId: users.activeCampaignId })
+  const [user] = await db.select({ id: users.id, username: users.username, avatarUrl: avatarKind, activeCampaignId: users.activeCampaignId })
     .from(users)
     .where(eq(users.id, userId))
     .limit(1)
@@ -90,7 +91,7 @@ router.get('/me', requireAuth, async (req, res) => {
     res.status(401).json({ error: 'Utilisateur introuvable' })
     return
   }
-  res.json({ user: { ...user, avatarUrl: user.avatarUrl ?? null } })
+  res.json({ user: { ...user, avatarUrl: toAvatarLink(user.id, user.avatarUrl) } })
 })
 
 router.patch('/me', requireAuth, async (req, res) => {
@@ -122,7 +123,10 @@ router.patch('/me', requireAuth, async (req, res) => {
     .set(patch)
     .where(eq(users.id, userId))
     .returning({ id: users.id, username: users.username, avatarUrl: users.avatarUrl })
-  res.json({ user: { ...updated, avatarUrl: updated.avatarUrl ?? null } })
+  // `?v=` : le lien avatar est stable, donc un <img> déjà affiché ne se
+  // rafraîchirait pas tout seul après un changement. Ce suffixe le force.
+  const link = toAvatarLink(updated.id, updated.avatarUrl)
+  res.json({ user: { ...updated, avatarUrl: link?.startsWith('/api/') ? `${link}?v=${Date.now()}` : link } })
 })
 
 router.use('/google', googleAuthRouter)

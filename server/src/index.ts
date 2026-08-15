@@ -1,6 +1,7 @@
 import "./loadEnv.js";
 import { getDatabaseUrl } from "./db/databaseUrl.js";
 import { runMigrations } from "./db/runMigrations.js";
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
@@ -65,7 +66,26 @@ app.use("/api/notes", notesRouter);
 app.use("/api/revisions", revisionsRouter);
 app.use("/api/tts", ttsRouter);
 
-// Serve generated images from database (auth-protected, owner only)
+/**
+ * Une image est visible par son propriétaire, ou si elle sert de portrait au
+ * personnage d'un membre d'une campagne que le demandeur partage avec lui.
+ */
+async function canSeeImage(imageId: number, ownerId: number, userId: number) {
+  if (ownerId === userId) return true;
+  const mine = db
+    .select({ campaignId: campaignMembers.campaignId })
+    .from(campaignMembers)
+    .where(eq(campaignMembers.userId, userId));
+  const [shared] = await db
+    .select({ id: campaignMembers.id })
+    .from(campaignMembers)
+    .innerJoin(characters, eq(characters.id, campaignMembers.characterId))
+    .where(and(eq(characters.portraitImageId, imageId), inArray(campaignMembers.campaignId, mine)))
+    .limit(1);
+  return Boolean(shared);
+}
+
+// Serve generated images from database (owner, or campaign mate's portrait)
 app.get("/api/images/:id", requireAuth, async (req, res) => {
   const id = Number(req.params.id);
   const userId = (req as AuthRequest).userId;
@@ -76,14 +96,45 @@ app.get("/api/images/:id", requireAuth, async (req, res) => {
   const [row] = await db
     .select({ data: generatedImages.data, mimeType: generatedImages.mimeType, userId: generatedImages.userId })
     .from(generatedImages)
-    .where(and(eq(generatedImages.id, id), eq(generatedImages.userId, userId)));
-  if (!row) {
+    .where(eq(generatedImages.id, id));
+  if (!row || !(await canSeeImage(id, row.userId, userId))) {
     res.status(404).json({ error: "Image not found" });
     return;
   }
   const buffer = Buffer.from(row.data, "base64");
   res.setHeader("Content-Type", row.mimeType);
   res.setHeader("Cache-Control", "private, max-age=604800, immutable");
+  res.setHeader("Content-Length", buffer.length);
+  res.end(buffer);
+});
+
+/**
+ * Avatar d'un utilisateur, servi en binaire.
+ * L'avatar peut changer sous la même URL : pas de cache "immutable", mais un
+ * ETag revalidé à chaque fois (304 vide si inchangé, jamais de version périmée).
+ */
+app.get("/api/users/:id/avatar", requireAuth, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id) || id <= 0) {
+    res.status(400).json({ error: "Invalid user ID" });
+    return;
+  }
+  const [row] = await db.select({ avatarUrl: users.avatarUrl }).from(users).where(eq(users.id, id));
+  const parsed = row?.avatarUrl?.match(/^data:([^;]+);base64,(.+)$/s);
+  if (!parsed) {
+    res.status(404).json({ error: "Avatar not found" });
+    return;
+  }
+  const [, mimeType, data] = parsed;
+  const etag = `"${createHash("sha1").update(data).digest("base64url")}"`;
+  res.setHeader("Cache-Control", "private, max-age=0, must-revalidate");
+  res.setHeader("ETag", etag);
+  if (req.headers["if-none-match"] === etag) {
+    res.status(304).end();
+    return;
+  }
+  const buffer = Buffer.from(data, "base64");
+  res.setHeader("Content-Type", mimeType);
   res.setHeader("Content-Length", buffer.length);
   res.end(buffer);
 });
