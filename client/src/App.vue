@@ -8,6 +8,8 @@ import AppToast from "./components/ui/AppToast.vue";
 import DiceBar from "./components/DiceBar.vue";
 import RollLogDrawer from "./components/roll-log/RollLogDrawer.vue";
 import Dice3DOverlay from "./components/dice3d/Dice3DOverlay.vue";
+import CampfireOverlay from "./components/campfire/CampfireOverlay.vue";
+import RestSummaryModal from "./components/campfire/RestSummaryModal.vue";
 import CriticalMomentOverlay from "./components/CriticalMomentOverlay.vue";
 import { user, authReady } from "./composables/useAuth";
 import { useActiveCombat, refreshActiveCombat } from "./composables/useActiveCombat";
@@ -166,6 +168,8 @@ if (savedStyle) {
     <RollLogDrawer />
     <Dice3DOverlay />
     <CriticalMomentOverlay />
+    <CampfireOverlay />
+    <RestSummaryModal />
     <AppToast />
   </div>
 </template>

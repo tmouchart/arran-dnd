@@ -4,7 +4,8 @@ import { db } from '../db/index.js'
 import { campaigns, campaignMembers, characters, users, encounterTemplates, encounterMonsters, combats, rollEvents } from '../db/schema.js'
 import { requireAuth, type AuthRequest } from '../auth/middleware.js'
 import { avatarKind, toAvatarLink } from '../avatarUrl.js'
-import { broadcastCampaignRoll, getClientsForCampaign, type SseClient } from '../campaigns/sseStore.js'
+import { broadcastCampaignEvent, broadcastCampaignRoll, getClientsForCampaign, type SseClient } from '../campaigns/sseStore.js'
+import { applyRest, isRestKind, restDelta, type RestBroadcast } from '../campaigns/rest.js'
 
 const router = Router()
 router.use(requireAuth)
@@ -725,6 +726,65 @@ router.get('/:id/rolls', async (req, res) => {
     .limit(200)
 
   res.json(rows.reverse())
+})
+
+// ── Repos partagé ───────────────────────────────────────────────────────────
+
+// POST /api/campaigns/:id/rest — le MJ fait dormir tout le groupe (MJ only)
+router.post('/:id/rest', async (req, res) => {
+  const userId = (req as unknown as AuthRequest).userId
+  const campaignId = Number(req.params.id)
+
+  const check = await verifyMember(campaignId, userId)
+  if (check.status !== 'ok') { res.status(403).json({ error: 'Non autorisé' }); return }
+  if (userId !== check.gmUserId) { res.status(403).json({ error: 'Réservé au MJ' }); return }
+
+  const { kind } = req.body as { kind?: unknown }
+  if (!isRestKind(kind)) { res.status(400).json({ error: 'Type de repos inconnu' }); return }
+
+  // Les fiches des membres — le MJ n'a pas forcément de personnage.
+  const rows = await db
+    .select({
+      userId: campaignMembers.userId,
+      id: characters.id,
+      name: characters.name,
+      hpCurrent: characters.hpCurrent,
+      hpMax: characters.hpMax,
+      mpCurrent: characters.mpCurrent,
+      mpMax: characters.mpMax,
+      prCurrent: characters.prCurrent,
+      affaibli: characters.affaibli,
+    })
+    .from(campaignMembers)
+    .innerJoin(characters, eq(characters.id, campaignMembers.characterId))
+    .where(eq(campaignMembers.campaignId, campaignId))
+
+  const deltas: RestBroadcast['deltas'] = []
+  for (const row of rows) {
+    const before = {
+      hpCurrent: row.hpCurrent, hpMax: row.hpMax,
+      mpCurrent: row.mpCurrent, mpMax: row.mpMax,
+      prCurrent: row.prCurrent, affaibli: row.affaibli,
+    }
+    const after = applyRest(before, kind)
+    const delta = restDelta(before, after)
+    deltas.push({ userId: row.userId, characterName: row.name, delta, after })
+    if (Object.keys(delta).length === 0 && after.affaibli === row.affaibli) continue
+    await db
+      .update(characters)
+      .set({
+        hpCurrent: after.hpCurrent,
+        mpCurrent: after.mpCurrent,
+        prCurrent: after.prCurrent,
+        affaibli: after.affaibli,
+      })
+      .where(eq(characters.id, row.id))
+  }
+
+  const event: RestBroadcast = { kind, deltas }
+  broadcastCampaignEvent(campaignId, 'rest', event)
+  console.log(`[campaign ${campaignId}] repos ${kind} sur ${rows.length} personnage(s)`)
+  res.json(event)
 })
 
 // GET /api/campaigns/:id/events — flux SSE des jets de la campagne

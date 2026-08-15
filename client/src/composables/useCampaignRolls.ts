@@ -1,6 +1,7 @@
 import { ref } from 'vue'
-import { fetchCampaignRolls, type RollEvent } from '../api/campaigns'
+import { fetchCampaignRolls, type RestEvent, type RollEvent } from '../api/campaigns'
 import { user } from './useAuth'
+import { receiveRest } from './useRest'
 import { celebrate } from './useCriticalMoment'
 import { rollOutcome, type RollOutcome } from '../utils/rollOutcome'
 
@@ -87,6 +88,14 @@ function connect(campaignId: number): void {
 
   // Jets que je n'ai pas le droit de voir (monstres du MJ) : le serveur n'envoie
   // que l'issue et le nom. La table vibre, personne n'apprend le chiffre.
+  // Le MJ a fait dormir le groupe : feu de camp pour tout le monde.
+  eventSource.addEventListener('rest', (e: MessageEvent) => {
+    try {
+      receiveRest(JSON.parse(e.data as string) as RestEvent)
+      resetIdleTimer()
+    } catch { /* ignore */ }
+  })
+
   eventSource.addEventListener('critical', (e: MessageEvent) => {
     try {
       const moment = JSON.parse(e.data as string) as { outcome: RollOutcome; actorName: string }

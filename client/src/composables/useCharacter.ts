@@ -368,6 +368,25 @@ export function applyServerHp(hpCurrent: number): void {
   lastSavedPayload = JSON.stringify(toServerPayload(character.value))
 }
 
+/**
+ * Applique un repos que le serveur a DÉJÀ écrit en base, sans déclencher la
+ * sauvegarde auto — même raison que `applyServerHp` : une fiche locale périmée
+ * renverrait tout le reste par-dessus.
+ */
+export function applyServerRest(state: {
+  hpCurrent: number
+  mpCurrent: number
+  prCurrent: number
+  affaibli: boolean
+}): void {
+  const c = character.value
+  c.hpCurrent = state.hpCurrent
+  c.mpCurrent = state.mpCurrent
+  c.prCurrent = state.prCurrent
+  c.affaibli = state.affaibli
+  lastSavedPayload = JSON.stringify(toServerPayload(c))
+}
+
 export async function loadCharacter(id?: number): Promise<void> {
   // Annule tout debounce en cours et remet les états propres
   if (debounceTimer) { clearTimeout(debounceTimer); debounceTimer = null }

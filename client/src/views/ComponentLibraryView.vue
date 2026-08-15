@@ -16,6 +16,7 @@ import AppModal from '../components/ui/AppModal.vue'
 import AppBottomSheet from '../components/ui/AppBottomSheet.vue'
 import { showToast } from '../composables/useToast'
 import { dice, revealAfterDice } from '../composables/useDice3D'
+import { previewRest } from '../composables/useRest'
 import {
   celebrate,
   resetCriticalCooldown,
@@ -199,6 +200,18 @@ function forceRoll(value: number) {
         >
           Vibration : {{ criticalVibrationEnabled ? 'on' : 'off' }}
         </AppButton>
+      </div>
+    </AppCard>
+
+    <AppCard title="Feu de camp — repos partagé">
+      <p class="demo-note">
+        Ce que voient tous les joueurs quand le MJ lance un repos. Clic n'importe où
+        pour passer le feu et aller au récap. Les valeurs sont factices : aucune fiche
+        n'est touchée.
+      </p>
+      <div class="demo-row">
+        <AppButton @click="previewRest('long')">🌙 Repos long</AppButton>
+        <AppButton @click="previewRest('complet')">🔥 Repos complet</AppButton>
       </div>
     </AppCard>
 

@@ -222,3 +222,42 @@ export function postCampaignRoll(campaignId: number, roll: RollInput): Promise<R
 export function fetchCampaignRolls(campaignId: number): Promise<RollEvent[]> {
   return request(`/${campaignId}/rolls`)
 }
+
+// ── Repos partagé ───────────────────────────────────────────────────────────
+
+/** Le repos court (1 PR contre des PV) reste une décision de joueur : il n'est pas ici. */
+export type RestKind = 'long' | 'complet'
+
+export interface RestChange {
+  before: number
+  after: number
+}
+
+export interface RestDelta {
+  hp?: RestChange
+  mp?: RestChange
+  pr?: RestChange
+}
+
+export interface RestState {
+  hpCurrent: number
+  hpMax: number
+  mpCurrent: number
+  mpMax: number
+  prCurrent: number
+  affaibli: boolean
+}
+
+export interface RestEvent {
+  kind: RestKind
+  deltas: {
+    userId: number
+    characterName: string
+    delta: RestDelta
+    after: RestState
+  }[]
+}
+
+export function postRest(campaignId: number, kind: RestKind): Promise<RestEvent> {
+  return request(`/${campaignId}/rest`, { method: 'POST', body: JSON.stringify({ kind }) })
+}

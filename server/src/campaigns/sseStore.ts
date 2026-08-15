@@ -16,6 +16,17 @@ export function getClientsForCampaign(campaignId: number): Set<SseClient> {
   return clientsByCampaign.get(campaignId)!
 }
 
+/** Diffuse un évènement à tous les clients de la campagne, sans filtre. */
+export function broadcastCampaignEvent(campaignId: number, name: string, payload: unknown): void {
+  const clients = clientsByCampaign.get(campaignId)
+  if (!clients || clients.size === 0) return
+  const data = JSON.stringify(payload)
+  for (const client of clients) {
+    client.res.write(`event: ${name}\n`)
+    client.res.write(`data: ${data}\n\n`)
+  }
+}
+
 /** Un 20 ou un 1 naturel sur un dé qui compte (d20 toujours, d12 hors jet libre). */
 export function criticalOutcome(event: Record<string, unknown>): 'critical' | 'fumble' | null {
   const damage = event.damage as { critical?: boolean; fumble?: boolean } | null | undefined
