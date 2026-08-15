@@ -21,8 +21,23 @@ const emit = defineEmits<{
 
 const editorRef = ref<HTMLDivElement | null>(null)
 
+/** Place le curseur après le dernier caractère, pour enchaîner l'écriture. */
+function focusEnd() {
+  const el = editorRef.value
+  if (!el) return
+  el.focus()
+  const range = document.createRange()
+  range.selectNodeContents(el)
+  range.collapse(false)
+  const selection = window.getSelection()
+  selection?.removeAllRanges()
+  selection?.addRange(range)
+  el.scrollTop = el.scrollHeight
+}
+
 defineExpose({
   focus: () => editorRef.value?.focus(),
+  focusEnd,
 })
 
 // ── Sources de suggestions ───────────────────────────────────────────────────

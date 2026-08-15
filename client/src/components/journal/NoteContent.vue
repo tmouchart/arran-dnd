@@ -5,17 +5,24 @@ import type { MentionKind } from '../../utils/mentions'
 
 const props = defineProps<{
   content: string
+  /** Rend la zone cliquable pour passer en édition. */
+  editable?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'mention', kind: MentionKind, id: number): void
+  (e: 'edit'): void
 }>()
 
 const html = computed(() => renderNoteHtml(props.content))
 
 function onClick(e: MouseEvent) {
   const link = (e.target as HTMLElement).closest?.('a.mention')
-  if (!link) return
+  if (!link) {
+    // Cliquer n'importe où ailleurs ouvre l'édition — pas de bouton à viser.
+    if (props.editable) emit('edit')
+    return
+  }
   const kind = link.getAttribute('data-kind') as MentionKind | null
   const id = Number(link.getAttribute('data-id'))
   if ((kind === 'codex' || kind === 'membre') && Number.isFinite(id)) {
@@ -25,7 +32,12 @@ function onClick(e: MouseEvent) {
 </script>
 
 <template>
-  <div class="note-render" v-html="html" @click="onClick" />
+  <div
+    class="note-render"
+    :class="{ 'note-render--editable': editable }"
+    v-html="html"
+    @click="onClick"
+  />
 </template>
 
 <style scoped>
@@ -40,6 +52,19 @@ function onClick(e: MouseEvent) {
   font-size: 0.95rem;
   line-height: 1.65;
   overflow-wrap: break-word;
+}
+
+.note-render--editable {
+  cursor: text;
+  transition: border-color 0.15s ease;
+}
+
+/* Le survol n'existe pas au doigt : sur mobile la bordure resterait allumée
+   après un tap. Le clic, lui, marche partout. */
+@media (hover: hover) {
+  .note-render--editable:hover {
+    border-color: var(--accent-strong);
+  }
 }
 
 .note-render :deep(p) {
