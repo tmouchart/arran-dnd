@@ -61,6 +61,6 @@ export interface MentionSource {
 export async function fetchCodexMentions(
   campaignId: number,
   entryId: number,
-): Promise<{ notes: MentionSource[]; pages: MentionSource[] }> {
+): Promise<{ notes: MentionSource[]; pages: MentionSource[]; board: MentionSource | null }> {
   return apiFetch(`/api/campaigns/${campaignId}/codex/${entryId}/mentions`)
 }

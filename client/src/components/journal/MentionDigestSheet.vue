@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { Lock, Users } from 'lucide-vue-next'
+import { BookOpen, Lock, Users } from 'lucide-vue-next'
 import AppBottomSheet from '../ui/AppBottomSheet.vue'
 import AppEmptyState from '../ui/AppEmptyState.vue'
 import { fetchCodexMentions, type MentionSource } from '../../api/codex'
@@ -26,7 +26,10 @@ const loading = ref(false)
 const error = ref(false)
 const myNotes = ref<MentionSource[]>([])
 const pages = ref<MentionSource[]>([])
+const board = ref<MentionSource | null>(null)
 
+// immediate : la sheet est montée avec modelValue déjà à true (v-if côté parent),
+// sans ça le watch ne se déclenche jamais au premier affichage.
 watch(
   () => props.modelValue,
   async (open) => {
@@ -37,12 +40,14 @@ watch(
       const data = await fetchCodexMentions(campaignId.value, props.entryId)
       myNotes.value = data.notes
       pages.value = data.pages
+      board.value = data.board
     } catch {
       error.value = true
     } finally {
       loading.value = false
     }
   },
+  { immediate: true },
 )
 
 function excerpt(source: MentionSource): string {
@@ -58,6 +63,11 @@ function openPage(id: number) {
   emit('update:modelValue', false)
   router.push({ name: 'journal-page', params: { id } })
 }
+
+function openBoard() {
+  emit('update:modelValue', false)
+  router.push({ name: 'journal' })
+}
 </script>
 
 <template>
@@ -68,11 +78,20 @@ function openPage(id: number) {
   >
     <AppEmptyState v-if="loading" variant="loading">Recherche…</AppEmptyState>
     <AppEmptyState v-else-if="error" variant="error">Impossible de charger les mentions.</AppEmptyState>
-    <AppEmptyState v-else-if="!myNotes.length && !pages.length">
+    <AppEmptyState v-else-if="!myNotes.length && !pages.length && !board">
       Personne n'a encore mentionné cette fiche.
     </AppEmptyState>
 
     <div v-else class="digest">
+      <template v-if="board">
+        <h4 class="digest-section"><BookOpen :size="13" /> Journal de bord</h4>
+        <button type="button" class="digest-item" @click="openBoard()">
+          <span class="digest-title">{{ board.title }}</span>
+          <span class="digest-excerpt">{{ excerpt(board) }}</span>
+          <span class="digest-meta">{{ relativeTime(board.updatedAt) }}</span>
+        </button>
+      </template>
+
       <template v-if="myNotes.length">
         <h4 class="digest-section"><Lock :size="13" /> Mes notes privées</h4>
         <button

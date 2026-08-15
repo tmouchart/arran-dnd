@@ -1,7 +1,7 @@
 import { and, desc, eq, like } from 'drizzle-orm'
 import { Router } from 'express'
 import { db } from '../db/index.js'
-import { campaigns, campaignMembers, codexEntries, journalPages, notes } from '../db/schema.js'
+import { campaigns, campaignMembers, codexEntries, journalCompagnie, journalPages, notes } from '../db/schema.js'
 import { requireAuth, type AuthRequest } from '../auth/middleware.js'
 import { saveWithRevision } from '../revisions/service.js'
 
@@ -140,7 +140,7 @@ router.get('/:id/codex/:entryId/mentions', async (req, res) => {
 
   // Le token stocké est "@[Nom](codex:ID)" — les parenthèses évitent de matcher codex:12 dans codex:123.
   const pattern = `%(codex:${entryId})%`
-  const [myNotes, pages] = await Promise.all([
+  const [myNotes, pages, boardRows] = await Promise.all([
     db
       .select({ id: notes.id, title: notes.title, content: notes.content, updatedAt: notes.updatedAt })
       .from(notes)
@@ -151,8 +151,15 @@ router.get('/:id/codex/:entryId/mentions', async (req, res) => {
       .from(journalPages)
       .where(and(eq(journalPages.type, 'text'), like(journalPages.content, pattern)))
       .orderBy(desc(journalPages.updatedAt)),
+    db
+      .select({ content: journalCompagnie.content, updatedAt: journalCompagnie.updatedAt })
+      .from(journalCompagnie)
+      .where(and(eq(journalCompagnie.id, 1), like(journalCompagnie.content, pattern))),
   ])
-  res.json({ notes: myNotes, pages })
+  const board = boardRows[0]
+    ? { id: 1, title: 'Journal de bord', content: boardRows[0].content, updatedAt: boardRows[0].updatedAt }
+    : null
+  res.json({ notes: myNotes, pages, board })
 })
 
 // DELETE /:id/codex/:entryId — auteur ou MJ uniquement
