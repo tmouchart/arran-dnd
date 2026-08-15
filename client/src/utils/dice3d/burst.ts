@@ -17,7 +17,7 @@ export interface Spark {
 }
 
 /** Ce qui retient les étincelles vers le bas. */
-const GRAVITY = 3.2
+const GRAVITY = 4.5
 
 export function createSparks(count: number, random: () => number = Math.random): Spark[] {
   return Array.from({ length: count }, () => {
