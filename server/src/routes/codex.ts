@@ -3,6 +3,7 @@ import { Router } from 'express'
 import { db } from '../db/index.js'
 import { campaigns, campaignMembers, codexEntries, journalPages, notes } from '../db/schema.js'
 import { requireAuth, type AuthRequest } from '../auth/middleware.js'
+import { saveWithRevision } from '../revisions/service.js'
 
 const CODEX_TYPES = ['personnage', 'lieu', 'autre'] as const
 type CodexType = (typeof CODEX_TYPES)[number]
@@ -82,23 +83,40 @@ router.put('/:id/codex/:entryId', async (req, res) => {
   if (check.status === 'not_found') { res.status(404).json({ error: 'Campagne introuvable' }); return }
   if (check.status === 'forbidden') { res.status(403).json({ error: 'Réservé aux membres de la campagne' }); return }
 
-  const updates: Record<string, unknown> = { updatedAt: new Date() }
-  if (name !== undefined) {
-    if (!name.trim()) { res.status(400).json({ error: 'Nom requis' }); return }
-    updates.name = name.trim()
+  if (name !== undefined && !name.trim()) { res.status(400).json({ error: 'Nom requis' }); return }
+  if (type !== undefined && !isCodexType(type)) {
+    res.status(400).json({ error: 'Type invalide (personnage, lieu ou autre)' }); return
   }
-  if (type !== undefined) {
-    if (!isCodexType(type)) { res.status(400).json({ error: 'Type invalide (personnage, lieu ou autre)' }); return }
-    updates.type = type
-  }
-  if (description !== undefined) updates.description = description
 
-  const [entry] = await db
-    .update(codexEntries)
-    .set(updates)
+  const [current] = await db
+    .select()
+    .from(codexEntries)
     .where(and(eq(codexEntries.id, entryId), eq(codexEntries.campaignId, campaignId)))
-    .returning()
-  if (!entry) { res.status(404).json({ error: 'Fiche introuvable' }); return }
+  if (!current) { res.status(404).json({ error: 'Fiche introuvable' }); return }
+
+  // Mise à jour partielle → on complète avec l'existant pour l'historique.
+  const result = await saveWithRevision({
+    type: 'codex_entry',
+    id: entryId,
+    snapshot: {
+      name: name !== undefined ? name.trim() : current.name,
+      type: type ?? current.type,
+      description: description ?? current.description,
+    },
+    userId,
+    expectedVersion: (req.body as { expectedVersion?: number }).expectedVersion ?? null,
+  })
+  if (result.status === 'conflict') {
+    res.status(409).json({
+      error: 'La fiche a été modifiée entre-temps.',
+      currentVersion: result.currentVersion,
+      ...result.snapshot,
+    })
+    return
+  }
+  if (result.status !== 'ok') { res.status(404).json({ error: 'Fiche introuvable' }); return }
+
+  const [entry] = await db.select().from(codexEntries).where(eq(codexEntries.id, entryId))
   res.json(entry)
 })
 

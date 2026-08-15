@@ -18,6 +18,7 @@ import campaignsRouter from "./routes/campaigns.js";
 import combatsRouter, { activeCombatRouter } from "./routes/combats.js";
 import codexRouter from "./routes/codex.js";
 import notesRouter from "./routes/notes.js";
+import revisionsRouter from "./routes/revisions.js";
 import ttsRouter from "./routes/tts.js";
 import { requireAuth, type AuthRequest } from "./auth/middleware.js";
 import { loadCoreIndex, loadTopic } from "./knowledge/loadKnowledge.js";
@@ -61,6 +62,7 @@ app.use("/api/campaigns", combatsRouter);
 app.use("/api/combats", activeCombatRouter);
 app.use("/api/campaigns", codexRouter);
 app.use("/api/notes", notesRouter);
+app.use("/api/revisions", revisionsRouter);
 app.use("/api/tts", ttsRouter);
 
 // Serve generated images from database (auth-protected, owner only)

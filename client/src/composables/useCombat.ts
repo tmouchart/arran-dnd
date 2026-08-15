@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
 import { user } from './useAuth'
-import { character } from './useCharacter'
+import { applyServerHp } from './useCharacter'
 import * as api from '../api/combats'
 import type { CombatState, CombatParticipant } from '../api/combats'
 import { setActiveCombat, clearActiveCombat } from './useActiveCombat'
@@ -91,8 +91,8 @@ export function useCombat() {
           const mine = state.participants.find(
             (p) => p.kind === 'player' && p.userId === user.value!.id,
           )
-          if (mine && mine.hpCurrent != null && character.value.hpCurrent !== mine.hpCurrent) {
-            character.value.hpCurrent = mine.hpCurrent
+          if (mine && mine.hpCurrent != null) {
+            applyServerHp(mine.hpCurrent)
           }
         }
         if (state.status === 'active') {

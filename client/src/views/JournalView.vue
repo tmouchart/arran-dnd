@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from "vue";
 import { useRoute } from "vue-router";
-import { BookText, Users, StickyNote, Brush, BookUser, Pencil, BookPlus } from "lucide-vue-next";
+import { BookText, Users, StickyNote, Brush, BookUser, Pencil, BookPlus, History } from "lucide-vue-next";
 import AppPageLayout from "../components/ui/AppPageLayout.vue";
 import AppPageHead from "../components/ui/AppPageHead.vue";
 import AppButton from "../components/ui/AppButton.vue";
@@ -18,6 +18,9 @@ import {
   createPage,
 } from "../api/journal";
 import { useJournalLock } from "../composables/useJournalLock";
+import { useAutosave } from "../composables/useAutosave";
+import JournalHistorySheet from "../components/journal/JournalHistorySheet.vue";
+import AppIconBtn from "../components/ui/AppIconBtn.vue";
 import { showToast } from "../composables/useToast";
 import { relativeTime } from "../utils/relativeTime";
 
@@ -41,12 +44,12 @@ const TABS = [
 const compagnieContent = ref("");
 const compagnieLastEditedBy = ref<string | null>(null);
 const compagnieUpdatedAt = ref<string | null>(null);
-const compagnieSaveStatus = ref<"idle" | "saving" | "saved" | "error">("idle");
-let compagnieDebounce: ReturnType<typeof setTimeout> | null = null;
+const showCompagnieHistory = ref(false);
 
 const {
   lock: compagnieLock,
   content: compagnieSseContent,
+  version: compagnieVersion,
   isLockedByMe: compagnieLockedByMe,
   isLockedByOther: compagnieLockedByOther,
   lockedByName: compagnieLockedByName,
@@ -66,19 +69,26 @@ watch(compagnieSseContent, (v) => {
   }
 });
 
-function scheduleCompagnieSave(content: string) {
-  if (compagnieDebounce) clearTimeout(compagnieDebounce);
-  compagnieSaveStatus.value = "saving";
-  compagnieDebounce = setTimeout(async () => {
-    try {
-      await saveJournalCompagnie(content);
-      compagnieSaveStatus.value = "saved";
-      setTimeout(() => { compagnieSaveStatus.value = "idle"; }, 2000);
-    } catch {
-      compagnieSaveStatus.value = "error";
+const {
+  status: compagnieSaveStatus,
+  hasPending: compagniePending,
+  schedule: scheduleCompagnieSave,
+  flush: flushCompagnieSave,
+} = useAutosave<string>(async (content) => {
+  try {
+    compagnieVersion.value = await saveJournalCompagnie(content, compagnieVersion.value);
+  } catch (e: any) {
+    // 409 : quelqu'un a écrit entre-temps. On se resynchronise sur la version
+    // du serveur au lieu de l'écraser, et on prévient.
+    if (e?.status === 409) {
+      compagnieVersion.value = e.body?.currentVersion ?? null;
+      compagnieContent.value = e.body?.content ?? compagnieContent.value;
+      showToast("Le journal a été modifié ailleurs — contenu rechargé.");
+      return;
     }
-  }, 800);
-}
+    throw e;
+  }
+});
 
 watch(compagnieContent, (v) => {
   if (!loading.value && compagnieLockedByMe.value) scheduleCompagnieSave(v);
@@ -94,13 +104,15 @@ async function onCompagnieFocus() {
 
 async function onCompagnieBlur() {
   if (!compagnieLockedByMe.value) return;
-  // Flush pending save before releasing
-  if (compagnieDebounce) {
-    clearTimeout(compagnieDebounce);
-    compagnieDebounce = null;
-    try { await saveJournalCompagnie(compagnieContent.value); } catch { /* best effort */ }
-  }
+  await flushCompagnieSave();
+  // Tant que du texte n'est pas parti, on garde le verrou : le relâcher
+  // laisserait quelqu'un écrire par-dessus ce qui n'est pas encore sauvegardé.
+  if (compagniePending.value) return;
   await releaseCompagnie();
+}
+
+async function onCompagnieHistoryRestored() {
+  await load();
 }
 
 // ── Save as page ─────────────────────────────────────────────────────────────
@@ -135,6 +147,7 @@ async function load() {
   try {
     const compagnie = await fetchJournalCompagnie();
     compagnieContent.value = compagnie.content;
+    compagnieVersion.value = compagnie.version;
     compagnieLastEditedBy.value = compagnie.lastEditedBy;
     compagnieUpdatedAt.value = compagnie.updatedAt;
     if (compagnie.lock) compagnieLock.value = compagnie.lock;
@@ -160,10 +173,12 @@ onMounted(load);
           <template v-if="activeTab === 'compagnie'">
             <span v-if="compagnieSaveStatus === 'saving'" class="save-indicator saving">Sauvegarde…</span>
             <span v-else-if="compagnieSaveStatus === 'saved'" class="save-indicator saved">Sauvegardé ✓</span>
-            <span v-else-if="compagnieSaveStatus === 'error'" class="save-indicator error">Erreur</span>
             <span v-else-if="compagnieLastEditedBy && compagnieUpdatedAt" class="last-edit-info">
               par {{ compagnieLastEditedBy }} · {{ relativeTime(compagnieUpdatedAt) }}
             </span>
+            <AppIconBtn title="Historique" @click="showCompagnieHistory = true">
+              <History :size="18" />
+            </AppIconBtn>
           </template>
         </template>
       </AppPageHead>
@@ -195,6 +210,13 @@ onMounted(load);
           </AppButton>
         </div>
 
+        <!-- Une sauvegarde bloquée doit se voir : c'est ce silence qui a fait
+             perdre du texte. -->
+        <div v-if="compagnieSaveStatus === 'error'" class="save-alert">
+          Sauvegarde impossible pour l'instant — ton texte est conservé et sera
+          renvoyé automatiquement. Ne ferme pas la page.
+        </div>
+
         <div class="editor-wrapper">
           <MentionTextarea
             v-model="compagnieContent"
@@ -204,6 +226,13 @@ onMounted(load);
             @blur="onCompagnieBlur"
           />
         </div>
+
+        <JournalHistorySheet
+          v-model="showCompagnieHistory"
+          type="journal_compagnie"
+          :entity-id="1"
+          @restored="onCompagnieHistoryRestored"
+        />
 
         <!-- Save as page sheet -->
         <AppBottomSheet v-model="showSaveAsPage" title="Sauvegarder en page">
@@ -305,5 +334,16 @@ onMounted(load);
 }
 .save-indicator.saving { color: var(--muted); }
 .save-indicator.saved  { color: var(--accent-strong); }
-.save-indicator.error  { color: #c95f56; }
+
+.save-alert {
+  flex-shrink: 0;
+  margin-bottom: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  color: var(--danger);
+  font-size: 0.84rem;
+  font-weight: 600;
+}
 </style>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { ArrowLeft, Lock, Send, Pencil, BookOpen } from "lucide-vue-next";
+import { ArrowLeft, Lock, Send, BookOpen, History } from "lucide-vue-next";
 import AppPageLayout from "../components/ui/AppPageLayout.vue";
 import AppPageHead from "../components/ui/AppPageHead.vue";
 import AppButton from "../components/ui/AppButton.vue";
@@ -14,6 +14,8 @@ import MentionSheet from "../components/journal/MentionSheet.vue";
 import { fetchNotes, updateNote, deleteNote, createNote, type Note } from "../api/notes";
 import { createPage, deletePage } from "../api/journal";
 import { useJournalLists } from "../composables/useJournalLists";
+import { useAutosave } from "../composables/useAutosave";
+import JournalHistorySheet from "../components/journal/JournalHistorySheet.vue";
 import { showToast } from "../composables/useToast";
 import type { MentionKind } from "../utils/mentions";
 
@@ -27,29 +29,19 @@ const title = ref("");
 const content = ref("");
 const loading = ref(true);
 const error = ref<string | null>(null);
-const saveStatus = ref<"idle" | "saving" | "saved" | "error">("idle");
-let debounce: ReturnType<typeof setTimeout> | null = null;
+const showHistory = ref(false);
 
-function scheduleSave() {
-  if (debounce) clearTimeout(debounce);
-  saveStatus.value = "saving";
-  debounce = setTimeout(saveNow, 800);
-}
-
-async function saveNow() {
-  if (debounce) {
-    clearTimeout(debounce);
-    debounce = null;
-  }
+const { status: saveStatus, schedule, flush: saveNow } = useAutosave<{
+  title: string;
+  content: string;
+}>(async (value) => {
   // note.value.id, pas noteId : au flush de depart de page, la route a deja change
   if (!note.value) return;
-  try {
-    await updateNote(note.value.id, { title: title.value, content: content.value });
-    saveStatus.value = "saved";
-    setTimeout(() => { saveStatus.value = "idle"; }, 2000);
-  } catch {
-    saveStatus.value = "error";
-  }
+  await updateNote(note.value.id, value);
+});
+
+function scheduleSave() {
+  schedule({ title: title.value, content: content.value });
 }
 
 watch([title, content], () => {
@@ -67,12 +59,12 @@ const editorRef = ref<InstanceType<typeof MentionTextarea> | null>(null);
 
 function startEditing() {
   editing.value = true;
-  nextTick(() => editorRef.value?.focus());
+  nextTick(() => editorRef.value?.focusEnd());
 }
 
 function stopEditing() {
   editing.value = false;
-  if (debounce) saveNow();
+  void saveNow();
 }
 
 // ── Mention cliquée ──────────────────────────────────────────────────────────
@@ -125,7 +117,8 @@ async function handlePublish() {
 
 // ── Chargement ───────────────────────────────────────────────────────────────
 
-onMounted(async () => {
+async function load() {
+  loading.value = true;
   try {
     const notes = await fetchNotes();
     const found = notes.find((n) => n.id === noteId.value);
@@ -143,11 +136,13 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
-});
+}
+
+onMounted(load);
 
 onBeforeUnmount(() => {
   // Flush pending save when leaving
-  if (debounce && !publishing.value) saveNow();
+  if (!publishing.value) void saveNow();
 });
 </script>
 
@@ -164,16 +159,11 @@ onBeforeUnmount(() => {
           <span v-if="saveStatus === 'saving'" class="save-indicator saving">Sauvegarde…</span>
           <span v-else-if="saveStatus === 'saved'" class="save-indicator saved">Sauvegardé ✓</span>
           <span v-else-if="saveStatus === 'error'" class="save-indicator error">Erreur</span>
-          <AppIconBtn
-            v-if="note && !editing"
-            :size="34"
-            title="Modifier"
-            @click="startEditing"
-          >
-            <Pencil :size="16" />
+          <AppIconBtn v-if="note" :size="34" title="Historique" @click="showHistory = true">
+            <History :size="16" />
           </AppIconBtn>
           <AppIconBtn
-            v-else-if="note"
+            v-if="note && editing"
             :size="34"
             title="Mode lecture"
             @click="stopEditing"
@@ -208,12 +198,28 @@ onBeforeUnmount(() => {
       </template>
       <template v-else>
         <h2 class="note-read-title" @click="startEditing">{{ title.trim() || "Sans titre" }}</h2>
-        <NoteContent v-if="content.trim()" :content="content" @mention="onMention" />
-        <AppEmptyState v-else>Note vide. Appuie sur le crayon pour écrire.</AppEmptyState>
+        <NoteContent
+          v-if="content.trim()"
+          :content="content"
+          :editable="true"
+          @mention="onMention"
+          @edit="startEditing"
+        />
+        <button v-else type="button" class="empty-editor" @click="startEditing">
+          Note vide. Touche ici pour écrire.
+        </button>
       </template>
     </div>
 
     <MentionSheet v-model="showMention" :kind="mentionKind" :id="mentionId" />
+
+    <JournalHistorySheet
+      v-if="note"
+      v-model="showHistory"
+      type="note"
+      :entity-id="note.id"
+      @restored="load"
+    />
   </AppPageLayout>
 </template>
 
@@ -241,6 +247,27 @@ onBeforeUnmount(() => {
   font-size: 1.25rem;
   font-family: var(--title-font);
   color: var(--accent-strong);
+  cursor: text;
+}
+
+.empty-editor {
+  flex: 1;
+  min-height: 0;
+  padding: 1rem;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: text;
+}
+
+@media (hover: hover) {
+  .empty-editor:hover {
+    border-color: var(--accent-strong);
+  }
 }
 
 .save-indicator {

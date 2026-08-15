@@ -354,6 +354,20 @@ function applyLoaded(row: ServerCharacter): void {
   lastSavedPayload = JSON.stringify(toServerPayload(character.value))
 }
 
+/**
+ * Applique des PV qui viennent DÉJÀ du serveur (flux SSE du combat) sans
+ * déclencher la sauvegarde auto. Sans ça, chaque coup encaissé faisait renvoyer
+ * la fiche entière par le navigateur du joueur — et une fiche locale périmée
+ * écrasait alors tout le reste.
+ */
+export function applyServerHp(hpCurrent: number): void {
+  if (character.value.hpCurrent === hpCurrent) return
+  character.value.hpCurrent = hpCurrent
+  // Le serveur a déjà cette valeur : on aligne le témoin pour que le watcher
+  // ne voie aucun changement à sauvegarder.
+  lastSavedPayload = JSON.stringify(toServerPayload(character.value))
+}
+
 export async function loadCharacter(id?: number): Promise<void> {
   // Annule tout debounce en cours et remet les états propres
   if (debounceTimer) { clearTimeout(debounceTimer); debounceTimer = null }

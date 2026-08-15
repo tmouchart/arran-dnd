@@ -11,8 +11,8 @@ import {
   holdsLock,
   registerSseClient,
   removeSseClient,
-  broadcastContentUpdate,
 } from '../journal/locks.js'
+import { saveWithRevision } from '../revisions/service.js'
 
 const router = Router()
 router.use(requireAuth)
@@ -61,6 +61,7 @@ router.get('/compagnie', async (_req, res) => {
   const lastEditedBy = await characterNameByUserId(row?.updatedByUserId ?? null)
   res.json({
     content: row?.content ?? '',
+    version: row?.version ?? 1,
     lock: lock ? { userId: lock.userId, characterName: lock.characterName } : null,
     lastEditedBy,
     updatedAt: row?.updatedAt?.toISOString() ?? null,
@@ -73,14 +74,27 @@ router.put('/compagnie', async (req, res) => {
     res.status(423).json({ error: 'Vous ne détenez pas le verrou.' })
     return
   }
-  const { content } = req.body as { content: string }
-  const charName = await activeCharacterName(userId)
-  await db.update(journalCompagnie)
-    .set({ content: content ?? '', updatedByUserId: userId, updatedAt: new Date() })
-    .where(eq(journalCompagnie.id, 1))
+  const { content, expectedVersion } = req.body as { content: string; expectedVersion?: number }
   renewLock('compagnie', userId)
-  broadcastContentUpdate('compagnie', content, { userId, characterName: charName })
-  res.json({ ok: true })
+
+  const result = await saveWithRevision({
+    type: 'journal_compagnie',
+    id: 1,
+    snapshot: { content: content ?? '' },
+    userId,
+    expectedVersion: expectedVersion ?? null,
+    skipLockCheck: true, // déjà vérifié juste au-dessus
+  })
+  if (result.status === 'conflict') {
+    res.status(409).json({
+      error: 'Le journal a été modifié entre-temps.',
+      currentVersion: result.currentVersion,
+      content: result.snapshot.content ?? '',
+    })
+    return
+  }
+  if (result.status !== 'ok') { res.status(404).json({ error: 'Journal introuvable' }); return }
+  res.json({ ok: true, version: result.version })
 })
 
 router.post('/compagnie/lock', async (req, res) => {
@@ -100,7 +114,7 @@ router.delete('/compagnie/lock', (req, res) => {
   res.json({ ok: true })
 })
 
-router.get('/compagnie/events', (req, res) => {
+router.get('/compagnie/events', async (req, res) => {
   const { userId } = auth(req)
   res.setHeader('Content-Type', 'text/event-stream; charset=utf-8')
   res.setHeader('Cache-Control', 'no-cache, no-transform')
@@ -110,15 +124,29 @@ router.get('/compagnie/events', (req, res) => {
   const client = { res, userId }
   registerSseClient('compagnie', client)
 
+  // Heartbeat : le proxy Fly coupe une connexion inactive (~60s). Sans ça le flux
+  // meurt en silence et l'éditeur se retrouve désynchronisé sans le savoir.
+  const heartbeat = setInterval(() => { res.write(': ping\n\n') }, 25000)
+
   const lock = getActiveLock('compagnie')
   if (lock) {
     res.write(`event: journal-locked\n`)
     res.write(`data: ${JSON.stringify({ userId: lock.userId, characterName: lock.characterName })}\n\n`)
   }
 
+  // État initial : sans ça, un client qui se reconnecte (veille du téléphone,
+  // coupure réseau) garde indéfiniment un contenu périmé et l'écrase à la
+  // prochaine frappe.
+  const [row] = await db.select().from(journalCompagnie).where(eq(journalCompagnie.id, 1))
+  res.write(`event: journal-snapshot\n`)
+  res.write(`data: ${JSON.stringify({ content: row?.content ?? '', version: row?.version ?? 1 })}\n\n`)
+
   req.on('close', () => {
+    clearInterval(heartbeat)
     removeSseClient('compagnie', client)
-    releaseLock('compagnie', userId)
+    // Le verrou n'est PAS libéré ici : la mort du flux est le cas normal (proxy,
+    // veille), pas un abandon. Le TTL de 60s s'en charge, et le client le
+    // renouvelle tant que l'onglet est actif.
   })
 })
 
@@ -181,24 +209,42 @@ router.put('/pages/:id', async (req, res) => {
   const resourceKey = `page:${id}`
 
   // Drawing pages don't require locks (collaborative drawing)
-  const [pageRow] = await db.select({ type: journalPages.type }).from(journalPages).where(eq(journalPages.id, id))
+  const [pageRow] = await db.select().from(journalPages).where(eq(journalPages.id, id))
   if (!pageRow) { res.status(404).json({ error: 'Page introuvable' }); return }
   if (pageRow.type !== 'drawing' && !holdsLock(resourceKey, userId)) {
     res.status(423).json({ error: 'Vous ne détenez pas le verrou.' })
     return
   }
 
-  const { title, content } = req.body as { title?: string; content?: string }
-  const updates: Record<string, unknown> = { updatedByUserId: userId, updatedAt: new Date() }
-  if (title !== undefined) updates.title = title
-  if (content !== undefined) updates.content = content
-  await db.update(journalPages).set(updates).where(eq(journalPages.id, id))
-  renewLock(resourceKey, userId)
-  if (content !== undefined) {
-    const charName = await activeCharacterName(userId)
-    broadcastContentUpdate(resourceKey, content, { userId, characterName: charName })
+  const { title, content, expectedVersion } = req.body as {
+    title?: string; content?: string; expectedVersion?: number
   }
-  res.json({ ok: true })
+  renewLock(resourceKey, userId)
+
+  // Le PUT accepte des mises à jour partielles → on complète avec l'existant
+  // pour obtenir le snapshot complet attendu par l'historique.
+  const result = await saveWithRevision({
+    type: 'journal_page',
+    id,
+    snapshot: {
+      title: title ?? pageRow.title,
+      content: content ?? pageRow.content,
+    },
+    userId,
+    expectedVersion: expectedVersion ?? null,
+    skipLockCheck: true,
+  })
+  if (result.status === 'conflict') {
+    res.status(409).json({
+      error: 'La page a été modifiée entre-temps.',
+      currentVersion: result.currentVersion,
+      content: result.snapshot.content ?? '',
+      title: result.snapshot.title ?? '',
+    })
+    return
+  }
+  if (result.status !== 'ok') { res.status(404).json({ error: 'Page introuvable' }); return }
+  res.json({ ok: true, version: result.version })
 })
 
 router.delete('/pages/:id', async (req, res) => {
@@ -237,9 +283,10 @@ router.delete('/pages/:id/lock', (req, res) => {
   res.json({ ok: true })
 })
 
-router.get('/pages/:id/events', (req, res) => {
+router.get('/pages/:id/events', async (req, res) => {
   const { userId } = auth(req)
-  const resourceKey = `page:${Number(req.params.id)}`
+  const pageId = Number(req.params.id)
+  const resourceKey = `page:${pageId}`
 
   res.setHeader('Content-Type', 'text/event-stream; charset=utf-8')
   res.setHeader('Cache-Control', 'no-cache, no-transform')
@@ -249,15 +296,23 @@ router.get('/pages/:id/events', (req, res) => {
   const client = { res, userId }
   registerSseClient(resourceKey, client)
 
+  // Heartbeat : voir /compagnie/events.
+  const heartbeat = setInterval(() => { res.write(': ping\n\n') }, 25000)
+
   const lock = getActiveLock(resourceKey)
   if (lock) {
     res.write(`event: journal-locked\n`)
     res.write(`data: ${JSON.stringify({ userId: lock.userId, characterName: lock.characterName })}\n\n`)
   }
 
+  const [row] = await db.select().from(journalPages).where(eq(journalPages.id, pageId))
+  res.write(`event: journal-snapshot\n`)
+  res.write(`data: ${JSON.stringify({ content: row?.content ?? '', version: row?.version ?? 1 })}\n\n`)
+
   req.on('close', () => {
+    clearInterval(heartbeat)
     removeSseClient(resourceKey, client)
-    releaseLock(resourceKey, userId)
+    // Verrou volontairement conservé — voir /compagnie/events.
   })
 })
 

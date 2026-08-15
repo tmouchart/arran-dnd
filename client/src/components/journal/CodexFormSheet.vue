@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
-import { User, MapPin, FileText } from 'lucide-vue-next'
+import { User, MapPin, FileText, History } from 'lucide-vue-next'
 import AppBottomSheet from '../ui/AppBottomSheet.vue'
+import JournalHistorySheet from './JournalHistorySheet.vue'
 import AppInput from '../ui/AppInput.vue'
 import AppButton from '../ui/AppButton.vue'
 import AppTextarea from '../ui/AppTextarea.vue'
@@ -24,7 +25,17 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void
   (e: 'saved', entry: CodexEntry, opts: { deleteNote: boolean }): void
+  (e: 'restored'): void
 }>()
+
+const showHistory = ref(false)
+
+/** On ferme le formulaire avant d'ouvrir l'historique : deux feuilles
+ *  superposées sont illisibles sur un téléphone. */
+function openHistory() {
+  emit('update:modelValue', false)
+  showHistory.value = true
+}
 
 const name = ref('')
 const type = ref<CodexType>('personnage')
@@ -124,8 +135,22 @@ async function submit() {
       <AppButton variant="primary" type="submit" :disabled="saving || !name.trim()" :block="true">
         {{ saving ? 'Sauvegarde…' : isEdit ? 'Enregistrer' : 'Créer la fiche' }}
       </AppButton>
+
+      <AppButton v-if="isEdit" :block="true" @click="openHistory">
+        <History :size="15" />
+        Historique
+      </AppButton>
     </form>
   </AppBottomSheet>
+
+  <JournalHistorySheet
+    v-if="entry"
+    v-model="showHistory"
+    type="codex_entry"
+    :entity-id="entry.id"
+    content-key="description"
+    @restored="emit('restored')"
+  />
 </template>
 
 <style scoped>

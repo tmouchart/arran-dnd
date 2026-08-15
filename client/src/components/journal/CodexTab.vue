@@ -213,6 +213,7 @@ onMounted(load)
         :campaign-id="campaignId"
         :entry="editEntry"
         @saved="onSaved"
+        @restored="load"
       />
     </template>
   </div>

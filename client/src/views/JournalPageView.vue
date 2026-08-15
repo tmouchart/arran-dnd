@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, computed, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { ArrowLeft, Pencil, Trash2, Maximize, Minimize, SquarePen, BookOpen } from "lucide-vue-next";
+import { ArrowLeft, Pencil, Trash2, Maximize, Minimize, BookOpen, History } from "lucide-vue-next";
 import AppPageLayout from "../components/ui/AppPageLayout.vue";
 import AppPageHead from "../components/ui/AppPageHead.vue";
 import AppButton from "../components/ui/AppButton.vue";
@@ -15,6 +15,8 @@ import NoteContent from "../components/journal/NoteContent.vue";
 import MentionSheet from "../components/journal/MentionSheet.vue";
 import { fetchPage, savePage, deletePage, type JournalPage, type Stroke } from "../api/journal";
 import { useJournalLock } from "../composables/useJournalLock";
+import { useAutosave } from "../composables/useAutosave";
+import JournalHistorySheet from "../components/journal/JournalHistorySheet.vue";
 import { showToast } from "../composables/useToast";
 import { relativeTime } from "../utils/relativeTime";
 import type { MentionKind } from "../utils/mentions";
@@ -30,15 +32,15 @@ const lastEditedBy = ref<string | null>(null);
 const updatedAt = ref<string | null>(null);
 const loading = ref(true);
 const error = ref<string | null>(null);
-const saveStatus = ref<"idle" | "saving" | "saved" | "error">("idle");
 const editingTitle = ref(false);
+const showHistory = ref(false);
 const titleInputRef = ref<InstanceType<typeof AppInput> | null>(null);
 const canvasRef = ref<InstanceType<typeof DrawingCanvas> | null>(null);
-let debounce: ReturnType<typeof setTimeout> | null = null;
 
 const {
   lock,
   content: sseContent,
+  version,
   isLockedByMe,
   isLockedByOther,
   lockedByName,
@@ -70,18 +72,32 @@ watch(sseContent, (v) => {
   }
 });
 
-function scheduleSave() {
-  if (debounce) clearTimeout(debounce);
-  saveStatus.value = "saving";
-  debounce = setTimeout(async () => {
-    try {
-      await savePage(pageId.value, { title: title.value, content: content.value });
-      saveStatus.value = "saved";
-      setTimeout(() => { saveStatus.value = "idle"; }, 2000);
-    } catch {
-      saveStatus.value = "error";
+const {
+  status: saveStatus,
+  hasPending,
+  schedule,
+  flush: flushSave,
+} = useAutosave<{ title: string; content: string }>(async (value) => {
+  try {
+    // Les dessins n'annoncent pas de version : plusieurs personnes dessinent en
+    // même temps et les traits fusionnent par id. L'historique sert de filet.
+    version.value = await savePage(pageId.value, {
+      ...value,
+      expectedVersion: isDrawing.value ? null : version.value,
+    });
+  } catch (e: any) {
+    if (e?.status === 409) {
+      version.value = e.body?.currentVersion ?? null;
+      content.value = e.body?.content ?? content.value;
+      showToast("La page a été modifiée ailleurs — contenu rechargé.");
+      return;
     }
-  }, 800);
+    throw e;
+  }
+});
+
+function scheduleSave() {
+  schedule({ title: title.value, content: content.value });
 }
 
 // For text pages: save only when holding lock. For drawings: save freely.
@@ -119,16 +135,16 @@ const editing = ref(false);
 const editorRef = ref<InstanceType<typeof MentionTextarea> | null>(null);
 
 function startEditing() {
+  if (isLockedByOther.value) return;
   editing.value = true;
-  nextTick(() => editorRef.value?.focus());
+  nextTick(() => editorRef.value?.focusEnd());
 }
 
 async function exitEditing() {
-  if (debounce) {
-    clearTimeout(debounce);
-    debounce = null;
-    try { await savePage(pageId.value, { title: title.value, content: content.value }); } catch { /* best effort */ }
-  }
+  await flushSave();
+  // Du texte pas encore parti ? On garde le verrou, sinon quelqu'un peut écrire
+  // par-dessus ce qui n'est pas sauvegardé.
+  if (hasPending.value) return;
   if (isLockedByMe.value) await release();
   editing.value = false;
 }
@@ -183,6 +199,7 @@ async function load() {
     const data = await fetchPage(pageId.value);
     page.value = data;
     content.value = data.content;
+    version.value = data.version;
     title.value = data.title;
     lastEditedBy.value = data.lastEditedBy;
     updatedAt.value = data.updatedAt;
@@ -232,10 +249,13 @@ onMounted(load);
       <template #actions>
         <span v-if="saveStatus === 'saving'" class="save-indicator saving">Sauvegarde…</span>
         <span v-else-if="saveStatus === 'saved'" class="save-indicator saved">Sauvegardé ✓</span>
-        <span v-else-if="saveStatus === 'error'" class="save-indicator error">Erreur</span>
         <span v-else-if="lastEditedBy && updatedAt" class="last-edit-info">
           par {{ lastEditedBy }} · {{ relativeTime(updatedAt) }}
         </span>
+
+        <AppIconBtn variant="ghost" :size="34" title="Historique" @click="showHistory = true">
+          <History :size="16" />
+        </AppIconBtn>
 
         <span v-if="isLockedByOther" class="lock-badge">
           <Pencil :size="13" />
@@ -243,16 +263,7 @@ onMounted(load);
         </span>
 
         <AppIconBtn
-          v-if="!isDrawing && !editing && !isLockedByOther"
-          variant="ghost"
-          :size="34"
-          title="Modifier"
-          @click="startEditing"
-        >
-          <SquarePen :size="16" />
-        </AppIconBtn>
-        <AppIconBtn
-          v-else-if="!isDrawing && editing"
+          v-if="!isDrawing && editing"
           variant="ghost"
           :size="34"
           title="Mode lecture"
@@ -271,7 +282,13 @@ onMounted(load);
     <AppEmptyState v-if="loading" variant="loading">Chargement…</AppEmptyState>
     <AppEmptyState v-else-if="error" variant="error">{{ error }}</AppEmptyState>
 
-    <div v-else class="editor-wrapper">
+    <!-- Une sauvegarde bloquée doit se voir. -->
+    <div v-else-if="saveStatus === 'error'" class="save-alert">
+      Sauvegarde impossible pour l'instant — ton contenu est conservé et sera
+      renvoyé automatiquement. Ne ferme pas la page.
+    </div>
+
+    <div v-if="!loading && !error" class="editor-wrapper">
       <!-- Drawing page -->
       <DrawingCanvas
         ref="canvasRef"
@@ -295,12 +312,24 @@ onMounted(load);
       <NoteContent
         v-else-if="content.trim()"
         :content="content"
+        :editable="!isLockedByOther"
         @mention="onMention"
+        @edit="startEditing"
       />
-      <AppEmptyState v-else>Page vide. Appuie sur le crayon pour écrire.</AppEmptyState>
+      <button v-else type="button" class="empty-editor" @click="startEditing">
+        Page vide. Touche ici pour écrire.
+      </button>
     </div>
 
     <MentionSheet v-model="showMention" :kind="mentionKind" :id="mentionId" />
+
+    <JournalHistorySheet
+      v-model="showHistory"
+      type="journal_page"
+      :entity-id="pageId"
+      :is-drawing="isDrawing"
+      @restored="load"
+    />
 
     <!-- Delete confirmation -->
     <AppModal v-model="showDeleteConfirm" title="Supprimer cette page ?">
@@ -319,6 +348,38 @@ onMounted(load);
 .page-view--drawing {
   max-width: none !important;
   padding: 0 !important;
+}
+
+.empty-editor {
+  flex: 1;
+  min-height: 0;
+  padding: 1rem;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: text;
+}
+
+@media (hover: hover) {
+  .empty-editor:hover {
+    border-color: var(--accent-strong);
+  }
+}
+
+.save-alert {
+  flex-shrink: 0;
+  margin-bottom: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  color: var(--danger);
+  font-size: 0.84rem;
+  font-weight: 600;
 }
 
 .title-text {

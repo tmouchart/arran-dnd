@@ -31,6 +31,7 @@ export interface LockInfo {
 
 export interface CompagnieData {
   content: string
+  version: number
   lock: LockInfo | null
   lastEditedBy: string | null
   updatedAt: string | null
@@ -40,12 +41,18 @@ export async function fetchJournalCompagnie(): Promise<CompagnieData> {
   return apiFetch('/api/journal/compagnie')
 }
 
-export async function saveJournalCompagnie(content: string): Promise<void> {
-  await apiFetch('/api/journal/compagnie', {
+/** Renvoie la nouvelle version. `expectedVersion` protège contre l'écrasement
+ *  d'un contenu modifié entre-temps (409). */
+export async function saveJournalCompagnie(
+  content: string,
+  expectedVersion?: number | null,
+): Promise<number> {
+  const data = await apiFetch('/api/journal/compagnie', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content }),
+    body: JSON.stringify({ content, expectedVersion }),
   })
+  return data.version
 }
 
 export async function lockCompagnie(): Promise<{ ok: boolean; lockedBy?: string }> {
@@ -87,6 +94,7 @@ export interface JournalPage {
   title: string
   type: JournalPageType
   content: string
+  version: number
   createdByUserId: number
   updatedByUserId: number | null
   createdAt: string
@@ -111,12 +119,16 @@ export async function fetchPage(id: number): Promise<JournalPage> {
   return apiFetch(`/api/journal/pages/${id}`)
 }
 
-export async function savePage(id: number, data: { title?: string; content?: string }): Promise<void> {
-  await apiFetch(`/api/journal/pages/${id}`, {
+export async function savePage(
+  id: number,
+  data: { title?: string; content?: string; expectedVersion?: number | null },
+): Promise<number> {
+  const res = await apiFetch(`/api/journal/pages/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   })
+  return res.version
 }
 
 export async function deletePage(id: number): Promise<void> {

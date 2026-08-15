@@ -48,6 +48,19 @@ function appendRoll(roll: RollEvent): void {
   if (!panelOpen.value) unread.value += 1
 }
 
+/** Recharge l'historique et le fusionne avec ce qui est déjà affiché. */
+async function syncHistory(campaignId: number): Promise<void> {
+  try {
+    const history = await fetchCampaignRolls(campaignId)
+    const known = new Set(rolls.value.map((r) => r.id))
+    const missing = history.filter((r) => !known.has(r.id))
+    if (missing.length === 0) return
+    rolls.value = [...rolls.value, ...missing]
+      .sort((a, b) => a.id - b.id)
+      .slice(-MAX_ROLLS)
+  } catch { /* silencieux */ }
+}
+
 function connect(campaignId: number): void {
   if (connectedCampaignId === campaignId && eventSource) return
   disconnect()
@@ -62,10 +75,11 @@ function connect(campaignId: number): void {
     } catch { /* ignore */ }
   })
 
-  // Le SSE ne porte que le flux live — l'historique vient du GET.
-  fetchCampaignRolls(campaignId)
-    .then((history) => { rolls.value = history })
-    .catch(() => { /* silencieux */ })
+  // Le SSE ne porte que le flux live — l'historique vient du GET. On le rejoue
+  // à CHAQUE ouverture, y compris les reconnexions automatiques d'EventSource :
+  // sinon les jets émis pendant une coupure réseau manquent pour toujours.
+  eventSource.onopen = () => { void syncHistory(campaignId) }
+  void syncHistory(campaignId)
 }
 
 function disconnect(): void {

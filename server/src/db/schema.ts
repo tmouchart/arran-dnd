@@ -28,6 +28,8 @@ export const users = pgTable('user', {
 export const journalCompagnie = pgTable('journal_compagnie', {
   id: integer('id').primaryKey().default(1),
   content: text('content').notNull().default(''),
+  /** Incrémentée à chaque écriture : détection de conflit + n° d'historique. */
+  version: integer('version').notNull().default(1),
   updatedByUserId: integer('updated_by_user_id').references(() => users.id),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })
@@ -120,6 +122,7 @@ export const journalPages = pgTable('journal_pages', {
   title: varchar('title', { length: 255 }).notNull(),
   type: varchar('type', { length: 20 }).notNull().default('text'),
   content: text('content').notNull().default(''),
+  version: integer('version').notNull().default(1),
   createdByUserId: integer('created_by_user_id').notNull().references(() => users.id),
   updatedByUserId: integer('updated_by_user_id').references(() => users.id),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -274,6 +277,7 @@ export const codexEntries = pgTable('codex_entry', {
   type: text('type').notNull(),
   name: text('name').notNull(),
   description: text('description').notNull().default(''),
+  version: integer('version').notNull().default(1),
   createdByUserId: integer('created_by_user_id').notNull().references(() => users.id),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -289,9 +293,36 @@ export const notes = pgTable('note', {
   /** 'text' | 'drawing' */
   type: text('type').notNull().default('text'),
   content: text('content').notNull().default(''),
+  version: integer('version').notNull().default(1),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })
+
+/**
+ * Historique de versions, commun à toutes les entités éditables du journal.
+ * Une restauration n'efface rien : elle écrit une nouvelle révision `restore`.
+ */
+export const revisions = pgTable(
+  'revision',
+  {
+    id: serial('id').primaryKey(),
+    /** 'journal_compagnie' | 'journal_page' | 'note' | 'codex_entry' */
+    entityType: varchar('entity_type', { length: 30 }).notNull(),
+    entityId: integer('entity_id').notNull(),
+    version: integer('version').notNull(),
+    /** État complet des champs versionnés à cette version. */
+    snapshot: jsonb('snapshot').notNull(),
+    authorUserId: integer('author_user_id').references(() => users.id, { onDelete: 'set null' }),
+    /** Dénormalisé : reste lisible même si le joueur change de perso. */
+    authorName: text('author_name').notNull().default(''),
+    /** 'edit' | 'restore' */
+    kind: varchar('kind', { length: 10 }).notNull().default('edit'),
+    /** Caractères gagnés/perdus vs la version précédente. */
+    sizeDelta: integer('size_delta').notNull().default(0),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex('revision_entity_version').on(table.entityType, table.entityId, table.version)],
+)
 
 export type UserRow = typeof users.$inferSelect
 export type CharacterRow = typeof characters.$inferSelect

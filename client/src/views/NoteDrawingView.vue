@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { ArrowLeft, Lock, Pencil, Maximize, Minimize } from "lucide-vue-next";
+import { ArrowLeft, Lock, Pencil, Maximize, Minimize, History } from "lucide-vue-next";
 import AppPageLayout from "../components/ui/AppPageLayout.vue";
 import AppPageHead from "../components/ui/AppPageHead.vue";
 import AppIconBtn from "../components/ui/AppIconBtn.vue";
 import AppInput from "../components/ui/AppInput.vue";
 import AppEmptyState from "../components/ui/AppEmptyState.vue";
 import DrawingCanvas from "../components/DrawingCanvas.vue";
+import JournalHistorySheet from "../components/journal/JournalHistorySheet.vue";
 import { fetchNotes, updateNote, type Note } from "../api/notes";
+import { useAutosave } from "../composables/useAutosave";
 import type { Stroke } from "../api/journal";
 
 const route = useRoute();
@@ -20,32 +22,22 @@ const title = ref("");
 const content = ref("");
 const loading = ref(true);
 const error = ref<string | null>(null);
-const saveStatus = ref<"idle" | "saving" | "saved" | "error">("idle");
 const editingTitle = ref(false);
+const showHistory = ref(false);
 const titleInputRef = ref<InstanceType<typeof AppInput> | null>(null);
 const canvasRef = ref<InstanceType<typeof DrawingCanvas> | null>(null);
-let debounce: ReturnType<typeof setTimeout> | null = null;
 
-function scheduleSave() {
-  if (debounce) clearTimeout(debounce);
-  saveStatus.value = "saving";
-  debounce = setTimeout(saveNow, 800);
-}
-
-async function saveNow() {
-  if (debounce) {
-    clearTimeout(debounce);
-    debounce = null;
-  }
+const { status: saveStatus, schedule, flush: saveNow } = useAutosave<{
+  title: string;
+  content: string;
+}>(async (value) => {
   // note.value.id, pas noteId : au flush de depart de page, la route a deja change
   if (!note.value) return;
-  try {
-    await updateNote(note.value.id, { title: title.value, content: content.value });
-    saveStatus.value = "saved";
-    setTimeout(() => { saveStatus.value = "idle"; }, 2000);
-  } catch {
-    saveStatus.value = "error";
-  }
+  await updateNote(note.value.id, value);
+});
+
+function scheduleSave() {
+  schedule({ title: title.value, content: content.value });
 }
 
 watch([title, content], () => {
@@ -74,7 +66,8 @@ function startRenaming() {
   nextTick(() => (titleInputRef.value as any)?.$el?.querySelector?.("input")?.focus());
 }
 
-onMounted(async () => {
+async function load() {
+  loading.value = true;
   try {
     const notes = await fetchNotes();
     const found = notes.find((n) => n.id === noteId.value);
@@ -90,11 +83,13 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
-});
+}
+
+onMounted(load);
 
 onBeforeUnmount(() => {
   // Flush pending save when leaving
-  if (debounce) saveNow();
+  void saveNow();
 });
 </script>
 
@@ -130,6 +125,9 @@ onBeforeUnmount(() => {
           <span v-if="saveStatus === 'saving'" class="save-indicator saving">Sauvegarde…</span>
           <span v-else-if="saveStatus === 'saved'" class="save-indicator saved">Sauvegardé ✓</span>
           <span v-else-if="saveStatus === 'error'" class="save-indicator error">Erreur</span>
+          <AppIconBtn v-if="note" :size="34" title="Historique" @click="showHistory = true">
+            <History :size="16" />
+          </AppIconBtn>
         </template>
       </AppPageHead>
     </template>
@@ -145,6 +143,15 @@ onBeforeUnmount(() => {
         @update:strokes="onStrokesUpdate"
       />
     </div>
+
+    <JournalHistorySheet
+      v-if="note"
+      v-model="showHistory"
+      type="note"
+      :entity-id="note.id"
+      :is-drawing="true"
+      @restored="load"
+    />
   </AppPageLayout>
 </template>
 
