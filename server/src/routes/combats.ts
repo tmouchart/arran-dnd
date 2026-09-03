@@ -5,10 +5,11 @@ import {
   combats, combatParticipants, campaigns, campaignMembers, characters, encounterTemplates, encounterMonsters,
 } from '../db/schema.js'
 import { requireAuth, type AuthRequest } from '../auth/middleware.js'
-import { broadcastCombatState, broadcastParticipantMoved, enrichParticipantHp, getClientsForCombat, sendCombatStateTo, type SseClient } from '../combats/sseStore.js'
+import { broadcastCombatState, broadcastParticipantMoved, enrichParticipantHp, getClientsForCombat, releaseClient, sendCombatStateTo, type SseClient } from '../combats/sseStore.js'
 import { serializeCombat } from '../combats/serialize.js'
 import { generateText } from '../ai/client.js'
 import { turnOrder, firstActiveId, step } from '../combats/turnOrder.js'
+import { startingPosition, clampToBoard } from '../combats/placement.js'
 
 // Armor/shield lookup for initiative calculation (mirrors client armorsCatalog.ts)
 const ARMOR_DEF: Record<string, number> = {
@@ -27,8 +28,6 @@ export function computeInitiative(char: { dex: number; armorId: string | null; s
 
 const router = Router()
 
-/** Demi-côté de la grille du champ de bataille, en cases (grille 12x12). */
-const BATTLE_HALF = 6
 router.use(requireAuth)
 
 // Helper: verify GM
@@ -99,6 +98,7 @@ router.post('/:id/combats', async (req, res) => {
     .where(eq(campaignMembers.campaignId, campaignId))
 
   const excludedSet = new Set(excludedUserIds)
+  let playerSlot = 0
 
   for (const member of members) {
     if (excludedSet.has(member.userId) || !member.characterId) continue
@@ -122,12 +122,14 @@ router.post('/:id/combats', async (req, res) => {
       hpMax: null,
       hpCurrent: null,
       def: char.defense,
+      ...startingPosition('player', playerSlot++),
     })
   }
 
   // Add monsters from encounter template
   if (encounterId) {
     const monsters = await db.select().from(encounterMonsters).where(eq(encounterMonsters.encounterId, encounterId)).orderBy(asc(encounterMonsters.id))
+    let monsterSlot = 0
     for (const m of monsters) {
       await db.insert(combatParticipants).values({
         combatId: combat.id,
@@ -148,6 +150,7 @@ router.post('/:id/combats', async (req, res) => {
         abilities: m.abilities,
         monsterDescription: m.description,
         hidden: m.hidden,
+        ...startingPosition('monster', monsterSlot++),
       })
     }
   }
@@ -346,9 +349,8 @@ router.patch('/:id/combats/:cid/participants/:pid/position', async (req, res) =>
     res.status(400).json({ error: 'x et y requis' }); return
   }
 
-  const clamp = (v: number) => Math.max(-BATTLE_HALF, Math.min(BATTLE_HALF, v))
-  const posX = clamp(x)
-  const posY = clamp(y)
+  const posX = clampToBoard(x)
+  const posY = clampToBoard(y)
   await db
     .update(combatParticipants)
     .set({ posX, posY })
@@ -356,12 +358,15 @@ router.patch('/:id/combats/:cid/participants/:pid/position', async (req, res) =>
 
   if (participant.hidden) {
     // Un PNJ en réserve n'existe que pour le MJ : sa position ne part pas en
-    // clair à toute la table, elle repasse par le sérialiseur.
-    await broadcastCombatState(combatId, check.gmUserId)
+    // clair à toute la table. Et comme il n'y a que le MJ à la voir, inutile de
+    // rediffuser 3 Ko aux cinq autres téléphones à chaque tap.
+    await broadcastCombatState(combatId, check.gmUserId, (c) => c.userId === check.gmUserId)
   } else {
     broadcastParticipantMoved(combatId, { id: pid, x: posX, y: posY })
   }
-  res.json({ ok: true })
+  // On renvoie la position RETENUE : le serveur a pu la ramener dans la grille,
+  // et le client doit caler son affichage optimiste dessus, pas sur son geste.
+  res.json({ ok: true, x: posX, y: posY })
 })
 
 // PATCH /:id/combats/:cid/environment — changer le décor (MJ seul)
@@ -401,6 +406,12 @@ router.post('/:id/combats/:cid/monsters', async (req, res) => {
 
   const body = req.body as Record<string, unknown>
 
+  // Le renfort se pose derrière les monstres déjà en place, pas sur eux.
+  const existing = await db
+    .select({ id: combatParticipants.id })
+    .from(combatParticipants)
+    .where(and(eq(combatParticipants.combatId, combatId), eq(combatParticipants.kind, 'monster')))
+
   await db.insert(combatParticipants).values({
     combatId,
     kind: 'monster',
@@ -421,6 +432,7 @@ router.post('/:id/combats/:cid/monsters', async (req, res) => {
     monsterDescription: body.description ? String(body.description) : null,
     // Le MJ peut préparer un renfort qui n'entre pas encore en scène.
     hidden: body.hidden === true,
+    ...startingPosition('monster', existing.length),
   })
 
   await broadcastCombatState(combatId, check.gmUserId)
@@ -599,7 +611,7 @@ router.get('/:id/combats/:cid/events', async (req, res) => {
 
   req.on('close', () => {
     clearInterval(heartbeat)
-    clients.delete(client)
+    releaseClient(combatId, client)
   })
 })
 

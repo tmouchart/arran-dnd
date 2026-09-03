@@ -4,6 +4,7 @@ import { combats, combatParticipants, campaignMembers, characters } from '../db/
 import { computeInitiative } from '../routes/combats.js'
 import { turnOrder, firstActiveId, step } from '../combats/turnOrder.js'
 import { DEV_BESTIARY, type DevMonster } from './bestiary.js'
+import { startingPosition } from '../combats/placement.js'
 
 export type PresetId = 'simple' | 'agonie' | 'monstre-mort' | 'foule' | 'egalites'
 
@@ -63,6 +64,7 @@ export async function createPresetCombat(campaignId: number, preset: PresetId): 
     .where(eq(campaignMembers.campaignId, campaignId))
 
   let firstPlayerId: number | null = null
+  let playerSlot = 0
   for (const member of members) {
     if (!member.characterId) continue
     const [char] = await db.select().from(characters).where(eq(characters.id, member.characterId))
@@ -77,6 +79,7 @@ export async function createPresetCombat(campaignId: number, preset: PresetId): 
       hpMax: null,
       hpCurrent: null,
       def: char.defense,
+      ...startingPosition('player', playerSlot++),
     }).returning({ id: combatParticipants.id })
     firstPlayerId ??= row.id
   }
@@ -84,6 +87,7 @@ export async function createPresetCombat(campaignId: number, preset: PresetId): 
   // --- Les monstres
   const named = numberDuplicates(pick(monsterCount))
   const monsterIds: number[] = []
+  let monsterSlot = 0
   for (const { monster, name } of named) {
     const [row] = await db.insert(combatParticipants).values({
       combatId: combat.id,
@@ -99,6 +103,7 @@ export async function createPresetCombat(campaignId: number, preset: PresetId): 
       attacks: monster.attacks,
       abilities: monster.abilities,
       monsterDescription: monster.description,
+      ...startingPosition('monster', monsterSlot++),
     }).returning({ id: combatParticipants.id })
     monsterIds.push(row.id)
   }
