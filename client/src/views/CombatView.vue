@@ -13,6 +13,9 @@ import {
   Zap,
   CheckCheck,
   LayoutList,
+  Map,
+  Eye,
+  EyeOff,
   Dices,
   Shield,
   Sparkles,
@@ -37,8 +40,10 @@ import AppEmptyState from "../components/ui/AppEmptyState.vue";
 import AppModal from "../components/ui/AppModal.vue";
 import AppBottomSheet from "../components/ui/AppBottomSheet.vue";
 import AppTabs, { type AppTab } from "../components/ui/AppTabs.vue";
+import BattleMapTab from "../components/battle/BattleMapTab.vue";
 import ActionsView from "./ActionsView.vue";
 import type { CombatParticipant } from "../api/combats";
+import { showToast } from "../composables/useToast";
 
 const route = useRoute();
 const router = useRouter();
@@ -59,13 +64,14 @@ const {
   nextTurn,
   prevTurn,
   updateHp,
+  setVisibility,
   addMonster,
   removeMonster,
   finish,
 } = useCombat();
 
-// Tab: timeline vs actions
-type CombatTab = "timeline" | "actions";
+// Tab: timeline vs actions vs carte
+type CombatTab = "timeline" | "actions" | "map";
 const activeTab = ref<CombatTab>("timeline");
 
 // L'onglet Actions n'existe que pour les joueurs. Le log des jets vit dans le
@@ -73,6 +79,7 @@ const activeTab = ref<CombatTab>("timeline");
 const combatTabs = computed<AppTab[]>(() => [
   { value: "timeline", label: "Combat", icon: LayoutList },
   ...(isGm.value ? [] : [{ value: "actions", label: "Mes actions", icon: Zap }]),
+  { value: "map", label: "Champ de bataille", icon: Map },
 ]);
 
 // Expanded card (click to toggle)
@@ -80,6 +87,14 @@ const expandedId = ref<number | null>(null);
 
 // Add monster bottom sheet
 const showAddMonster = ref(false);
+// Entrée en jeu du renfort ajouté : tout de suite, ou gardé en réserve.
+const addHidden = ref(false);
+
+/** Fait entrer un PNJ en scène, ou le renvoie en réserve. */
+async function toggleVisibility(p: CombatParticipant, hidden: boolean) {
+  await setVisibility(p.id, hidden);
+  showToast(hidden ? `${p.name} passe en réserve.` : `${p.name} entre dans le combat !`);
+}
 const monsterSearchQuery = ref("");
 const filteredMonsters = computed(() =>
   filterCatalog(monsterSearchQuery.value, MONSTERS_CATALOG),
@@ -294,6 +309,7 @@ async function handleAddFromCatalog(m: Monster) {
     attacks: m.attacks,
     abilities: m.abilities,
     description: m.description ?? null,
+    hidden: addHidden.value,
   });
   monsterSearchQuery.value = "";
   showAddMonster.value = false;
@@ -323,6 +339,7 @@ async function handleSubmitCustomMonster() {
     statInt: f.stats.Int,
     statSag: f.stats.Sag,
     statCha: f.stats.Cha,
+    hidden: addHidden.value,
   });
   showCustomForm.value = false;
   showAddMonster.value = false;
@@ -382,6 +399,9 @@ function goBack() {
         <!-- Tabs: Timeline / Actions (joueur) -->
         <AppTabs :model-value="activeTab" :tabs="combatTabs" @update:model-value="activeTab = $event as CombatTab" />
 
+        <!-- Tab: Champ de bataille 3D -->
+        <BattleMapTab v-if="activeTab === 'map'" :combat="combat" :is-gm="isGm" />
+
         <!-- Tab: Actions (player only) -->
         <div v-if="activeTab === 'actions' && !isGm" class="actions-tab">
           <ActionsView :embedded="true" />
@@ -427,6 +447,7 @@ function goBack() {
                   p.initiative
                 }}</span>
                 <span v-if="p.def && (isGm || p.kind === 'player')" class="card-def"><Shield :size="13" /> {{ p.def }}</span>
+                <button v-if="isGm && p.kind === 'monster'" class="trash-btn" title="Mettre en réserve" @click.stop="toggleVisibility(p, true)"><EyeOff :size="13" /></button>
                 <button v-if="isGm && p.kind === 'monster'" class="trash-btn" title="Supprimer" @click.stop="confirmDeleteId = p.id"><Trash2 :size="13" /></button>
                 <!-- Inline HP controls (GM monsters) -->
                 <template v-if="canAdjustHp(p) && p.hpCurrent !== null && p.hpMax !== null">
@@ -547,6 +568,30 @@ function goBack() {
           </div>
         </div>
 
+        <!-- La réserve du MJ : renforts et embusqués pas encore entrés en scène. -->
+        <div v-if="isGm && combat.reserve.length > 0" class="reserve">
+          <div class="reserve-head">
+            <EyeOff :size="13" /> En réserve
+          </div>
+          <div
+            v-for="p in combat.reserve"
+            :key="p.id"
+            class="participant-card reserve-card"
+          >
+            <div class="card-summary">
+              <div class="card-left">
+                <span class="card-kind-dot monster" />
+                <span class="card-name">{{ p.name }}</span>
+              </div>
+              <div class="card-right">
+                <span class="card-init"><Zap :size="13" /> {{ p.initiative }}</span>
+                <button class="trash-btn" title="Faire entrer en jeu" @click.stop="toggleVisibility(p, false)"><Eye :size="13" /></button>
+                <button class="trash-btn" title="Supprimer" @click.stop="confirmDeleteId = p.id"><Trash2 :size="13" /></button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         </div>
 
       </template>
@@ -606,6 +651,16 @@ function goBack() {
       @update:model-value="setAddMonsterOpen"
     >
       <div class="add-monster-body">
+          <!-- Entrée en jeu : tout de suite, ou gardé pour plus tard. -->
+          <AppTabs
+            :model-value="addHidden ? 'reserve' : 'now'"
+            :tabs="[
+              { value: 'now', label: 'Maintenant', icon: Eye },
+              { value: 'reserve', label: 'En réserve', icon: EyeOff },
+            ]"
+            @update:model-value="addHidden = $event === 'reserve'"
+          />
+
           <!-- Custom form -->
           <template v-if="showCustomForm">
             <div class="custom-form-grid">
@@ -706,6 +761,40 @@ function goBack() {
 
 <style scoped>
 /* Layout : la colonne log a disparu (tiroir global), une seule colonne */
+/* Une carte qui apparaît en cours de combat, c'est un renfort qui débarque :
+   côté joueur, ça ne doit pas juste « pop ». */
+@keyframes reveal-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.participant-card {
+  animation: reveal-in 0.28s ease-out;
+}
+
+.reserve {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.8rem;
+}
+
+.reserve-head {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Pointillés + grisé : c'est là, mais ce n'est pas encore en jeu. */
+.reserve-card {
+  border-style: dashed;
+  opacity: 0.72;
+}
+
 .combat-columns {
   display: flex;
   flex-direction: column;

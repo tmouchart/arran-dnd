@@ -31,6 +31,11 @@ export interface CombatParticipant {
   attacks: { name: string; bonus: number; damage: string; range?: number }[] | null
   abilities: { name: string; description: string }[] | null
   monsterDescription: string | null
+  /** PNJ en réserve : préparé par le MJ, pas encore entré en scène. */
+  hidden?: boolean
+  /** Position sur le champ de bataille, en cases (centre = 0,0). null = jamais placé. */
+  posX: number | null
+  posY: number | null
 }
 
 export interface CombatState {
@@ -40,7 +45,11 @@ export interface CombatState {
   status: 'active' | 'finished'
   currentTurnIndex: number
   roundNumber: number
+  /** Décor du champ de bataille (voir `components/battle/environments.ts`). */
+  environment: string
   participants: CombatParticipant[]
+  /** Les PNJ en réserve. Toujours vide pour un joueur : il ignore leur existence. */
+  reserve: CombatParticipant[]
   createdAt: string
   finishedAt: string | null
 }
@@ -99,6 +108,42 @@ export function updateParticipantHp(
   return request(`/${campaignId}/combats/${combatId}/participants/${participantId}`, {
     method: 'PATCH',
     body: JSON.stringify({ hpCurrent }),
+  })
+}
+
+export function setParticipantVisibility(
+  campaignId: number,
+  combatId: number,
+  participantId: number,
+  hidden: boolean,
+): Promise<void> {
+  return request(`/${campaignId}/combats/${combatId}/participants/${participantId}/visibility`, {
+    method: 'PATCH',
+    body: JSON.stringify({ hidden }),
+  })
+}
+
+export function moveParticipant(
+  campaignId: number,
+  combatId: number,
+  participantId: number,
+  x: number,
+  y: number,
+): Promise<void> {
+  return request(`/${campaignId}/combats/${combatId}/participants/${participantId}/position`, {
+    method: 'PATCH',
+    body: JSON.stringify({ x, y }),
+  })
+}
+
+export function setCombatEnvironment(
+  campaignId: number,
+  combatId: number,
+  environment: string,
+): Promise<void> {
+  return request(`/${campaignId}/combats/${combatId}/environment`, {
+    method: 'PATCH',
+    body: JSON.stringify({ environment }),
   })
 }
 

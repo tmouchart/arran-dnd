@@ -2,6 +2,7 @@ import type express from 'express'
 import { eq, and, asc, inArray } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { combats, combatParticipants, campaigns, campaignMembers, characters } from '../db/schema.js'
+import { serializeCombat } from './serialize.js'
 
 type ParticipantRow = typeof combatParticipants.$inferSelect
 
@@ -94,16 +95,6 @@ function writeSse(res: express.Response, event: string, data: unknown): void {
   res.write(`data: ${JSON.stringify(data)}\n\n`)
 }
 
-/** Compute qualitative HP status for a monster */
-function hpStatus(hpCurrent: number, hpMax: number): string {
-  if (hpCurrent <= 0) return 'mort'
-  const pct = (hpCurrent / hpMax) * 100
-  if (pct > 75) return 'intact'
-  if (pct > 50) return 'blesse'
-  if (pct > 25) return 'mal_en_point'
-  return 'agonisant'
-}
-
 /** Load combat state from DB and broadcast to all SSE clients */
 export async function broadcastCombatState(combatId: number, gmUserId: number): Promise<void> {
   const clients = sseClients.get(combatId)
@@ -120,43 +111,7 @@ export async function broadcastCombatState(combatId: number, gmUserId: number): 
 
   const enriched = await enrichParticipantHp(combat.campaignId, participants)
 
-  // Sort by initiative DESC, id ASC en cas d'égalité (ordre stable entre deux requêtes)
-  const sorted = [...enriched].sort((a, b) => b.initiative - a.initiative || a.id - b.id)
-
   for (const client of clients) {
-    const isGm = client.userId === gmUserId
-    const payload = {
-      id: combat.id,
-      campaignId: combat.campaignId,
-      name: combat.name,
-      status: combat.status,
-      currentTurnIndex: combat.currentTurnIndex,
-      roundNumber: combat.roundNumber,
-      createdAt: combat.createdAt,
-      finishedAt: combat.finishedAt,
-      participants: sorted.map((p) => {
-        if (isGm || p.kind === 'player') {
-          return p
-        }
-        // Players see qualitative HP for monsters, not exact values
-        return {
-          id: p.id,
-          combatId: p.combatId,
-          kind: p.kind,
-          userId: p.userId,
-          name: p.name,
-          initiative: p.initiative,
-          def: p.def,
-          hpMax: null,
-          hpCurrent: null,
-          hpStatus: hpStatus(p.hpCurrent ?? 0, p.hpMax ?? 1),
-          nc: null,
-          statFor: null, statDex: null, statCon: null,
-          statInt: null, statSag: null, statCha: null,
-          attacks: null, abilities: null, monsterDescription: null,
-        }
-      }),
-    }
-    writeSse(client.res, 'combat-updated', payload)
+    writeSse(client.res, 'combat-updated', serializeCombat(combat, enriched, client.userId === gmUserId))
   }
 }

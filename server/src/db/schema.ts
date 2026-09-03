@@ -204,8 +204,11 @@ export const combats = pgTable('combat', {
   encounterId: integer('encounter_id').references(() => encounterTemplates.id, { onDelete: 'set null' }),
   name: varchar('name', { length: 200 }).notNull(),
   status: varchar('status', { length: 20 }).notNull().default('active'),
-  currentTurnIndex: integer('current_turn_index').notNull().default(0),
+  /** Participant dont c'est le tour. NULL = combat pas encore commencé / participant supprimé. */
+  currentParticipantId: integer('current_participant_id'),
   roundNumber: integer('round_number').notNull().default(1),
+  /** Décor du champ de bataille 3D (voir `client/src/components/battle/environments.ts`). */
+  environment: varchar('environment', { length: 40 }).notNull().default('foret'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   finishedAt: timestamp('finished_at', { withTimezone: true }),
 })
@@ -234,6 +237,11 @@ export const combatParticipants = pgTable('combat_participant', {
   attacks: jsonb('attacks'),
   abilities: jsonb('abilities'),
   monsterDescription: text('monster_description'),
+  /** Position sur le champ de bataille, en cases (centre = 0,0). NULL = jamais placé. */
+  posX: real('pos_x'),
+  posY: real('pos_y'),
+  /** PNJ en réserve : hors de l'ordre d'initiative, invisible pour les joueurs. */
+  hidden: boolean('hidden').notNull().default(false),
 })
 
 /**

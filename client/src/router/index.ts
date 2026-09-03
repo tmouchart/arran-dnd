@@ -39,6 +39,9 @@ export const router = createRouter({
     { path: '/campagnes/:id/rencontres/:eid', name: 'encounter-edit', component: EncounterEditView },
     { path: '/campagnes/:id/combat/:cid', name: 'combat', component: CombatView },
     { path: '/options', name: 'options', component: OptionsView },
+    // POC du champ de bataille 3D — pions en dur, rien n'est sauvegardé.
+    // Pas de garde `DEV` : on la teste depuis le téléphone, donc sur le build servi par l'API.
+    { path: '/battle-poc', name: 'battle-poc', component: () => import('../views/BattlePocView.vue') },
     // Kitchen sink du design system — dev uniquement, absent du build de prod
     ...(import.meta.env.DEV
       ? [{ path: '/component-library', name: 'component-library', component: () => import('../views/ComponentLibraryView.vue') }]

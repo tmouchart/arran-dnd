@@ -150,6 +150,21 @@ export function useCombat() {
     await api.updateParticipantHp(currentCampaignId, combat.value.id, participantId, hpCurrent)
   }
 
+  async function setVisibility(participantId: number, hidden: boolean): Promise<void> {
+    if (!combat.value || !currentCampaignId) return
+    await api.setParticipantVisibility(currentCampaignId, combat.value.id, participantId, hidden)
+  }
+
+  async function moveParticipant(participantId: number, x: number, y: number): Promise<void> {
+    if (!combat.value || !currentCampaignId) return
+    await api.moveParticipant(currentCampaignId, combat.value.id, participantId, x, y)
+  }
+
+  async function setEnvironment(environment: string): Promise<void> {
+    if (!combat.value || !currentCampaignId) return
+    await api.setCombatEnvironment(currentCampaignId, combat.value.id, environment)
+  }
+
   async function addMonster(data: Record<string, unknown>): Promise<void> {
     if (!combat.value || !currentCampaignId) return
     await api.addCombatMonster(currentCampaignId, combat.value.id, data)
@@ -180,6 +195,9 @@ export function useCombat() {
     nextTurn: doNextTurn,
     prevTurn: doPrevTurn,
     updateHp,
+    moveParticipant,
+    setVisibility,
+    setEnvironment,
     addMonster,
     removeMonster,
     finish,

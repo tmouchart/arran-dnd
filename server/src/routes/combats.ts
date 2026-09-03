@@ -6,7 +6,9 @@ import {
 } from '../db/schema.js'
 import { requireAuth, type AuthRequest } from '../auth/middleware.js'
 import { broadcastCombatState, enrichParticipantHp, getClientsForCombat, type SseClient } from '../combats/sseStore.js'
+import { serializeCombat } from '../combats/serialize.js'
 import { generateText } from '../ai/client.js'
+import { turnOrder, firstActiveId, step } from '../combats/turnOrder.js'
 
 // Armor/shield lookup for initiative calculation (mirrors client armorsCatalog.ts)
 const ARMOR_DEF: Record<string, number> = {
@@ -17,13 +19,16 @@ const SHIELD_DEF: Record<string, number> = {
   'petit-bouclier': 1, 'grand-bouclier': 2,
 }
 
-function computeInitiative(char: { dex: number; armorId: string | null; shieldId: string | null; initiativeBonus: number }): number {
+export function computeInitiative(char: { dex: number; armorId: string | null; shieldId: string | null; initiativeBonus: number }): number {
   const armorDef = char.armorId ? (ARMOR_DEF[char.armorId] ?? 0) : 0
   const shieldDef = char.shieldId ? (SHIELD_DEF[char.shieldId] ?? 0) : 0
   return char.dex - armorDef - shieldDef + (char.initiativeBonus ?? 0)
 }
 
 const router = Router()
+
+/** Demi-côté de la grille du champ de bataille, en cases (grille 12x12). */
+const BATTLE_HALF = 6
 router.use(requireAuth)
 
 // Helper: verify GM
@@ -146,6 +151,13 @@ router.post('/:id/combats', async (req, res) => {
     }
   }
 
+  // Le combat démarre sur la meilleure initiative. Il faut les participants en
+  // base pour la connaître, d'où ce second UPDATE.
+  const created = await db.select().from(combatParticipants).where(eq(combatParticipants.combatId, combat.id))
+  await db.update(combats)
+    .set({ currentParticipantId: firstActiveId(turnOrder(created)) })
+    .where(eq(combats.id, combat.id))
+
   await broadcastCombatState(combat.id, check.gmUserId)
 
   console.log(`[combat] created: "${combatName}" in campaign ${campaignId}`)
@@ -185,33 +197,8 @@ router.get('/:id/combats/:cid', async (req, res) => {
 
   const participants = await db.select().from(combatParticipants).where(eq(combatParticipants.combatId, combatId)).orderBy(asc(combatParticipants.id))
   const enriched = await enrichParticipantHp(campaignId, participants)
-  const sorted = [...enriched].sort((a, b) => b.initiative - a.initiative || a.id - b.id)
 
-  const isGm = userId === check.gmUserId
-
-  function hpStatus(cur: number, max: number): string {
-    if (cur <= 0) return 'mort'
-    const pct = (cur / max) * 100
-    if (pct > 75) return 'intact'
-    if (pct > 50) return 'blesse'
-    if (pct > 25) return 'mal_en_point'
-    return 'agonisant'
-  }
-
-  res.json({
-    ...combat,
-    participants: sorted.map((p) => {
-      if (isGm || p.kind === 'player') return p
-      return {
-        id: p.id, combatId: p.combatId, kind: p.kind, userId: p.userId,
-        name: p.name, initiative: p.initiative, def: p.def,
-        hpMax: null, hpCurrent: null, hpStatus: hpStatus(p.hpCurrent ?? 0, p.hpMax ?? 1),
-        nc: null, statFor: null, statDex: null, statCon: null,
-        statInt: null, statSag: null, statCha: null,
-        attacks: null, abilities: null, monsterDescription: null,
-      }
-    }),
-  })
+  res.json(serializeCombat(combat, enriched, userId === check.gmUserId))
 })
 
 // POST /:id/combats/:cid/next-turn
@@ -227,31 +214,23 @@ router.post('/:id/combats/:cid/next-turn', async (req, res) => {
   if (!combat) { res.status(404).json({ error: 'Combat introuvable' }); return }
   if (combat.status !== 'active') { res.status(400).json({ error: 'Combat inactif' }); return }
 
-  const participants = await db.select().from(combatParticipants).where(eq(combatParticipants.combatId, combatId)).orderBy(asc(combatParticipants.id))
-  const sorted = [...participants].sort((a, b) => b.initiative - a.initiative || a.id - b.id)
-  const alive = sorted.filter((p) => p.kind === 'player' || (p.hpCurrent ?? 0) > 0)
-
-  if (alive.length === 0) { res.status(400).json({ error: 'Aucun participant actif' }); return }
+  const participants = await db.select().from(combatParticipants).where(eq(combatParticipants.combatId, combatId))
+  const sorted = turnOrder(participants)
 
   // Verify requester is GM or current active participant
-  const currentParticipant = sorted[combat.currentTurnIndex]
+  const currentParticipant = sorted.find((p) => p.id === combat.currentParticipantId)
   const isGm = userId === check.gmUserId
   const isCurrentPlayer = currentParticipant?.userId === userId
   if (!isGm && !isCurrentPlayer) {
     res.status(403).json({ error: "Ce n'est pas ton tour" }); return
   }
 
-  // Find next alive participant
-  let nextIndex = combat.currentTurnIndex
-  let roundNumber = combat.roundNumber
-  for (let i = 0; i < sorted.length; i++) {
-    nextIndex = (nextIndex + 1) % sorted.length
-    if (nextIndex === 0) roundNumber++
-    const p = sorted[nextIndex]
-    if (p.kind === 'player' || (p.hpCurrent ?? 0) > 0) break
-  }
+  const next = step(sorted, combat.currentParticipantId, 1)
+  if (!next) { res.status(400).json({ error: 'Aucun participant actif' }); return }
 
-  await db.update(combats).set({ currentTurnIndex: nextIndex, roundNumber }).where(eq(combats.id, combatId))
+  await db.update(combats)
+    .set({ currentParticipantId: next.participantId, roundNumber: combat.roundNumber + next.wrapped })
+    .where(eq(combats.id, combatId))
   await broadcastCombatState(combatId, check.gmUserId)
   res.json({ ok: true })
 })
@@ -269,22 +248,18 @@ router.post('/:id/combats/:cid/prev-turn', async (req, res) => {
   if (!combat) { res.status(404).json({ error: 'Combat introuvable' }); return }
   if (combat.status !== 'active') { res.status(400).json({ error: 'Combat inactif' }); return }
 
-  const participants = await db.select().from(combatParticipants).where(eq(combatParticipants.combatId, combatId)).orderBy(asc(combatParticipants.id))
-  const sorted = [...participants].sort((a, b) => b.initiative - a.initiative || a.id - b.id)
+  const participants = await db.select().from(combatParticipants).where(eq(combatParticipants.combatId, combatId))
+  const sorted = turnOrder(participants)
 
-  let prevIndex = combat.currentTurnIndex
-  let roundNumber = combat.roundNumber
-  for (let i = 0; i < sorted.length; i++) {
-    prevIndex = prevIndex - 1
-    if (prevIndex < 0) {
-      prevIndex = sorted.length - 1
-      roundNumber = Math.max(1, roundNumber - 1)
-    }
-    const p = sorted[prevIndex]
-    if (p.kind === 'player' || (p.hpCurrent ?? 0) > 0) break
-  }
+  const prev = step(sorted, combat.currentParticipantId, -1)
+  if (!prev) { res.status(400).json({ error: 'Aucun participant actif' }); return }
 
-  await db.update(combats).set({ currentTurnIndex: prevIndex, roundNumber }).where(eq(combats.id, combatId))
+  await db.update(combats)
+    .set({
+      currentParticipantId: prev.participantId,
+      roundNumber: Math.max(1, combat.roundNumber - prev.wrapped),
+    })
+    .where(eq(combats.id, combatId))
   await broadcastCombatState(combatId, check.gmUserId)
   res.json({ ok: true })
 })
@@ -342,6 +317,66 @@ router.patch('/:id/combats/:cid/participants/:pid', async (req, res) => {
   res.json({ ok: true })
 })
 
+// PATCH /:id/combats/:cid/participants/:pid/position — déplacer un pion
+router.patch('/:id/combats/:cid/participants/:pid/position', async (req, res) => {
+  const userId = (req as unknown as AuthRequest).userId
+  const campaignId = Number(req.params.id)
+  const combatId = Number(req.params.cid)
+  const pid = Number(req.params.pid)
+
+  const check = await verifyMember(campaignId, userId)
+  if (check.status !== 'ok') { res.status(403).json({ error: 'Non autorisé' }); return }
+
+  const combat = await loadCombatInCampaign(combatId, campaignId)
+  if (!combat) { res.status(404).json({ error: 'Combat introuvable' }); return }
+
+  const [participant] = await db.select().from(combatParticipants).where(eq(combatParticipants.id, pid))
+  if (!participant || participant.combatId !== combatId) {
+    res.status(404).json({ error: 'Participant introuvable' }); return
+  }
+
+  // Les monstres sont au MJ. Les personnages, toute la table peut les bouger.
+  if (participant.kind === 'monster' && userId !== check.gmUserId) {
+    res.status(403).json({ error: 'Seul le MJ peut déplacer les monstres' }); return
+  }
+
+  const { x, y } = req.body as { x?: number; y?: number }
+  if (typeof x !== 'number' || typeof y !== 'number' || !Number.isFinite(x) || !Number.isFinite(y)) {
+    res.status(400).json({ error: 'x et y requis' }); return
+  }
+
+  const clamp = (v: number) => Math.max(-BATTLE_HALF, Math.min(BATTLE_HALF, v))
+  await db
+    .update(combatParticipants)
+    .set({ posX: clamp(x), posY: clamp(y) })
+    .where(eq(combatParticipants.id, pid))
+
+  await broadcastCombatState(combatId, check.gmUserId)
+  res.json({ ok: true })
+})
+
+// PATCH /:id/combats/:cid/environment — changer le décor (MJ seul)
+router.patch('/:id/combats/:cid/environment', async (req, res) => {
+  const userId = (req as unknown as AuthRequest).userId
+  const campaignId = Number(req.params.id)
+  const combatId = Number(req.params.cid)
+
+  const check = await verifyGm(campaignId, userId)
+  if (check.status !== 'ok') { res.status(403).json({ error: 'Seul le MJ peut changer le décor' }); return }
+
+  const combat = await loadCombatInCampaign(combatId, campaignId)
+  if (!combat) { res.status(404).json({ error: 'Combat introuvable' }); return }
+
+  const { environment } = req.body as { environment?: string }
+  if (typeof environment !== 'string' || !/^[a-z-]{1,40}$/.test(environment)) {
+    res.status(400).json({ error: 'environment invalide' }); return
+  }
+
+  await db.update(combats).set({ environment }).where(eq(combats.id, combatId))
+  await broadcastCombatState(combatId, check.gmUserId)
+  res.json({ ok: true })
+})
+
 // POST /:id/combats/:cid/monsters — ajouter un monstre (renforts)
 router.post('/:id/combats/:cid/monsters', async (req, res) => {
   const userId = (req as unknown as AuthRequest).userId
@@ -375,10 +410,50 @@ router.post('/:id/combats/:cid/monsters', async (req, res) => {
     attacks: body.attacks ?? null,
     abilities: body.abilities ?? null,
     monsterDescription: body.description ? String(body.description) : null,
+    // Le MJ peut préparer un renfort qui n'entre pas encore en scène.
+    hidden: body.hidden === true,
   })
 
   await broadcastCombatState(combatId, check.gmUserId)
   res.status(201).json({ ok: true })
+})
+
+// PATCH /:id/combats/:cid/participants/:pid/visibility — réserve ↔ scène (MJ seul)
+router.patch('/:id/combats/:cid/participants/:pid/visibility', async (req, res) => {
+  const userId = (req as unknown as AuthRequest).userId
+  const campaignId = Number(req.params.id)
+  const combatId = Number(req.params.cid)
+  const pid = Number(req.params.pid)
+
+  const check = await verifyGm(campaignId, userId)
+  if (check.status !== 'ok') { res.status(403).json({ error: 'Réservé au MJ' }); return }
+
+  const combat = await loadCombatInCampaign(combatId, campaignId)
+  if (!combat) { res.status(404).json({ error: 'Combat introuvable' }); return }
+
+  const [participant] = await db.select().from(combatParticipants).where(eq(combatParticipants.id, pid))
+  if (!participant || participant.combatId !== combatId) {
+    res.status(404).json({ error: 'Participant introuvable' }); return
+  }
+  if (participant.kind !== 'monster') {
+    res.status(400).json({ error: 'Seul un monstre peut être mis en réserve' }); return
+  }
+
+  const { hidden } = req.body as { hidden?: boolean }
+  if (typeof hidden !== 'boolean') { res.status(400).json({ error: 'hidden requis' }); return }
+
+  // Remettre en réserve celui dont c'est le tour : on passe la main avant, sinon
+  // le tour pointerait sur quelqu'un qui n'est plus dans l'ordre.
+  if (hidden && combat.currentParticipantId === pid) {
+    const all = await db.select().from(combatParticipants).where(eq(combatParticipants.combatId, combatId))
+    const next = step(turnOrder(all), pid, 1)
+    const nextId = next && next.participantId !== pid ? next.participantId : null
+    await db.update(combats).set({ currentParticipantId: nextId }).where(eq(combats.id, combatId))
+  }
+
+  await db.update(combatParticipants).set({ hidden }).where(eq(combatParticipants.id, pid))
+  await broadcastCombatState(combatId, check.gmUserId)
+  res.json({ ok: true })
 })
 
 // DELETE /:id/combats/:cid/participants/:pid — supprimer un monstre (GM seulement)
@@ -400,6 +475,17 @@ router.delete('/:id/combats/:cid/participants/:pid', async (req, res) => {
   }
   if (participant.kind !== 'monster') {
     res.status(400).json({ error: 'Seuls les monstres peuvent être supprimés' }); return
+  }
+
+  // Si on supprime le participant dont c'est le tour, on passe la main au
+  // suivant avant de le retirer. Sinon la FK ON DELETE SET NULL laisserait le
+  // tour vide et le combat repartirait du haut de l'initiative.
+  if (combat.currentParticipantId === pid) {
+    const all = await db.select().from(combatParticipants).where(eq(combatParticipants.combatId, combatId))
+    // On part de `pid` (encore présent dans l'ordre) pour trouver son suivant.
+    const next = step(turnOrder(all), pid, 1)
+    const nextId = next && next.participantId !== pid ? next.participantId : null
+    await db.update(combats).set({ currentParticipantId: nextId }).where(eq(combats.id, combatId))
   }
 
   await db.delete(combatParticipants).where(eq(combatParticipants.id, pid))
