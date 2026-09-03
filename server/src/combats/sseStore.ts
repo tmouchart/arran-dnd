@@ -90,6 +90,17 @@ export function getClientsForCombat(combatId: number): Set<SseClient> {
   return sseClients.get(combatId)!
 }
 
+/**
+ * Un client s'en va. On retire aussi le `Set` devenu vide : sans ça la table
+ * gardait une entrée par combat jamais rouvert, pour toute la vie du process.
+ */
+export function releaseClient(combatId: number, client: SseClient): void {
+  const clients = sseClients.get(combatId)
+  if (!clients) return
+  clients.delete(client)
+  if (clients.size === 0) sseClients.delete(combatId)
+}
+
 function writeSse(res: express.Response, event: string, data: unknown): void {
   res.write(`event: ${event}\n`)
   res.write(`data: ${JSON.stringify(data)}\n\n`)
@@ -137,10 +148,22 @@ export async function sendCombatStateTo(
   writeSse(client.res, 'combat-updated', serializeCombat(combat, enriched, client.userId === gmUserId))
 }
 
-/** Load combat state from DB and broadcast to all SSE clients */
-export async function broadcastCombatState(combatId: number, gmUserId: number): Promise<void> {
-  const clients = sseClients.get(combatId)
-  if (!clients || clients.size === 0) return
+/**
+ * Relit l'état en base et le diffuse aux clients du combat.
+ *
+ * `only` restreint les destinataires : quand rien de ce qui change n'est
+ * visible des joueurs (un PNJ de la réserve qu'on déplace), les rediffuser
+ * coûte 3 Ko par téléphone et fait re-rendre leur carte pour rien.
+ */
+export async function broadcastCombatState(
+  combatId: number,
+  gmUserId: number,
+  only?: (client: SseClient) => boolean,
+): Promise<void> {
+  const all = sseClients.get(combatId)
+  if (!all || all.size === 0) return
+  const clients = only ? [...all].filter(only) : [...all]
+  if (clients.length === 0) return
 
   const [combat] = await db.select().from(combats).where(eq(combats.id, combatId))
   if (!combat) return
