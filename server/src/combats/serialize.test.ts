@@ -141,6 +141,16 @@ describe('serializeCombat — ce qu\'un joueur a le droit de voir', () => {
   })
 })
 
+describe('serializeCombat — le rôle', () => {
+  it("dit au client si le destinataire est MJ, même sans un seul monstre visible", () => {
+    // Le client le devinait par « aucun monstre visible → c'est le MJ ». Au
+    // démarrage d'une embuscade, tous les joueurs se croyaient donc MJ.
+    const ambush = [player({ id: 20 }), monster({ id: 10, hidden: true })]
+    expect(serializeCombat(combat(), ambush, false).isGm).toBe(false)
+    expect(serializeCombat(combat(), ambush, true).isGm).toBe(true)
+  })
+})
+
 describe('serializeCombat — la réserve du MJ', () => {
   const parts = [
     player({ id: 20, initiative: 18 }),

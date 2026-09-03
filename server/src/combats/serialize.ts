@@ -65,6 +65,10 @@ export function serializeCombat(
 
   return {
     ...combat,
+    // Le client ne devine plus son rôle. Il le déduisait de « aucun monstre
+    // visible → c'est le MJ », donc au démarrage d'une embuscade (tous les PNJ
+    // en réserve) chaque joueur se croyait MJ.
+    isGm,
     // Index dérivé de l'id stocké : le client continue de raisonner en position.
     currentTurnIndex: turnIndexOf(sorted, combat.currentParticipantId),
     participants: sorted.map((p) => (isGm || p.kind === 'player' ? p : maskMonster(p))),

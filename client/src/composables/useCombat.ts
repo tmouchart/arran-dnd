@@ -11,6 +11,8 @@ const error = ref<string | null>(null)
 const idle = ref(false)
 let eventSource: EventSource | null = null
 let currentCampaignId: number | null = null
+/** Combat suivi, pour pouvoir le relire au réveil du téléphone (`wakeCombat`). */
+let currentCombatId: number | null = null
 let idleTimer: ReturnType<typeof setTimeout> | null = null
 
 // Combat paused after this much inactivity (no combat update nor user interaction)
@@ -41,6 +43,7 @@ function resetIdleTimer(): void {
 function connect(campaignId: number, combatId: number): void {
   disconnect()
   currentCampaignId = campaignId
+  currentCombatId = combatId
   connecting.value = true
   error.value = null
   idle.value = false
@@ -111,6 +114,7 @@ function disconnect(): void {
   error.value = null
   idle.value = false
   currentCampaignId = null
+  currentCombatId = null
   // Don't clear activeCombat here — the banner should persist when navigating away
 }
 
@@ -118,9 +122,6 @@ function disconnect(): void {
 function markActivity(): void {
   if (eventSource) resetIdleTimer()
 }
-
-/** Id du combat suivi, pour pouvoir le relire au réveil du téléphone. */
-let currentCombatId: number | null = null
 
 /**
  * Le téléphone revient au premier plan.
@@ -144,16 +145,8 @@ export async function wakeCombat(): Promise<void> {
 }
 
 export function useCombat() {
-  const isGm = computed(() => {
-    // GM is determined by whether the user can see monster HP (hpCurrent !== null on monsters)
-    // But we also need the campaignId context — so we check if current user's ID
-    // matches the GM pattern (first participant check or separate field)
-    // For now, we detect GM by checking if any monster has non-null hpCurrent
-    if (!combat.value || !user.value) return false
-    const monster = combat.value.participants.find((p) => p.kind === 'monster')
-    if (!monster) return true // No monsters = could be GM
-    return monster.hpCurrent !== null
-  })
+  // Le serveur le dit dans chaque état : lui seul connaît le `gmUserId`.
+  const isGm = computed(() => combat.value?.isGm ?? false)
 
   const currentParticipant = computed<CombatParticipant | null>(() => {
     if (!combat.value) return null
@@ -192,9 +185,14 @@ export function useCombat() {
     await api.setParticipantVisibility(currentCampaignId, combat.value.id, participantId, hidden)
   }
 
-  async function moveParticipant(participantId: number, x: number, y: number): Promise<void> {
-    if (!combat.value || !currentCampaignId) return
-    await api.moveParticipant(currentCampaignId, combat.value.id, participantId, x, y)
+  /** Renvoie la position RETENUE par le serveur (il peut l'avoir clampée). */
+  async function moveParticipant(
+    participantId: number,
+    x: number,
+    y: number,
+  ): Promise<{ x: number; y: number } | null> {
+    if (!combat.value || !currentCampaignId) return null
+    return api.moveParticipant(currentCampaignId, combat.value.id, participantId, x, y)
   }
 
   async function setEnvironment(environment: string): Promise<void> {

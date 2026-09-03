@@ -45,6 +45,8 @@ export interface CombatState {
   status: 'active' | 'finished'
   currentTurnIndex: number
   roundNumber: number
+  /** Le destinataire de cet état est-il le MJ ? Tranché par le serveur. */
+  isGm: boolean
   /** Décor du champ de bataille (voir `components/battle/environments.ts`). */
   environment: string
   participants: CombatParticipant[]
@@ -129,7 +131,7 @@ export function moveParticipant(
   participantId: number,
   x: number,
   y: number,
-): Promise<void> {
+): Promise<{ x: number; y: number }> {
   return request(`/${campaignId}/combats/${combatId}/participants/${participantId}/position`, {
     method: 'PATCH',
     body: JSON.stringify({ x, y }),
