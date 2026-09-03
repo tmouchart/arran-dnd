@@ -11,7 +11,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/scripts/migrate.ts",
     "create-migration": "node scripts/create-migration.mjs",
-    "create-user": "tsx src/scripts/create-user.ts"
+    "create-user": "tsx src/scripts/create-user.ts",
+    "seed-dev": "tsx src/scripts/seed-dev.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.117.1",

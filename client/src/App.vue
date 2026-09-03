@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from "vue-router";
-import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { computed, defineAsyncComponent, onBeforeUnmount, ref, watch } from "vue";
 import { useRoute } from "vue-router";
-import { UserCircle, Loader2, ScrollText, Swords, Backpack, BookOpenText, Map, Palette, Dices, History } from "lucide-vue-next";
+import { UserCircle, Loader2, ScrollText, Swords, Backpack, BookOpenText, Map, Palette, Dices, History, Wrench } from "lucide-vue-next";
 import CrystalBall from "./components/icons/CrystalBall.vue";
 import AppToast from "./components/ui/AppToast.vue";
 import DiceBar from "./components/DiceBar.vue";
@@ -18,6 +18,10 @@ import { useCampaignRolls } from "./composables/useCampaignRolls";
 import { primeAudio } from "./utils/sfx";
 
 const isDev = import.meta.env.DEV;
+const devToolsOpen = ref(false);
+// Chargé à la demande : le code des outils de dev sort dans son propre chunk et
+// n'est jamais téléchargé en prod.
+const DevToolsSheet = defineAsyncComponent(() => import("./components/dev/DevToolsSheet.vue"));
 const route = useRoute();
 const { activeCombat } = useActiveCombat();
 const { diceBarOpen, toggleDiceBar } = useDiceBar();
@@ -150,6 +154,15 @@ if (savedStyle) {
             <History :size="20" />
             <span v-if="unread > 0 && !panelOpen" class="nav-badge" />
           </button>
+          <button
+            v-if="isDev"
+            type="button"
+            class="nav-link nav-link--dev"
+            title="Outils de dev"
+            @click="devToolsOpen = true"
+          >
+            <Wrench :size="20" />
+          </button>
         </div>
         <RouterLink v-if="user" to="/options" class="nav-user" title="Options">
           <div class="nav-avatar">
@@ -169,6 +182,7 @@ if (savedStyle) {
     <Dice3DOverlay />
     <CriticalMomentOverlay />
     <CampfireOverlay />
+    <DevToolsSheet v-if="isDev" v-model="devToolsOpen" />
     <RestSummaryModal />
     <AppToast />
   </div>

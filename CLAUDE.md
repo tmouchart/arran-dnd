@@ -244,6 +244,31 @@ Read dev.log                       # tout le log
 Grep "Error|ECONNREFUSED" dev.log  # filtrer
 ```
 
+### Outils de dev (bac à sable, switch d'identité, combats bidon)
+
+Actifs seulement si `DEV_TOOLS=1` dans `server/.env` **et** `NODE_ENV !== 'production'`
+(voir `server/src/dev/enabled.ts` — volontairement fail-closed).
+
+**Le bac à sable** : `npm run seed-dev` recrée la campagne « Bac à sable » avec
+le MJ `mj-dev` et 4 joueurs (`bracco`, `nym`, `orlane`, `kaeliss`), mot de passe
+`dev` pour tous. Les fiches sont volontairement variées : armure lourde (init
+très basse), un perso à 2 PV, deux DEX identiques pour tester les égalités
+d'initiative. Idempotent — il supprime et recrée la campagne, les comptes sont
+réutilisés. Il ne touche à aucune autre campagne.
+
+**La clé à molette** dans la barre du bas (dev uniquement) ouvre :
+- **Incarner** — change d'identité sans mot de passe, puis reload. Plus besoin de
+  se délog.
+- **Combat bidon** — lance un combat de test dans la campagne active, avec des
+  presets : combat simple, un PJ en agonie, round 3 avec un mort à sauter, foule
+  de 12, égalités d'initiative partout.
+
+**Voir MJ et joueur en même temps** : une fenêtre normale + une fenêtre privée.
+Chacune a son cookie, donc chacune son identité.
+
+⚠️ `/api/dev/switch-user` délivre le compte de n'importe qui sans mot de passe.
+Ne jamais monter ce routeur en prod, ne jamais retirer le double verrou.
+
 ### Ports
 
 | Service | URL |
