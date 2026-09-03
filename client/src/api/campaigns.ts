@@ -108,6 +108,8 @@ export interface EncounterMonster {
   attacks: EncounterMonsterAttack[]
   abilities: EncounterMonsterAbility[]
   description: string | null
+  /** Démarre le combat en réserve : caché aux joueurs, hors initiative. */
+  hidden: boolean
 }
 
 export interface EncounterSummary {

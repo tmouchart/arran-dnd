@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, Copy, Trash2, Plus, Search, X, ChevronUp, ChevronDown } from 'lucide-vue-next'
+import { ArrowLeft, Copy, Trash2, Plus, Search, X, ChevronUp, ChevronDown, Eye, EyeOff } from 'lucide-vue-next'
 import {
   fetchEncounter,
   updateEncounter,
@@ -104,6 +104,7 @@ function catalogToMonsterData(m: Monster): Omit<EncounterMonster, 'id' | 'encoun
     attacks: m.attacks,
     abilities: m.abilities,
     description: m.description ?? null,
+    hidden: false,
   }
 }
 
@@ -126,7 +127,7 @@ async function handleAddCustom() {
       name: 'Nouveau monstre',
       nc: 0, size: 'moyenne', def: 10, pv: 10, init: 10, rd: null,
       statFor: 0, statDex: 0, statCon: 0, statInt: 0, statSag: 0, statCha: 0,
-      attacks: [], abilities: [], description: null,
+      attacks: [], abilities: [], description: null, hidden: false,
     })
     encounter.value.monsters.push(created)
     editingMonsterId.value = created.id
@@ -154,6 +155,13 @@ async function handleDeleteMonster(mid: number) {
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Erreur'
   }
+}
+
+/** Bascule un ennemi entre « entre en jeu tout de suite » et « en réserve ». */
+async function toggleHidden(m: EncounterMonster) {
+  const hidden = !m.hidden
+  m.hidden = hidden
+  await updateEncounterMonster(campaignId, encounterId, m.id, { hidden })
 }
 
 // Save monster field changes with debounce
@@ -304,12 +312,22 @@ function goBack() {
           <!-- Summary row -->
           <div class="monster-summary" @click="editingMonsterId = editingMonsterId === m.id ? null : m.id">
             <div class="monster-main-info">
-              <span class="monster-name">{{ m.name }}</span>
+              <span class="monster-name">
+                {{ m.name }}
+                <span v-if="m.hidden" class="reserve-tag">en réserve</span>
+              </span>
               <span class="monster-stats-brief">
                 NC {{ m.nc }} · {{ m.pv }} PV · DEF {{ m.def }} · Init {{ m.init }}
               </span>
             </div>
             <div class="monster-actions">
+              <AppIconBtn
+                :title="m.hidden ? 'En réserve : entrera plus tard' : 'Entre en jeu dès le début'"
+                @click.stop="toggleHidden(m)"
+              >
+                <EyeOff v-if="m.hidden" :size="16" />
+                <Eye v-else :size="16" />
+              </AppIconBtn>
               <AppIconBtn title="Dupliquer" @click.stop="handleDuplicate(m.id)">
                 <Copy :size="16" />
               </AppIconBtn>
@@ -564,6 +582,17 @@ function goBack() {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.reserve-tag {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 0 var(--space-xs);
+  margin-left: var(--space-xs);
 }
 
 .monster-stats-brief {

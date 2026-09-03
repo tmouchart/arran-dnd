@@ -147,6 +147,7 @@ router.post('/:id/combats', async (req, res) => {
         attacks: m.attacks,
         abilities: m.abilities,
         monsterDescription: m.description,
+        hidden: m.hidden,
       })
     }
   }

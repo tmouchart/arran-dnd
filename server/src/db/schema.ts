@@ -194,6 +194,8 @@ export const encounterMonsters = pgTable('encounter_monster', {
   attacks: jsonb('attacks').notNull().default([]),
   abilities: jsonb('abilities').notNull().default([]),
   description: text('description'),
+  /** Démarre le combat en réserve (caché aux joueurs, hors initiative). */
+  hidden: boolean('hidden').notNull().default(false),
 })
 
 export const combats = pgTable('combat', {

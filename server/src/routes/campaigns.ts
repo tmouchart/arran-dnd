@@ -451,6 +451,7 @@ router.post('/:id/encounters/:eid/monsters', async (req, res) => {
       attacks: body.attacks ?? [],
       abilities: body.abilities ?? [],
       description: body.description ? String(body.description) : null,
+      hidden: body.hidden === true,
     })
     .returning()
 
@@ -577,6 +578,7 @@ router.put('/:id/encounters/:eid/monsters/:mid', async (req, res) => {
       ...(body.attacks !== undefined ? { attacks: body.attacks } : {}),
       ...(body.abilities !== undefined ? { abilities: body.abilities } : {}),
       ...(body.description !== undefined ? { description: body.description ? String(body.description) : null } : {}),
+      ...(body.hidden !== undefined ? { hidden: body.hidden === true } : {}),
     })
     .where(eq(encounterMonsters.id, mid))
     .returning()
