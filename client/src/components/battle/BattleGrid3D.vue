@@ -680,7 +680,19 @@ function frame() {
 
   dirty = false
   renderer.render(scene, camera)
+  if (isDev) framesThisSecond++
 }
+
+/**
+ * Compteur d'images (dev seulement) : il compte les rendus réellement faits,
+ * pas les appels à requestAnimationFrame. Au repos la boucle s'arrête pour de
+ * bon, donc 0 est la bonne valeur — et pendant une pulsation seule, on doit
+ * lire 15.
+ */
+const isDev = import.meta.env.DEV
+const fps = ref(0)
+let framesThisSecond = 0
+let fpsTimer: ReturnType<typeof setInterval> | null = null
 
 onMounted(() => {
   const el = container.value
@@ -714,9 +726,17 @@ onMounted(() => {
   observer.observe(el)
   clock.start()
   requestRender()
+
+  if (isDev) {
+    fpsTimer = setInterval(() => {
+      fps.value = framesThisSecond
+      framesThisSecond = 0
+    }, 1000)
+  }
 })
 
 onBeforeUnmount(() => {
+  if (fpsTimer) clearInterval(fpsTimer)
   cancelAnimationFrame(raf)
   running = false
   observer?.disconnect()
@@ -756,17 +776,52 @@ defineExpose({
 </script>
 
 <template>
-  <div
-    ref="container"
-    class="battle-grid"
-    @pointerdown="onPointerDown"
-    @pointermove="onPointerMove"
-    @pointerup="onPointerUp"
-    @pointercancel="onPointerUp"
-  />
+  <div class="battle-grid-wrap">
+    <div
+      ref="container"
+      class="battle-grid"
+      @pointerdown="onPointerDown"
+      @pointermove="onPointerMove"
+      @pointerup="onPointerUp"
+      @pointercancel="onPointerUp"
+    />
+    <!-- Dev only : vérifier d'un coup d'œil que la boucle lève bien le pied. -->
+    <div v-if="isDev" class="fps-layer">
+      <span class="fps-badge">{{ fps }} fps</span>
+    </div>
+  </div>
 </template>
 
 <style scoped>
+.battle-grid-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Calque au-dessus de la scène : il ne mange aucun geste. */
+.fps-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  padding: var(--space-xs);
+  pointer-events: none;
+}
+
+.fps-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 0 var(--space-xs);
+  opacity: 0.8;
+}
+
 .battle-grid {
   width: 100%;
   height: 100%;
