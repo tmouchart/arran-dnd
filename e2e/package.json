@@ -1,0 +1,13 @@
+{
+  "name": "e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "ui": "playwright test --ui"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.50.0",
+    "postgres": "^3.4.8"
+  }
+}

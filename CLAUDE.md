@@ -295,6 +295,20 @@ await fetch('http://localhost:3566/api/characters', { headers: { cookie: 'token=
 
 Attention : la table des utilisateurs s'appelle `"user"` (singulier, mot réservé SQL → guillemets obligatoires).
 
+## Tests end-to-end
+
+`npm run e2e` — Playwright, headless, une seule commande. Elle build, prépare
+la base dédiée `arrandnd_e2e`, démarre le serveur de prod sur le port 3567,
+joue les tests, coupe tout. Elle ne touche jamais à la base de dev ni au
+`npm run dev` qui tourne dans ton terminal.
+
+- Les tests vivent dans `e2e/specs/`. Plan et périmètre : `plans/17-tests-e2e.md`.
+- Les données viennent du bac à sable (`seedDev()`), recréé à chaque run.
+- Pour cibler un élément : **`data-testid`**, pas de sélecteur CSS ni de texte
+  fragile. Sur les boutons icônes, le testid est obligatoire.
+- Jamais de `waitForTimeout` : on attend une assertion ou une réponse réseau.
+- Les appels IA et TTS sont coupés (`e2e/fixtures/test.ts`).
+
 ## Plans
 
 All implementation plans must be saved as Markdown files in the `plans/` directory at the project root. Use numbered prefixes for ordering (e.g., `01-campagnes.md`, `02-rencontres.md`). Always write the plan to this directory — never only in `.claude/plans/`.

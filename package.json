@@ -3,7 +3,8 @@
   "private": true,
   "workspaces": [
     "client",
-    "server"
+    "server",
+    "e2e"
   ],
   "scripts": {
     "dev": "node scripts/dev.mjs",
@@ -12,7 +13,11 @@
     "db:migrate": "npm run db:migrate -w server",
     "create-user": "npm run create-user -w server --",
     "test": "npm run test -w client && npm run test -w server",
-    "seed-dev": "npm run seed-dev -w server"
+    "seed-dev": "npm run seed-dev -w server",
+    "e2e": "npm run build && npm run e2e:db && npm run test -w e2e",
+    "e2e:ui": "npm run build && npm run e2e:db && npm run ui -w e2e",
+    "e2e:db": "tsx e2e/prepare-db.ts",
+    "e2e:headed": "npm run build && npm run e2e:db && npm run test -w e2e -- --headed"
   },
   "devDependencies": {
     "concurrently": "^9.1.0",
