@@ -28,7 +28,17 @@ const showGrid = ref(false)
  * déplacement est en vol, les positions qui arrivent pour ce pion sont ignorées
  * (elles datent d'avant notre geste).
  */
-const pending = ref(new Map<string, { x: number; z: number; at: number; confirmed: boolean }>())
+const pending = ref(new Map<string, { seq: number; x: number; z: number; at: number }>())
+
+/**
+ * Numéro de geste, pour qu'une réponse ne confirme que SON déplacement.
+ *
+ * Deux taps rapides et la réponse du premier arrivait sur l'entrée du second :
+ * elle la marquait confirmée puis la lâchait 600 ms plus tard, alors que le
+ * serveur en était encore à la première position — le pion se téléportait en
+ * arrière. Un geste plus récent périme donc le précédent.
+ */
+let nextSeq = 0
 
 /** Au-delà, on considère que le serveur ne répondra jamais et on lâche prise. */
 const PENDING_TIMEOUT_MS = 3000
@@ -36,8 +46,9 @@ const PENDING_TIMEOUT_MS = 3000
 /** Après confirmation, délai maximal d'attente du prochain état diffusé. */
 const SETTLE_GRACE_MS = 600
 
-function release(id: string) {
-  if (!pending.value.delete(id)) return
+function release(id: string, seq: number) {
+  if (pending.value.get(id)?.seq !== seq) return
+  pending.value.delete(id)
   pending.value = new Map(pending.value)
 }
 
@@ -123,13 +134,13 @@ watch(
     let changed = false
     for (const [id, move] of pending.value) {
       const p = participants.find((x) => String(x.id) === id)
-      // Une fois notre écriture confirmée, le premier état reçu fait foi —
-      // même s'il porte la position de quelqu'un qui a écrit juste après nous.
-      // Sans ça, celui qui perd une collision reste bloqué sur sa position
-      // fantôme pendant trois secondes.
+      // On ne lâche que sur NOTRE position. Un état qui en porte une autre est
+      // soit un geste plus ancien qui traîne, soit quelqu'un qui a écrit après
+      // nous : dans les deux cas c'est le `setTimeout` de 600 ms après la
+      // réponse qui tranche, pas cet état-là. Sans ça, l'événement en retard
+      // d'un tap précédent téléportait le pion en arrière.
       const settled =
         !p ||
-        move.confirmed ||
         now - move.at > PENDING_TIMEOUT_MS ||
         (Math.abs((p.posX ?? 0) - move.x) < 1e-3 && Math.abs((p.posY ?? 0) - move.z) < 1e-3)
       if (settled) {
@@ -147,18 +158,20 @@ const activeId = computed(() =>
 )
 
 async function onMove(id: string, x: number, z: number) {
-  pending.value.set(id, { x, z, at: Date.now(), confirmed: false })
+  const seq = ++nextSeq
+  pending.value.set(id, { seq, x, z, at: Date.now() })
   pending.value = new Map(pending.value)
   try {
     await moveParticipant(Number(id), x, z)
     // Le serveur diffuse AVANT de répondre : notre état est déjà en route.
     // On garde l'affichage optimiste juste le temps qu'il arrive, pas plus.
+    // Si un geste plus récent a pris la main, ce n'est plus notre affaire.
     const move = pending.value.get(id)
-    if (move) move.confirmed = true
-    setTimeout(() => release(id), SETTLE_GRACE_MS)
+    if (move?.seq !== seq) return
+    setTimeout(() => release(id, seq), SETTLE_GRACE_MS)
   } catch {
     // Refusé : le pion revient là où le serveur le croit.
-    release(id)
+    release(id, seq)
     showToast('Déplacement refusé.')
   }
 }
