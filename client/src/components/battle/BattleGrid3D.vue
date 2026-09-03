@@ -364,6 +364,7 @@ function syncTokens() {
     scene.remove(view.group)
     views.delete(id)
   }
+  requestRender()
 }
 
 function disposeObject(root: THREE.Object3D) {
@@ -385,6 +386,7 @@ function refreshGround() {
   ground.material = new THREE.MeshLambertMaterial({
     map: makeGroundTexture(env, gridSize(), !!props.showGrid),
   })
+  requestRender()
 }
 
 /** Repeint le sol, refait le décor et règle les lumières. */
@@ -405,6 +407,7 @@ function applyEnvironment() {
     disposeObject(child)
   }
   for (const o of env.decor?.(half(), rngFor(env.id)) ?? []) decorGroup.add(o)
+  requestRender()
 }
 
 /**
@@ -444,6 +447,7 @@ function resize() {
   if (!el) return
   renderer.setSize(el.clientWidth, el.clientHeight, false)
   updateCamera()
+  requestRender()
 }
 
 /* ------------------------------------------------------------------ */
@@ -487,6 +491,7 @@ function onPointerMove(e: PointerEvent) {
     if (pinchStart > 0 && dist > 0) {
       frustum = THREE.MathUtils.clamp(frustumStart * (pinchStart / dist), 5, 26)
       updateCamera()
+      requestRender()
     }
     return
   }
@@ -501,6 +506,7 @@ function onPointerMove(e: PointerEvent) {
   camTarget.x = THREE.MathUtils.clamp(camTarget.x, -limit, limit)
   camTarget.z = THREE.MathUtils.clamp(camTarget.z, -limit, limit)
   updateCamera()
+  requestRender()
 }
 
 function onPointerUp(e: PointerEvent) {
@@ -534,6 +540,7 @@ function handleTap(e: PointerEvent) {
     }
     selectedId.value = selectedId.value === id ? null : id
     emit('select', selectedId.value)
+    requestRender()
     return
   }
 
@@ -550,18 +557,72 @@ function handleTap(e: PointerEvent) {
 /** Rotation par quarts de tour : impossible de se perdre. */
 function rotate(dir: 1 | -1) {
   yawGoal += (dir * Math.PI) / 2
+  requestRender()
 }
 
 function recenter() {
   camTarget.set(0, 0, 0)
   frustum = 12.5
   updateCamera()
+  requestRender()
+}
+
+/**
+ * Rendu à la demande.
+ *
+ * Une boucle 60 fps permanente fait chauffer six téléphones pendant deux heures,
+ * et un téléphone qui chauffe finit par throttler — c'est là que TOUT devient
+ * saccadé. On ne dessine donc que s'il se passe quelque chose, et la pulsation
+ * de l'anneau, qui elle tourne en continu, se contente de 15 images/seconde.
+ */
+const PULSE_FPS = 15
+let running = false
+let dirty = true
+let pulseAccumulator = 0
+
+/** Réveille la boucle. À appeler dès qu'on change quoi que ce soit de visible. */
+function requestRender() {
+  dirty = true
+  if (!running) {
+    running = true
+    clock.getDelta() // purge le temps écoulé pendant la sieste
+    raf = requestAnimationFrame(frame)
+  }
+}
+
+/** Y a-t-il un pion en train de glisser, ou la caméra en train de tourner ? */
+function isAnimating(): boolean {
+  if (Math.abs(yawGoal - yaw) > 1e-4) return true
+  for (const v of views.values()) if (v.t < 1) return true
+  return false
+}
+
+/** Un anneau visible pulse, donc il faut continuer à dessiner — mais doucement. */
+function hasPulse(): boolean {
+  return !!props.activeId && views.has(props.activeId)
 }
 
 function frame() {
-  raf = requestAnimationFrame(frame)
   const dt = clock.getDelta()
   const time = clock.elapsedTime
+  const animating = isAnimating()
+
+  // Rien ne bouge et rien ne pulse : on s'arrête pour de bon.
+  if (!animating && !dirty && !hasPulse()) {
+    running = false
+    return
+  }
+
+  raf = requestAnimationFrame(frame)
+
+  // Pulsation seule : on lève le pied à 15 fps.
+  if (!animating && !dirty) {
+    pulseAccumulator += dt
+    if (pulseAccumulator < 1 / PULSE_FPS) return
+    pulseAccumulator = 0
+  } else {
+    pulseAccumulator = 0
+  }
 
   if (Math.abs(yawGoal - yaw) > 1e-4) {
     yaw += (yawGoal - yaw) * Math.min(1, dt * 8)
@@ -588,6 +649,7 @@ function frame() {
     }
   }
 
+  dirty = false
   renderer.render(scene, camera)
 }
 
@@ -622,7 +684,7 @@ onMounted(() => {
   observer = new ResizeObserver(resize)
   observer.observe(el)
   clock.start()
-  frame()
+  requestRender()
 })
 
 onBeforeUnmount(() => {
@@ -639,6 +701,7 @@ onBeforeUnmount(() => {
 })
 
 watch(() => props.tokens, syncTokens, { deep: true })
+watch(() => props.activeId, () => requestRender())
 watch(() => props.environment, () => scene && applyEnvironment())
 watch(() => props.showGrid, () => scene && refreshGround())
 
@@ -661,6 +724,7 @@ defineExpose({
   recenter,
   deselect: () => {
     selectedId.value = null
+    requestRender()
   },
 })
 </script>
