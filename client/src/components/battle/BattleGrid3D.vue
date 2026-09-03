@@ -362,9 +362,28 @@ function syncTokens() {
   for (const [id, view] of views) {
     if (seen.has(id)) continue
     scene.remove(view.group)
+    disposeObject(view.group)
     views.delete(id)
   }
   requestRender()
+}
+
+/**
+ * Libère un matériau ET ses textures.
+ *
+ * `material.dispose()` ne touche pas à `.map` : chaque pion porte trois canvas
+ * (étiquette, jauge de PV, ombre) et le sol fait 1152×1152. Les oublier faisait
+ * grossir la VRAM à chaque aller-retour sur l'onglet Carte.
+ *
+ * `shadowTex` est partagée par tous les pions et survit au composant : on ne la
+ * libère qu'au démontage, une seule fois.
+ */
+function disposeMaterial(mat: THREE.Material) {
+  for (const key of ['map', 'alphaMap', 'lightMap', 'emissiveMap'] as const) {
+    const tex = (mat as unknown as Record<string, THREE.Texture | null>)[key]
+    if (tex && tex !== shadowTex) tex.dispose()
+  }
+  mat.dispose()
 }
 
 function disposeObject(root: THREE.Object3D) {
@@ -372,17 +391,15 @@ function disposeObject(root: THREE.Object3D) {
     const m = o as THREE.Mesh
     m.geometry?.dispose?.()
     const mat = m.material as THREE.Material | THREE.Material[] | undefined
-    if (Array.isArray(mat)) mat.forEach((x) => x.dispose())
-    else mat?.dispose?.()
+    if (Array.isArray(mat)) mat.forEach(disposeMaterial)
+    else if (mat) disposeMaterial(mat)
   })
 }
 
 /** Repeint la texture du sol (décor courant + damier si demandé). */
 function refreshGround() {
   const env = findEnvironment(props.environment)
-  const old = ground.material as THREE.MeshLambertMaterial
-  old.map?.dispose()
-  old.dispose()
+  disposeMaterial(ground.material)
   ground.material = new THREE.MeshLambertMaterial({
     map: makeGroundTexture(env, gridSize(), !!props.showGrid),
   })
@@ -444,7 +461,7 @@ function updateCamera() {
 
 function resize() {
   const el = container.value
-  if (!el) return
+  if (!el || el.clientWidth === 0 || el.clientHeight === 0) return
   renderer.setSize(el.clientWidth, el.clientHeight, false)
   updateCamera()
   requestRender()
@@ -602,13 +619,25 @@ function hasPulse(): boolean {
   return !!props.activeId && views.has(props.activeId)
 }
 
+/**
+ * Le composant reste monté quand on quitte l'onglet Carte (sinon la scène se
+ * reconstruit à chaque passage). Mais un `display: none` ne suspend pas la
+ * boucle : sans ce garde, l'anneau doré continuerait de pulser à 15 fps
+ * derrière la timeline, pendant tout le combat.
+ */
+function isVisible(): boolean {
+  const el = container.value
+  return !!el && el.clientWidth > 0 && el.clientHeight > 0
+}
+
 function frame() {
   const dt = clock.getDelta()
   const time = clock.elapsedTime
   const animating = isAnimating()
 
-  // Rien ne bouge et rien ne pulse : on s'arrête pour de bon.
-  if (!animating && !dirty && !hasPulse()) {
+  // Onglet caché, ou rien ne bouge et rien ne pulse : on s'arrête pour de bon.
+  // Le ResizeObserver rallume la boucle au retour sur la carte.
+  if (!isVisible() || (!animating && !dirty && !hasPulse())) {
     running = false
     return
   }
@@ -689,14 +718,11 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   cancelAnimationFrame(raf)
+  running = false
   observer?.disconnect()
-  scene?.traverse((o) => {
-    const m = o as THREE.Mesh
-    m.geometry?.dispose?.()
-    const mat = m.material as THREE.Material | THREE.Material[] | undefined
-    if (Array.isArray(mat)) mat.forEach((x) => x.dispose())
-    else mat?.dispose?.()
-  })
+  if (scene) disposeObject(scene)
+  shadowTex.dispose()
+  views.clear()
   renderer?.dispose()
 })
 

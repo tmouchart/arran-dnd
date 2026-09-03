@@ -82,6 +82,13 @@ const combatTabs = computed<AppTab[]>(() => [
   { value: "map", label: "Champ de bataille", icon: Map },
 ]);
 
+// La carte 3D coûte un contexte WebGL et un sol de 1152 px à peindre : on ne
+// la construit pas tant que personne n'a ouvert l'onglet.
+const mapEverOpened = ref(false);
+watch(activeTab, (tab) => {
+  if (tab === "map") mapEverOpened.value = true;
+}, { immediate: true });
+
 // Expanded card (click to toggle)
 const expandedId = ref<number | null>(null);
 
@@ -400,7 +407,15 @@ function goBack() {
         <AppTabs :model-value="activeTab" :tabs="combatTabs" @update:model-value="activeTab = $event as CombatTab" />
 
         <!-- Tab: Champ de bataille 3D -->
-        <BattleMapTab v-if="activeTab === 'map'" :combat="combat" :is-gm="isGm" />
+        <!-- Montée au premier affichage, puis gardée : un v-if reconstruisait
+             toute la scène three.js (sol 1152px, décor, 3 canvas par pion) à
+             chaque passage d'onglet, et fuyait ses textures au passage. -->
+        <BattleMapTab
+          v-if="mapEverOpened"
+          v-show="activeTab === 'map'"
+          :combat="combat"
+          :is-gm="isGm"
+        />
 
         <!-- Tab: Actions (player only) -->
         <div v-if="activeTab === 'actions' && !isGm" class="actions-tab">
