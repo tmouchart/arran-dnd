@@ -79,7 +79,7 @@ export async function saveWithRevision(params: {
   await prune(type, id, row.isDrawing)
 
   const name = await authorName(userId)
-  adapter.broadcast(id, snapshot, { userId, characterName: name })
+  adapter.broadcast(id, snapshot, nextVersion, { userId, characterName: name })
 
   return { status: 'ok', version: nextVersion }
 }

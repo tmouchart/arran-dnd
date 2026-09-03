@@ -107,14 +107,16 @@ function broadcastLockStatus(resourceKey: string): void {
 
 export function broadcastContentUpdate(
   resourceKey: string,
-  content: string,
+  payload: { content: string; version: number },
   updatedBy: { userId: number; characterName: string },
 ): void {
   const clients = sseClients.get(resourceKey)
   if (!clients) return
   for (const client of clients) {
     if (client.userId === updatedBy.userId) continue
-    writeSse(client.res, 'journal-updated', { content, updatedBy: updatedBy.characterName })
+    // La version est indispensable : sans elle le destinataire garde un numéro
+    // périmé et sa prochaine sauvegarde part en 409 — au prix de son texte.
+    writeSse(client.res, 'journal-updated', { ...payload, updatedBy: updatedBy.characterName })
   }
 }
 

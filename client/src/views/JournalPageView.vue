@@ -17,6 +17,7 @@ import { fetchPage, savePage, deletePage, type JournalPage, type Stroke } from "
 import { useJournalLock } from "../composables/useJournalLock";
 import { useAutosave } from "../composables/useAutosave";
 import JournalHistorySheet from "../components/journal/JournalHistorySheet.vue";
+import { mergeStrokes } from "../utils/strokes";
 import { showToast } from "../composables/useToast";
 import { relativeTime } from "../utils/relativeTime";
 import type { MentionKind } from "../utils/mentions";
@@ -41,11 +42,14 @@ const {
   lock,
   content: sseContent,
   version,
+  hasLocalEdits,
+  lockLost,
   isLockedByMe,
   isLockedByOther,
   lockedByName,
   connectSSE,
   acquire,
+  ensureLock,
   release,
 } = useJournalLock(
   `/api/journal/pages/${pageId.value}/events`,
@@ -53,23 +57,22 @@ const {
   `/api/journal/pages/${pageId.value}/lock`,
 );
 
-// SSE content updates
+/** Dernier état qu'on sait identique à celui du serveur. Il sert de référence
+ *  pour distinguer « l'utilisateur a tapé » de « on vient de recevoir/charger »
+ *  — sans ça, ouvrir la page déclenche une sauvegarde et vole le verrou. */
+let syncedContent = "";
+let syncedTitle = "";
+
+// Contenu venu des autres. Pour le texte le composable ne le publie que quand
+// c'est sans risque ; pour les dessins on fusionne trait par trait.
 watch(sseContent, (v) => {
-  if (!v) return;
-  if (isDrawing.value) {
-    // Merge remote strokes into local strokes
-    try {
-      const remote: Stroke[] = JSON.parse(v);
-      const local: Stroke[] = content.value ? JSON.parse(content.value) : [];
-      const localIds = new Set(local.map((s) => s.id));
-      const merged = [...local, ...remote.filter((s) => !localIds.has(s.id))];
-      if (merged.length !== local.length) {
-        content.value = JSON.stringify(merged);
-      }
-    } catch { /* ignore malformed */ }
-  } else {
-    if (!isLockedByMe.value) content.value = v;
-  }
+  if (!v || v === content.value) return;
+  const next = isDrawing.value ? mergeStrokes(content.value, v) : v;
+  if (next === null || next === content.value) return;
+  // La fusion fait autorité côté serveur : ce qu'on affiche est déjà à jour,
+  // inutile de le lui renvoyer.
+  syncedContent = next;
+  content.value = next;
 });
 
 const {
@@ -78,33 +81,53 @@ const {
   schedule,
   flush: flushSave,
 } = useAutosave<{ title: string; content: string }>(async (value) => {
+  // Le verrou a pu expirer entre deux frappes (téléphone en veille). On le
+  // reprend avant d'écrire au lieu de partir en 423. Les dessins n'en ont pas.
+  if (!isDrawing.value && !(await ensureLock())) {
+    throw new Error("verrou indisponible");
+  }
   try {
     // Les dessins n'annoncent pas de version : plusieurs personnes dessinent en
     // même temps et les traits fusionnent par id. L'historique sert de filet.
-    version.value = await savePage(pageId.value, {
+    const saved = await savePage(pageId.value, {
       ...value,
       expectedVersion: isDrawing.value ? null : version.value,
     });
+    version.value = saved.version;
+    syncedTitle = value.title;
+    // Le serveur a fusionné avec les traits arrivés entre-temps : on adopte son
+    // résultat, sinon l'écran reste amputé du dessin des autres.
+    syncedContent = saved.content ?? value.content;
+    if (saved.content) content.value = saved.content;
   } catch (e: any) {
+    // 409 : on garde CE QUI EST TAPÉ — l'autre version reste dans l'historique
+    // — et on rejoue la sauvegarde avec la version à jour.
     if (e?.status === 409) {
       version.value = e.body?.currentVersion ?? null;
-      content.value = e.body?.content ?? content.value;
-      showToast("La page a été modifiée ailleurs — contenu rechargé.");
-      return;
+      showToast("Quelqu'un a écrit en même temps — sa version est dans l'historique.");
     }
     throw e;
   }
 });
 
+// Une seule source de vérité pour « du texte n'est pas encore arrivé au
+// serveur » : c'est ce qui protège l'écran et maintient le verrou en vie.
+watch(hasPending, (v) => { hasLocalEdits.value = v; });
+
 function scheduleSave() {
   schedule({ title: title.value, content: content.value });
 }
 
-// For text pages: save only when holding lock. For drawings: save freely.
-watch(content, () => {
-  if (!loading.value && (isDrawing.value || isLockedByMe.value)) scheduleSave();
+watch(content, (v) => {
+  if (loading.value || v === syncedContent) return;
+  if (!isDrawing.value && isLockedByOther.value && !isLockedByMe.value) return;
+  scheduleSave();
 });
-watch(title, () => { if (!loading.value && isLockedByMe.value) scheduleSave(); });
+watch(title, (v) => {
+  if (loading.value || v === syncedTitle) return;
+  if (isLockedByOther.value && !isLockedByMe.value) return;
+  scheduleSave();
+});
 
 let acquiring = false;
 async function onFocus() {
@@ -199,8 +222,10 @@ async function load() {
     const data = await fetchPage(pageId.value);
     page.value = data;
     content.value = data.content;
+    syncedContent = data.content;
     version.value = data.version;
     title.value = data.title;
+    syncedTitle = data.title;
     lastEditedBy.value = data.lastEditedBy;
     updatedAt.value = data.updatedAt;
     if (data.lock) lock.value = data.lock;
@@ -282,6 +307,13 @@ onMounted(load);
     <AppEmptyState v-if="loading" variant="loading">Chargement…</AppEmptyState>
     <AppEmptyState v-else-if="error" variant="error">{{ error }}</AppEmptyState>
 
+    <!-- Le verrou perdu pendant qu'on écrit doit se voir : c'est ce silence
+         qui faisait perdre du texte. -->
+    <div v-else-if="lockLost" class="save-alert">
+      {{ lockedByName ?? "Quelqu'un" }} édite cette page en ce moment. Ton texte
+      est conservé et sera renvoyé dès que la place se libère. Ne ferme pas la page.
+    </div>
+
     <!-- Une sauvegarde bloquée doit se voir. -->
     <div v-else-if="saveStatus === 'error'" class="save-alert">
       Sauvegarde impossible pour l'instant — ton contenu est conservé et sera
@@ -293,6 +325,7 @@ onMounted(load);
       <DrawingCanvas
         ref="canvasRef"
         v-if="isDrawing"
+        :shared="true"
         :strokes="drawingStrokes"
         :readonly="isLockedByOther"
         @update:strokes="onStrokesUpdate"

@@ -78,6 +78,9 @@ export interface Stroke {
   color: string
   width: number
   eraser: boolean
+  /** Pierre tombale : un trait annulé n'est pas retiré de la liste, sinon la
+   *  copie d'un autre joueur le ferait revenir à la fusion suivante. */
+  deleted?: boolean
 }
 
 export interface JournalPageSummary {
@@ -119,16 +122,18 @@ export async function fetchPage(id: number): Promise<JournalPage> {
   return apiFetch(`/api/journal/pages/${id}`)
 }
 
+/** `content` n'est renvoyé que pour un dessin fusionné côté serveur : c'est la
+ *  liste de traits complète, à réafficher telle quelle. */
 export async function savePage(
   id: number,
   data: { title?: string; content?: string; expectedVersion?: number | null },
-): Promise<number> {
+): Promise<{ version: number; content?: string }> {
   const res = await apiFetch(`/api/journal/pages/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   })
-  return res.version
+  return { version: res.version, content: res.content }
 }
 
 export async function deletePage(id: number): Promise<void> {

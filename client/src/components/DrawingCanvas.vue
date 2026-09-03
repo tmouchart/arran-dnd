@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount, nextTick } from "vue";
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from "vue";
 import { Eraser, Undo2, Pen, Hand, ZoomIn, ZoomOut } from "lucide-vue-next";
 import type { Stroke } from "../api/journal";
 
 const props = defineProps<{
   strokes: Stroke[];
   readonly: boolean;
+  /** Dessin partagé : « annuler » ne défait alors que mes propres traits — sur
+   *  une page à plusieurs, le dernier trait est souvent celui du voisin. */
+  shared?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -18,6 +21,9 @@ const emit = defineEmits<{
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const wrapperRef = ref<HTMLDivElement | null>(null);
 const currentStrokes = ref<Stroke[]>([...props.strokes]);
+/** Traits que « annuler » peut défaire : ceux de cette session, plus tous les
+ *  autres quand le dessin n'est pas partagé (rien à écraser chez personne). */
+const myStrokeIds = ref(new Set<string>(props.shared ? [] : props.strokes.map((s) => s.id)));
 const activeStroke = ref<Stroke | null>(null);
 const selectedColor = ref("#1a1a1a");
 const brushWidth = ref(3);
@@ -90,6 +96,7 @@ function redrawAll() {
   ctx.fillRect(-panX.value / z, -panY.value / z, w / z, h / z);
 
   for (const stroke of currentStrokes.value) {
+    if (stroke.deleted) continue;
     drawStroke(ctx, stroke, w, h);
   }
 }
@@ -100,7 +107,8 @@ function drawStroke(
   w: number,
   h: number,
 ) {
-  if (stroke.points.length < 2) return;
+  // Un trait annulé revient du serveur réduit à son id : plus de points.
+  if (!stroke.points || stroke.points.length < 2) return;
   ctx.save();
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
@@ -277,6 +285,7 @@ function onPointerUp() {
   lastPoint = null;
 
   if (activeStroke.value.points.length >= 2) {
+    myStrokeIds.value.add(activeStroke.value.id);
     currentStrokes.value.push(activeStroke.value);
     emit("update:strokes", [...currentStrokes.value]);
   }
@@ -334,9 +343,25 @@ function selectWidth(w: number) {
   showSizePicker.value = false;
 }
 
+const canUndo = computed(() =>
+  currentStrokes.value.some((s) => !s.deleted && myStrokeIds.value.has(s.id)),
+);
+
+function lastUndoableIndex(): number {
+  for (let i = currentStrokes.value.length - 1; i >= 0; i--) {
+    const s = currentStrokes.value[i];
+    if (!s.deleted && myStrokeIds.value.has(s.id)) return i;
+  }
+  return -1;
+}
+
+/** Annuler ne doit défaire que MES traits : à plusieurs, le dernier trait de
+ *  la liste est souvent celui du voisin. On marque au lieu de retirer, pour que
+ *  la suppression survive à la fusion avec les autres. */
 function undo() {
-  if (currentStrokes.value.length === 0) return;
-  currentStrokes.value.pop();
+  const i = lastUndoableIndex();
+  if (i === -1) return;
+  currentStrokes.value[i] = { ...currentStrokes.value[i], deleted: true };
   emit("update:strokes", [...currentStrokes.value]);
   redrawAll();
 }
@@ -371,6 +396,7 @@ watch(
   () => props.strokes,
   (newStrokes) => {
     currentStrokes.value = [...newStrokes];
+    if (!props.shared) for (const st of newStrokes) myStrokeIds.value.add(st.id);
     redrawAll();
   },
 );
@@ -490,7 +516,7 @@ onBeforeUnmount(() => {
       <button
         class="tool-btn"
         title="Annuler"
-        :disabled="currentStrokes.length === 0"
+        :disabled="!canUndo"
         @click="undo"
       >
         <Undo2 :size="18" />

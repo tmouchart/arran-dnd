@@ -12,6 +12,7 @@ import {
   registerSseClient,
   removeSseClient,
 } from '../journal/locks.js'
+import { mergeStrokesJson } from '../journal/strokes.js'
 import { saveWithRevision } from '../revisions/service.js'
 
 const router = Router()
@@ -221,6 +222,14 @@ router.put('/pages/:id', async (req, res) => {
   }
   renewLock(resourceKey, userId)
 
+  // Un dessin n'a pas de verrou : deux personnes tracent en même temps et
+  // envoient chacune la liste complète. On fusionne au lieu d'écraser, sinon
+  // une copie vieille de trois secondes efface les traits des autres.
+  const nextContent =
+    content !== undefined && pageRow.type === 'drawing'
+      ? mergeStrokesJson(pageRow.content, content)
+      : content
+
   // Le PUT accepte des mises à jour partielles → on complète avec l'existant
   // pour obtenir le snapshot complet attendu par l'historique.
   const result = await saveWithRevision({
@@ -228,7 +237,7 @@ router.put('/pages/:id', async (req, res) => {
     id,
     snapshot: {
       title: title ?? pageRow.title,
-      content: content ?? pageRow.content,
+      content: nextContent ?? pageRow.content,
     },
     userId,
     expectedVersion: expectedVersion ?? null,
@@ -244,7 +253,10 @@ router.put('/pages/:id', async (req, res) => {
     return
   }
   if (result.status !== 'ok') { res.status(404).json({ error: 'Page introuvable' }); return }
-  res.json({ ok: true, version: result.version })
+  // Le dessin a pu être fusionné : on renvoie le résultat, sinon l'auteur garde
+  // à l'écran une version amputée des traits des autres.
+  const merged = nextContent !== undefined && nextContent !== content ? nextContent : undefined
+  res.json({ ok: true, version: result.version, content: merged })
 })
 
 router.delete('/pages/:id', async (req, res) => {

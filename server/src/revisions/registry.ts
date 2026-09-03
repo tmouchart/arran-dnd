@@ -34,7 +34,12 @@ export interface EntityAdapter {
   /** Clé du verrou d'édition à respecter, ou null si l'entité n'en a pas. */
   lockKey(id: number): string | null
   /** Diffusion temps réel après écriture, si l'entité a un flux SSE. */
-  broadcast(id: number, snapshot: Snapshot, author: { userId: number; characterName: string }): void
+  broadcast(
+    id: number,
+    snapshot: Snapshot,
+    version: number,
+    author: { userId: number; characterName: string },
+  ): void
 }
 
 /** Membre de la campagne (ou MJ) — mêmes droits que `codex.ts`. */
@@ -70,8 +75,8 @@ const journalCompagnieAdapter: EntityAdapter = {
   canRead: async () => true,
   canWrite: async () => true,
   lockKey: () => 'compagnie',
-  broadcast(_id, snapshot, author) {
-    broadcastContentUpdate('compagnie', snapshot.content ?? '', author)
+  broadcast(_id, snapshot, version, author) {
+    broadcastContentUpdate('compagnie', { content: snapshot.content ?? '', version }, author)
   },
 }
 
@@ -101,8 +106,8 @@ const journalPageAdapter: EntityAdapter = {
   canRead: async () => true,
   canWrite: async () => true,
   lockKey: (id) => `page:${id}`,
-  broadcast(id, snapshot, author) {
-    broadcastContentUpdate(`page:${id}`, snapshot.content ?? '', author)
+  broadcast(id, snapshot, version, author) {
+    broadcastContentUpdate(`page:${id}`, { content: snapshot.content ?? '', version }, author)
   },
 }
 

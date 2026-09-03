@@ -50,11 +50,14 @@ const {
   lock: compagnieLock,
   content: compagnieSseContent,
   version: compagnieVersion,
+  hasLocalEdits: compagnieHasLocalEdits,
+  lockLost: compagnieLockLost,
   isLockedByMe: compagnieLockedByMe,
   isLockedByOther: compagnieLockedByOther,
   lockedByName: compagnieLockedByName,
   connectSSE: connectCompagnieSSE,
   acquire: acquireCompagnie,
+  ensureLock: ensureCompagnieLock,
   release: releaseCompagnie,
 } = useJournalLock(
   "/api/journal/compagnie/events",
@@ -62,11 +65,17 @@ const {
   "/api/journal/compagnie/lock",
 );
 
-// SSE content updates (from other users)
+/** Dernier contenu qu'on sait identique à celui du serveur. Il sert de
+ *  référence pour distinguer « l'utilisateur a tapé » de « on vient de
+ *  recevoir/charger du texte » — sans ça, ouvrir la page déclenche une
+ *  sauvegarde et vole le verrou à celui qui écrit. */
+let compagnieSynced = "";
+
+// Contenu venu des autres. Le composable ne le publie que quand c'est sans risque.
 watch(compagnieSseContent, (v) => {
-  if (v && !compagnieLockedByMe.value) {
-    compagnieContent.value = v;
-  }
+  if (!v || v === compagnieContent.value) return;
+  compagnieSynced = v;
+  compagnieContent.value = v;
 });
 
 const {
@@ -75,23 +84,34 @@ const {
   schedule: scheduleCompagnieSave,
   flush: flushCompagnieSave,
 } = useAutosave<string>(async (content) => {
+  // Le verrou a pu expirer entre deux frappes (téléphone en veille). On le
+  // reprend avant d'écrire au lieu de partir en 423.
+  if (!(await ensureCompagnieLock())) {
+    throw new Error("verrou indisponible");
+  }
   try {
     compagnieVersion.value = await saveJournalCompagnie(content, compagnieVersion.value);
+    compagnieSynced = content;
   } catch (e: any) {
-    // 409 : quelqu'un a écrit entre-temps. On se resynchronise sur la version
-    // du serveur au lieu de l'écraser, et on prévient.
+    // 409 : quelqu'un a écrit entre-temps. On garde CE QUI EST TAPÉ — sa
+    // version n'est pas perdue, elle est dans l'historique — et on rejoue la
+    // sauvegarde avec la version à jour.
     if (e?.status === 409) {
       compagnieVersion.value = e.body?.currentVersion ?? null;
-      compagnieContent.value = e.body?.content ?? compagnieContent.value;
-      showToast("Le journal a été modifié ailleurs — contenu rechargé.");
-      return;
+      showToast("Quelqu'un a écrit en même temps — sa version est dans l'historique.");
     }
     throw e;
   }
 });
 
+// Une seule source de vérité pour « du texte n'est pas encore arrivé au
+// serveur » : c'est ce qui protège l'écran et maintient le verrou en vie.
+watch(compagniePending, (v) => { compagnieHasLocalEdits.value = v; });
+
 watch(compagnieContent, (v) => {
-  if (!loading.value && compagnieLockedByMe.value) scheduleCompagnieSave(v);
+  if (loading.value || v === compagnieSynced) return;
+  if (compagnieLockedByOther.value && !compagnieLockedByMe.value) return;
+  scheduleCompagnieSave(v);
 });
 
 let acquiringCompagnie = false;
@@ -147,6 +167,7 @@ async function load() {
   try {
     const compagnie = await fetchJournalCompagnie();
     compagnieContent.value = compagnie.content;
+    compagnieSynced = compagnie.content;
     compagnieVersion.value = compagnie.version;
     compagnieLastEditedBy.value = compagnie.lastEditedBy;
     compagnieUpdatedAt.value = compagnie.updatedAt;
@@ -212,7 +233,12 @@ onMounted(load);
 
         <!-- Une sauvegarde bloquée doit se voir : c'est ce silence qui a fait
              perdre du texte. -->
-        <div v-if="compagnieSaveStatus === 'error'" class="save-alert">
+        <div v-if="compagnieLockLost" class="save-alert">
+          {{ compagnieLockedByName ?? "Quelqu'un" }} écrit dans le journal en ce
+          moment. Ton texte est conservé et sera renvoyé dès que la place se
+          libère. Ne ferme pas la page.
+        </div>
+        <div v-else-if="compagnieSaveStatus === 'error'" class="save-alert">
           Sauvegarde impossible pour l'instant — ton texte est conservé et sera
           renvoyé automatiquement. Ne ferme pas la page.
         </div>
