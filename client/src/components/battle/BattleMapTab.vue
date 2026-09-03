@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Grid3x3, RotateCcw, RotateCw, Crosshair } from 'lucide-vue-next'
 import AppIconBtn from '../ui/AppIconBtn.vue'
 import AppSelect from '../ui/AppSelect.vue'
@@ -18,6 +18,28 @@ const { moveParticipant, setEnvironment, currentParticipant } = useCombat()
 
 const grid = ref<InstanceType<typeof BattleGrid3D> | null>(null)
 const showGrid = ref(false)
+
+/**
+ * Déplacements déjà joués à l'écran mais pas encore confirmés par le serveur.
+ *
+ * Sans ça, taper un pion ne fait rien pendant l'aller-retour réseau — 150 à
+ * 600 ms sur un téléphone en 4G — puis le pion saute. On le bouge donc tout de
+ * suite, et cette table fait aussi office de garde anti-rebond : tant qu'un
+ * déplacement est en vol, les positions qui arrivent pour ce pion sont ignorées
+ * (elles datent d'avant notre geste).
+ */
+const pending = ref(new Map<string, { x: number; z: number; at: number; confirmed: boolean }>())
+
+/** Au-delà, on considère que le serveur ne répondra jamais et on lâche prise. */
+const PENDING_TIMEOUT_MS = 3000
+
+/** Après confirmation, délai maximal d'attente du prochain état diffusé. */
+const SETTLE_GRACE_MS = 600
+
+function release(id: string) {
+  if (!pending.value.delete(id)) return
+  pending.value = new Map(pending.value)
+}
 
 /** Couleurs des héros : stable, prise dans l'ordre de la liste. */
 const HERO_COLORS = ['#4f8ef7', '#3fbf7f', '#c264d9', '#f0a63c', '#4fc7d9', '#e0648a']
@@ -80,20 +102,63 @@ const tokens = computed<BattleToken[]>(() => {
   // On filtre APRÈS la construction : les index gardent leur couleur et leur
   // place de départ quand un voisin meurt ou reste caché.
   const shownIds = new Set(monsters.filter(isOnMap).map((p) => String(p.id)))
-  return [
+  const all = [
     ...build(players, true),
     ...build(monsters, false).filter((t) => shownIds.has(t.id)),
   ]
+
+  // Notre geste passe devant ce que dit le serveur, jusqu'à confirmation.
+  return all.map((t) => {
+    const p = pending.value.get(t.id)
+    return p ? { ...t, x: p.x, z: p.z } : t
+  })
 })
+
+/** Le serveur a confirmé (ou quelqu'un d'autre a bougé le pion) : on lâche. */
+watch(
+  () => props.combat.participants,
+  (participants) => {
+    if (pending.value.size === 0) return
+    const now = Date.now()
+    let changed = false
+    for (const [id, move] of pending.value) {
+      const p = participants.find((x) => String(x.id) === id)
+      // Une fois notre écriture confirmée, le premier état reçu fait foi —
+      // même s'il porte la position de quelqu'un qui a écrit juste après nous.
+      // Sans ça, celui qui perd une collision reste bloqué sur sa position
+      // fantôme pendant trois secondes.
+      const settled =
+        !p ||
+        move.confirmed ||
+        now - move.at > PENDING_TIMEOUT_MS ||
+        (Math.abs((p.posX ?? 0) - move.x) < 1e-3 && Math.abs((p.posY ?? 0) - move.z) < 1e-3)
+      if (settled) {
+        pending.value.delete(id)
+        changed = true
+      }
+    }
+    if (changed) pending.value = new Map(pending.value)
+  },
+  { deep: true },
+)
 
 const activeId = computed(() =>
   currentParticipant.value ? String(currentParticipant.value.id) : null,
 )
 
 async function onMove(id: string, x: number, z: number) {
+  pending.value.set(id, { x, z, at: Date.now(), confirmed: false })
+  pending.value = new Map(pending.value)
   try {
     await moveParticipant(Number(id), x, z)
+    // Le serveur diffuse AVANT de répondre : notre état est déjà en route.
+    // On garde l'affichage optimiste juste le temps qu'il arrive, pas plus.
+    const move = pending.value.get(id)
+    if (move) move.confirmed = true
+    setTimeout(() => release(id), SETTLE_GRACE_MS)
   } catch {
+    // Refusé : le pion revient là où le serveur le croit.
+    release(id)
     showToast('Déplacement refusé.')
   }
 }
