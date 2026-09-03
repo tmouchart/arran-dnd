@@ -76,12 +76,20 @@ async function submit() {
   try {
     const data = { name: name.value.trim(), type: type.value, description: description.value }
     const entry = props.entry
-      ? await updateCodexEntry(props.campaignId, props.entry.id, data)
+      // `expectedVersion` : sans lui, deux joueurs qui ouvrent la même fiche
+      // s'écrasent en silence — le dernier à valider gagne.
+      ? await updateCodexEntry(props.campaignId, props.entry.id, {
+          ...data,
+          expectedVersion: props.entry.version,
+        })
       : await createCodexEntry(props.campaignId, data)
     emit('saved', entry, { deleteNote: props.convertMode ? deleteNoteAfter.value : false })
     emit('update:modelValue', false)
-  } catch {
-    errorMsg.value = 'Erreur lors de la sauvegarde de la fiche.'
+  } catch (e: any) {
+    errorMsg.value =
+      e?.status === 409
+        ? 'Quelqu’un vient de modifier cette fiche. Ferme et rouvre-la pour repartir de sa version — ton texte est encore là, copie-le avant.'
+        : 'Erreur lors de la sauvegarde de la fiche.'
   } finally {
     saving.value = false
   }

@@ -16,6 +16,7 @@ export interface CodexEntry {
   name: string
   description: string
   createdByUserId: number
+  version: number
   createdAt: string
   updatedAt: string
 }
@@ -38,7 +39,7 @@ export async function createCodexEntry(
 export async function updateCodexEntry(
   campaignId: number,
   entryId: number,
-  data: { name?: string; type?: CodexType; description?: string },
+  data: { name?: string; type?: CodexType; description?: string; expectedVersion?: number },
 ): Promise<CodexEntry> {
   return apiFetch(`/api/campaigns/${campaignId}/codex/${entryId}`, {
     method: 'PUT',
