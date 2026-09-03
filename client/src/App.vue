@@ -13,6 +13,7 @@ import RestSummaryModal from "./components/campfire/RestSummaryModal.vue";
 import CriticalMomentOverlay from "./components/CriticalMomentOverlay.vue";
 import { user, authReady } from "./composables/useAuth";
 import { useActiveCombat, refreshActiveCombat } from "./composables/useActiveCombat";
+import { wakeCombat } from "./composables/useCombat";
 import { useDiceBar } from "./composables/useDiceBar";
 import { useCampaignRolls } from "./composables/useCampaignRolls";
 import { primeAudio } from "./utils/sfx";
@@ -61,6 +62,7 @@ document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible" && user.value) {
     refreshActiveCombat();
     wakeRolls();
+    wakeCombat();
   }
 });
 // L'AudioContext démarre suspendu tant que l'utilisateur n'a rien tapé : on le

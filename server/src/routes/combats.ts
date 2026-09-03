@@ -5,7 +5,7 @@ import {
   combats, combatParticipants, campaigns, campaignMembers, characters, encounterTemplates, encounterMonsters,
 } from '../db/schema.js'
 import { requireAuth, type AuthRequest } from '../auth/middleware.js'
-import { broadcastCombatState, enrichParticipantHp, getClientsForCombat, type SseClient } from '../combats/sseStore.js'
+import { broadcastCombatState, broadcastParticipantMoved, enrichParticipantHp, getClientsForCombat, sendCombatStateTo, type SseClient } from '../combats/sseStore.js'
 import { serializeCombat } from '../combats/serialize.js'
 import { generateText } from '../ai/client.js'
 import { turnOrder, firstActiveId, step } from '../combats/turnOrder.js'
@@ -346,12 +346,20 @@ router.patch('/:id/combats/:cid/participants/:pid/position', async (req, res) =>
   }
 
   const clamp = (v: number) => Math.max(-BATTLE_HALF, Math.min(BATTLE_HALF, v))
+  const posX = clamp(x)
+  const posY = clamp(y)
   await db
     .update(combatParticipants)
-    .set({ posX: clamp(x), posY: clamp(y) })
+    .set({ posX, posY })
     .where(eq(combatParticipants.id, pid))
 
-  await broadcastCombatState(combatId, check.gmUserId)
+  if (participant.hidden) {
+    // Un PNJ en réserve n'existe que pour le MJ : sa position ne part pas en
+    // clair à toute la table, elle repasse par le sérialiseur.
+    await broadcastCombatState(combatId, check.gmUserId)
+  } else {
+    broadcastParticipantMoved(combatId, { id: pid, x: posX, y: posY })
+  }
   res.json({ ok: true })
 })
 
@@ -584,8 +592,9 @@ router.get('/:id/combats/:cid/events', async (req, res) => {
     console.log(`[sse] heartbeat → combat=${combatId} user=${userId} (clients=${clients.size})`)
   }, 25000)
 
-  // Send initial state
-  await broadcastCombatState(combatId, check.gmUserId)
+  // Au seul nouveau venu : rediffuser à toute la table à chaque reconnexion
+  // ferait clignoter la carte des autres pour rien.
+  await sendCombatStateTo(client, combatId, check.gmUserId)
 
   req.on('close', () => {
     clearInterval(heartbeat)

@@ -38,6 +38,111 @@ function resetIdleTimer(): void {
   }, IDLE_MS)
 }
 
+function connect(campaignId: number, combatId: number): void {
+  disconnect()
+  currentCampaignId = campaignId
+  connecting.value = true
+  error.value = null
+  idle.value = false
+  eventSource = new EventSource(
+    `/api/campaigns/${campaignId}/combats/${combatId}/events`,
+    { withCredentials: true },
+  )
+  resetIdleTimer()
+  eventSource.addEventListener('combat-updated', (e: MessageEvent) => {
+    try {
+      const state = JSON.parse(e.data as string) as CombatState
+      combat.value = state
+      connecting.value = false
+      error.value = null
+      resetIdleTimer()
+      // Keep my own character sheet HP in sync with the live combat state
+      // (combat is the moment my HP changes — reflect it in "Mes actions"/ma perso).
+      if (user.value) {
+        const mine = state.participants.find(
+          (p) => p.kind === 'player' && p.userId === user.value!.id,
+        )
+        if (mine && mine.hpCurrent != null) {
+          applyServerHp(mine.hpCurrent)
+        }
+      }
+      if (state.status === 'active') {
+        setActiveCombat({
+          url: `/campagnes/${campaignId}/combat/${combatId}`,
+          name: state.name,
+          campaignId,
+          combatId,
+        })
+      } else {
+        clearActiveCombat()
+      }
+    } catch {
+      error.value = 'Erreur de parsing SSE'
+    }
+  })
+  // Déplacement seul : le serveur n'envoie que les trois nombres qui changent.
+  // On les applique sur place plutôt que de remplacer tout l'état.
+  eventSource.addEventListener('participant-moved', (e: MessageEvent) => {
+    try {
+      const move = JSON.parse(e.data as string) as { id: number; x: number; y: number }
+      const participant = combat.value?.participants.find((p) => p.id === move.id)
+      if (!participant) return
+      participant.posX = move.x
+      participant.posY = move.y
+      resetIdleTimer()
+    } catch { /* trame illisible : le prochain état complet nous recalera */ }
+  })
+
+  eventSource.onerror = () => {
+    // EventSource reconnecte automatiquement tant qu'il n'est pas CLOSED.
+    // On n'affiche l'erreur fatale qu'en cas de fermeture définitive ;
+    // sur une coupure transitoire on garde l'état affiché pendant la reco.
+    if (eventSource?.readyState === EventSource.CLOSED) {
+      error.value = 'Connexion perdue'
+      connecting.value = false
+    }
+  }
+}
+
+function disconnect(): void {
+  closeStream()
+  combat.value = null
+  connecting.value = false
+  error.value = null
+  idle.value = false
+  currentCampaignId = null
+  // Don't clear activeCombat here — the banner should persist when navigating away
+}
+
+// Reset the inactivity timer on user interaction (only while connected).
+function markActivity(): void {
+  if (eventSource) resetIdleTimer()
+}
+
+/** Id du combat suivi, pour pouvoir le relire au réveil du téléphone. */
+let currentCombatId: number | null = null
+
+/**
+ * Le téléphone revient au premier plan.
+ *
+ * iOS suspend `EventSource` en arrière-plan : au retour, soit le flux est mort
+ * et il faut le rouvrir, soit il a survécu mais on a raté des événements. Dans
+ * les deux cas on relit l'état une fois, sinon le joueur regarde une carte figée
+ * sur ce qui se passait il y a trois minutes.
+ */
+export async function wakeCombat(): Promise<void> {
+  if (currentCampaignId === null || currentCombatId === null) return
+  if (idle.value) return // en pause assumée : c'est au joueur de reprendre
+
+  if (!eventSource || eventSource.readyState === EventSource.CLOSED) {
+    connect(currentCampaignId, currentCombatId)
+    return
+  }
+  try {
+    combat.value = await api.fetchCombat(currentCampaignId, currentCombatId)
+  } catch { /* hors ligne : on garde ce qu'on a */ }
+}
+
 export function useCombat() {
   const isGm = computed(() => {
     // GM is determined by whether the user can see monster HP (hpCurrent !== null on monsters)
@@ -66,74 +171,6 @@ export function useCombat() {
       (p) => p.kind === 'player' && p.userId === user.value!.id,
     ) ?? null
   })
-
-  function connect(campaignId: number, combatId: number): void {
-    disconnect()
-    currentCampaignId = campaignId
-    connecting.value = true
-    error.value = null
-    idle.value = false
-    eventSource = new EventSource(
-      `/api/campaigns/${campaignId}/combats/${combatId}/events`,
-      { withCredentials: true },
-    )
-    resetIdleTimer()
-    eventSource.addEventListener('combat-updated', (e: MessageEvent) => {
-      try {
-        const state = JSON.parse(e.data as string) as CombatState
-        combat.value = state
-        connecting.value = false
-        error.value = null
-        resetIdleTimer()
-        // Keep my own character sheet HP in sync with the live combat state
-        // (combat is the moment my HP changes — reflect it in "Mes actions"/ma perso).
-        if (user.value) {
-          const mine = state.participants.find(
-            (p) => p.kind === 'player' && p.userId === user.value!.id,
-          )
-          if (mine && mine.hpCurrent != null) {
-            applyServerHp(mine.hpCurrent)
-          }
-        }
-        if (state.status === 'active') {
-          setActiveCombat({
-            url: `/campagnes/${campaignId}/combat/${combatId}`,
-            name: state.name,
-            campaignId,
-            combatId,
-          })
-        } else {
-          clearActiveCombat()
-        }
-      } catch {
-        error.value = 'Erreur de parsing SSE'
-      }
-    })
-    eventSource.onerror = () => {
-      // EventSource reconnecte automatiquement tant qu'il n'est pas CLOSED.
-      // On n'affiche l'erreur fatale qu'en cas de fermeture définitive ;
-      // sur une coupure transitoire on garde l'état affiché pendant la reco.
-      if (eventSource?.readyState === EventSource.CLOSED) {
-        error.value = 'Connexion perdue'
-        connecting.value = false
-      }
-    }
-  }
-
-  function disconnect(): void {
-    closeStream()
-    combat.value = null
-    connecting.value = false
-    error.value = null
-    idle.value = false
-    currentCampaignId = null
-    // Don't clear activeCombat here — the banner should persist when navigating away
-  }
-
-  // Reset the inactivity timer on user interaction (only while connected).
-  function markActivity(): void {
-    if (eventSource) resetIdleTimer()
-  }
 
   async function doNextTurn(): Promise<void> {
     if (!combat.value || !currentCampaignId) return

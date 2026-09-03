@@ -95,6 +95,48 @@ function writeSse(res: express.Response, event: string, data: unknown): void {
   res.write(`data: ${JSON.stringify(data)}\n\n`)
 }
 
+/**
+ * Un pion a bougé, et rien d'autre n'a changé.
+ *
+ * Rediffuser tout l'état coûtait 3 Ko par téléphone à chaque tap — mesuré.
+ * Ici on n'envoie que les trois nombres qui changent. C'est la SEULE entorse
+ * au principe « un seul sérialiseur » : elle est admise parce que la position
+ * est le seul champ du combat qui n'est secret pour personne. Tout le reste
+ * (PV, stats, réserve) continue de passer par `serializeCombat`.
+ */
+export function broadcastParticipantMoved(
+  combatId: number,
+  move: { id: number; x: number; y: number },
+): void {
+  const clients = sseClients.get(combatId)
+  if (!clients) return
+  for (const client of clients) writeSse(client.res, 'participant-moved', move)
+}
+
+/**
+ * État initial, envoyé au seul client qui vient de se connecter.
+ *
+ * Rediffuser à tout le monde ferait re-rendre la carte des cinq autres à chaque
+ * reconnexion — et sur six téléphones en 4G, les reconnexions sont la norme.
+ */
+export async function sendCombatStateTo(
+  client: SseClient,
+  combatId: number,
+  gmUserId: number,
+): Promise<void> {
+  const [combat] = await db.select().from(combats).where(eq(combats.id, combatId))
+  if (!combat) return
+
+  const participants = await db
+    .select()
+    .from(combatParticipants)
+    .where(eq(combatParticipants.combatId, combatId))
+    .orderBy(asc(combatParticipants.id))
+
+  const enriched = await enrichParticipantHp(combat.campaignId, participants)
+  writeSse(client.res, 'combat-updated', serializeCombat(combat, enriched, client.userId === gmUserId))
+}
+
 /** Load combat state from DB and broadcast to all SSE clients */
 export async function broadcastCombatState(combatId: number, gmUserId: number): Promise<void> {
   const clients = sseClients.get(combatId)
