@@ -432,6 +432,8 @@ function goBack() {
             v-for="(p, idx) in combat.participants"
             :key="p.id"
             class="participant-card"
+            :data-testid="idx === combat.currentTurnIndex && combat.status === 'active' ? 'active-participant' : 'participant'"
+            :data-participant-id="p.id"
             :class="{
               active:
                 idx === combat.currentTurnIndex && combat.status === 'active',

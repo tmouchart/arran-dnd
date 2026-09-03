@@ -463,6 +463,7 @@ onBeforeUnmount(() => {
   <div class="mention-wrap">
     <div
       ref="editorRef"
+      data-testid="mention-editor"
       class="mention-editor"
       :class="{ 'mention-editor--readonly': readonly }"
       :contenteditable="!readonly"

@@ -94,7 +94,7 @@ function absoluteTime(r: RollEvent): string {
 </script>
 
 <template>
-  <div class="log-panel">
+  <div class="log-panel" data-testid="roll-log">
     <AppEmptyState v-if="rolls.length === 0" variant="empty">
       Aucun jet pour l'instant — les dés parlent, l'histoire commence.
     </AppEmptyState>

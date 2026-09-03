@@ -70,6 +70,7 @@ function stepCount(delta: number) {
         v-for="sides in DICE"
         :key="sides"
         type="button"
+        :data-testid="`die-d${sides}`"
         class="die-btn"
         @click="roll(sides)"
       >

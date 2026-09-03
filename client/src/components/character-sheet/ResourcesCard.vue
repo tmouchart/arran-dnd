@@ -48,13 +48,13 @@ const mpIsMystique = computed(() => props.family === "mystiques");
       <div class="bar-block">
         <div class="bar-label"><span>Points de vie</span></div>
         <div class="hp-current-row">
-          <button type="button" class="hp-btn hp-btn--minus" :disabled="character.hpCurrent <= 0" @click="character.hpCurrent = Math.max(0, character.hpCurrent - 1)">-</button>
+          <button type="button" data-testid="hp-minus" class="hp-btn hp-btn--minus" :disabled="character.hpCurrent <= 0" @click="character.hpCurrent = Math.max(0, character.hpCurrent - 1)">-</button>
           <div class="hp-current-display hp-current-display--hp">
-            <span class="hp-current-value" :style="{ color: hpGradientColor(character.hpCurrent, computedHp) }">{{ character.hpCurrent }}</span>
+            <span data-testid="hp-current" class="hp-current-value" :style="{ color: hpGradientColor(character.hpCurrent, computedHp) }">{{ character.hpCurrent }}</span>
             <span class="hp-current-sep">/</span>
             <span class="hp-current-max">{{ computedHp }}</span>
           </div>
-          <button type="button" class="hp-btn hp-btn--plus" :disabled="character.hpCurrent >= computedHp" @click="character.hpCurrent = Math.min(computedHp, character.hpCurrent + 1)">+</button>
+          <button type="button" data-testid="hp-plus" class="hp-btn hp-btn--plus" :disabled="character.hpCurrent >= computedHp" @click="character.hpCurrent = Math.min(computedHp, character.hpCurrent + 1)">+</button>
         </div>
         <div class="def-formula hp-formula">
           <div class="def-chip def-chip--total def-chip--hp" title="PV max calculés">
