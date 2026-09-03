@@ -29,6 +29,9 @@ de membre raté début juillet, qui ne servait plus au cluster mais tournait et 
 Migration vers un cluster minimal `arran-dnd-pg` : 1 machine shared-cpu-1x / 256 MB RAM,
 volume 1 GB, Postgres 18.1, région ams. **Coût : ~2,10 $/mois** (économie ~83 $/mois ≈ 1000 $/an).
 
+> Suite : 256 MB se sont révélés trop justes en usage réel. Le cluster tourne à **512 MB**
+> depuis le 2026-08-12. Ne pas redescendre. Détail dans `POSTGRES-DOWNSIZE-PLAN.md`.
+
 Déroulé (~30 min, zéro perte de données, joueur actif pendant la bascule sans interruption) :
 
 1. `pg_dump` sur la machine primary + rapatriement `fly sftp` → `arran-dnd-20260723.dump` (11 MB, gitignoré)

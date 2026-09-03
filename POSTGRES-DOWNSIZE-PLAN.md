@@ -152,3 +152,19 @@ Le fichier `.dump` local reste le backup ultime même après destruction.
 - [x] 4. `arran-dnd` re-pointée (attach refusé car secret existant → user `arran_dnd` créé à la main + `fly secrets set DATABASE_URL`)
 - [x] 5. App testée en réel : migrations Drizzle "already applied", health check OK, GET/PUT 200, aucune écriture perdue sur l'ancienne DB
 - [ ] 6. `fly apps destroy arran-dnd-db`
+
+## Suite : 256 MB ne suffisaient pas (2026-08-12)
+
+Le cluster a été monté à **512 MB** le 12 août : 256 MB était trop juste pour Postgres en
+usage réel. La cible de 256 MB écrite plus haut est donc périmée — **ne pas redescendre**.
+
+État constaté le 2026-09-03 :
+
+```
+arran-dnd-pg  │ 1 │ shared-cpu-1x │ 512 MB │ ams   (machine 8ed433f7d056d8, volume 1 GB)
+```
+
+Le surcoût est de l'ordre du dollar par mois : l'économie de ~83 $/mois tient toujours.
+
+L'app elle-même (`arran-dnd`) tourne en 256 MB depuis le début et n'a jamais manqué de
+mémoire — le problème était bien côté base.

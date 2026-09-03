@@ -31,6 +31,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: superfly/flyctl-actions/setup-flyctl@master
-      - run: flyctl deploy --remote-only
+      # --ha=false : sans ça, Fly clone une seconde machine « pour la haute
+      # disponibilité ». La liste des clients SSE vit en mémoire dans le
+      # process, donc deux machines = un déplacement de pion diffusé sur la
+      # machine qui n'a pas le joueur au bout du fil, et le pion revient en
+      # arrière. Une seule machine, une seule table.
+      - run: flyctl deploy --remote-only --ha=false
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
