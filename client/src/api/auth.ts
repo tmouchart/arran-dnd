@@ -5,6 +5,8 @@ export interface AuthUser {
   username: string
   avatarUrl: string | null
   activeCampaignId?: number | null
+  /** Couleur de dé effective (`#rrggbb`) : celle choisie, sinon celle par défaut. */
+  diceColor?: string
 }
 
 export async function login(username: string, password: string): Promise<AuthUser> {
@@ -42,7 +44,7 @@ export async function fetchMe(): Promise<AuthUser | null> {
   return data.user as AuthUser
 }
 
-export async function updateMe(fields: { avatarUrl?: string | null; username?: string }): Promise<AuthUser> {
+export async function updateMe(fields: { avatarUrl?: string | null; username?: string; diceColor?: string | null }): Promise<AuthUser> {
   const res = await fetch(`${BASE}/me`, {
     method: 'PATCH',
     credentials: 'include',

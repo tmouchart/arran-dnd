@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import * as THREE from 'three'
 import { buildFaces, buildDieGeometry, faceFitRatio, SUPPORTED_SIDES } from './polyhedra'
 import { fontSizeFor } from './atlas'
-import { landingLayout, planDice } from './plan'
+import { landingLayout, planDice, remoteSlotLayout, MAX_REMOTE_DICE, REMOTE_SCALE, REMOTE_SLOTS } from './plan'
 import { burstOpacity, createSparks, flashIntensity, sampleSpark, shockwave } from './burst'
 import { createMotion, faceTargetQuaternion, sampleMotion } from './motion'
 
@@ -283,5 +283,40 @@ describe('sampleMotion', () => {
     const motion = createMotion(options)
     expect(sampleMotion(motion, 2).position.distanceTo(motion.to)).toBeCloseTo(0, 5)
     expect(sampleMotion(motion, -1).position.distanceTo(motion.from)).toBeCloseTo(0, 5)
+  })
+})
+
+describe('remoteSlotLayout', () => {
+  const halfWidth = 4
+  const halfHeight = 8
+
+  it('les 4 emplacements se répartissent sur la largeur, en haut', () => {
+    const xs = Array.from({ length: 4 }, (_, slot) => remoteSlotLayout(slot, 1, halfWidth, halfHeight).positions[0].x)
+    expect(xs).toEqual([-3, -1, 1, 3])
+    for (const slot of [0, 1, 2, 3]) {
+      expect(remoteSlotLayout(slot, 1, halfWidth, halfHeight).positions[0].y).toBeGreaterThan(halfHeight * 0.5)
+    }
+  })
+
+  it('un dé seul fait 40 % d’un dé à moi', () => {
+    expect(remoteSlotLayout(0, 1, halfWidth, halfHeight).scale).toBe(REMOTE_SCALE)
+    expect(landingLayout(1).scale).toBeCloseTo(REMOTE_SCALE / 0.8)
+  })
+
+  it('plusieurs dés se serrent sans sortir de leur emplacement', () => {
+    const slotWidth = (halfWidth * 2) / REMOTE_SLOTS
+    const { positions, scale } = remoteSlotLayout(1, 5, halfWidth, halfHeight)
+    expect(positions).toHaveLength(5)
+    expect(scale).toBeLessThan(REMOTE_SCALE)
+    const left = -halfWidth + slotWidth
+    const right = left + slotWidth
+    for (const p of positions) {
+      expect(p.x - scale).toBeGreaterThanOrEqual(left)
+      expect(p.x + scale).toBeLessThanOrEqual(right)
+    }
+  })
+
+  it('plafonne à 5 dés par emplacement', () => {
+    expect(remoteSlotLayout(0, 12, halfWidth, halfHeight).positions).toHaveLength(MAX_REMOTE_DICE)
   })
 })

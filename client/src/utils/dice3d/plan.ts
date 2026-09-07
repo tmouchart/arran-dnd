@@ -27,6 +27,13 @@ export interface DieRoll {
 /** Au-delà, l'écran est illisible et le rendu commence à coûter. */
 const MAX_DICE = 10
 
+/** Emplacements pour les dés des autres joueurs, dans la bande du haut. */
+export const REMOTE_SLOTS = 4
+/** Un dé distant dans un emplacement : 40 % d'un dé à moi, seul au centre. */
+export const REMOTE_SCALE = 0.4
+/** Un joueur qui lance 3d6 : on en anime au plus 5 dans son emplacement. */
+export const MAX_REMOTE_DICE = 5
+
 export function isAnimatable(sides: number): boolean {
   return sides === 100 || (SUPPORTED_SIDES as readonly number[]).includes(sides)
 }
@@ -60,6 +67,36 @@ export function planDice(rolls: DieRoll[]): DieInstance[] {
   }
 
   return dice.slice(0, MAX_DICE)
+}
+
+/**
+ * Place les dés d'un joueur distant dans son emplacement, en haut de l'écran.
+ *
+ * Les 4 emplacements se partagent la largeur visible. Plusieurs dés dans un
+ * même emplacement se serrent en rangée, plus petits, sans déborder sur le
+ * voisin. `halfWidth`/`halfHeight` sont les demi-dimensions visibles à la
+ * profondeur des dés (voir `viewport()` dans l'overlay).
+ */
+export function remoteSlotLayout(
+  slot: number,
+  count: number,
+  halfWidth: number,
+  halfHeight: number,
+): { positions: { x: number; y: number }[]; scale: number } {
+  const n = Math.max(1, Math.min(count, MAX_REMOTE_DICE))
+  const slotWidth = (halfWidth * 2) / REMOTE_SLOTS
+  const centerX = -halfWidth + slotWidth * (slot + 0.5)
+  // Sous la barre du haut : à 72 % de la demi-hauteur visible
+  const y = halfHeight * 0.72
+
+  // Un dé seul prend l'échelle distante ; plusieurs se partagent l'emplacement
+  const scale = Math.min(REMOTE_SCALE, (slotWidth * 0.9) / (n * 2.3))
+  const gap = scale * 2.3
+  const positions = Array.from({ length: n }, (_, i) => ({
+    x: centerX + (i - (n - 1) / 2) * gap,
+    y,
+  }))
+  return { positions, scale }
 }
 
 /**

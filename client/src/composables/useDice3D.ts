@@ -1,5 +1,6 @@
 import { ref, shallowRef } from 'vue'
 import { planDice, type DieRoll } from '../utils/dice3d/plan'
+import { user } from './useAuth'
 
 export type { DieRoll }
 
@@ -14,9 +15,18 @@ export type { DieRoll }
 export interface DiceRequest {
   id: number
   rolls: DieRoll[]
+  /** Couleur du corps du dé (`#rrggbb`). Absente = doré du thème. */
+  color?: string
+}
+
+/** Le jet d'un autre membre de la campagne, à montrer en petit. */
+export interface RemoteDiceRequest extends DiceRequest {
+  actorName: string
+  color: string
 }
 
 const STORAGE_KEY = 'arran-dice-3d'
+const REMOTE_KEY = 'arran-dice-remote'
 
 function loadPreference(): boolean {
   try {
@@ -36,8 +46,32 @@ export function setDice3dEnabled(on: boolean) {
   } catch { /* quota */ }
 }
 
+/** Réglage joueur : voir rouler les dés des autres, ou pas. ON par défaut. */
+export const remoteDiceEnabled = ref(loadRemotePreference())
+
+function loadRemotePreference(): boolean {
+  try {
+    return localStorage.getItem(REMOTE_KEY) !== 'off'
+  } catch {
+    return true
+  }
+}
+
+export function setRemoteDiceEnabled(on: boolean) {
+  remoteDiceEnabled.value = on
+  try {
+    localStorage.setItem(REMOTE_KEY, on ? 'on' : 'off')
+  } catch { /* quota */ }
+}
+
 /** La demande en cours. L'overlay la surveille. */
 export const diceRequest = shallowRef<DiceRequest | null>(null)
+
+/**
+ * Le dernier jet distant reçu. Contrairement à `diceRequest`, plusieurs peuvent
+ * se chevaucher : l'overlay les empile dans ses emplacements, il ne remplace pas.
+ */
+export const remoteDiceRequest = shallowRef<RemoteDiceRequest | null>(null)
 
 let sequence = 0
 let pending: (() => void) | null = null
@@ -61,8 +95,18 @@ export function playDiceRoll(rolls: DieRoll[]): Promise<void> {
   pending?.()
   return new Promise<void>((resolve) => {
     pending = resolve
-    diceRequest.value = { id: ++sequence, rolls }
+    diceRequest.value = { id: ++sequence, rolls, color: user.value?.diceColor }
   })
+}
+
+/**
+ * Un autre joueur a lancé : son dé roule chez moi, en petit, dans sa couleur.
+ * Rien à attendre — personne n'a de résultat à révéler de ce côté.
+ */
+export function playRemoteDiceRoll(roll: { actorName: string; color: string; rolls: DieRoll[] }) {
+  if (!dice3dEnabled.value || !remoteDiceEnabled.value || prefersReducedMotion()) return
+  if (!planDice(roll.rolls).length) return
+  remoteDiceRequest.value = { id: ++sequence, ...roll }
 }
 
 /** Appelé par l'overlay quand le dé se pose — ou quand le joueur passe. */

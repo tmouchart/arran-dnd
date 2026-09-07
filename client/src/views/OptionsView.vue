@@ -9,6 +9,7 @@ import {
   Trash2,
   Upload,
   Palette,
+  Dices,
 } from "lucide-vue-next";
 import { user, logout } from "../composables/useAuth";
 import { updateMe } from "../api/auth";
@@ -20,6 +21,7 @@ import {
   type ServerCharacter,
 } from "../api/characters";
 import { MYSTIC_TALENTS_BY_ID, isMysticTalentId } from "../data/mysticTalents";
+import { DICE_COLORS } from "../data/diceColors";
 import { inferProfileFamily } from "../utils/inferProfileFamily";
 import AppPageLayout from "../components/ui/AppPageLayout.vue";
 import AppPageHead from "../components/ui/AppPageHead.vue";
@@ -78,6 +80,20 @@ function applyStyle(next: AppStyle) {
     delete document.documentElement.dataset.style;
   }
   localStorage.setItem(STYLE_KEY, next);
+}
+
+// ─── Couleur de dé ────────────────────────────────────────────────────────────
+const diceColorSaving = ref(false);
+
+async function pickDiceColor(hex: string) {
+  if (diceColorSaving.value || hex === user.value?.diceColor) return;
+  diceColorSaving.value = true;
+  try {
+    const updated = await updateMe({ diceColor: hex });
+    if (user.value) user.value = { ...user.value, diceColor: updated.diceColor };
+  } finally {
+    diceColorSaving.value = false;
+  }
 }
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
@@ -319,6 +335,29 @@ onMounted(load);
             <span class="style-card-name">{{ opt.label }}</span>
             <span class="style-card-desc">{{ opt.desc }}</span>
           </button>
+        </div>
+      </div>
+
+      <div class="style-section">
+        <span class="option-label style-section-label">
+          <Dices :size="16" />
+          Couleur de dé
+        </span>
+        <span class="profile-hint">Ton dé roule dans cette couleur, chez toi comme chez les autres.</span>
+        <div class="dice-swatches">
+          <button
+            v-for="c in DICE_COLORS"
+            :key="c.hex"
+            type="button"
+            class="dice-swatch"
+            :class="{ active: user?.diceColor === c.hex }"
+            :style="{ background: c.hex }"
+            :title="c.label"
+            :aria-label="c.label"
+            :disabled="diceColorSaving"
+            :data-testid="`dice-color-${c.hex.slice(1)}`"
+            @click="pickDiceColor(c.hex)"
+          />
         </div>
       </div>
     </AppCard>
@@ -667,6 +706,37 @@ onMounted(load);
 .style-card.active.grimoire { border-top-color: #c9943e; }
 .style-card.active.vitrail { border-top-color: #2546a8; }
 .style-card.active.carte-du-monde { border-top-color: #b8860b; }
+
+/* ── Couleur de dé ────────────────────────────────────────────────────────── */
+.dice-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+.dice-swatch {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--border-strong);
+  cursor: pointer;
+  padding: 0;
+  transition: transform 120ms ease, box-shadow 160ms ease;
+}
+
+.dice-swatch:hover:not(:disabled) {
+  transform: scale(1.08);
+}
+
+.dice-swatch.active {
+  box-shadow: 0 0 0 3px var(--accent);
+}
+
+.dice-swatch:disabled {
+  cursor: default;
+}
 
 /* ── Characters ───────────────────────────────────────────────────────────── */
 .char-list {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { filterRolls } from './useCampaignRolls'
+import { filterRolls, remoteDiceFor } from './useCampaignRolls'
 import type { RollEvent } from '../api/campaigns'
 
 function roll(over: Partial<RollEvent>): RollEvent {
@@ -39,5 +39,21 @@ describe('filterRolls', () => {
   it('ne mute pas la liste source', () => {
     filterRolls(list, 'combat')
     expect(list).toHaveLength(3)
+  })
+})
+
+describe('remoteDiceFor', () => {
+  it('un jet simple fait rouler son dé principal', () => {
+    expect(remoteDiceFor(roll({ die: 17, sides: 20, kind: 'weapon' }))).toEqual([
+      { sides: 20, value: 17, kind: 'weapon' },
+    ])
+  })
+
+  it('un jet à plusieurs dés les fait tous rouler', () => {
+    expect(remoteDiceFor(roll({ die: 0, sides: 6, kind: 'libre', rolls: [2, 5, 6] }))).toEqual([
+      { sides: 6, value: 2, kind: 'libre' },
+      { sides: 6, value: 5, kind: 'libre' },
+      { sides: 6, value: 6, kind: 'libre' },
+    ])
   })
 })

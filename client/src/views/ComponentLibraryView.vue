@@ -15,7 +15,9 @@ import AppEmptyState from '../components/ui/AppEmptyState.vue'
 import AppModal from '../components/ui/AppModal.vue'
 import AppBottomSheet from '../components/ui/AppBottomSheet.vue'
 import { showToast } from '../composables/useToast'
-import { dice, revealAfterDice } from '../composables/useDice3D'
+import { dice, playRemoteDiceRoll, revealAfterDice } from '../composables/useDice3D'
+import { DICE_COLORS } from '../data/diceColors'
+import { rollDie } from '../utils/dice'
 import { previewRest } from '../composables/useRest'
 import {
   celebrate,
@@ -51,6 +53,21 @@ const badgeVariants = ['attaque', 'limitée', 'gratuite', 'info', 'pm', 'active'
 function fireMoment(outcome: 'critical' | 'fumble') {
   resetCriticalCooldown()
   celebrate(outcome, 'Théos')
+}
+
+// Banc d'essai des dés des autres : un jet distant bidon, sans second
+// navigateur. Nom et couleur tirés au sort, valeur forcée ou non.
+const REMOTE_NAMES = ['Bracco', 'Nym', 'Orlane', 'Kaeliss', 'Théos']
+let remoteIndex = 0
+
+function fakeRemoteRoll(value?: number, count = 1) {
+  const i = remoteIndex++ % REMOTE_NAMES.length
+  const values = Array.from({ length: count }, () => value ?? rollDie(20))
+  playRemoteDiceRoll({
+    actorName: REMOTE_NAMES[i],
+    color: DICE_COLORS[i].hex,
+    rolls: dice(20, values, count > 1 ? 'libre' : 'weapon'),
+  })
 }
 
 function forceRoll(value: number) {
@@ -172,6 +189,22 @@ function forceRoll(value: number) {
           <AppButton size="small">Réessayer</AppButton>
         </template>
       </AppEmptyState>
+    </AppCard>
+
+    <AppCard title="Dés des autres joueurs">
+      <p class="demo-note">
+        Le jet d'un autre membre roule en petit, en haut, dans sa couleur. Clique
+        plusieurs fois vite : 4 emplacements, puis file d'attente.
+      </p>
+      <div class="demo-row">
+        <AppButton @click="fakeRemoteRoll()">🎲 Dé distant</AppButton>
+        <AppButton @click="fakeRemoteRoll(20)">✨ Distant : 20</AppButton>
+        <AppButton @click="fakeRemoteRoll(1)">💀 Distant : 1</AppButton>
+        <AppButton @click="fakeRemoteRoll(undefined, 3)">🎲🎲🎲 Distant : 3d20</AppButton>
+        <AppButton @click="forceRoll(rollDie(20)); fakeRemoteRoll(); fakeRemoteRoll()">
+          Moi + 2 distants
+        </AppButton>
+      </div>
     </AppCard>
 
     <AppCard title="Moment critique">

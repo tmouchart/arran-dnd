@@ -2,7 +2,7 @@
 import { RouterLink, RouterView } from "vue-router";
 import { computed, defineAsyncComponent, onBeforeUnmount, ref, watch } from "vue";
 import { useRoute } from "vue-router";
-import { UserCircle, Loader2, ScrollText, Swords, Backpack, BookOpenText, Map, Palette, Dices, History, Wrench } from "lucide-vue-next";
+import { UserCircle, Loader2, ScrollText, Swords, Backpack, BookOpenText, Map, Palette, Dices, History, Users, Wrench } from "lucide-vue-next";
 import CrystalBall from "./components/icons/CrystalBall.vue";
 import AppToast from "./components/ui/AppToast.vue";
 import DiceBar from "./components/DiceBar.vue";
@@ -16,6 +16,7 @@ import { useActiveCombat, refreshActiveCombat } from "./composables/useActiveCom
 import { wakeCombat } from "./composables/useCombat";
 import { useDiceBar } from "./composables/useDiceBar";
 import { useCampaignRolls } from "./composables/useCampaignRolls";
+import { remoteDiceEnabled, setRemoteDiceEnabled } from "./composables/useDice3D";
 import { primeAudio } from "./utils/sfx";
 
 const isDev = import.meta.env.DEV;
@@ -155,6 +156,16 @@ if (savedStyle) {
           >
             <History :size="20" />
             <span v-if="unread > 0 && !panelOpen" class="nav-badge" />
+          </button>
+          <button
+            type="button"
+            class="nav-link"
+            :class="{ 'nav-link--on': remoteDiceEnabled }"
+            :title="remoteDiceEnabled ? 'Dés des autres joueurs' : 'Dés des autres masqués'"
+            data-testid="nav-remote-dice"
+            @click="setRemoteDiceEnabled(!remoteDiceEnabled)"
+          >
+            <Users :size="20" />
           </button>
           <button
             v-if="isDev"

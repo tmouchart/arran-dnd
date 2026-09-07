@@ -201,6 +201,8 @@ export interface RollEvent {
   rolls: number[] | null
   damage: { total: number; critical: boolean; fumble: boolean } | null
   createdAt: string
+  /** Couleur du dé du lanceur. Présente sur le flux SSE seulement, pas en base. */
+  diceColor?: string
 }
 
 export interface RollInput {

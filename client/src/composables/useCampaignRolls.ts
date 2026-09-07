@@ -3,6 +3,7 @@ import { fetchCampaignRolls, type RestEvent, type RollEvent } from '../api/campa
 import { user } from './useAuth'
 import { receiveRest } from './useRest'
 import { celebrate } from './useCriticalMoment'
+import { playRemoteDiceRoll } from './useDice3D'
 import { rollOutcome, type RollOutcome } from '../utils/rollOutcome'
 
 /** Filtre du panneau de log. */
@@ -52,6 +53,21 @@ function appendRoll(roll: RollEvent): void {
   if (!panelOpen.value) unread.value += 1
 }
 
+/**
+ * Le dé d'un autre joueur roule chez moi, en petit, dans sa couleur. Un jet
+ * à plusieurs dés (bac à sable) les fait tous rouler ; sinon c'est le dé
+ * principal du jet.
+ */
+export function remoteDiceFor(roll: RollEvent): { sides: number; value: number; kind: string }[] {
+  const values = roll.rolls?.length ? roll.rolls : [roll.die]
+  return values.map((value) => ({ sides: roll.sides, value, kind: roll.kind }))
+}
+
+function showRemoteDice(roll: RollEvent): void {
+  if (!roll.diceColor) return
+  playRemoteDiceRoll({ actorName: roll.actorName, color: roll.diceColor, rolls: remoteDiceFor(roll) })
+}
+
 /** Recharge l'historique et le fusionne avec ce qui est déjà affiché. */
 async function syncHistory(campaignId: number): Promise<void> {
   try {
@@ -79,6 +95,7 @@ function connect(campaignId: number): void {
       // Mes propres jets me reviennent par ce flux : la fanfare a déjà joué au
       // moment où mon dé s'est posé, on ne la rejoue pas.
       if (roll.userId !== user.value?.id) {
+        showRemoteDice(roll)
         const outcome = rollOutcome(roll)
         if (outcome) celebrate(outcome, roll.actorName)
       }

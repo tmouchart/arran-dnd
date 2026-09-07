@@ -42,7 +42,18 @@ export function fontSizeFor(label: string, fitRatio: number): number {
   return (usable / halfDiagonal) * 0.94
 }
 
-export function buildAtlas(labels: string[], fitRatio: number): DiceAtlas {
+/** Couleurs d'un dé : le corps et les chiffres. */
+export interface DiceColors {
+  face: string
+  ink: string
+}
+
+/** Le doré du thème : ce que porte un dé sans couleur de joueur. */
+export function themeDiceColors(): DiceColors {
+  return { face: token('--brand', '#d9a544'), ink: token('--on-brand', '#241c10') }
+}
+
+export function buildAtlas(labels: string[], fitRatio: number, colors: DiceColors = themeDiceColors()): DiceAtlas {
   const columns = Math.ceil(Math.sqrt(labels.length))
   const rows = Math.ceil(labels.length / columns)
 
@@ -51,10 +62,7 @@ export function buildAtlas(labels: string[], fitRatio: number): DiceAtlas {
   canvas.height = rows * CELL
   const ctx = canvas.getContext('2d')!
 
-  // Corps doré, chiffres sombres : c'est le seul couple qui tient sur les 4
-  // thèmes, et `--on-brand` est fait pour ça.
-  const face = token('--brand', '#d9a544')
-  const ink = token('--on-brand', '#241c10')
+  const { face, ink } = colors
 
   ctx.fillStyle = face
   ctx.fillRect(0, 0, canvas.width, canvas.height)
