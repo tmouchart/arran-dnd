@@ -5,6 +5,8 @@ import { db } from '../db/index.js'
 import { users } from '../db/schema.js'
 import { signToken } from '../auth/jwt.js'
 import { avatarKind, toAvatarLink } from '../avatarUrl.js'
+import { isDiceColor } from '../campaigns/diceColors.js'
+import { effectiveDiceColor } from '../campaigns/diceColorQuery.js'
 import { requireAuth, type AuthRequest } from '../auth/middleware.js'
 import googleAuthRouter from './googleAuth.js'
 
@@ -91,12 +93,20 @@ router.get('/me', requireAuth, async (req, res) => {
     res.status(401).json({ error: 'Utilisateur introuvable' })
     return
   }
-  res.json({ user: { ...user, avatarUrl: toAvatarLink(user.id, user.avatarUrl) } })
+  const diceColor = await effectiveDiceColor(user.id, user.activeCampaignId)
+  res.json({ user: { ...user, avatarUrl: toAvatarLink(user.id, user.avatarUrl), diceColor } })
 })
 
 router.patch('/me', requireAuth, async (req, res) => {
   const userId = (req as AuthRequest).userId
-  const { avatarUrl, username } = req.body as { avatarUrl?: string | null; username?: string }
+  const { avatarUrl, username, diceColor } = req.body as {
+    avatarUrl?: string | null; username?: string; diceColor?: string | null
+  }
+
+  if (diceColor !== undefined && diceColor !== null && !isDiceColor(diceColor)) {
+    res.status(400).json({ error: 'Couleur invalide' })
+    return
+  }
 
   if (username !== undefined) {
     if (!username.trim()) {
@@ -117,16 +127,25 @@ router.patch('/me', requireAuth, async (req, res) => {
   const patch: Partial<typeof users.$inferInsert> = {}
   if (avatarUrl !== undefined) patch.avatarUrl = avatarUrl ?? null
   if (username !== undefined) patch.username = username.trim()
+  if (diceColor !== undefined) patch.diceColor = diceColor?.toLowerCase() ?? null
 
   const [updated] = await db
     .update(users)
     .set(patch)
     .where(eq(users.id, userId))
-    .returning({ id: users.id, username: users.username, avatarUrl: users.avatarUrl })
+    .returning({ id: users.id, username: users.username, avatarUrl: users.avatarUrl, activeCampaignId: users.activeCampaignId })
+  const effectiveColor = await effectiveDiceColor(updated.id, updated.activeCampaignId)
   // `?v=` : le lien avatar est stable, donc un <img> déjà affiché ne se
   // rafraîchirait pas tout seul après un changement. Ce suffixe le force.
   const link = toAvatarLink(updated.id, updated.avatarUrl)
-  res.json({ user: { ...updated, avatarUrl: link?.startsWith('/api/') ? `${link}?v=${Date.now()}` : link } })
+  res.json({
+    user: {
+      id: updated.id,
+      username: updated.username,
+      avatarUrl: link?.startsWith('/api/') ? `${link}?v=${Date.now()}` : link,
+      diceColor: effectiveColor,
+    },
+  })
 })
 
 router.use('/google', googleAuthRouter)

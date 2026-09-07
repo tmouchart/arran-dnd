@@ -22,6 +22,8 @@ export const users = pgTable('user', {
   /** Notes personnelles du joueur (privées). */
   notesPerso: text('notes_perso').notNull().default(''),
   activeCampaignId: integer('active_campaign_id'),
+  /** Couleur du dé 3D (`#rrggbb`). NULL = couleur par défaut selon la campagne. */
+  diceColor: varchar('dice_color', { length: 7 }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 })
 

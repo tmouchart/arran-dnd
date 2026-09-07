@@ -6,6 +6,7 @@ import { requireAuth, type AuthRequest } from '../auth/middleware.js'
 import { avatarKind, toAvatarLink } from '../avatarUrl.js'
 import { broadcastCampaignEvent, broadcastCampaignRoll, getClientsForCampaign, type SseClient } from '../campaigns/sseStore.js'
 import { applyRest, isRestKind, restDelta, type RestBroadcast } from '../campaigns/rest.js'
+import { effectiveDiceColor } from '../campaigns/diceColorQuery.js'
 
 const router = Router()
 router.use(requireAuth)
@@ -704,8 +705,12 @@ router.post('/:id/rolls', async (req, res) => {
     damage: body.damage ?? null,
   }).returning()
 
-  broadcastCampaignRoll(campaignId, check.gmUserId, event)
-  res.status(201).json(event)
+  // La couleur du dé voyage avec le jet : les autres membres l'affichent en 3D
+  // dans la couleur du lanceur. Elle n'est pas stockée, seulement diffusée.
+  const diceColor = await effectiveDiceColor(userId, campaignId)
+  const payload = { ...event, diceColor }
+  broadcastCampaignRoll(campaignId, check.gmUserId, payload)
+  res.status(201).json(payload)
 })
 
 // GET /api/campaigns/:id/rolls — historique (les non-MJ ne voient pas les jets PNJ)
