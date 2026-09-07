@@ -121,6 +121,7 @@ function absoluteTime(r: RollEvent): string {
           v-for="r in g.entries"
           :key="r.id"
           class="log-entry"
+          data-testid="roll-log-entry"
           :class="{
             'log-entry--critical': rollOutcome(r) === 'critical',
             'log-entry--fumble': rollOutcome(r) === 'fumble',
