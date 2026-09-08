@@ -49,6 +49,8 @@ interface Show {
   slot: number
   /** Couleur du corps, pour que le flash d'un critique reste dans le ton. */
   color?: string
+  /** Les faces tirées, affichées dans l'étiquette une fois le dé posé. */
+  result: string
   dice: { mesh: Mesh; motion: Motion; scale: number; outcome: RollOutcome }[]
   startedAt: number
   landed: boolean
@@ -69,6 +71,9 @@ interface Label {
   color: string
   x: number
   y: number
+  /** Vide tant que le dé vole : un petit dé de 45 px ne se lit pas, le chiffre si. */
+  result: string
+  outcome: RollOutcome
   fading: boolean
 }
 
@@ -359,6 +364,7 @@ async function launch(
     remote,
     slot,
     color: request.color,
+    result: request.rolls.map((r) => r.value).join(' · '),
     dice: [],
     startedAt: 0,
     landed: false,
@@ -438,6 +444,8 @@ async function startRemote(request: RemoteDiceRequest) {
     color: request.color,
     x: at.x,
     y: at.y,
+    result: '',
+    outcome: null,
     fading: false,
   })
 
@@ -489,6 +497,11 @@ function tick(now: number) {
       show.landedAt = now
       finish(show)
       void triggerEffects(show)
+      const label = labels.value.find((l) => l.id === show.id)
+      if (label) {
+        label.result = show.result
+        label.outcome = show.dice.find((d) => d.outcome)?.outcome ?? null
+      }
     }
 
     const effectAge = show.landed ? now - show.landedAt : 0
@@ -641,7 +654,12 @@ onBeforeUnmount(() => {
       :style="{ left: `${label.x}px`, top: `${label.y}px` }"
     >
       <span class="dice-label-dot" :style="{ background: label.color }" />
-      {{ label.name }}
+      <span class="dice-label-name">{{ label.name }}</span>
+      <span
+        v-if="label.result"
+        class="dice-label-result"
+        :class="label.outcome && `dice-label-result--${label.outcome}`"
+      >{{ label.result }}</span>
     </span>
   </div>
 </template>
@@ -679,7 +697,7 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   gap: var(--space-xs);
-  max-width: 22vw;
+  max-width: 24vw;
   padding: 1px var(--space-sm);
   border-radius: var(--radius-pill);
   border: 1px solid var(--border-strong);
@@ -688,11 +706,31 @@ onBeforeUnmount(() => {
   font-size: 0.72rem;
   font-weight: 700;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   color: var(--text);
   animation: dice-label-in 220ms ease-out;
   transition: opacity 300ms ease;
+}
+
+.dice-label-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Le chiffre : plus gros que le nom, c'est lui qu'on cherche des yeux */
+.dice-label-result {
+  flex-shrink: 0;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--brand-strong);
+  animation: dice-result-in 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.dice-label-result--critical { color: var(--accent-strong); }
+.dice-label-result--fumble { color: var(--danger); }
+
+@keyframes dice-result-in {
+  from { opacity: 0; transform: scale(0.4); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 .dice-label.is-fading {
