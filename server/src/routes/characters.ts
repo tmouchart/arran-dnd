@@ -8,6 +8,7 @@ function username(req: unknown): string {
   return (req as AuthRequest).username ?? 'unknown'
 }
 import { broadcastUserCombats } from '../combats/sseStore.js'
+import { pickUpdatable } from '../characters/updatable.js'
 type SkillRow = { name: string; rank: number }
 type CompetenceRow = { id: string; name: string; ability: string | null; bonus: number }
 type PathRow = { id?: string; name: string; rank: number; kind?: string; notes?: string }
@@ -158,22 +159,10 @@ router.put('/:id', async (req, res) => {
     affaibli: boolean
     competences: CompetenceRow[]
     portraitImageId: number | null
+    hpLevelGains: number[]
   }>
 
-  // Whitelist : seules ces colonnes sont modifiables par le client.
-  // Bloque le mass-assignment (userId, isActive, createdAt…) et les clés inconnues.
-  const UPDATABLE_FIELDS = [
-    'name', 'profile', 'histoire', 'people', 'level',
-    'hpMax', 'hpCurrent', 'mpMax', 'mpCurrent', 'defense', 'initiativeBonus',
-    'attackContactBonus', 'attackDistanceBonus', 'attackMagiqueBonus', 'defenseBonus',
-    'str', 'dex', 'con', 'int', 'wis', 'cha',
-    'skills', 'weapons', 'martialFormations', 'paths', 'mysticTalent',
-    'armorId', 'shieldId', 'items', 'goldCoins', 'silverCoins', 'copperCoins',
-    'pcCurrent', 'prCurrent', 'affaibli', 'competences', 'portraitImageId',
-  ] as const
-  const body = Object.fromEntries(
-    UPDATABLE_FIELDS.filter((k) => k in rawBody).map((k) => [k, rawBody[k]]),
-  ) as UpdatableBody
+  const body = pickUpdatable(rawBody) as UpdatableBody
 
   const [row] = await db
     .update(characters)

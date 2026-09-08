@@ -30,3 +30,33 @@ test.describe('fiche de personnage', () => {
     await restored
   })
 })
+
+// Régression prod (sept. 2026) : le bac à sable seed des persos niveau 5 sans
+// jets de croissance. Au chargement, un premier calcul de PV max avec 0 jet
+// rabattait les PV courants (48 → 11) avant que les jets par défaut soient
+// ajoutés. Le joueur voyait ses PV fondre à chaque ouverture de la fiche.
+test('les PV courants ne sont pas rabattus au chargement de la fiche', async ({ page }) => {
+  await page.goto('/personnage')
+  // Bracco est seedé à 48/48 (server/src/dev/seed.ts).
+  await expect(page.getByTestId('hp-current')).toHaveText('48')
+})
+
+// Régression prod (août 2026) : le serveur jetait les jets de croissance à
+// chaque sauvegarde (liste blanche anti mass-assignment incomplète).
+test('un jet de croissance modifié survit à un rechargement', async ({ page }) => {
+  await page.goto('/personnage')
+  await page.getByTestId('hp-growth-open').click()
+  const input = page.getByTestId('hp-growth-input-2')
+  await expect(input).toBeVisible()
+
+  const saved = page.waitForResponse(
+    (r) => /\/api\/characters\/\d+$/.test(r.url()) && r.request().method() === 'PUT' && r.ok()
+  )
+  await input.fill('3')
+  await input.blur()
+  await saved
+
+  await page.reload()
+  await page.getByTestId('hp-growth-open').click()
+  await expect(page.getByTestId('hp-growth-input-2')).toHaveValue('3')
+})

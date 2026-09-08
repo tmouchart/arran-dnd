@@ -7,8 +7,12 @@ import {
   computedMp,
   FAMILY_DIE_MAX,
   createDefaultCharacter,
+  toCharacter,
+  normalizeHpLevelGains,
 } from './useCharacter'
 import type { PathRow } from '../types/character'
+import type { ServerCharacter } from '../api/characters'
+import { nextTick } from 'vue'
 
 // ── Voies réelles (client/src/data/voies.ts) ──────────────────────────────────
 
@@ -167,5 +171,54 @@ describe('computedMp', () => {
     character.value.level = 4
     character.value.abilities.wisdom = 12 // mod +1
     expect(computedMp.value).toBe(4 + 1)
+  })
+})
+
+// ── Chargement d'une fiche dont les jets de croissance sont incomplets ────────
+// Régression prod (sept. 2026) : niveau 5 avec 3 jets → au chargement, le
+// premier calcul de PV max (avec 3 jets) rabattait les PV courants, puis le
+// 4e jet était ajouté et le max remontait. Résultat : « 24/31 » à chaque
+// ouverture de la fiche.
+
+describe('normalizeHpLevelGains', () => {
+  it('complète avec le dé max jusqu’à niveau - 1', () => {
+    expect(normalizeHpLevelGains([5, 5, 4], 5, 6)).toEqual([5, 5, 4, 6])
+  })
+  it('tronque si trop de jets', () => {
+    expect(normalizeHpLevelGains([5, 5, 4, 6], 3, 6)).toEqual([5, 5])
+  })
+  it('ne touche pas à une liste déjà complète', () => {
+    expect(normalizeHpLevelGains([5, 5, 4, 2], 5, 6)).toEqual([5, 5, 4, 2])
+  })
+  it('niveau 1 → aucun jet', () => {
+    expect(normalizeHpLevelGains([3], 1, 6)).toEqual([])
+  })
+})
+
+describe('chargement d’une fiche avec des jets de croissance manquants', () => {
+  const MINIZOU: ServerCharacter = {
+    id: 5, userId: 9, isActive: true, name: 'Minizou', profile: '', histoire: '', people: 'nain',
+    level: 5, hpMax: 31, hpCurrent: 30, mpMax: 12, mpCurrent: 12, defense: 12, initiativeBonus: 0,
+    str: 10, dex: 12, con: 13, int: 16, wis: 12, cha: 10,
+    skills: [], weapons: [], martialFormations: [],
+    paths: [MYSTIQUE_1, MYSTIQUE_2],
+    mysticTalent: null, armorId: null, shieldId: null,
+    defenseBonus: 0, attackContactBonus: 0, attackDistanceBonus: 0, attackMagiqueBonus: 0,
+    hpLevelGains: [5, 5, 4], // 3 jets pour un niveau 5 : il en manque un
+    items: [], goldCoins: 0, silverCoins: 0, copperCoins: 0,
+    pcCurrent: 2, prCurrent: 5, affaibli: false, competences: [], portraitImageId: null,
+  }
+
+  it('toCharacter complète les jets avant tout calcul', () => {
+    expect(toCharacter(MINIZOU).hpLevelGains).toEqual([5, 5, 4, 6])
+  })
+
+  it('les PV courants ne sont pas rabattus au chargement', async () => {
+    character.value = toCharacter(MINIZOU)
+    await nextTick()
+    // d6 + 1 (CON 13) + (5+1) + (5+1) + (4+1) + (6+1) = 31
+    expect(computedHp.value).toBe(31)
+    expect(character.value.hpCurrent).toBe(30)
+    expect(character.value.hpMax).toBe(31)
   })
 })

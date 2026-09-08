@@ -29,7 +29,22 @@ function loadCurrentMp(mpMax: number): number {
   return Number.isFinite(v) && v >= 0 ? v : mpMax
 }
 
+/**
+ * Ramène la liste des jets de croissance à exactement (niveau - 1) entrées :
+ * on complète avec le dé max de la famille, on tronque l'excédent.
+ * Appelé AVANT de poser la fiche, sinon le premier calcul de PV max tourne
+ * avec des jets manquants et rabat les PV courants (bug « 24/31 », sept. 2026).
+ */
+export function normalizeHpLevelGains(gains: number[], level: number, dieMax: number): number[] {
+  const needed = Math.max(0, level - 1)
+  if (gains.length === needed) return gains
+  if (gains.length > needed) return gains.slice(0, needed)
+  return [...gains, ...Array(needed - gains.length).fill(dieMax)]
+}
+
 export function toCharacter(s: ServerCharacter): Character {
+  const rawGains = Array.isArray(s.hpLevelGains) ? (s.hpLevelGains as number[]) : []
+  const dieMax = FAMILY_DIE_MAX[inferProfileFamily(s.paths)]
   return {
     id: String(s.id),
     name: s.name,
@@ -67,7 +82,7 @@ export function toCharacter(s: ServerCharacter): Character {
     attackContactBonus: s.attackContactBonus ?? 0,
     attackDistanceBonus: s.attackDistanceBonus ?? 0,
     attackMagiqueBonus: s.attackMagiqueBonus ?? 0,
-    hpLevelGains: Array.isArray(s.hpLevelGains) ? (s.hpLevelGains as number[]) : [],
+    hpLevelGains: normalizeHpLevelGains(rawGains, s.level, dieMax),
     items: Array.isArray(s.items) ? s.items : [],
     goldCoins: s.goldCoins ?? 0,
     silverCoins: s.silverCoins ?? 0,
@@ -320,17 +335,10 @@ watch(computedHp, (val) => {
 watch(
   () => character.value.level,
   (newLevel) => {
-    const needed = Math.max(0, newLevel - 1)
-    const gains = character.value.hpLevelGains
-    if (gains.length < needed) {
-      const family = inferProfileFamily(character.value.paths)
-      const dieMax = FAMILY_DIE_MAX[family]
-      while (character.value.hpLevelGains.length < needed) {
-        character.value.hpLevelGains.push(dieMax)
-      }
-    } else if (gains.length > needed) {
-      character.value.hpLevelGains = gains.slice(0, needed)
-    }
+    const c = character.value
+    const dieMax = FAMILY_DIE_MAX[inferProfileFamily(c.paths)]
+    const normalized = normalizeHpLevelGains(c.hpLevelGains, newLevel, dieMax)
+    if (normalized !== c.hpLevelGains) c.hpLevelGains = normalized
   },
 )
 

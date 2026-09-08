@@ -89,6 +89,7 @@ function rollDie(levelIndex: number) {
               <input
                 type="number"
                 class="lvl-roll-input"
+                :data-testid="`hp-growth-input-${i + 1}`"
                 :min="1"
                 :max="dieMax"
                 :value="rollAt(i - 1)"

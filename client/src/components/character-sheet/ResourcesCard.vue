@@ -75,6 +75,7 @@ const mpIsMystique = computed(() => props.family === "mystiques");
             <span class="def-op">+</span>
             <button
               class="def-chip def-chip--growth"
+              data-testid="hp-growth-open"
               title="Cliquer pour voir la progression par niveau"
               @click="showHpModal = true"
             >
