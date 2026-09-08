@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 import { useRouter } from "vue-router";
-import { Crown, UserCircle, Swords, Sprout } from "lucide-vue-next";
+import { Crown, UserCircle, Swords, Sprout, Dices } from "lucide-vue-next";
 import AppBottomSheet from "../ui/AppBottomSheet.vue";
 import AppButton from "../ui/AppButton.vue";
 import AppEmptyState from "../ui/AppEmptyState.vue";
 import { user } from "../../composables/useAuth";
 import { showToast } from "../../composables/useToast";
 import * as api from "../../api/dev";
+import { fakeRemoteRoll } from "./fakeRemoteRoll";
 
 const props = defineProps<{ modelValue: boolean }>();
 const emit = defineEmits<{ (e: "update:modelValue", v: boolean): void }>();
@@ -63,6 +64,20 @@ async function handleSeed() {
   }
 }
 
+// La feuille passe au-dessus des dés : on la ferme avant de lancer.
+function handleRemoteDice(shots: { value?: number; count?: number }[]) {
+  emit("update:modelValue", false);
+  for (const shot of shots) fakeRemoteRoll(shot.value, shot.count);
+}
+
+const remoteDiceShots: { label: string; shots: { value?: number; count?: number }[] }[] = [
+  { label: "1 dé distant", shots: [{}] },
+  { label: "4 joueurs d'un coup", shots: [{}, {}, {}, {}] },
+  { label: "Distant : 20", shots: [{ value: 20 }] },
+  { label: "Distant : 1", shots: [{ value: 1 }] },
+  { label: "Distant : 3d20", shots: [{ count: 3 }] },
+];
+
 async function handlePreset(preset: api.DevPreset) {
   const campaignId = user.value?.activeCampaignId;
   if (!campaignId) {
@@ -108,6 +123,21 @@ async function handlePreset(preset: api.DevPreset) {
           <UserCircle v-else :size="16" class="dev-user-icon" />
           <span class="dev-user-name">{{ u.username }}</span>
           <span v-if="u.gmOf" class="dev-user-tag">MJ · {{ u.gmOf }}</span>
+        </button>
+      </div>
+
+      <h3 class="dev-heading">Dés des autres</h3>
+      <p class="dev-note">Un jet distant bidon, sans second navigateur. Ferme la feuille et lance.</p>
+      <div class="dev-users">
+        <button
+          v-for="d in remoteDiceShots"
+          :key="d.label"
+          type="button"
+          class="dev-user"
+          @click="handleRemoteDice(d.shots)"
+        >
+          <Dices :size="16" class="dev-user-icon" />
+          <span class="dev-user-name">{{ d.label }}</span>
         </button>
       </div>
 

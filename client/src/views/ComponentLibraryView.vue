@@ -15,8 +15,8 @@ import AppEmptyState from '../components/ui/AppEmptyState.vue'
 import AppModal from '../components/ui/AppModal.vue'
 import AppBottomSheet from '../components/ui/AppBottomSheet.vue'
 import { showToast } from '../composables/useToast'
-import { dice, playRemoteDiceRoll, revealAfterDice } from '../composables/useDice3D'
-import { DICE_COLORS } from '../data/diceColors'
+import { dice, revealAfterDice } from '../composables/useDice3D'
+import { fakeRemoteRoll } from '../components/dev/fakeRemoteRoll'
 import { rollDie } from '../utils/dice'
 import { previewRest } from '../composables/useRest'
 import {
@@ -53,21 +53,6 @@ const badgeVariants = ['attaque', 'limitée', 'gratuite', 'info', 'pm', 'active'
 function fireMoment(outcome: 'critical' | 'fumble') {
   resetCriticalCooldown()
   celebrate(outcome, 'Théos')
-}
-
-// Banc d'essai des dés des autres : un jet distant bidon, sans second
-// navigateur. Nom et couleur tirés au sort, valeur forcée ou non.
-const REMOTE_NAMES = ['Bracco', 'Nym', 'Orlane', 'Kaeliss', 'Théos']
-let remoteIndex = 0
-
-function fakeRemoteRoll(value?: number, count = 1) {
-  const i = remoteIndex++ % REMOTE_NAMES.length
-  const values = Array.from({ length: count }, () => value ?? rollDie(20))
-  playRemoteDiceRoll({
-    actorName: REMOTE_NAMES[i],
-    color: DICE_COLORS[i].hex,
-    rolls: dice(20, values, count > 1 ? 'libre' : 'weapon'),
-  })
 }
 
 function forceRoll(value: number) {
