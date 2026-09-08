@@ -7,6 +7,16 @@ import type express from 'express'
 export interface SseClient {
   res: express.Response
   userId: number
+  /**
+   * Mode table (tablette au milieu de la table) : même logué avec le compte du
+   * MJ, ce client est traité comme un joueur. Le secret du MJ ne sort pas.
+   */
+  viewer?: boolean
+}
+
+/** Le client demande à être traité comme un simple joueur (`?as=viewer`). */
+export function isViewerRequest(req: express.Request): boolean {
+  return req.query.as === 'viewer'
 }
 
 const clientsByCampaign = new Map<number, Set<SseClient>>()
@@ -66,7 +76,7 @@ export function broadcastCampaignRoll(
     : null
 
   for (const client of clients) {
-    if (hidden && client.userId !== gmUserId) {
+    if (hidden && (client.userId !== gmUserId || client.viewer)) {
       if (!teaser) continue
       client.res.write('event: critical\n')
       client.res.write(`data: ${teaser}\n\n`)

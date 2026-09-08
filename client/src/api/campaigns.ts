@@ -223,8 +223,8 @@ export function postCampaignRoll(campaignId: number, roll: RollInput): Promise<R
   return request(`/${campaignId}/rolls`, { method: 'POST', body: JSON.stringify(roll) })
 }
 
-export function fetchCampaignRolls(campaignId: number): Promise<RollEvent[]> {
-  return request(`/${campaignId}/rolls`)
+export function fetchCampaignRolls(campaignId: number, viewer = false): Promise<RollEvent[]> {
+  return request(`/${campaignId}/rolls${viewer ? '?as=viewer' : ''}`)
 }
 
 // ── Repos partagé ───────────────────────────────────────────────────────────

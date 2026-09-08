@@ -83,8 +83,8 @@ export function createCombat(
   })
 }
 
-export function fetchCombat(campaignId: number, combatId: number): Promise<CombatState> {
-  return request(`/${campaignId}/combats/${combatId}`)
+export function fetchCombat(campaignId: number, combatId: number, viewer = false): Promise<CombatState> {
+  return request(`/${campaignId}/combats/${combatId}${viewer ? '?as=viewer' : ''}`)
 }
 
 export function nextTurn(campaignId: number, combatId: number): Promise<void> {

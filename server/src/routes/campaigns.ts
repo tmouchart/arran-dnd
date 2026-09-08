@@ -4,7 +4,7 @@ import { db } from '../db/index.js'
 import { campaigns, campaignMembers, characters, users, encounterTemplates, encounterMonsters, combats, rollEvents } from '../db/schema.js'
 import { requireAuth, type AuthRequest } from '../auth/middleware.js'
 import { avatarKind, toAvatarLink } from '../avatarUrl.js'
-import { broadcastCampaignEvent, broadcastCampaignRoll, getClientsForCampaign, type SseClient } from '../campaigns/sseStore.js'
+import { broadcastCampaignEvent, broadcastCampaignRoll, getClientsForCampaign, isViewerRequest, type SseClient } from '../campaigns/sseStore.js'
 import { applyRest, isRestKind, restDelta, type RestBroadcast } from '../campaigns/rest.js'
 import { dominantColor } from '../campaigns/diceStyle.js'
 import { effectiveDiceStyle } from '../campaigns/diceStyleQuery.js'
@@ -722,7 +722,7 @@ router.get('/:id/rolls', async (req, res) => {
   const check = await verifyMember(campaignId, userId)
   if (check.status !== 'ok') { res.status(403).json({ error: 'Non autorisé' }); return }
 
-  const isGm = userId === check.gmUserId
+  const isGm = userId === check.gmUserId && !isViewerRequest(req)
   const where = isGm
     ? eq(rollEvents.campaignId, campaignId)
     : and(eq(rollEvents.campaignId, campaignId), eq(rollEvents.visibility, 'public'))
@@ -809,7 +809,7 @@ router.get('/:id/events', async (req, res) => {
     Connection: 'keep-alive',
   })
 
-  const client: SseClient = { res, userId }
+  const client: SseClient = { res, userId, viewer: isViewerRequest(req) }
   const clients = getClientsForCampaign(campaignId)
   clients.add(client)
 

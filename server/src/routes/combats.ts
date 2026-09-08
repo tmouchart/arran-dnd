@@ -7,6 +7,7 @@ import {
 import { requireAuth, type AuthRequest } from '../auth/middleware.js'
 import { broadcastCombatState, broadcastParticipantMoved, enrichParticipantHp, getClientsForCombat, releaseClient, sendCombatStateTo, type SseClient } from '../combats/sseStore.js'
 import { serializeCombat } from '../combats/serialize.js'
+import { broadcastCampaignEvent, isViewerRequest } from '../campaigns/sseStore.js'
 import { generateText } from '../ai/client.js'
 import { turnOrder, firstActiveId, step } from '../combats/turnOrder.js'
 import { startingPosition, clampToBoard } from '../combats/placement.js'
@@ -163,6 +164,9 @@ router.post('/:id/combats', async (req, res) => {
     .where(eq(combats.id, combat.id))
 
   await broadcastCombatState(combat.id, check.gmUserId)
+  // Le flux de campagne annonce le combat : le mode table (et le bandeau des
+  // téléphones) bascule sans qu'on touche l'écran.
+  broadcastCampaignEvent(campaignId, 'combat', { combatId: combat.id, status: 'active' })
 
   console.log(`[combat] created: "${combatName}" in campaign ${campaignId}`)
   res.status(201).json({ id: combat.id })
@@ -202,7 +206,7 @@ router.get('/:id/combats/:cid', async (req, res) => {
   const participants = await db.select().from(combatParticipants).where(eq(combatParticipants.combatId, combatId)).orderBy(asc(combatParticipants.id))
   const enriched = await enrichParticipantHp(campaignId, participants)
 
-  res.json(serializeCombat(combat, enriched, userId === check.gmUserId))
+  res.json(serializeCombat(combat, enriched, userId === check.gmUserId && !isViewerRequest(req)))
 })
 
 // POST /:id/combats/:cid/next-turn
@@ -571,6 +575,7 @@ router.post('/:id/combats/:cid/finish', async (req, res) => {
 
   await db.update(combats).set({ status: 'finished', finishedAt: new Date() }).where(eq(combats.id, combatId))
   await broadcastCombatState(combatId, check.gmUserId)
+  broadcastCampaignEvent(campaignId, 'combat', { combatId, status: 'finished' })
 
   console.log(`[combat] finished: id=${combatId}`)
   res.json({ ok: true })
@@ -594,7 +599,7 @@ router.get('/:id/combats/:cid/events', async (req, res) => {
     Connection: 'keep-alive',
   })
 
-  const client: SseClient = { res, userId }
+  const client: SseClient = { res, userId, viewer: isViewerRequest(req) }
   const clients = getClientsForCombat(combatId)
   clients.add(client)
 

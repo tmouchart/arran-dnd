@@ -81,6 +81,12 @@ export async function broadcastUserCombats(userId: number): Promise<void> {
 export interface SseClient {
   res: express.Response
   userId: number
+  /** Mode table : traité comme un joueur même avec le compte du MJ. */
+  viewer?: boolean
+}
+
+function seesAsGm(client: SseClient, gmUserId: number): boolean {
+  return client.userId === gmUserId && !client.viewer
 }
 
 const sseClients = new Map<number, Set<SseClient>>()
@@ -145,7 +151,7 @@ export async function sendCombatStateTo(
     .orderBy(asc(combatParticipants.id))
 
   const enriched = await enrichParticipantHp(combat.campaignId, participants)
-  writeSse(client.res, 'combat-updated', serializeCombat(combat, enriched, client.userId === gmUserId))
+  writeSse(client.res, 'combat-updated', serializeCombat(combat, enriched, seesAsGm(client, gmUserId)))
 }
 
 /**
@@ -177,6 +183,6 @@ export async function broadcastCombatState(
   const enriched = await enrichParticipantHp(combat.campaignId, participants)
 
   for (const client of clients) {
-    writeSse(client.res, 'combat-updated', serializeCombat(combat, enriched, client.userId === gmUserId))
+    writeSse(client.res, 'combat-updated', serializeCombat(combat, enriched, seesAsGm(client, gmUserId)))
   }
 }

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import type express from 'express'
-import { broadcastCampaignRoll, criticalOutcome, getClientsForCampaign } from './sseStore.js'
+import { broadcastCampaignRoll, criticalOutcome, getClientsForCampaign, type SseClient } from './sseStore.js'
 
 const CAMPAIGN = 9001
 const GM = 1
@@ -9,7 +9,8 @@ const PLAYER = 2
 function fakeClient(userId: number) {
   const written: string[] = []
   const res = { write: (chunk: string) => { written.push(chunk); return true } } as unknown as express.Response
-  return { client: { res, userId }, written }
+  const client: SseClient = { res, userId }
+  return { client, written }
 }
 
 function roll(over: Record<string, unknown> = {}) {
@@ -95,5 +96,27 @@ describe('broadcastCampaignRoll', () => {
     broadcastCampaignRoll(CAMPAIGN, GM, roll({ visibility: 'public', actorName: 'Théos' }))
 
     expect(player.written.join('')).toContain('event: roll')
+  })
+})
+
+describe('mode table (viewer)', () => {
+  beforeEach(() => {
+    getClientsForCampaign(CAMPAIGN).clear()
+  })
+
+  it('le MJ en mode table ne reçoit pas les jets cachés, seulement le frisson', () => {
+    const tablet = fakeClient(GM)
+    tablet.client.viewer = true
+    getClientsForCampaign(CAMPAIGN).add(tablet.client)
+
+    broadcastCampaignRoll(CAMPAIGN, GM, roll({ die: 20 }))
+    broadcastCampaignRoll(CAMPAIGN, GM, roll({ die: 14, actorName: 'Gobelin' }))
+    broadcastCampaignRoll(CAMPAIGN, GM, { visibility: 'public', actorName: 'Thorin' })
+
+    const data = tablet.written.join('')
+    expect(data).toContain('event: critical')
+    expect(data).not.toContain('27')
+    expect(data).not.toContain('Gobelin')
+    expect(data).toContain('Thorin')
   })
 })
