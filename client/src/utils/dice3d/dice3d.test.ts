@@ -320,3 +320,16 @@ describe('remoteSlotLayout', () => {
     expect(remoteSlotLayout(0, 12, halfWidth, halfHeight).positions).toHaveLength(MAX_REMOTE_DICE)
   })
 })
+
+describe('faceTargetQuaternion vers la caméra', () => {
+  it('une face posée hors centre vise la caméra, pas l’avant', () => {
+    const normal = new THREE.Vector3(0, 0, 1)
+    const landing = new THREE.Vector3(-3, 5, 0)
+    const cameraPos = new THREE.Vector3(0, 0, 9)
+    const toward = cameraPos.clone().sub(landing)
+    const q = faceTargetQuaternion(normal, toward)
+    const facing = normal.clone().applyQuaternion(q)
+    expect(facing.dot(toward.clone().normalize())).toBeCloseTo(1, 5)
+    expect(facing.z).toBeLessThan(1)
+  })
+})

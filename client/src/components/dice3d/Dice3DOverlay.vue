@@ -380,11 +380,14 @@ async function launch(
     const die = dice[i]
     const mesh = await meshFor(die, request.color)
     const normals = await faceNormals(die)
-    const target = motionApi!.faceTargetQuaternion(normals[die.faceIndex])
+    const landing = new three!.Vector3(positions[i].x, positions[i].y, 0)
+    // La face vise la caméra depuis l'endroit où le dé se pose, pas « l'avant »
+    const toward = camera!.position.clone().sub(landing)
+    const target = motionApi!.faceTargetQuaternion(normals[die.faceIndex], toward)
     const motion = motionApi!.createMotion({
       halfWidth,
       halfHeight,
-      landing: new three!.Vector3(positions[i].x, positions[i].y, 0),
+      landing,
       target,
     })
     motion.duration *= timing.speed

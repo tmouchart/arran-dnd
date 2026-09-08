@@ -32,11 +32,21 @@ const easeOutCubic = (t: number) => 1 - (1 - t) ** 3
 /** Décroissance plus brutale : le dé freine sec en se posant. */
 const easeOutQuart = (t: number) => 1 - (1 - t) ** 4
 
-/** L'orientation qui présente une face à la caméra (l'axe +Z). */
-export function faceTargetQuaternion(normal: THREE.Vector3): THREE.Quaternion {
+/**
+ * L'orientation qui présente une face à la caméra.
+ *
+ * `toward` est la direction du dé vers la caméra. Au centre de l'écran c'est
+ * +Z ; mais un dé posé en haut à gauche est vu de biais par une caméra en
+ * perspective : sa face doit viser la caméra elle-même, sinon le chiffre
+ * apparaît tourné.
+ */
+export function faceTargetQuaternion(
+  normal: THREE.Vector3,
+  toward: THREE.Vector3 = new THREE.Vector3(0, 0, 1),
+): THREE.Quaternion {
   return new THREE.Quaternion().setFromUnitVectors(
     normal.clone().normalize(),
-    new THREE.Vector3(0, 0, 1),
+    toward.clone().normalize(),
   )
 }
 
