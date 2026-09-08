@@ -6,7 +6,8 @@ import { requireAuth, type AuthRequest } from '../auth/middleware.js'
 import { avatarKind, toAvatarLink } from '../avatarUrl.js'
 import { broadcastCampaignEvent, broadcastCampaignRoll, getClientsForCampaign, type SseClient } from '../campaigns/sseStore.js'
 import { applyRest, isRestKind, restDelta, type RestBroadcast } from '../campaigns/rest.js'
-import { effectiveDiceColor } from '../campaigns/diceColorQuery.js'
+import { dominantColor } from '../campaigns/diceStyle.js'
+import { effectiveDiceStyle } from '../campaigns/diceStyleQuery.js'
 
 const router = Router()
 router.use(requireAuth)
@@ -705,10 +706,10 @@ router.post('/:id/rolls', async (req, res) => {
     damage: body.damage ?? null,
   }).returning()
 
-  // La couleur du dé voyage avec le jet : les autres membres l'affichent en 3D
-  // dans la couleur du lanceur. Elle n'est pas stockée, seulement diffusée.
-  const diceColor = await effectiveDiceColor(userId, campaignId)
-  const payload = { ...event, diceColor }
+  // Le style du dé voyage avec le jet : les autres membres l'affichent en 3D
+  // aux couleurs du lanceur. Il n'est pas stocké, seulement diffusé.
+  const diceStyle = await effectiveDiceStyle(userId, campaignId)
+  const payload = { ...event, diceStyle, diceColor: dominantColor(diceStyle) }
   broadcastCampaignRoll(campaignId, check.gmUserId, payload)
   res.status(201).json(payload)
 })

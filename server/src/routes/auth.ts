@@ -5,8 +5,8 @@ import { db } from '../db/index.js'
 import { users } from '../db/schema.js'
 import { signToken } from '../auth/jwt.js'
 import { avatarKind, toAvatarLink } from '../avatarUrl.js'
-import { isDiceColor } from '../campaigns/diceColors.js'
-import { effectiveDiceColor } from '../campaigns/diceColorQuery.js'
+import { dominantColor, parseDiceStyle } from '../campaigns/diceStyle.js'
+import { effectiveDiceStyle } from '../campaigns/diceStyleQuery.js'
 import { requireAuth, type AuthRequest } from '../auth/middleware.js'
 import googleAuthRouter from './googleAuth.js'
 
@@ -93,19 +93,31 @@ router.get('/me', requireAuth, async (req, res) => {
     res.status(401).json({ error: 'Utilisateur introuvable' })
     return
   }
-  const diceColor = await effectiveDiceColor(user.id, user.activeCampaignId)
-  res.json({ user: { ...user, avatarUrl: toAvatarLink(user.id, user.avatarUrl), diceColor } })
+  const diceStyle = await effectiveDiceStyle(user.id, user.activeCampaignId)
+  res.json({
+    user: {
+      ...user,
+      avatarUrl: toAvatarLink(user.id, user.avatarUrl),
+      diceStyle,
+      // Gardé le temps d'une version, pour un client pas encore rechargé.
+      diceColor: dominantColor(diceStyle),
+    },
+  })
 })
 
 router.patch('/me', requireAuth, async (req, res) => {
   const userId = (req as AuthRequest).userId
-  const { avatarUrl, username, diceColor } = req.body as {
-    avatarUrl?: string | null; username?: string; diceColor?: string | null
+  const { avatarUrl, username, diceStyle } = req.body as {
+    avatarUrl?: string | null; username?: string; diceStyle?: unknown
   }
 
-  if (diceColor !== undefined && diceColor !== null && !isDiceColor(diceColor)) {
-    res.status(400).json({ error: 'Couleur invalide' })
-    return
+  let parsedStyle: ReturnType<typeof parseDiceStyle> = null
+  if (diceStyle !== undefined && diceStyle !== null) {
+    parsedStyle = parseDiceStyle(diceStyle)
+    if (!parsedStyle) {
+      res.status(400).json({ error: 'Style de dé invalide' })
+      return
+    }
   }
 
   if (username !== undefined) {
@@ -127,14 +139,17 @@ router.patch('/me', requireAuth, async (req, res) => {
   const patch: Partial<typeof users.$inferInsert> = {}
   if (avatarUrl !== undefined) patch.avatarUrl = avatarUrl ?? null
   if (username !== undefined) patch.username = username.trim()
-  if (diceColor !== undefined) patch.diceColor = diceColor?.toLowerCase() ?? null
+  if (diceStyle !== undefined) {
+    patch.diceStyle = parsedStyle
+    patch.diceColor = parsedStyle ? dominantColor(parsedStyle) : null
+  }
 
   const [updated] = await db
     .update(users)
     .set(patch)
     .where(eq(users.id, userId))
     .returning({ id: users.id, username: users.username, avatarUrl: users.avatarUrl, activeCampaignId: users.activeCampaignId })
-  const effectiveColor = await effectiveDiceColor(updated.id, updated.activeCampaignId)
+  const effectiveStyle = await effectiveDiceStyle(updated.id, updated.activeCampaignId)
   // `?v=` : le lien avatar est stable, donc un <img> déjà affiché ne se
   // rafraîchirait pas tout seul après un changement. Ce suffixe le force.
   const link = toAvatarLink(updated.id, updated.avatarUrl)
@@ -143,7 +158,8 @@ router.patch('/me', requireAuth, async (req, res) => {
       id: updated.id,
       username: updated.username,
       avatarUrl: link?.startsWith('/api/') ? `${link}?v=${Date.now()}` : link,
-      diceColor: effectiveColor,
+      diceStyle: effectiveStyle,
+      diceColor: dominantColor(effectiveStyle),
     },
   })
 })

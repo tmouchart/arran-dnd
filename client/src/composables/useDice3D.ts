@@ -1,5 +1,6 @@
 import { ref, shallowRef } from 'vue'
 import { planDice, type DieRoll } from '../utils/dice3d/plan'
+import type { DiceStyle } from '../data/diceStyle'
 import { user } from './useAuth'
 
 export type { DieRoll }
@@ -15,14 +16,14 @@ export type { DieRoll }
 export interface DiceRequest {
   id: number
   rolls: DieRoll[]
-  /** Couleur du corps du dé (`#rrggbb`). Absente = doré du thème. */
-  color?: string
+  /** Style du corps du dé. Absent = doré du thème. */
+  style?: DiceStyle
 }
 
 /** Le jet d'un autre membre de la campagne, à montrer en petit. */
 export interface RemoteDiceRequest extends DiceRequest {
   actorName: string
-  color: string
+  style: DiceStyle
 }
 
 const STORAGE_KEY = 'arran-dice-3d'
@@ -95,15 +96,15 @@ export function playDiceRoll(rolls: DieRoll[]): Promise<void> {
   pending?.()
   return new Promise<void>((resolve) => {
     pending = resolve
-    diceRequest.value = { id: ++sequence, rolls, color: user.value?.diceColor }
+    diceRequest.value = { id: ++sequence, rolls, style: user.value?.diceStyle }
   })
 }
 
 /**
- * Un autre joueur a lancé : son dé roule chez moi, en petit, dans sa couleur.
+ * Un autre joueur a lancé : son dé roule chez moi, en petit, à ses couleurs.
  * Rien à attendre — personne n'a de résultat à révéler de ce côté.
  */
-export function playRemoteDiceRoll(roll: { actorName: string; color: string; rolls: DieRoll[] }) {
+export function playRemoteDiceRoll(roll: { actorName: string; style: DiceStyle; rolls: DieRoll[] }) {
   if (!dice3dEnabled.value || !remoteDiceEnabled.value || prefersReducedMotion()) return
   if (!planDice(roll.rolls).length) return
   remoteDiceRequest.value = { id: ++sequence, ...roll }

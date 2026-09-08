@@ -14,7 +14,8 @@ import {
   REMOTE_SLOTS,
   type DieInstance,
 } from '../../utils/dice3d/plan'
-import { inkFor } from '../../data/diceColors'
+import { dominantColor, type DiceStyle } from '../../data/diceStyle'
+import { buildDieMesh, createMeshCache, disposeMeshCache, trimMeshCache } from '../../utils/dice3d/mesh'
 import type { RollOutcome } from '../../utils/rollOutcome'
 
 /**
@@ -47,7 +48,7 @@ interface Show {
   remote: boolean
   /** Emplacement dans la bande du haut (dés distants seulement). */
   slot: number
-  /** Couleur du corps, pour que le flash d'un critique reste dans le ton. */
+  /** Couleur dominante du corps, pour que le flash d'un critique reste dans le ton. */
   color?: string
   /** Les faces tirées, affichées dans l'étiquette une fois le dé posé. */
   result: string
@@ -98,10 +99,13 @@ let scene: import('three').Scene | null = null
 let camera: import('three').PerspectiveCamera | null = null
 let broken = false
 
-/** Géométries et textures réutilisées d'un lancer à l'autre. */
-const geometries = new Map<string, import('three').BufferGeometry>()
-const materials = new Map<string, import('three').Material>()
-let outlineMaterial: import('three').MeshBasicMaterial | null = null
+/**
+ * Géométries et textures réutilisées d'un lancer à l'autre. Plafonné : chaque
+ * style de dé croisé en campagne ajoute une entrée, et un joueur qui règle le
+ * sien en essaie des dizaines.
+ */
+const meshCache = createMeshCache()
+const MESH_CACHE_MAX = 12
 let sparkTexture: import('three').Texture | null = null
 
 let shows: Show[] = []
@@ -182,36 +186,8 @@ function toScreen(point: import('three').Vector3): { x: number; y: number } {
   }
 }
 
-async function meshFor(die: DieInstance, color?: string): Promise<Mesh> {
-  const T = three!
-  // Une texture par forme ET par couleur : un dé rubis et un dé saphir sont deux
-  // atlas différents, jamais une teinte posée sur le doré.
-  const cacheKey = `${die.sides}:${die.kind}:${color ?? 'theme'}`
-
-  if (!geometries.has(cacheKey)) {
-    const [{ buildFaces, buildDieGeometry, faceFitRatio }, { buildAtlas, labelsFor, themeDiceColors }] =
-      await Promise.all([
-        import('../../utils/dice3d/polyhedra'),
-        import('../../utils/dice3d/atlas'),
-      ])
-    const faces = buildFaces(die.sides)
-    const colors = color ? { face: color, ink: inkFor(color) } : themeDiceColors()
-    const atlas = buildAtlas(labelsFor(die.sides, die.kind), faceFitRatio(faces), colors)
-    geometries.set(cacheKey, buildDieGeometry(faces, atlas.columns, atlas.rows))
-    materials.set(
-      cacheKey,
-      new T.MeshStandardMaterial({ map: atlas.texture, roughness: 0.34, metalness: 0.28 }),
-    )
-  }
-
-  const mesh = new T.Mesh(geometries.get(cacheKey)!, materials.get(cacheKey)!)
-  // Liseré sombre : le dé doit rester lisible sur n'importe quel fond, puisque
-  // rien n'est assombri derrière lui. Un seul matériau pour tous les dés.
-  outlineMaterial ??= new T.MeshBasicMaterial({ color: 0x21160e, side: T.BackSide })
-  const outline = new T.Mesh(geometries.get(cacheKey)!, outlineMaterial)
-  outline.scale.setScalar(1.07)
-  mesh.add(outline)
-  return mesh
+async function meshFor(die: DieInstance, style?: DiceStyle): Promise<Mesh> {
+  return buildDieMesh(three!, meshCache, die, style)
 }
 
 /** Les normales des faces, pour savoir quelle orientation vise chaque dé. */
@@ -363,7 +339,7 @@ async function launch(
     id: request.id,
     remote,
     slot,
-    color: request.color,
+    color: request.style ? dominantColor(request.style) : undefined,
     result: request.rolls.map((r) => r.value).join(' · '),
     dice: [],
     startedAt: 0,
@@ -378,7 +354,7 @@ async function launch(
 
   for (let i = 0; i < dice.length; i++) {
     const die = dice[i]
-    const mesh = await meshFor(die, request.color)
+    const mesh = await meshFor(die, request.style)
     const normals = await faceNormals(die)
     const landing = new three!.Vector3(positions[i].x, positions[i].y, 0)
     // La face vise la caméra depuis l'endroit où le dé se pose, pas « l'avant »
@@ -444,7 +420,7 @@ async function startRemote(request: RemoteDiceRequest) {
   labels.value.push({
     id: request.id,
     name: request.actorName,
-    color: request.color,
+    color: dominantColor(request.style),
     x: at.x,
     y: at.y,
     result: '',
@@ -520,6 +496,9 @@ function tick(now: number) {
   else {
     frame = 0
     visible.value = false
+    // Le ménage attend que la scène soit vide : évincer l'entrée d'un dé encore
+    // en vol lui retirerait sa géométrie sous les pieds.
+    trimMeshCache(meshCache, MESH_CACHE_MAX)
   }
 }
 
@@ -622,18 +601,13 @@ onBeforeUnmount(() => {
   cancelAnimationFrame(frame)
   frame = 0
   releaseAll()
-  geometries.forEach((g) => g.dispose())
-  materials.forEach((m) => m.dispose())
-  outlineMaterial?.dispose()
+  disposeMeshCache(meshCache)
   sparkTexture?.dispose()
   renderer?.dispose()
 
   // Les caches vivent au niveau du module, pas de l'instance : sans ce ménage,
   // un remontage repartirait sur un renderer et des textures déjà détruits.
-  geometries.clear()
-  materials.clear()
   normalCache.clear()
-  outlineMaterial = null
   sparkTexture = null
   renderer = null
   scene = null

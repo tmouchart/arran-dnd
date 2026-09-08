@@ -1,3 +1,5 @@
+import type { DiceStyle } from '../data/diceStyle'
+
 const BASE = '/api/auth'
 
 export interface AuthUser {
@@ -5,8 +7,8 @@ export interface AuthUser {
   username: string
   avatarUrl: string | null
   activeCampaignId?: number | null
-  /** Couleur de dé effective (`#rrggbb`) : celle choisie, sinon celle par défaut. */
-  diceColor?: string
+  /** Style de dé effectif : celui choisi, sinon celui du rang dans la campagne. */
+  diceStyle?: DiceStyle
 }
 
 export async function login(username: string, password: string): Promise<AuthUser> {
@@ -44,7 +46,7 @@ export async function fetchMe(): Promise<AuthUser | null> {
   return data.user as AuthUser
 }
 
-export async function updateMe(fields: { avatarUrl?: string | null; username?: string; diceColor?: string | null }): Promise<AuthUser> {
+export async function updateMe(fields: { avatarUrl?: string | null; username?: string; diceStyle?: DiceStyle }): Promise<AuthUser> {
   const res = await fetch(`${BASE}/me`, {
     method: 'PATCH',
     credentials: 'include',

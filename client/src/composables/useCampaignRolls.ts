@@ -5,6 +5,7 @@ import { receiveRest } from './useRest'
 import { celebrate } from './useCriticalMoment'
 import { playRemoteDiceRoll } from './useDice3D'
 import { rollOutcome, type RollOutcome } from '../utils/rollOutcome'
+import { parseDiceStyle } from '../data/diceStyle'
 
 /** Filtre du panneau de log. */
 export type RollFilter = 'all' | 'combat' | 'player' | 'monster'
@@ -64,8 +65,9 @@ export function remoteDiceFor(roll: RollEvent): { sides: number; value: number; 
 }
 
 function showRemoteDice(roll: RollEvent): void {
-  if (!roll.diceColor) return
-  playRemoteDiceRoll({ actorName: roll.actorName, color: roll.diceColor, rolls: remoteDiceFor(roll) })
+  const style = parseDiceStyle(roll.diceStyle)
+  if (!style) return
+  playRemoteDiceRoll({ actorName: roll.actorName, style, rolls: remoteDiceFor(roll) })
 }
 
 /** Recharge l'historique et le fusionne avec ce qui est déjà affiché. */

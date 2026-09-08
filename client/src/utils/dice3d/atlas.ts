@@ -1,4 +1,6 @@
 import * as THREE from 'three'
+import { diceFont } from '../../data/diceFonts'
+import { resolvedInk, type DiceBg, type DiceStyle } from '../../data/diceStyle'
 
 /**
  * Atlas de textures : un seul canvas qui porte tous les chiffres du dé, une
@@ -42,18 +44,55 @@ export function fontSizeFor(label: string, fitRatio: number): number {
   return (usable / halfDiagonal) * 0.94
 }
 
-/** Couleurs d'un dé : le corps et les chiffres. */
-export interface DiceColors {
-  face: string
-  ink: string
+/** Le doré du thème : ce que porte un dé sans style de joueur. */
+export function themeDiceStyle(): DiceStyle {
+  return { bg: { type: 'solid', from: token('--brand', '#d9a544') }, ink: token('--on-brand', '#241c10'), font: null }
 }
 
-/** Le doré du thème : ce que porte un dé sans couleur de joueur. */
-export function themeDiceColors(): DiceColors {
-  return { face: token('--brand', '#d9a544'), ink: token('--on-brand', '#241c10') }
+/**
+ * Peint le fond d'une case. Un dégradé est appliqué **par face**, pas sur le
+ * volume : l'atlas est un damier de faces dépliées, un dégradé étalé sur tout
+ * le canvas donnerait des sauts de teinte d'une face à l'autre. Chaque face
+ * porte donc le même dégradé.
+ */
+function paintCell(ctx: CanvasRenderingContext2D, x: number, y: number, bg: DiceBg) {
+  if (bg.type === 'solid') {
+    ctx.fillStyle = bg.from
+    ctx.fillRect(x, y, CELL, CELL)
+    return
+  }
+
+  const [x0, y0, x1, y1] = gradientLine(bg.angle, CELL)
+  const gradient = ctx.createLinearGradient(x + x0, y + y0, x + x1, y + y1)
+  gradient.addColorStop(0, bg.from)
+  gradient.addColorStop(1, bg.to)
+  ctx.fillStyle = gradient
+  ctx.fillRect(x, y, CELL, CELL)
 }
 
-export function buildAtlas(labels: string[], fitRatio: number, colors: DiceColors = themeDiceColors()): DiceAtlas {
+/**
+ * Les deux extrémités de la ligne d'un dégradé dans une case carrée, en
+ * coordonnées locales à la case.
+ *
+ * Convention CSS : 0° pointe vers le haut, l'angle tourne dans le sens des
+ * aiguilles. L'axe y du canvas descend, d'où le `-cos`. La longueur suit la
+ * formule CSS, pour que les deux arrêts touchent bien les coins opposés.
+ */
+export function gradientLine(angle: number, size: number): [number, number, number, number] {
+  const radians = (angle * Math.PI) / 180
+  const dx = Math.sin(radians)
+  const dy = -Math.cos(radians)
+  const length = size * (Math.abs(dx) + Math.abs(dy))
+  const mid = size / 2
+  return [
+    mid - (dx * length) / 2,
+    mid - (dy * length) / 2,
+    mid + (dx * length) / 2,
+    mid + (dy * length) / 2,
+  ]
+}
+
+export function buildAtlas(labels: string[], fitRatio: number, style: DiceStyle = themeDiceStyle()): DiceAtlas {
   const columns = Math.ceil(Math.sqrt(labels.length))
   const rows = Math.ceil(labels.length / columns)
 
@@ -62,22 +101,27 @@ export function buildAtlas(labels: string[], fitRatio: number, colors: DiceColor
   canvas.height = rows * CELL
   const ctx = canvas.getContext('2d')!
 
-  const { face, ink } = colors
+  const ink = resolvedInk(style)
 
-  ctx.fillStyle = face
-  ctx.fillRect(0, 0, canvas.width, canvas.height)
+  // Toutes les cases, pas seulement celles qui portent un chiffre : les cases
+  // en trop (un d10 tient dans une grille de 12) doivent rester opaques, sinon
+  // le filtrage de texture fait baver du transparent sur les bords voisins.
+  for (let i = 0; i < columns * rows; i++) {
+    paintCell(ctx, (i % columns) * CELL, Math.floor(i / columns) * CELL, style.bg)
+  }
 
   ctx.fillStyle = ink
   ctx.strokeStyle = ink
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
+  const family = diceFont(style.font)?.stack ?? token('--title-font', 'Georgia, serif')
 
   labels.forEach((label, i) => {
     const cx = (i % columns) * CELL + CELL / 2
     const cy = Math.floor(i / columns) * CELL + CELL / 2
 
     const size = fontSizeFor(label, fitRatio)
-    ctx.font = `700 ${size}px ${token('--title-font', 'Georgia, serif')}`
+    ctx.font = `700 ${size}px ${family}`
     ctx.fillText(label, cx, cy)
 
     if (needsUnderline(label)) {

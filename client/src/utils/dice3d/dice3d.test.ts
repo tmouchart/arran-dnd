@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import * as THREE from 'three'
 import { buildFaces, buildDieGeometry, faceFitRatio, SUPPORTED_SIDES } from './polyhedra'
-import { fontSizeFor } from './atlas'
+import { fontSizeFor, gradientLine } from './atlas'
 import { landingLayout, planDice, remoteSlotLayout, MAX_REMOTE_DICE, REMOTE_SCALE, REMOTE_SLOTS } from './plan'
 import { burstOpacity, createSparks, flashIntensity, sampleSpark, shockwave } from './burst'
 import { createMotion, faceTargetQuaternion, sampleMotion } from './motion'
@@ -331,5 +331,34 @@ describe('faceTargetQuaternion vers la caméra', () => {
     const facing = normal.clone().applyQuaternion(q)
     expect(facing.dot(toward.clone().normalize())).toBeCloseTo(1, 5)
     expect(facing.z).toBeLessThan(1)
+  })
+})
+
+describe('gradientLine', () => {
+  // `+ 0` : Math.round(-0.0001) donne -0, que toEqual distingue de 0.
+  const round = (line: number[]) => line.map((n) => Math.round(n * 1000) / 1000 + 0)
+
+  it('0° va du bas vers le haut, comme en CSS', () => {
+    expect(round(gradientLine(0, 100))).toEqual([50, 100, 50, 0])
+  })
+
+  it('180° va du haut vers le bas', () => {
+    expect(round(gradientLine(180, 100))).toEqual([50, 0, 50, 100])
+  })
+
+  it('90° va de la gauche vers la droite', () => {
+    expect(round(gradientLine(90, 100))).toEqual([0, 50, 100, 50])
+  })
+
+  it('45° touche deux coins opposés de la case', () => {
+    expect(round(gradientLine(45, 100))).toEqual([0, 100, 100, 0])
+  })
+
+  it('reste centré sur la case quel que soit l’angle', () => {
+    for (const angle of [0, 15, 73, 160, 300]) {
+      const [x0, y0, x1, y1] = gradientLine(angle, 100)
+      expect((x0 + x1) / 2).toBeCloseTo(50)
+      expect((y0 + y1) / 2).toBeCloseTo(50)
+    }
   })
 })
