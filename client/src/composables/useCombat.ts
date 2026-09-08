@@ -14,6 +14,8 @@ let currentCampaignId: number | null = null
 /** Combat suivi, pour pouvoir le relire au réveil du téléphone (`wakeCombat`). */
 let currentCombatId: number | null = null
 let idleTimer: ReturnType<typeof setTimeout> | null = null
+/** Mode table : vue joueur imposée par le serveur, et jamais de mise en pause. */
+let viewer = false
 
 // Combat paused after this much inactivity (no combat update nor user interaction)
 // → release the SSE connection so Fly can auto-stop the machine.
@@ -32,6 +34,7 @@ function closeStream(): void {
 
 function resetIdleTimer(): void {
   if (idleTimer) clearTimeout(idleTimer)
+  if (viewer) return
   idleTimer = setTimeout(() => {
     closeStream()
     combat.value = null
@@ -40,15 +43,16 @@ function resetIdleTimer(): void {
   }, IDLE_MS)
 }
 
-function connect(campaignId: number, combatId: number): void {
+function connect(campaignId: number, combatId: number, options: { viewer?: boolean } = {}): void {
   disconnect()
   currentCampaignId = campaignId
   currentCombatId = combatId
+  viewer = !!options.viewer
   connecting.value = true
   error.value = null
   idle.value = false
   eventSource = new EventSource(
-    `/api/campaigns/${campaignId}/combats/${combatId}/events`,
+    `/api/campaigns/${campaignId}/combats/${combatId}/events${viewer ? '?as=viewer' : ''}`,
     { withCredentials: true },
   )
   resetIdleTimer()
@@ -115,6 +119,7 @@ function disconnect(): void {
   idle.value = false
   currentCampaignId = null
   currentCombatId = null
+  viewer = false
   // Don't clear activeCombat here — the banner should persist when navigating away
 }
 
@@ -140,7 +145,7 @@ export async function wakeCombat(): Promise<void> {
     return
   }
   try {
-    combat.value = await api.fetchCombat(currentCampaignId, currentCombatId)
+    combat.value = await api.fetchCombat(currentCampaignId, currentCombatId, viewer)
   } catch { /* hors ligne : on garde ce qu'on a */ }
 }
 

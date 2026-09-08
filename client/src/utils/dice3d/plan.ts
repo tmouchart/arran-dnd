@@ -99,6 +99,66 @@ export function remoteSlotLayout(
   return { positions, scale }
 }
 
+/** Zone d'écran où les dés du mode table se posent (la carte), en pixels. */
+export interface ScreenArea {
+  left: number
+  top: number
+  width: number
+  height: number
+}
+
+/** Un dé du mode table : aussi gros qu'un dé à moi. Lu à un mètre, pas à 30 cm. */
+export const VIEWER_SCALE = 0.5
+/** Les 4 emplacements du mode table : la carte coupée en 2 × 2. */
+const VIEWER_COLUMNS = 2
+
+/**
+ * Place les dés d'un jet sur la carte, en mode table.
+ *
+ * Comme à une vraie table, les dés tombent sur le champ de bataille, à un
+ * endroit un peu différent à chaque fois. Chaque emplacement est un quart de
+ * la carte ; le point de chute est tiré dedans, avec une marge pour que le dé
+ * n'en déborde pas. Deux jets simultanés tombent donc dans deux quarts
+ * différents et ne se recouvrent jamais.
+ *
+ * `screen` est la taille de la fenêtre ; `halfWidth`/`halfHeight` les
+ * demi-dimensions visibles à la profondeur des dés. `random` vaut dans [0, 1[.
+ */
+export function viewerLayout(
+  slot: number,
+  count: number,
+  area: ScreenArea,
+  screen: { width: number; height: number },
+  halfWidth: number,
+  halfHeight: number,
+  random: () => number = Math.random,
+): { positions: { x: number; y: number }[]; scale: number } {
+  const n = Math.max(1, Math.min(count, MAX_REMOTE_DICE))
+  const rows = Math.ceil(REMOTE_SLOTS / VIEWER_COLUMNS)
+  const col = slot % VIEWER_COLUMNS
+  const row = Math.floor(slot / VIEWER_COLUMNS)
+  const cellWidth = area.width / VIEWER_COLUMNS
+  const cellHeight = area.height / rows
+
+  // Marge : la moitié de la cellule au plus, pour que le dé reste dedans
+  const marginX = Math.min(cellWidth * 0.3, cellWidth / 2)
+  const marginY = Math.min(cellHeight * 0.3, cellHeight / 2)
+  const px = area.left + col * cellWidth + marginX + random() * Math.max(0, cellWidth - 2 * marginX)
+  const py = area.top + row * cellHeight + marginY + random() * Math.max(0, cellHeight - 2 * marginY)
+
+  // Pixels → coordonnées de scène à la profondeur des dés
+  const centerX = ((px / screen.width) * 2 - 1) * halfWidth
+  const y = (1 - (py / screen.height) * 2) * halfHeight
+
+  const scale = Math.min(VIEWER_SCALE, (cellWidth / screen.width) * halfWidth * 2 * 0.9 / (n * 2.3))
+  const gap = scale * 2.3
+  const positions = Array.from({ length: n }, (_, i) => ({
+    x: centerX + (i - (n - 1) / 2) * gap,
+    y,
+  }))
+  return { positions, scale }
+}
+
 /**
  * Place les dés à l'arrivée : une rangée centrée, qui passe à la ligne au-delà
  * de 5 dés. Renvoie aussi l'échelle, réduite quand il y en a beaucoup.

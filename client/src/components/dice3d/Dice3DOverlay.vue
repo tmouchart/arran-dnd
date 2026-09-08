@@ -4,6 +4,7 @@ import {
   diceRequest,
   remoteDiceRequest,
   settleDiceRoll,
+  viewerArea,
   type DiceRequest,
   type RemoteDiceRequest,
 } from '../../composables/useDice3D'
@@ -11,6 +12,7 @@ import {
   landingLayout,
   planDice,
   remoteSlotLayout,
+  viewerLayout,
   REMOTE_SLOTS,
   type DieInstance,
 } from '../../utils/dice3d/plan'
@@ -29,6 +31,10 @@ import type { RollOutcome } from '../../utils/rollOutcome'
  * - le mien, plein centre, un seul à la fois ;
  * - ceux des autres joueurs, plus petits, dans 4 emplacements en haut, avec le
  *   nom du perso sous le dé. Plusieurs peuvent rouler en même temps.
+ *
+ * En mode table (`viewerArea`), il n'y a pas de « moi » : les dés de tout le
+ * monde tombent sur la carte, plus gros, et restent posés le temps d'être lus
+ * à un mètre. Personne ne touche l'écran, donc rien ne les efface au tap.
  *
  * Coût : three.js n'est chargé qu'au premier jet, le contexte WebGL est créé une
  * fois et gardé, et la boucle d'animation ne tourne que tant qu'un dé est là.
@@ -88,6 +94,8 @@ const labels = ref<Label[]>([])
  */
 const OWN = { holdMs: 1100, fadeMs: 400, speed: 1 }
 const REMOTE = { holdMs: 900, fadeMs: 300, speed: 0.7 }
+/** Mode table : le dé reste posé le temps que toute la table le lise. */
+const VIEWER = { holdMs: 4500, fadeMs: 500, speed: 0.85 }
 const EFFECT_MS = 900
 /** Jets distants en attente d'un emplacement libre. Au-delà, on oublie. */
 const MAX_QUEUE = 8
@@ -322,18 +330,28 @@ async function flashDie(show: Show, mesh: Mesh, outcome: Exclude<RollOutcome, nu
   })
 }
 
+/** Où et à quelle taille les dés d'un jet distant se posent. */
+function remoteLayout(slot: number, count: number) {
+  const { halfWidth, halfHeight } = viewport()
+  const area = viewerArea.value
+  if (area) {
+    const screen = { width: window.innerWidth, height: window.innerHeight }
+    return viewerLayout(slot, count, area, screen, halfWidth, halfHeight)
+  }
+  return remoteSlotLayout(slot, count, halfWidth, halfHeight)
+}
+
 /** Monte les dés d'un show dans la scène et le met en route. */
 async function launch(
   request: DiceRequest,
   dice: DieInstance[],
   remote: boolean,
   slot: number,
+  layout: { positions: { x: number; y: number }[]; scale: number },
 ): Promise<void> {
-  const timing = remote ? REMOTE : OWN
+  const timing = !remote ? OWN : viewerArea.value ? VIEWER : REMOTE
   const { halfWidth, halfHeight } = viewport()
-  const { positions, scale } = remote
-    ? remoteSlotLayout(slot, dice.length, halfWidth, halfHeight)
-    : landingLayout(dice.length)
+  const { positions, scale } = layout
 
   const show: Show = {
     id: request.id,
@@ -394,7 +412,7 @@ async function startOwn(request: DiceRequest) {
   // Un nouveau lancer à moi remplace le précédent, sans attendre son fondu
   for (const show of shows.filter((s) => !s.remote)) release(show)
   resize()
-  await launch(request, dice, false, -1)
+  await launch(request, dice, false, -1, landingLayout(dice.length))
 }
 
 async function startRemote(request: RemoteDiceRequest) {
@@ -413,8 +431,9 @@ async function startRemote(request: RemoteDiceRequest) {
 
   // Le nom s'affiche dès le début du vol : c'est le premier repère quand
   // plusieurs dés déboulent en même temps.
-  const { halfWidth, halfHeight } = viewport()
-  const { positions, scale } = remoteSlotLayout(slot, dice.length, halfWidth, halfHeight)
+  // Le point de chute est tiré une fois : l'étiquette et les dés doivent tomber d'accord.
+  const layout = remoteLayout(slot, dice.length)
+  const { positions, scale } = layout
   const centerX = positions.reduce((sum, p) => sum + p.x, 0) / positions.length
   const at = toScreen(new three!.Vector3(centerX, positions[0].y - scale * 1.35, 0))
   labels.value.push({
@@ -428,7 +447,7 @@ async function startRemote(request: RemoteDiceRequest) {
     fading: false,
   })
 
-  await launch(request, dice, true, slot)
+  await launch(request, dice, true, slot, layout)
 }
 
 /**
@@ -555,7 +574,8 @@ function dismiss() {
 }
 
 function onPointerDown() {
-  if (!visible.value) return
+  // Mode table : personne ne vise l'écran, un tap ne doit rien effacer
+  if (!visible.value || viewerArea.value) return
   dismiss()
 }
 
@@ -630,7 +650,7 @@ onBeforeUnmount(() => {
       :key="label.id"
       class="dice-label"
       data-testid="remote-die-label"
-      :class="{ 'is-fading': label.fading }"
+      :class="{ 'is-fading': label.fading, 'is-viewer': !!viewerArea }"
       :style="{ left: `${label.x}px`, top: `${label.y}px` }"
     >
       <span class="dice-label-dot" :style="{ background: label.color }" />
@@ -707,6 +727,22 @@ onBeforeUnmount(() => {
 
 .dice-label-result--critical { color: var(--accent-strong); }
 .dice-label-result--fumble { color: var(--danger); }
+
+/* Mode table : lu à un mètre, tout est plus grand */
+.dice-label.is-viewer {
+  max-width: 40vw;
+  padding: var(--space-xs) var(--space-md);
+  font-size: 1.15rem;
+}
+
+.dice-label.is-viewer .dice-label-result {
+  font-size: 2rem;
+}
+
+.dice-label.is-viewer .dice-label-dot {
+  width: 12px;
+  height: 12px;
+}
 
 @keyframes dice-result-in {
   from { opacity: 0; transform: scale(0.4); }

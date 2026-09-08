@@ -29,6 +29,8 @@ const props = defineProps<{
   environment?: string
   /** Damier bien visible par-dessus le sol. Éteint par défaut. */
   showGrid?: boolean
+  /** Mode table : personne ne bouge rien, la carte se regarde. */
+  readonly?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -40,6 +42,7 @@ const emit = defineEmits<{
 
 /** Seul le MJ déplace les monstres. Les héros, tout le monde. */
 function canMove(token: BattleToken): boolean {
+  if (props.readonly) return false
   return token.kind === 'hero' || !!props.isGm
 }
 

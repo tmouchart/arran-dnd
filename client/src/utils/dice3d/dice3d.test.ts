@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import * as THREE from 'three'
 import { buildFaces, buildDieGeometry, faceFitRatio, SUPPORTED_SIDES } from './polyhedra'
 import { fontSizeFor, gradientLine } from './atlas'
-import { landingLayout, planDice, remoteSlotLayout, MAX_REMOTE_DICE, REMOTE_SCALE, REMOTE_SLOTS } from './plan'
+import { landingLayout, planDice, remoteSlotLayout, viewerLayout, MAX_REMOTE_DICE, REMOTE_SCALE, REMOTE_SLOTS, VIEWER_SCALE } from './plan'
 import { burstOpacity, createSparks, flashIntensity, sampleSpark, shockwave } from './burst'
 import { createMotion, faceTargetQuaternion, sampleMotion } from './motion'
 
@@ -360,5 +360,48 @@ describe('gradientLine', () => {
       expect((x0 + x1) / 2).toBeCloseTo(50)
       expect((y0 + y1) / 2).toBeCloseTo(50)
     }
+  })
+})
+
+describe('viewerLayout', () => {
+  const area = { left: 0, top: 0, width: 800, height: 600 }
+  const screen = { width: 1200, height: 600 }
+  const halfW = 12
+  const halfH = 6
+
+  it('pose chaque emplacement dans son quart de la carte', () => {
+    const mid = () => 0.5
+    const a = viewerLayout(0, 1, area, screen, halfW, halfH, mid)
+    const b = viewerLayout(1, 1, area, screen, halfW, halfH, mid)
+    const c = viewerLayout(2, 1, area, screen, halfW, halfH, mid)
+    // Haut gauche / haut droite / bas gauche
+    expect(a.positions[0].x).toBeLessThan(b.positions[0].x)
+    expect(a.positions[0].y).toBeCloseTo(b.positions[0].y)
+    expect(c.positions[0].y).toBeLessThan(a.positions[0].y)
+    // Tous à gauche de l'écran : la carte n'en couvre que les deux tiers
+    for (const l of [a, b, c]) expect(l.positions[0].x).toBeLessThan(halfW * (800 / 1200 * 2 - 1) + 0.01)
+  })
+
+  it('reste dans la cellule quel que soit le tirage', () => {
+    for (const r of [0, 0.999]) {
+      const { positions } = viewerLayout(0, 1, area, screen, halfW, halfH, () => r)
+      const px = ((positions[0].x / halfW) + 1) / 2 * screen.width
+      const py = (1 - positions[0].y / halfH) / 2 * screen.height
+      expect(px).toBeGreaterThanOrEqual(0)
+      expect(px).toBeLessThanOrEqual(400)
+      expect(py).toBeGreaterThanOrEqual(0)
+      expect(py).toBeLessThanOrEqual(300)
+    }
+  })
+
+  it('est plus gros qu\'un dé distant classique et serre les dés multiples', () => {
+    const one = viewerLayout(0, 1, area, screen, halfW, halfH, () => 0.5)
+    // Sur une carte étroite, cinq dés doivent se serrer pour tenir dans leur quart
+    const narrow = { ...area, width: 300 }
+    const five = viewerLayout(0, 5, narrow, screen, halfW, halfH, () => 0.5)
+    expect(one.scale).toBe(VIEWER_SCALE)
+    expect(one.scale).toBeGreaterThan(REMOTE_SCALE)
+    expect(five.scale).toBeLessThan(one.scale)
+    expect(five.positions).toHaveLength(5)
   })
 })

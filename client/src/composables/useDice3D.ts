@@ -1,5 +1,5 @@
 import { ref, shallowRef } from 'vue'
-import { planDice, type DieRoll } from '../utils/dice3d/plan'
+import { planDice, type DieRoll, type ScreenArea } from '../utils/dice3d/plan'
 import type { DiceStyle } from '../data/diceStyle'
 import { user } from './useAuth'
 
@@ -65,6 +65,13 @@ export function setRemoteDiceEnabled(on: boolean) {
   } catch { /* quota */ }
 }
 
+/**
+ * Mode table : la zone de l'écran (la carte) où les dés de tout le monde
+ * tombent. Non nul tant que la page « table » est ouverte. L'overlay s'en sert
+ * pour choisir le point de chute, la taille et la durée d'affichage.
+ */
+export const viewerArea = shallowRef<ScreenArea | null>(null)
+
 /** La demande en cours. L'overlay la surveille. */
 export const diceRequest = shallowRef<DiceRequest | null>(null)
 
@@ -105,7 +112,8 @@ export function playDiceRoll(rolls: DieRoll[]): Promise<void> {
  * Rien à attendre — personne n'a de résultat à révéler de ce côté.
  */
 export function playRemoteDiceRoll(roll: { actorName: string; style: DiceStyle; rolls: DieRoll[] }) {
-  if (!dice3dEnabled.value || !remoteDiceEnabled.value || prefersReducedMotion()) return
+  // En mode table il n'y a pas de « moi » : le réglage « dés des autres » ne s'applique pas
+  if (!dice3dEnabled.value || (!remoteDiceEnabled.value && !viewerArea.value) || prefersReducedMotion()) return
   if (!planDice(roll.rolls).length) return
   remoteDiceRequest.value = { id: ++sequence, ...roll }
 }

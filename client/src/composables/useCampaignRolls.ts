@@ -6,6 +6,8 @@ import { celebrate } from './useCriticalMoment'
 import { playRemoteDiceRoll } from './useDice3D'
 import { rollOutcome, type RollOutcome } from '../utils/rollOutcome'
 import { parseDiceStyle } from '../data/diceStyle'
+import { refreshActiveCombat } from './useActiveCombat'
+import { appendFeed, clearFeed, feedLineFor, secretLineFor } from './useViewerFeed'
 
 /** Filtre du panneau de log. */
 export type RollFilter = 'all' | 'combat' | 'player' | 'monster'
@@ -34,6 +36,14 @@ const filter = ref<RollFilter>((stored(FILTER_KEY) as RollFilter | null) ?? 'all
 let eventSource: EventSource | null = null
 let connectedCampaignId: number | null = null
 let idleTimer: ReturnType<typeof setTimeout> | null = null
+/**
+ * Mode table : le serveur nous traite en joueur (jamais de jet caché), tous
+ * les jets sont « ceux des autres », et le flux ne se relâche jamais.
+ */
+let viewer = false
+
+/** Le fil d'actions n'écrit une ligne qu'une fois le dé posé, pas avant. */
+const FEED_DELAY_MS = 900
 
 function closeStream(): void {
   eventSource?.close()
@@ -44,7 +54,16 @@ function closeStream(): void {
 
 function resetIdleTimer(): void {
   if (idleTimer) clearTimeout(idleTimer)
+  // Une tablette posée au milieu de la table ne bouge pas : sans ça, une
+  // longue phase de roleplay la couperait sans prévenir.
+  if (viewer) return
   idleTimer = setTimeout(closeStream, IDLE_MS)
+}
+
+function feedDelay(): number {
+  return typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    ? 0
+    : FEED_DELAY_MS
 }
 
 function appendRoll(roll: RollEvent): void {
@@ -73,7 +92,7 @@ function showRemoteDice(roll: RollEvent): void {
 /** Recharge l'historique et le fusionne avec ce qui est déjà affiché. */
 async function syncHistory(campaignId: number): Promise<void> {
   try {
-    const history = await fetchCampaignRolls(campaignId)
+    const history = await fetchCampaignRolls(campaignId, viewer)
     const known = new Set(rolls.value.map((r) => r.id))
     const missing = history.filter((r) => !known.has(r.id))
     if (missing.length === 0) return
@@ -83,12 +102,15 @@ async function syncHistory(campaignId: number): Promise<void> {
   } catch { /* silencieux */ }
 }
 
-function connect(campaignId: number): void {
-  if (connectedCampaignId === campaignId && eventSource) return
+function connect(campaignId: number, options: { viewer?: boolean } = {}): void {
+  const asViewer = !!options.viewer
+  if (connectedCampaignId === campaignId && eventSource && viewer === asViewer) return
   disconnect()
   connectedCampaignId = campaignId
+  viewer = asViewer
 
-  eventSource = new EventSource(`/api/campaigns/${campaignId}/events`, { withCredentials: true })
+  const url = `/api/campaigns/${campaignId}/events${viewer ? '?as=viewer' : ''}`
+  eventSource = new EventSource(url, { withCredentials: true })
   resetIdleTimer()
   eventSource.addEventListener('roll', (e: MessageEvent) => {
     try {
@@ -96,10 +118,14 @@ function connect(campaignId: number): void {
       appendRoll(roll)
       // Mes propres jets me reviennent par ce flux : la fanfare a déjà joué au
       // moment où mon dé s'est posé, on ne la rejoue pas.
-      if (roll.userId !== user.value?.id) {
+      if (viewer || roll.userId !== user.value?.id) {
         showRemoteDice(roll)
         const outcome = rollOutcome(roll)
         if (outcome) celebrate(outcome, roll.actorName)
+      }
+      if (viewer) {
+        const line = feedLineFor(roll)
+        setTimeout(() => appendFeed(line), feedDelay())
       }
       resetIdleTimer()
     } catch { /* ignore */ }
@@ -119,8 +145,16 @@ function connect(campaignId: number): void {
     try {
       const moment = JSON.parse(e.data as string) as { outcome: RollOutcome; actorName: string }
       if (moment.outcome) celebrate(moment.outcome, moment.actorName)
+      if (viewer) appendFeed(secretLineFor(moment))
       resetIdleTimer()
     } catch { /* ignore */ }
+  })
+
+  // Un combat commence ou se termine : le bandeau des téléphones et le mode
+  // table basculent sans qu'on touche l'écran.
+  eventSource.addEventListener('combat', () => {
+    void refreshActiveCombat()
+    resetIdleTimer()
   })
 
   // Le SSE ne porte que le flux live — l'historique vient du GET. On le rejoue
@@ -133,8 +167,10 @@ function connect(campaignId: number): void {
 function disconnect(): void {
   closeStream()
   connectedCampaignId = null
+  viewer = false
   rolls.value = []
   unread.value = 0
+  clearFeed()
 }
 
 /** Rouvre le flux s'il a été relâché pour inactivité (retour au premier plan, jet lancé…). */

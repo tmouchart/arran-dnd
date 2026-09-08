@@ -2,7 +2,7 @@
 import { RouterLink, RouterView } from "vue-router";
 import { computed, defineAsyncComponent, onBeforeUnmount, ref, watch } from "vue";
 import { useRoute } from "vue-router";
-import { UserCircle, Loader2, ScrollText, Swords, Backpack, BookOpenText, Map, Palette, Dices, History, Users, Wrench } from "lucide-vue-next";
+import { UserCircle, Loader2, ScrollText, Swords, Backpack, BookOpenText, Map, Palette, Dices, History, Users, Wrench, Tv } from "lucide-vue-next";
 import CrystalBall from "./components/icons/CrystalBall.vue";
 import AppToast from "./components/ui/AppToast.vue";
 import DiceBar from "./components/DiceBar.vue";
@@ -74,6 +74,9 @@ const showCombatBanner = computed(() =>
   activeCombat.value && !route.path.includes('/combat/'),
 );
 
+// Mode table : la page occupe tout l'écran, sans barres ni tiroir.
+const isViewer = computed(() => !!route.meta.viewer);
+
 // Apply saved theme + style on boot
 type Theme = "light" | "dark";
 const STORAGE_KEY = "arran-theme";
@@ -94,6 +97,12 @@ if (savedStyle) {
   <div v-if="!authReady" class="boot-screen">
     <Loader2 :size="36" class="boot-spinner" />
     <p class="boot-text">Chargement en cours</p>
+  </div>
+  <div v-else-if="isViewer" class="app-shell">
+    <RouterView />
+    <Dice3DOverlay />
+    <CriticalMomentOverlay />
+    <AppToast />
   </div>
   <div v-else class="app-shell" :class="{ 'shell-docked': panelOpen }">
     <header class="top-nav">
@@ -167,6 +176,9 @@ if (savedStyle) {
           >
             <Users :size="20" />
           </button>
+          <RouterLink to="/table" class="nav-link" title="Mode table" data-testid="nav-viewer">
+            <Tv :size="20" />
+          </RouterLink>
           <button
             v-if="isDev"
             type="button"
