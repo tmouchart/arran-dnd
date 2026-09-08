@@ -17,6 +17,10 @@ export const SEED_GM = 'mj-dev'
  * - une armure lourde → initiative très basse, voire négative
  * - un perso à 2 PV → teste l'agonie et les seuils de couleur
  * - deux DEX identiques → teste les égalités d'initiative
+ *
+ * Les voies fixent la famille (donc le dé de vie), et les jets de croissance
+ * donnent exactement le hpMax affiché : base (dé max + mod CON) + Σ(jet + mod CON).
+ * Sans ça, la fiche recalcule d'autres PV que ceux du seed.
  */
 export const SEED_PLAYERS = [
   {
@@ -25,6 +29,12 @@ export const SEED_PLAYERS = [
       name: 'Bracco Pouce-Cassé', profile: 'Guerrier', people: 'Nain', level: 5,
       hpMax: 48, hpCurrent: 48, defense: 18, armorId: 'cotte-mailles', shieldId: 'grand-bouclier',
       str: 17, dex: 12, con: 16, int: 8, wis: 10, cha: 9, initiativeBonus: 0,
+      // Combattant (d10), CON +3 : 13 + (7+3) + (5+3) + (6+3) + (5+3) = 48
+      paths: [
+        { id: 'voie-du-bastion', name: 'Voie du bastion', rank: 3 },
+        { id: 'voie-de-la-guerre', name: 'Voie de la guerre', rank: 2 },
+      ],
+      hpLevelGains: [7, 5, 6, 5],
     },
   },
   {
@@ -33,6 +43,12 @@ export const SEED_PLAYERS = [
       name: 'Nym la Vive', profile: 'Voleur', people: 'Halfelin', level: 5,
       hpMax: 30, hpCurrent: 30, defense: 16, armorId: 'cuir', shieldId: null,
       str: 9, dex: 18, con: 11, int: 13, wis: 12, cha: 14, initiativeBonus: 2,
+      // Aventurière (d8), CON +0 : 8 + 6 + 4 + 7 + 5 = 30
+      paths: [
+        { id: 'voie-de-lescrime', name: "Voie de l'escrime", rank: 3 },
+        { id: 'voie-de-lacrobatie', name: "Voie de l'acrobatie", rank: 2 },
+      ],
+      hpLevelGains: [6, 4, 7, 5],
     },
   },
   {
@@ -40,8 +56,15 @@ export const SEED_PLAYERS = [
     character: {
       // À 2 PV : teste l'agonie, les seuils de couleur et le tri des mourants.
       name: 'Orlane du Vent', profile: 'Magicien', people: 'Humain', level: 5,
-      hpMax: 26, hpCurrent: 2, mpMax: 20, mpCurrent: 14, defense: 12, armorId: null, shieldId: null,
+      hpMax: 26, hpCurrent: 2, mpMax: 12, mpCurrent: 10, defense: 12, armorId: null, shieldId: null,
       str: 8, dex: 14, con: 10, int: 18, wis: 13, cha: 12, initiativeBonus: 0,
+      // Mage avec des sorts : teste le coût en PM et la concentration.
+      // Deux voies mystiques → famille mystique (d6), CON +0 : 6 + 5 + 6 + 4 + 5 = 26
+      paths: [
+        { id: 'voie-de-la-magie-elementaliste', name: 'Voie de la magie élémentaliste', rank: 4 },
+        { id: 'voie-du-mysticisme', name: 'Voie du mysticisme', rank: 1 },
+      ],
+      hpLevelGains: [5, 6, 4, 5],
     },
   },
   {
@@ -51,6 +74,12 @@ export const SEED_PLAYERS = [
       name: 'Kaeliss Feuille-Grise', profile: 'Rôdeur', people: 'Elfe sylvain', level: 5,
       hpMax: 34, hpCurrent: 34, defense: 15, armorId: 'cuir-renforce', shieldId: null,
       str: 12, dex: 18, con: 12, int: 11, wis: 15, cha: 10, initiativeBonus: 0,
+      // Aventurière (d8), CON +1 : 9 + (6+1) + (5+1) + (4+1) + (6+1) = 34
+      paths: [
+        { id: 'voie-de-larcherie', name: "Voie de l'archerie", rank: 3 },
+        { id: 'voie-de-lacrobatie', name: "Voie de l'acrobatie", rank: 2 },
+      ],
+      hpLevelGains: [6, 5, 4, 6],
     },
   },
 ] as const

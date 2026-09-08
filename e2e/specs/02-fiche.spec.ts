@@ -31,14 +31,22 @@ test.describe('fiche de personnage', () => {
   })
 })
 
-// Régression prod (sept. 2026) : le bac à sable seed des persos niveau 5 sans
-// jets de croissance. Au chargement, un premier calcul de PV max avec 0 jet
-// rabattait les PV courants (48 → 11) avant que les jets par défaut soient
-// ajoutés. Le joueur voyait ses PV fondre à chaque ouverture de la fiche.
+// Régression prod (sept. 2026) : quand il manquait des jets de croissance
+// (niveau 5 avec 3 jets), un premier calcul de PV max rabattait les PV
+// courants avant que le jet manquant soit ajouté. On reproduit l'état prod en
+// amputant Bracco d'un jet par l'API, puis on ouvre la fiche.
 test('les PV courants ne sont pas rabattus au chargement de la fiche', async ({ page }) => {
-  await page.goto('/personnage')
-  // Bracco est seedé à 48/48 (server/src/dev/seed.ts).
-  await expect(page.getByTestId('hp-current')).toHaveText('48')
+  const chars = await (await page.request.get('/api/characters')).json()
+  const bracco = chars.find((c: { isActive: boolean }) => c.isActive)
+  const seeded: number[] = bracco.hpLevelGains // [7, 5, 6, 5], cf. server/src/dev/seed.ts
+
+  await page.request.put(`/api/characters/${bracco.id}`, { data: { hpLevelGains: seeded.slice(0, -1) } })
+  try {
+    await page.goto('/personnage')
+    await expect(page.getByTestId('hp-current')).toHaveText(String(bracco.hpCurrent))
+  } finally {
+    await page.request.put(`/api/characters/${bracco.id}`, { data: { hpLevelGains: seeded, hpCurrent: bracco.hpCurrent } })
+  }
 })
 
 // Régression prod (août 2026) : le serveur jetait les jets de croissance à
