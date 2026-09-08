@@ -7,7 +7,7 @@ function roll(over: Partial<RollEvent> = {}): RollEvent {
     id: 1, campaignId: 1, combatId: null, userId: 2, actorName: 'Minizou', actorKind: 'player',
     visibility: 'public', kind: 'action', label: 'Boule de feu', context: 'actions',
     die: 17, sides: 20, bonus: 0, total: 17, rolls: null, damage: null, createdAt: '',
-    diceColor: '#d64545', ...over,
+    diceStyle: { bg: { type: 'solid', from: '#d64545' }, ink: null, font: null }, ...over,
   }
 }
 

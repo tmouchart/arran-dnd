@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import type { RollEvent } from '../api/campaigns'
 import { rollOutcome, type RollOutcome } from '../utils/rollOutcome'
+import { dominantColor, parseDiceStyle } from '../data/diceStyle'
 
 /**
  * Le fil d'actions du mode table : « Minizou · Boule de feu — 17 ».
@@ -29,10 +30,11 @@ export const feed = ref<FeedLine[]>([])
 
 /** Transforme un jet reçu en ligne du fil. Pure, testable. */
 export function feedLineFor(roll: RollEvent): FeedLine {
+  const style = parseDiceStyle(roll.diceStyle)
   return {
     id: `roll-${roll.id}`,
     actorName: roll.actorName,
-    color: roll.diceColor,
+    color: style ? dominantColor(style) : undefined,
     label: roll.label,
     sides: roll.sides,
     total: roll.total,
