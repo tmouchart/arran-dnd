@@ -605,9 +605,12 @@ watch(diceRequest, (request) => {
   if (request) void startOwn(request)
 })
 
+// `sync` : quatre joueurs qui lancent dans la même milliseconde font quatre
+// demandes d'affilée. Un watcher normal les regroupe et ne verrait que la
+// dernière — trois dés perdus.
 watch(remoteDiceRequest, (request) => {
   if (request) void startRemote(request)
-})
+}, { flush: 'sync' })
 
 window.addEventListener('resize', resize)
 // En capture : on efface le dé avant même que la cible ne traite le clic
