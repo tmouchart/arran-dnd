@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Sword, Scroll, Heart, Trash2, Plus, Pencil } from 'lucide-vue-next'
+import { Sword, Scroll, Heart, Trash2, Plus, Pencil, Coins, Expand, Flame } from 'lucide-vue-next'
 import AppPageLayout from '../components/ui/AppPageLayout.vue'
 import AppPageHead from '../components/ui/AppPageHead.vue'
 import AppCard from '../components/ui/AppCard.vue'
@@ -11,6 +11,7 @@ import AppSelect from '../components/ui/AppSelect.vue'
 import AppTextarea from '../components/ui/AppTextarea.vue'
 import AppBadge from '../components/ui/AppBadge.vue'
 import AppTabs from '../components/ui/AppTabs.vue'
+import AppToggleGroup from '../components/ui/AppToggleGroup.vue'
 import AppEmptyState from '../components/ui/AppEmptyState.vue'
 import AppModal from '../components/ui/AppModal.vue'
 import AppBottomSheet from '../components/ui/AppBottomSheet.vue'
@@ -34,6 +35,7 @@ const selectValue = ref('guerrier')
 const textareaValue = ref('Une note griffonnée dans la marge du grimoire…')
 const tabValue = ref('emoji')
 const lucideTab = ref('sword')
+const toggleValue = ref('')
 const modalOpen = ref(false)
 const wideModalOpen = ref(false)
 const sheetOpen = ref(false)
@@ -153,6 +155,20 @@ function forceRoll(value: number) {
             { value: 'scroll', label: 'Sorts', icon: Scroll },
           ]"
         />
+      </div>
+    </AppCard>
+
+    <AppCard title="AppToggleGroup">
+      <div class="demo-row">
+        <AppToggleGroup
+          v-model="toggleValue"
+          :items="[
+            { value: 'econome', icon: Coins, title: 'Économe' },
+            { value: 'etendue', icon: Expand, title: 'Étendue' },
+            { value: 'puissante', icon: Flame, title: 'Puissante' },
+          ]"
+        />
+        <span>{{ toggleValue || 'aucun' }}</span>
       </div>
     </AppCard>
 

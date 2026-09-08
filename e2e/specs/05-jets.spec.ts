@@ -60,3 +60,35 @@ test('le dé d’un autre joueur roule chez le MJ, sauf si le MJ le coupe', asyn
     await joueur.close()
   }
 })
+
+// Concentration (magie.md) : le sort passe en action limitée et gagne un
+// bonus. Économe retire 2 PM ; puissante monte les dés d'une catégorie.
+test('un mage se concentre : économe coûte 2 PM de moins, puissante monte les dés', async ({ browser }) => {
+  const ctx = await browser.newContext({ storageState: stateFor('orlane') })
+  const page = await ctx.newPage()
+
+  try {
+    await page.goto('/actions')
+    const carte = page.locator('.action-bubble', { hasText: 'Boule de feu' })
+    await expect(carte).toBeVisible()
+    await expect(carte.getByTestId('action-pm-badge')).toHaveText('PM:4')
+    await expect(carte.getByTestId('action-type-badge')).toHaveText('Attaque')
+    await expect(page.getByTestId('pm-current')).toHaveText('10')
+
+    // Économe : −2 PM, action limitée.
+    await carte.getByTestId('concentration-econome').click()
+    await expect(carte.getByTestId('action-pm-badge')).toHaveText('PM:2')
+    await expect(carte.getByTestId('action-type-badge')).toHaveText('Limitée')
+
+    await carte.getByTestId('action-roll').click()
+    await expect(page.getByTestId('pm-current')).toHaveText('8')
+    // Le choix ne survit pas à l'incantation.
+    await expect(carte.getByTestId('action-pm-badge')).toHaveText('PM:4')
+
+    // Puissante : 4d6 → 4d8 dans la description.
+    await carte.getByTestId('concentration-puissante').click()
+    await expect(carte.getByTestId('action-description')).toContainText('4d8')
+  } finally {
+    await ctx.close()
+  }
+})

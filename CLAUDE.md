@@ -162,6 +162,7 @@ Add a shadcn component with `npx shadcn-vue@latest add <name> -y -o` (writes int
 | `AppModal` | **Every centered dialog** (confirmations, forms, pickers). `v-model` boolean, props `title`, `wide` (560px). Slots: default, `#footer` (action buttons). Built on reka-ui `Dialog`: focus trap, Escape, click-outside, scroll lock and focus restore come for free. |
 | `AppBottomSheet` | **Every bottom sheet** (mobile-first panels; centered dialog on desktop). `v-model` + `title`. Same reka-ui `Dialog` engine as AppModal — pick sheet for mobile flows, modal for confirmations. |
 | `AppTabs` | **Every tab bar.** `v-model` string + `tabs: { value, label, icon?, dot? }[]` (icon = emoji string or Lucide component). Prop `iconOnlyMobile` hides labels on phones. Built on reka-ui `Tabs`: arrow-key navigation included. Active state is `[data-state="active"]`, not `.active`. |
+| `AppToggleGroup` | Groupe de boutons icône à choix unique (mode de concentration, etc.). `v-model` string (`''` = rien), `items: { value, icon, title, testid? }[]`. Re-cliquer le bouton actif le désélectionne. Built on reka-ui `ToggleGroup`. |
 | `AppSelect` | All `<select>` fields. `v-model` + `<option>` in default slot. Stays a **native** `<select>` on purpose — the OS picker is better UX on phones. |
 | `AppTextarea` | All `<textarea>` fields. `v-model`, `rows`, `placeholder`. Same look as AppInput. |
 | `AppToast` | Global toasts — never instantiate; call `showToast(message, options?)` from `composables/useToast.ts`. |

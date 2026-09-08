@@ -339,7 +339,7 @@ export const VOIES: Voie[] = [
       { name: 'Brumes', description: "Crée un brouillard dense (portée 20m, zone 20m de diamètre) réduisant fortement la visibilité.", active: true },
       { name: 'Sous tension', description: "Charge électrique pendant [5+Mod.SAG] tours : 1d6 DM à quiconque le touche au contact.", active: true },
       { name: 'Armure de terre', description: "Pendant [5+Mod.SAG] tours, réduit tous les DM élémentaires (feu, froid, électricité, acide) de 2×rang.", active: true },
-      { name: 'Boule de feu', description: "Portée 30m, zone 6m de rayon : test d'attaque magique contre chaque cible dans la zone pour [2d6+Mod.INT] DM.", active: true },
+      { name: 'Boule de feu', description: "Portée 30m, zone 6m de rayon : test d'attaque magique contre chaque cible dans la zone pour [4d6+Mod.INT] DM.", active: true },
       { name: 'Intelligence héroïque', description: "+2 en INT. Lance 2d20 à tous les tests d'INT et garde le meilleur.", active: false },
     ],
   },

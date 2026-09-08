@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, reactive, watch } from "vue";
-import { Swords, ChevronDown, ChevronUp, CirclePlus, CircleMinus, Scroll, Dices, Sparkles, RefreshCw, Bandage, Shield } from "lucide-vue-next";
+import { Swords, ChevronDown, ChevronUp, CirclePlus, CircleMinus, Scroll, Dices, Sparkles, RefreshCw, Bandage, Shield, Coins, Expand, Flame } from "lucide-vue-next";
 import AppPageLayout from "../components/ui/AppPageLayout.vue";
 import AppPageHead from "../components/ui/AppPageHead.vue";
 import AppBadge from "../components/ui/AppBadge.vue";
@@ -8,6 +8,7 @@ import AppEmptyState from "../components/ui/AppEmptyState.vue";
 import { RouterLink } from "vue-router";
 import AppButton from "../components/ui/AppButton.vue";
 import AppModal from "../components/ui/AppModal.vue";
+import AppToggleGroup, { type AppToggleItem } from "../components/ui/AppToggleGroup.vue";
 import PassifsCard from "../components/character-sheet/PassifsCard.vue";
 import AffaibliPill from "../components/AffaibliPill.vue";
 import { useCharacter, loadCharacter, PR_MAX } from "../composables/useCharacter";
@@ -24,6 +25,15 @@ import { dice, revealAfterDice } from "../composables/useDice3D";
 import { MARTIAL_WEAPON_CATEGORY_BY_ID } from "../data/martialWeaponCategories";
 import { useRollHistory } from "../composables/useRollHistory";
 import { useDualWield, type SingleHandRoll } from "../composables/useDualWield";
+import { useSpellCast } from "../composables/useSpellCast";
+import { showToast } from "../composables/useToast";
+import {
+  allowedModes,
+  concentratedPmCost,
+  upgradeDiceInText,
+  CONCENTRATION_LABELS,
+  type ConcentrationMode,
+} from "../utils/concentration";
 import AgonieModal from "../components/AgonieModal.vue";
 
 const props = withDefaults(defineProps<{ embedded?: boolean }>(), { embedded: false });
@@ -45,6 +55,7 @@ function retryLoad() {
 }
 
 const profileFamily = computed(() => inferProfileFamily(character.value.paths));
+const { payPm } = useSpellCast(character, profileFamily);
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -88,6 +99,73 @@ function computeBonus(attackType: AttackType): number | null {
   if (attackType === 'distance') return computedAttackDistance.value;
   if (attackType === 'magique') return computedAttackMagique.value;
   return null;
+}
+
+// ── Concentration (magie.md) ─────────────────────────────────────────────────
+
+function actionKey(action: Action): string {
+  return action.source + '-' + action.name;
+}
+
+/** Mode choisi par carte. Absent = sort normal. Remis à zéro après chaque incantation. */
+const concentration = reactive<Record<string, ConcentrationMode>>({});
+
+function modeOf(action: Action): ConcentrationMode {
+  return concentration[actionKey(action)] ?? 'aucune';
+}
+
+function setMode(action: Action, value: string) {
+  concentration[actionKey(action)] = (value || 'aucune') as ConcentrationMode;
+}
+
+const CONCENTRATION_ICONS = { econome: Coins, etendue: Expand, puissante: Flame } as const;
+
+/** Rappel affiché sous la description quand un mode est choisi. */
+const CONCENTRATION_HINTS: Record<ConcentrationMode, string> = {
+  aucune: '',
+  econome: 'Concentration économe : 2 PM de moins, action limitée.',
+  etendue: 'Concentration étendue : portée ou durée doublée, au choix. Action limitée.',
+  puissante: 'Concentration puissante : les dés montent d’une catégorie. Action limitée.',
+};
+
+function concentrationItems(action: Action): AppToggleItem[] {
+  return allowedModes(action)
+    .filter((m): m is keyof typeof CONCENTRATION_ICONS => m !== 'aucune')
+    .map((m) => ({ value: m, icon: CONCENTRATION_ICONS[m], title: CONCENTRATION_LABELS[m], testid: `concentration-${m}` }));
+}
+
+function displayedActionType(action: Action): ActionType {
+  return modeOf(action) === 'aucune' ? action.actionType : 'limitée';
+}
+
+function displayedPmCost(action: Action): number | null {
+  if (action.pmCost == null) return null;
+  return concentratedPmCost(action.pmCost, modeOf(action));
+}
+
+function displayedDescription(action: Action): string {
+  return modeOf(action) === 'puissante' ? upgradeDiceInText(action.description) : action.description;
+}
+
+/** « Foudre — concentration : puissante » dans le log, sinon juste le nom. */
+function castLabel(action: Action): string {
+  const mode = modeOf(action);
+  return mode === 'aucune' ? action.name : `${action.name} — concentration : ${mode}`;
+}
+
+/** Paie le sort (PM puis brûlure de magie) et remet la carte en mode normal. */
+function paySpell(action: Action): void {
+  const cost = displayedPmCost(action);
+  if (cost != null) payPm(cost);
+  concentration[actionKey(action)] = 'aucune';
+}
+
+/** Sort sans jet d'attaque (Peau d'écorce, Sommeil…) : on paie, c'est tout. */
+function castSpell(action: Action) {
+  const cost = displayedPmCost(action) ?? 0;
+  const label = castLabel(action);
+  paySpell(action);
+  showToast(cost > 0 ? `${label} : −${cost} PM` : `${label} : gratuit`);
 }
 
 // ── Autres règles de base (les attaques normales passent par les armes sur la fiche) ──
@@ -447,24 +525,12 @@ function rollAction(action: Action) {
   const bonus = computeBonus(action.attackType);
   if (bonus === null) return;
 
-  // Déduire le coût en PM (brûlure de magie si insuffisant)
-  if (action.pmCost != null && action.pmCost > 0) {
-    const c = character.value;
-    const available = c.mpCurrent;
-    if (available >= action.pmCost) {
-      c.mpCurrent = available - action.pmCost;
-    } else {
-      const deficit = action.pmCost - available;
-      c.mpCurrent = 0;
-      // Combattants : 1 PM manquant = 2 PV perdus ; autres : 1 PM = 1 PV
-      const pvCost = profileFamily.value === 'combattants' ? deficit * 2 : deficit;
-      c.hpCurrent = Math.max(0, c.hpCurrent - pvCost);
-    }
-  }
+  const label = castLabel(action);
+  paySpell(action);
 
   const attackSides = attackDieSides.value;
   const attackDie = rollDie(attackSides);
-  const key = action.source + '-' + action.name;
+  const key = actionKey(action);
   revealAfterDice(dice(attackSides, [attackDie]), () => {
     actionRolls[key] = {
       attackDie,
@@ -476,7 +542,7 @@ function rollAction(action: Action) {
     addRoll({
       characterName: character.value.name,
       kind: 'action',
-      label: action.name,
+      label,
       die: attackDie,
       sides: attackSides,
       bonus,
@@ -673,7 +739,7 @@ function losePr() {
           <span class="ch-res-label">PM</span>
           <div class="ch-stepper">
             <button type="button" class="ch-btn" @click="character.mpCurrent = Math.max(0, character.mpCurrent - 1)"><CircleMinus :size="17" /></button>
-            <span class="ch-res-value">{{ character.mpCurrent }}<span class="ch-res-max"> / {{ computedMp }}</span></span>
+            <span class="ch-res-value"><span data-testid="pm-current">{{ character.mpCurrent }}</span><span class="ch-res-max"> / {{ computedMp }}</span></span>
             <button type="button" class="ch-btn" @click="character.mpCurrent = Math.min(computedMp, character.mpCurrent + 1)"><CirclePlus :size="17" /></button>
           </div>
         </div>
@@ -871,8 +937,8 @@ function losePr() {
       >
         <div class="action-header">
           <span class="action-name">{{ action.name }}</span>
-          <AppBadge :variant="action.actionType">{{ actionTypeLabel(action.actionType) }}</AppBadge>
-          <AppBadge v-if="action.pmCost != null" variant="pm">PM:{{ action.pmCost }}</AppBadge>
+          <AppBadge :variant="displayedActionType(action)" data-testid="action-type-badge">{{ actionTypeLabel(displayedActionType(action)) }}</AppBadge>
+          <AppBadge v-if="displayedPmCost(action) != null" variant="pm" data-testid="action-pm-badge">PM:{{ displayedPmCost(action) }}</AppBadge>
         </div>
 
         <div v-if="action.actionType !== 'info'" class="action-meta">
@@ -889,7 +955,8 @@ function losePr() {
           </span>
         </div>
 
-        <p class="action-description">{{ action.description }}</p>
+        <p class="action-description" data-testid="action-description">{{ displayedDescription(action) }}</p>
+        <p v-if="modeOf(action) !== 'aucune'" class="concentration-hint">{{ CONCENTRATION_HINTS[modeOf(action)] }}</p>
 
         <!-- Résultat spécial : Combat à deux armes -->
         <template v-if="action.name === 'Combat à deux armes'">
@@ -976,14 +1043,32 @@ function losePr() {
 
         <div class="action-footer">
           <div class="action-source">{{ action.source }}</div>
+          <AppToggleGroup
+            v-if="concentrationItems(action).length"
+            :model-value="modeOf(action) === 'aucune' ? '' : modeOf(action)"
+            :items="concentrationItems(action)"
+            data-testid="concentration-group"
+            @update:model-value="setMode(action, $event)"
+          />
           <button
             v-if="action.attackType || action.name === 'Combat à deux armes'"
             type="button"
             class="roll-btn"
+            data-testid="action-roll"
             @click="rollAction(action)"
           >
             <Dices :size="15" />
             Lancer les dés
+          </button>
+          <button
+            v-else-if="action.pmCost != null"
+            type="button"
+            class="roll-btn"
+            data-testid="action-cast"
+            @click="castSpell(action)"
+          >
+            <Sparkles :size="15" />
+            Lancer le sort
           </button>
         </div>
       </div>
@@ -1739,6 +1824,12 @@ function losePr() {
   line-height: 1.45;
   margin: 0;
   white-space: pre-line;
+}
+
+.concentration-hint {
+  font-size: 0.78rem;
+  color: var(--accent-strong);
+  margin: 0;
 }
 
 /* ── Source ─────────────────────────────────────────────────────────────── */
