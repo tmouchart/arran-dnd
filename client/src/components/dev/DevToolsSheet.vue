@@ -104,6 +104,22 @@ async function handlePreset(preset: api.DevPreset) {
     description="Changer d'identité et créer des combats de test."
     @update:model-value="emit('update:modelValue', $event)"
   >
+    <!-- Purement client : marche même si les routes /api/dev ne répondent pas -->
+    <h3 class="dev-heading">Dés des autres</h3>
+    <p class="dev-note">Un jet distant bidon, sans second navigateur. Ferme la feuille et lance.</p>
+    <div class="dev-users">
+      <button
+        v-for="d in remoteDiceShots"
+        :key="d.label"
+        type="button"
+        class="dev-user"
+        @click="handleRemoteDice(d.shots)"
+      >
+        <Dices :size="16" class="dev-user-icon" />
+        <span class="dev-user-name">{{ d.label }}</span>
+      </button>
+    </div>
+
     <AppEmptyState v-if="loading" variant="loading">Chargement…</AppEmptyState>
     <AppEmptyState v-else-if="error" variant="error">{{ error }}</AppEmptyState>
 
@@ -123,21 +139,6 @@ async function handlePreset(preset: api.DevPreset) {
           <UserCircle v-else :size="16" class="dev-user-icon" />
           <span class="dev-user-name">{{ u.username }}</span>
           <span v-if="u.gmOf" class="dev-user-tag">MJ · {{ u.gmOf }}</span>
-        </button>
-      </div>
-
-      <h3 class="dev-heading">Dés des autres</h3>
-      <p class="dev-note">Un jet distant bidon, sans second navigateur. Ferme la feuille et lance.</p>
-      <div class="dev-users">
-        <button
-          v-for="d in remoteDiceShots"
-          :key="d.label"
-          type="button"
-          class="dev-user"
-          @click="handleRemoteDice(d.shots)"
-        >
-          <Dices :size="16" class="dev-user-icon" />
-          <span class="dev-user-name">{{ d.label }}</span>
         </button>
       </div>
 
@@ -180,6 +181,8 @@ async function handlePreset(preset: api.DevPreset) {
 }
 
 .dev-heading:first-child { margin-top: 0; }
+/* Le bloc « Incarner » suit un bloc toujours présent : il garde sa marge */
+.dev-users + .dev-heading { margin-top: var(--space-md); }
 
 .dev-note {
   font-size: 0.8rem;

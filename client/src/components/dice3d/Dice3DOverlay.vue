@@ -47,6 +47,8 @@ interface Show {
   remote: boolean
   /** Emplacement dans la bande du haut (dés distants seulement). */
   slot: number
+  /** Couleur du corps, pour que le flash d'un critique reste dans le ton. */
+  color?: string
   dice: { mesh: Mesh; motion: Motion; scale: number; outcome: RollOutcome }[]
   startedAt: number
   landed: boolean
@@ -308,6 +310,9 @@ async function spawnShockwave(show: Show, origin: import('three').Vector3, scale
  * Éclat de la face touchée. Le matériau est partagé entre tous les dés d'une
  * même forme : on le clone, sinon les trois dés d'un jet flasheraient parce
  * qu'un seul a fait 20.
+ *
+ * Le critique brille dans la couleur du dé, pas en doré : une émission d'une
+ * autre teinte délave la face et le 20 devient illisible. L'échec reste rouge.
  */
 async function flashDie(show: Show, mesh: Mesh, outcome: Exclude<RollOutcome, null>) {
   const T = three!
@@ -319,13 +324,15 @@ async function flashDie(show: Show, mesh: Mesh, outcome: Exclude<RollOutcome, nu
   const original = mesh.material as import('three').MeshStandardMaterial
   const flashing = original.clone()
   flashing.emissive = new T.Color(
-    outcome === 'critical' ? token('--brand', '#d9a544') : token('--danger', '#e05252'),
+    outcome === 'critical'
+      ? (show.color ?? token('--brand', '#d9a544'))
+      : token('--danger', '#e05252'),
   )
   mesh.material = flashing
 
   show.effects.push({
     update(t) {
-      flashing.emissiveIntensity = flashIntensity(t) * (outcome === 'critical' ? 1.3 : 0.9)
+      flashing.emissiveIntensity = flashIntensity(t) * (outcome === 'critical' ? 0.55 : 0.5)
     },
     dispose() {
       mesh.material = original
@@ -351,6 +358,7 @@ async function launch(
     id: request.id,
     remote,
     slot,
+    color: request.color,
     dice: [],
     startedAt: 0,
     landed: false,
