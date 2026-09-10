@@ -1,8 +1,18 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as THREE from 'three'
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { findEnvironment, rngFor, type BattleEnvironment } from './environments'
 import { visibleEtats } from '../../data/etats'
+import {
+  buildSegments,
+  cleanPath,
+  WALL_HEIGHT,
+  WALL_THICKNESS,
+  type BattleWall,
+  type WallPoint,
+} from './walls'
+import { findWallMaterial, paintWallTile } from './wallMaterials'
 
 export interface BattleToken {
   id: string
@@ -34,6 +44,12 @@ const props = defineProps<{
   showGrid?: boolean
   /** Mode table : personne ne bouge rien, la carte se regarde. */
   readonly?: boolean
+  /** Les murs posés sur la carte (voir `walls.ts`). */
+  walls?: BattleWall[]
+  /** Mode mur : un doigt trace au lieu de déplacer la carte. MJ seulement. */
+  drawMode?: boolean
+  /** De quoi sera fait le prochain mur tracé (voir `wallMaterials.ts`). */
+  drawMaterial?: string
 }>()
 
 const emit = defineEmits<{
@@ -139,6 +155,20 @@ function makeShadowTexture(): THREE.CanvasTexture {
   ctx.fillStyle = g
   ctx.fillRect(0, 0, 128, 128)
   return new THREE.CanvasTexture(canvas)
+}
+
+/**
+ * La texture d'un matériau de mur.
+ *
+ * Chaque boîte du mur porte le carreau entier sur chacune de ses faces. Comme
+ * le rééchantillonnage donne des segments de longueur voisine (§3 du plan 23),
+ * les blocs gardent la même échelle tout le long — pas besoin de bricoler les UV.
+ */
+function makeWallTexture(materialId: string): THREE.CanvasTexture {
+  const tex = new THREE.CanvasTexture(paintWallTile(materialId))
+  tex.colorSpace = THREE.SRGBColorSpace
+  tex.anisotropy = 4
+  return tex
 }
 
 /** Étiquette de nom : un sprite, donc toujours face à la caméra, gratuitement. */
@@ -310,7 +340,35 @@ let yaw = Math.PI / 4 // angle courant, animé
 let yawGoal = Math.PI / 4 // angle visé (multiple de 90°)
 let frustum = 12.5 // hauteur visible, en cases
 
+/** Tous les murs vivent ici, plus celui qu'on est en train de tracer. */
+const wallsGroup = new THREE.Group()
+
 const shadowTex = makeShadowTexture()
+
+/**
+ * Un matériau THREE par matériau de mur, fabriqué au premier mur qui le
+ * demande. La plupart des combats n'en utilisent qu'un ou deux : peindre les
+ * quatre carreaux au chargement serait du travail jeté.
+ */
+const wallMaterials = new Map<string, THREE.MeshLambertMaterial>()
+
+function wallMaterialFor(id: string | undefined): THREE.MeshLambertMaterial {
+  const key = findWallMaterial(id).id
+  let mat = wallMaterials.get(key)
+  if (!mat) {
+    mat = new THREE.MeshLambertMaterial({ map: makeWallTexture(key) })
+    wallMaterials.set(key, mat)
+  }
+  return mat
+}
+
+/**
+ * Textures partagées par tous les objets et qui survivent au composant.
+ * `disposeMaterial` doit les laisser tranquilles : on ne les libère qu'au
+ * démontage, une seule fois.
+ */
+const SHARED_TEXTURES = new Set<THREE.Texture>([shadowTex])
+
 const ground = new THREE.Mesh<THREE.PlaneGeometry, THREE.Material>(
   new THREE.PlaneGeometry(1, 1),
   new THREE.MeshBasicMaterial(),
@@ -477,13 +535,16 @@ function syncTokens() {
  * Les sprites sont des enfants du groupe du pion, donc le `traverse` ci-dessous
  * les attrape tous — y compris celui des états, ajouté après coup.
  *
- * `shadowTex` est partagée par tous les pions et survit au composant : on ne la
- * libère qu'au démontage, une seule fois.
+ * Les textures de `SHARED_TEXTURES` sont partagées et survivent au composant :
+ * on ne les libère qu'au démontage, une seule fois.
  */
 function disposeMaterial(mat: THREE.Material) {
+  // Les matériaux de mur sont partagés entre tous les murs : les libérer ici
+  // viderait la texture de ceux qui restent affichés.
+  for (const wallMat of wallMaterials.values()) if (mat === wallMat) return
   for (const key of ['map', 'alphaMap', 'lightMap', 'emissiveMap'] as const) {
     const tex = (mat as unknown as Record<string, THREE.Texture | null>)[key]
-    if (tex && tex !== shadowTex) tex.dispose()
+    if (tex && !SHARED_TEXTURES.has(tex)) tex.dispose()
   }
   mat.dispose()
 }
@@ -496,6 +557,58 @@ function disposeObject(root: THREE.Object3D) {
     if (Array.isArray(mat)) mat.forEach(disposeMaterial)
     else if (mat) disposeMaterial(mat)
   })
+}
+
+/* ------------------------------------------------------------------ */
+/* Les murs                                                            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Un mur = une boîte par segment, toutes fusionnées en une seule géométrie.
+ *
+ * Sans la fusion, un mur qui traverse la carte ferait quarante meshes, donc
+ * quarante draw calls, pour un objet que le joueur voit comme un seul.
+ */
+function buildWallGeometry(points: WallPoint[]): THREE.BufferGeometry | null {
+  const parts = buildSegments(points).map((s) => {
+    const box = new THREE.BoxGeometry(s.length, WALL_HEIGHT, WALL_THICKNESS)
+    box.rotateY(s.angle)
+    box.translate(s.x, WALL_HEIGHT / 2, s.z)
+    return box
+  })
+  if (parts.length === 0) return null
+  const merged = mergeGeometries(parts)
+  for (const p of parts) p.dispose()
+  return merged
+}
+
+function buildWallMesh(wall: BattleWall): THREE.Mesh | null {
+  const geometry = buildWallGeometry(wall.points)
+  if (!geometry) return null
+  const mesh = new THREE.Mesh(geometry, wallMaterialFor(wall.material))
+  mesh.userData.wallId = wall.id
+  return mesh
+}
+
+const wallViews = new Map<string, THREE.Mesh>()
+
+function syncWalls() {
+  const seen = new Set<string>()
+  for (const wall of props.walls ?? []) {
+    seen.add(wall.id)
+    if (wallViews.has(wall.id)) continue
+    const mesh = buildWallMesh(wall)
+    if (!mesh) continue
+    wallsGroup.add(mesh)
+    wallViews.set(wall.id, mesh)
+  }
+  for (const [id, mesh] of wallViews) {
+    if (seen.has(id)) continue
+    wallsGroup.remove(mesh)
+    mesh.geometry.dispose()
+    wallViews.delete(id)
+  }
+  requestRender()
 }
 
 /** Repeint la texture du sol (décor courant + damier si demandé). */
@@ -589,7 +702,10 @@ function onPointerDown(e: PointerEvent) {
   if (pointers.size === 1) {
     dragDistance = 0
     downAt = performance.now()
+    if (props.drawMode) startDrawing(e)
   } else if (pointers.size === 2) {
+    // Le deuxième doigt veut zoomer, pas tracer.
+    cancelDrawing()
     const [a, b] = [...pointers.values()]
     pinchStart = Math.hypot(a.x - b.x, a.y - b.y)
     frustumStart = frustum
@@ -616,6 +732,12 @@ function onPointerMove(e: PointerEvent) {
   }
 
   dragDistance += Math.hypot(dx, dy)
+
+  if (drawing) {
+    extendDrawing(e)
+    return
+  }
+
   const right = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0).setY(0).normalize()
   const up = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 1).setY(0).normalize()
   const wpp = worldPerPixel()
@@ -632,11 +754,132 @@ function onPointerUp(e: PointerEvent) {
   const known = pointers.delete(e.pointerId)
   if (!known || pointers.size > 0) return
   // Un tap : court, et le doigt n'a quasi pas bougé.
-  if (dragDistance < 10 && performance.now() - downAt < 600) handleTap(e)
+  const tapped = dragDistance < 10 && performance.now() - downAt < 600
+  if (drawing) {
+    finishDrawing(tapped, e)
+    return
+  }
+  if (tapped) handleTap(e)
 }
 
 const raycaster = new THREE.Raycaster()
 const pointerNdc = new THREE.Vector2()
+
+/* ------------------------------------------------------------------ */
+/* Tracer un mur                                                       */
+/* ------------------------------------------------------------------ */
+
+let drawing = false
+let drawPath: WallPoint[] = []
+let previewMesh: THREE.Mesh | null = null
+
+/**
+ * Le doigt, projeté sur le sol.
+ *
+ * On vise le plan mathématique `y = 0`, pas le mesh du sol : le tracé continue
+ * même quand le doigt sort de la grille, et `cleanPath` le ramène dans les
+ * bornes au moment de poser le mur.
+ */
+const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
+const groundHit = new THREE.Vector3()
+
+function groundPointAt(e: PointerEvent): WallPoint | null {
+  const el = container.value
+  if (!el) return null
+  const rect = el.getBoundingClientRect()
+  pointerNdc.set(
+    ((e.clientX - rect.left) / rect.width) * 2 - 1,
+    -((e.clientY - rect.top) / rect.height) * 2 + 1,
+  )
+  raycaster.setFromCamera(pointerNdc, camera)
+  if (!raycaster.ray.intersectPlane(groundPlane, groundHit)) return null
+  return { x: groundHit.x, z: groundHit.z }
+}
+
+/** Nombre de points du dernier aperçu construit : voir `redrawPreview`. */
+let previewPoints = 0
+
+function clearPreview() {
+  if (!previewMesh) return
+  wallsGroup.remove(previewMesh)
+  previewMesh.geometry.dispose()
+  previewMesh = null
+}
+
+/**
+ * Le mur pousse sous le doigt, avec sa vraie géométrie et sa vraie pierre.
+ *
+ * Pas d'aperçu en pointillés : au lâcher, il ne doit rien se passer de visible.
+ * Le mur est déjà là, il ne fait que se sauvegarder.
+ *
+ * Le doigt crache un point par image, mais le rééchantillonnage n'en retient
+ * qu'un tous les 0,3 case : tant que le tracé nettoyé n'a pas gagné de point,
+ * il n'y a rien de neuf à construire. Sans ce garde, on refabriquerait
+ * quarante boîtes soixante fois par seconde pour le même mur.
+ */
+function redrawPreview() {
+  const path = cleanPath(drawPath, half())
+  if (path.length === previewPoints) return
+  previewPoints = path.length
+
+  clearPreview()
+  const geometry = buildWallGeometry(path)
+  if (geometry) {
+    previewMesh = new THREE.Mesh(geometry, wallMaterialFor(props.drawMaterial))
+    wallsGroup.add(previewMesh)
+  }
+  requestRender()
+}
+
+function startDrawing(e: PointerEvent) {
+  const p = groundPointAt(e)
+  if (!p) return
+  drawing = true
+  drawPath = [p]
+}
+
+function extendDrawing(e: PointerEvent) {
+  const p = groundPointAt(e)
+  if (!p) return
+  drawPath.push(p)
+  redrawPreview()
+}
+
+function cancelDrawing() {
+  drawing = false
+  drawPath = []
+  previewPoints = 0
+  clearPreview()
+  requestRender()
+}
+
+function finishDrawing(tapped: boolean, e: PointerEvent) {
+  const path = cleanPath(drawPath, half())
+  cancelDrawing()
+
+  // Un tap en mode mur, ce n'est pas un tracé : c'est une gomme.
+  if (tapped) {
+    const id = wallIdAt(e)
+    if (id) emit('erase-wall', id)
+    return
+  }
+  if (path.length < 2) return
+  emit('draw-wall', path)
+}
+
+/** Le mur sous le doigt, s'il y en a un. */
+function wallIdAt(e: PointerEvent): string | null {
+  const el = container.value
+  if (!el) return null
+  const rect = el.getBoundingClientRect()
+  pointerNdc.set(
+    ((e.clientX - rect.left) / rect.width) * 2 - 1,
+    -((e.clientY - rect.top) / rect.height) * 2 + 1,
+  )
+  raycaster.setFromCamera(pointerNdc, camera)
+  const hit = raycaster.intersectObjects([...wallViews.values()], false)[0]
+  return (hit?.object.userData.wallId as string) ?? null
+}
 
 function handleTap(e: PointerEvent) {
   const el = container.value
@@ -807,6 +1050,7 @@ onMounted(() => {
   ground.rotation.x = -Math.PI / 2
   scene.add(ground)
   scene.add(decorGroup)
+  scene.add(wallsGroup)
 
   // Une chaude en haut, une froide ambiante. Deux lumières suffisent.
   keyLight = new THREE.DirectionalLight(0xffffff, 1)
@@ -823,6 +1067,7 @@ onMounted(() => {
 
   resize()
   syncTokens()
+  syncWalls()
 
   observer = new ResizeObserver(resize)
   observer.observe(el)
@@ -844,7 +1089,13 @@ onBeforeUnmount(() => {
   observer?.disconnect()
   if (scene) disposeObject(scene)
   shadowTex.dispose()
+  for (const mat of wallMaterials.values()) {
+    mat.map?.dispose()
+    mat.dispose()
+  }
+  wallMaterials.clear()
   views.clear()
+  wallViews.clear()
   renderer?.dispose()
 })
 
@@ -852,6 +1103,9 @@ watch(() => props.tokens, syncTokens, { deep: true })
 watch(() => props.activeId, () => requestRender())
 watch(() => props.environment, () => scene && applyEnvironment())
 watch(() => props.showGrid, () => scene && refreshGround())
+watch(() => props.walls, () => scene && syncWalls(), { deep: true })
+// On quitte le mode mur en plein tracé : le mur en cours n'a jamais existé.
+watch(() => props.drawMode, (on) => { if (!on) cancelDrawing() })
 
 // Le MJ redevient joueur : les PV des monstres disparaissent, et il lâche
 // le monstre qu'il tenait.

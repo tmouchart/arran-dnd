@@ -12,6 +12,7 @@ import { generateText } from '../ai/client.js'
 import { turnOrder, firstActiveId, step } from '../combats/turnOrder.js'
 import { startingPosition, clampToBoard } from '../combats/placement.js'
 import { isEtatId } from '../combats/etats.js'
+import { sanitizeObstacles } from '../combats/obstacles.js'
 
 // Armor/shield lookup for initiative calculation (mirrors client armorsCatalog.ts)
 const ARMOR_DEF: Record<string, number> = {
@@ -444,6 +445,30 @@ router.patch('/:id/combats/:cid/environment', async (req, res) => {
   }
 
   await db.update(combats).set({ environment }).where(eq(combats.id, combatId))
+  await broadcastCombatState(combatId, check.gmUserId)
+  res.json({ ok: true })
+})
+
+// PUT /:id/combats/:cid/obstacles — les murs tracés sur la carte (MJ seul)
+//
+// On reçoit la liste ENTIÈRE, pas un delta : seul le MJ écrit, la liste est
+// petite, et ça rend la route idempotente — tracer, effacer et annuler sont
+// alors le même appel.
+router.put('/:id/combats/:cid/obstacles', async (req, res) => {
+  const userId = (req as unknown as AuthRequest).userId
+  const campaignId = Number(req.params.id)
+  const combatId = Number(req.params.cid)
+
+  const check = await verifyGm(campaignId, userId)
+  if (check.status !== 'ok') { res.status(403).json({ error: 'Seul le MJ peut tracer des murs' }); return }
+
+  const combat = await loadCombatInCampaign(combatId, campaignId)
+  if (!combat) { res.status(404).json({ error: 'Combat introuvable' }); return }
+
+  const obstacles = sanitizeObstacles((req.body as { obstacles?: unknown }).obstacles)
+  if (!obstacles) { res.status(400).json({ error: 'obstacles invalides' }); return }
+
+  await db.update(combats).set({ obstacles }).where(eq(combats.id, combatId))
   await broadcastCombatState(combatId, check.gmUserId)
   res.json({ ok: true })
 })

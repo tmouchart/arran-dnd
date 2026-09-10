@@ -15,6 +15,7 @@ function combat(overrides: Partial<CombatRow> = {}): CombatRow {
     currentParticipantId: null,
     roundNumber: 1,
     environment: 'foret',
+    obstacles: [],
     createdAt: new Date('2026-01-01'),
     finishedAt: null,
     ...overrides,
@@ -123,6 +124,12 @@ describe('serializeCombat — ce qu\'un joueur a le droit de voir', () => {
     // Sans la position, les joueurs ne verraient pas les monstres sur la carte.
     expect(m.posX).toBe(2)
     expect(m.posY).toBe(-1)
+  })
+
+  it('voit les murs de la carte : ce n’est le secret de personne', () => {
+    const murs = [{ id: 'a', points: [{ x: 0, z: 0 }, { x: 2, z: 0 }] }]
+    const out = serializeCombat(combat({ obstacles: murs }), [monster()], false)
+    expect(out.obstacles).toEqual(murs)
   })
 
   it('ne masque jamais un personnage joueur', () => {

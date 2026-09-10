@@ -5,6 +5,7 @@ import * as api from '../api/combats'
 import type { CombatState, CombatParticipant } from '../api/combats'
 import { setActiveCombat, clearActiveCombat } from './useActiveCombat'
 import { isEtatId } from '../data/etats'
+import type { BattleWall } from '../components/battle/walls'
 
 const combat = ref<CombatState | null>(null)
 const connecting = ref(false)
@@ -210,6 +211,11 @@ export function useCombat() {
     await api.setCombatEnvironment(currentCampaignId, combat.value.id, environment)
   }
 
+  async function setObstacles(obstacles: BattleWall[]): Promise<void> {
+    if (!combat.value || !currentCampaignId) return
+    await api.setCombatObstacles(currentCampaignId, combat.value.id, obstacles)
+  }
+
   async function addMonster(data: Record<string, unknown>): Promise<void> {
     if (!combat.value || !currentCampaignId) return
     await api.addCombatMonster(currentCampaignId, combat.value.id, data)
@@ -243,6 +249,7 @@ export function useCombat() {
     moveParticipant,
     setVisibility,
     setEnvironment,
+    setObstacles,
     addMonster,
     removeMonster,
     finish,

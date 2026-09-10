@@ -66,6 +66,8 @@ export function serializeCombat(
   const sorted = turnOrder(participants)
 
   return {
+    // `obstacles` passe tel quel : un mur est visible à la table, ce n'est le
+    // secret de personne.
     ...combat,
     // Le client ne devine plus son rôle. Il le déduisait de « aucun monstre
     // visible → c'est le MJ », donc au démarrage d'une embuscade (tous les PNJ

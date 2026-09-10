@@ -215,6 +215,8 @@ export const combats = pgTable('combat', {
   roundNumber: integer('round_number').notNull().default(1),
   /** Décor du champ de bataille 3D (voir `client/src/components/battle/environments.ts`). */
   environment: varchar('environment', { length: 40 }).notNull().default('foret'),
+  /** Murs tracés par le MJ sur la carte (voir `client/src/components/battle/walls.ts`). */
+  obstacles: jsonb('obstacles').notNull().default([]),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   finishedAt: timestamp('finished_at', { withTimezone: true }),
 })

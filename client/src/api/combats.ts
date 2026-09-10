@@ -1,3 +1,5 @@
+import type { BattleWall } from '../components/battle/walls'
+
 const BASE = '/api/campaigns'
 
 export interface CombatSummary {
@@ -51,6 +53,8 @@ export interface CombatState {
   isGm: boolean
   /** Décor du champ de bataille (voir `components/battle/environments.ts`). */
   environment: string
+  /** Les murs tracés par le MJ (voir `components/battle/walls.ts`). */
+  obstacles: BattleWall[]
   participants: CombatParticipant[]
   /** Les PNJ en réserve. Toujours vide pour un joueur : il ignore leur existence. */
   reserve: CombatParticipant[]
@@ -160,6 +164,18 @@ export function setCombatEnvironment(
   return request(`/${campaignId}/combats/${combatId}/environment`, {
     method: 'PATCH',
     body: JSON.stringify({ environment }),
+  })
+}
+
+/** La liste ENTIÈRE des murs : tracer, effacer et annuler sont le même appel. */
+export function setCombatObstacles(
+  campaignId: number,
+  combatId: number,
+  obstacles: BattleWall[],
+): Promise<void> {
+  return request(`/${campaignId}/combats/${combatId}/obstacles`, {
+    method: 'PUT',
+    body: JSON.stringify({ obstacles }),
   })
 }
 
