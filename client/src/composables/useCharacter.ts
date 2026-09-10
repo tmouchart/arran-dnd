@@ -7,17 +7,26 @@ import {
   updateCharacter,
   type ServerCharacter,
 } from '../api/characters'
-import { ARMORS_BY_ID, SHIELDS_BY_ID } from '../data/armorsCatalog'
 import { inferProfileFamily } from '../utils/inferProfileFamily'
-import { type VoieFamily } from '../data/voies'
+import { abilityModifier } from '../utils/attackBonus'
+import {
+  FAMILY_DIE_MAX,
+  computeDef,
+  computeMp,
+  computeHpBase,
+  computeHpConMod,
+  computeHpGrowth,
+  computeHp,
+  computeHpDv,
+  computeDv,
+  computeInitiative,
+  computePcMax,
+  computeAttackContact,
+  computeAttackDistance,
+  computeAttackMagique,
+} from '../utils/characterStats'
 
-/** Maximum die face per family (level 1 = max; subsequent levels = roll). */
-export const FAMILY_DIE_MAX: Record<VoieFamily, number> = {
-  combattants: 10,
-  aventuriers: 8,
-  mystiques: 6,
-  prestige: 8,
-}
+export { FAMILY_DIE_MAX }
 
 // PM courants : localStorage ; PV courants : colonne serveur `hp_current` (source de vérité)
 const MP_KEY = 'arran-mp-current'
@@ -182,16 +191,7 @@ const serverId = ref<number | null>(null)
 
 
 /** Computed DEF = 10 + mod DEX (si armure non encombrante) + bonus armure + bonus bouclier + bonus divers */
-export const computedDef = computed(() => {
-  const c = character.value
-  const dexMod = Math.floor((c.abilities.dexterity - 10) / 2)
-  const armor = c.armorId ? ARMORS_BY_ID[c.armorId] : null
-  const shield = c.shieldId ? SHIELDS_BY_ID[c.shieldId] : null
-  const armorBonus = armor?.defBonus ?? 0
-  const shieldBonus = shield?.defBonus ?? 0
-  const dexContrib = armor?.encombrant ? 0 : dexMod
-  return 10 + dexContrib + armorBonus + shieldBonus + c.defenseBonus
-})
+export const computedDef = computed(() => computeDef(character.value))
 
 // Sync computed DEF → character.defense so the server always has the up-to-date value
 watch(computedDef, (val) => {
@@ -203,75 +203,36 @@ watch(computedDef, (val) => {
  * - Combattants / Aventuriers / Prestige : ×1
  * - Mystiques : ×2
  */
-export const computedMp = computed(() => {
-  const c = character.value
-  const wisMod = Math.floor((c.abilities.wisdom - 10) / 2)
-  const base = c.level + wisMod
-  const family = inferProfileFamily(c.paths)
-  return family === 'mystiques' ? 2 * base : base
-})
+export const computedMp = computed(() => computeMp(character.value))
 
 // Sync computed PM → character.mpMax so the server always has the up-to-date value
 watch(computedMp, (val) => {
   character.value.mpMax = Math.max(0, val)
 }, { immediate: true })
 
-/**
- * PV de base (niveau 1) = dé max de la famille + mod CON
- */
-export const computedHpBase = computed(() => {
-  const c = character.value
-  const family = inferProfileFamily(c.paths)
-  const dieMax = FAMILY_DIE_MAX[family]
-  const conMod = Math.floor((c.abilities.constitution - 10) / 2)
-  return dieMax + conMod
-})
+/** PV de base (niveau 1) = dé max de la famille + mod CON */
+export const computedHpBase = computed(() => computeHpBase(character.value))
 
 /** Valeur du dé de vie (nombre max, ex: 10 pour combattants). */
-export const computedHpDv = computed(() => {
-  const family = inferProfileFamily(character.value.paths)
-  return FAMILY_DIE_MAX[family]
-})
+export const computedHpDv = computed(() => computeHpDv(character.value))
 
 /** Mod CON appliqué aux PV de base. */
-export const computedHpConMod = computed(() =>
-  Math.floor((character.value.abilities.constitution - 10) / 2),
-)
+export const computedHpConMod = computed(() => computeHpConMod(character.value))
 
-/**
- * Croissance PV (niveaux 2+) = somme des jets + mod CON par niveau
- */
-export const computedHpGrowth = computed(() => {
-  const c = character.value
-  const conMod = Math.floor((c.abilities.constitution - 10) / 2)
-  return c.hpLevelGains.reduce((sum, roll) => sum + roll + conMod, 0)
-})
+/** Croissance PV (niveaux 2+) = somme des jets + mod CON par niveau */
+export const computedHpGrowth = computed(() => computeHpGrowth(character.value))
 
 /** PV max = base niv.1 + croissance niv.2..N */
-export const computedHp = computed(() => Math.max(1, computedHpBase.value + computedHpGrowth.value))
+export const computedHp = computed(() => computeHp(character.value))
 
 /** Dé de vie de la famille (label affiché). */
-export const computedDv = computed((): string => {
-  const family = inferProfileFamily(character.value.paths)
-  const faces: Record<VoieFamily, string> = { combattants: 'd10', aventuriers: 'd8', mystiques: 'd6', prestige: 'd8' }
-  return faces[family]
-})
+export const computedDv = computed((): string => computeDv(character.value))
 
 /** Initiative = valeur DEX - bonus DEF armure - bonus DEF bouclier (règles Terres d'Arran). */
-export const computedInitiative = computed(() => {
-  const c = character.value
-  const armor = c.armorId ? ARMORS_BY_ID[c.armorId] : null
-  const shield = c.shieldId ? SHIELDS_BY_ID[c.shieldId] : null
-  return c.abilities.dexterity - (armor?.defBonus ?? 0) - (shield?.defBonus ?? 0) + (c.initiativeBonus ?? 0)
-})
+export const computedInitiative = computed(() => computeInitiative(character.value))
 
 /** PC max = 2 + Mod. CHA + (aventuriers : +2). */
-export const computedPcMax = computed(() => {
-  const c = character.value
-  const chaMod = Math.floor((c.abilities.charisma - 10) / 2)
-  const family = inferProfileFamily(c.paths)
-  return 2 + chaMod + (family === 'aventuriers' ? 2 : 0)
-})
+export const computedPcMax = computed(() => computePcMax(character.value))
 
 /** PR max = 5 (règle de base CO / Terres d'Arran). */
 export const PR_MAX = 5
@@ -279,50 +240,21 @@ export const PR_MAX = 5
 /** Faces du dé d'attaque/test : 12 si le personnage est affaibli, 20 sinon. */
 export const attackDieSides = computed(() => (character.value.affaibli ? 12 : 20))
 
-// Bonus d'attaque par famille
-function familyAttackBonus(family: VoieFamily): { contact: number; distance: number; magique: number } {
-  if (family === 'combattants') return { contact: 2, distance: 2, magique: 0 }
-  if (family === 'aventuriers') return { contact: 1, distance: 1, magique: 0 }
-  if (family === 'mystiques') return { contact: 0, distance: 0, magique: 2 }
-  return { contact: 1, distance: 1, magique: 0 } // prestige → aventuriers par défaut
-}
-
 /**
  * Bonus d'attaque de contact = niveau + Mod. FOR + bonus famille
  * Pas de pénalité d'armure sur le contact.
  */
-export const computedAttackContact = computed(() => {
-  const c = character.value
-  const forMod = Math.floor((c.abilities.strength - 10) / 2)
-  const bonus = familyAttackBonus(inferProfileFamily(c.paths))
-  return c.level + forMod + bonus.contact + (c.attackContactBonus ?? 0)
-})
+export const computedAttackContact = computed(() => computeAttackContact(character.value))
 
 /**
  * Bonus d'attaque à distance = niveau + Mod. DEX + bonus famille - floor((armorDef + shieldDef) / 2)
  */
-export const computedAttackDistance = computed(() => {
-  const c = character.value
-  const dexMod = Math.floor((c.abilities.dexterity - 10) / 2)
-  const armor = c.armorId ? ARMORS_BY_ID[c.armorId] : null
-  const shield = c.shieldId ? SHIELDS_BY_ID[c.shieldId] : null
-  const equipPenalty = Math.floor(((armor?.defBonus ?? 0) + (shield?.defBonus ?? 0)) / 2)
-  const bonus = familyAttackBonus(inferProfileFamily(c.paths))
-  return c.level + dexMod + bonus.distance - equipPenalty + (c.attackDistanceBonus ?? 0)
-})
+export const computedAttackDistance = computed(() => computeAttackDistance(character.value))
 
 /**
  * Bonus d'attaque magique = niveau + Mod. INT + bonus famille - (armorDef + shieldDef)
  */
-export const computedAttackMagique = computed(() => {
-  const c = character.value
-  const intMod = Math.floor((c.abilities.intelligence - 10) / 2)
-  const armor = c.armorId ? ARMORS_BY_ID[c.armorId] : null
-  const shield = c.shieldId ? SHIELDS_BY_ID[c.shieldId] : null
-  const equipPenalty = (armor?.defBonus ?? 0) + (shield?.defBonus ?? 0)
-  const bonus = familyAttackBonus(inferProfileFamily(c.paths))
-  return c.level + intMod + bonus.magique - equipPenalty + (c.attackMagiqueBonus ?? 0)
-})
+export const computedAttackMagique = computed(() => computeAttackMagique(character.value))
 
 // Sync computed HP → character.hpMax (et clamp hpCurrent, qui ne doit jamais dépasser le max)
 watch(computedHp, (val) => {
@@ -462,10 +394,6 @@ watch(
 )
 
 export function useCharacter() {
-  function abilityModifier(score: number): number {
-    return Math.floor((score - 10) / 2)
-  }
-
   return {
     character,
     loading,

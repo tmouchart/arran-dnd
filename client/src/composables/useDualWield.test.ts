@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import type { Character, WeaponRow } from '../types/character'
 import { isDaggerWeapon, useDualWield } from './useDualWield'
 import { createDefaultCharacter } from './useCharacter'
+import { abilityModifier } from '../utils/attackBonus'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -17,10 +18,6 @@ function makeWeapon(overrides: Partial<WeaponRow> = {}): WeaponRow {
     rangeMeters: null,
     ...overrides,
   }
-}
-
-function abilityModifier(score: number): number {
-  return Math.floor((score - 10) / 2)
 }
 
 // ── isDaggerWeapon ───────────────────────────────────────────────────────────

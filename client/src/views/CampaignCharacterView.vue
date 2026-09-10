@@ -5,10 +5,23 @@ import { ArrowLeft } from 'lucide-vue-next'
 import { fetchMemberCharacter } from '../api/campaigns'
 import { toCharacter } from '../composables/useCharacter'
 import { inferProfileFamily } from '../utils/inferProfileFamily'
-import { ARMORS_BY_ID, SHIELDS_BY_ID } from '../data/armorsCatalog'
+import { abilityModifier } from '../utils/attackBonus'
+import {
+  FAMILY_DIE_MAX,
+  computeDef,
+  computeMp,
+  computeHpBase,
+  computeHpConMod,
+  computeHpGrowth,
+  computeInitiative,
+  computePcMax,
+  computeAttackContact,
+  computeAttackDistance,
+  computeAttackMagique,
+} from '../utils/characterStats'
 import type { Character } from '../types/character'
 import type { VoieFamily } from '../data/voies'
-import { FAMILY_DIE_MAX, PR_MAX } from '../composables/useCharacter'
+import { PR_MAX } from '../composables/useCharacter'
 
 import AppPageLayout from '../components/ui/AppPageLayout.vue'
 import AppPageHead from '../components/ui/AppPageHead.vue'
@@ -26,6 +39,14 @@ import MartialFormationsCard from '../components/character-sheet/MartialFormatio
 import WeaponsCard from '../components/character-sheet/WeaponsCard.vue'
 import EquipmentCard from '../components/character-sheet/EquipmentCard.vue'
 import CompetencesCard from '../components/character-sheet/CompetencesCard.vue'
+
+/** Libellé du dé de vie par famille (le personnage peut être absent : on garde un défaut). */
+const DV_LABELS: Record<VoieFamily, string> = {
+  combattants: 'd10',
+  aventuriers: 'd8',
+  mystiques: 'd6',
+  prestige: 'd8',
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -51,115 +72,29 @@ onMounted(async () => {
   }
 })
 
-function abilityModifier(score: number): number {
-  return Math.floor((score - 10) / 2)
-}
-
 const family = computed(() =>
   character.value ? inferProfileFamily(character.value.paths) : ('combattants' as VoieFamily),
 )
 
-const computedDef = computed(() => {
-  const c = character.value
-  if (!c) return 0
-  const dexMod = Math.floor((c.abilities.dexterity - 10) / 2)
-  const armor = c.armorId ? ARMORS_BY_ID[c.armorId] : null
-  const shield = c.shieldId ? SHIELDS_BY_ID[c.shieldId] : null
-  const dexContrib = armor?.encombrant ? 0 : dexMod
-  return 10 + dexContrib + (armor?.defBonus ?? 0) + (shield?.defBonus ?? 0) + c.defenseBonus
-})
-
-const computedMp = computed(() => {
-  const c = character.value
-  if (!c) return 0
-  const wisMod = Math.floor((c.abilities.wisdom - 10) / 2)
-  const base = c.level + wisMod
-  return family.value === 'mystiques' ? 2 * base : base
-})
-
-const computedHpBase = computed(() => {
-  const c = character.value
-  if (!c) return 0
-  const dieMax = FAMILY_DIE_MAX[family.value]
-  const conMod = Math.floor((c.abilities.constitution - 10) / 2)
-  return dieMax + conMod
-})
-
+const computedDef = computed(() => (character.value ? computeDef(character.value) : 0))
+const computedMp = computed(() => (character.value ? computeMp(character.value) : 0))
+const computedHpBase = computed(() => (character.value ? computeHpBase(character.value) : 0))
 const computedHpDv = computed(() => FAMILY_DIE_MAX[family.value])
-const computedHpConMod = computed(() =>
-  character.value ? Math.floor((character.value.abilities.constitution - 10) / 2) : 0,
-)
-
-const computedHpGrowth = computed(() => {
-  const c = character.value
-  if (!c) return 0
-  const conMod = Math.floor((c.abilities.constitution - 10) / 2)
-  return c.hpLevelGains.reduce((sum, roll) => sum + roll + conMod, 0)
-})
-
+const computedHpConMod = computed(() => (character.value ? computeHpConMod(character.value) : 0))
+const computedHpGrowth = computed(() => (character.value ? computeHpGrowth(character.value) : 0))
 const computedHp = computed(() => Math.max(1, computedHpBase.value + computedHpGrowth.value))
-
-const computedDv = computed((): string => {
-  const faces: Record<VoieFamily, string> = {
-    combattants: 'd10',
-    aventuriers: 'd8',
-    mystiques: 'd6',
-    prestige: 'd8',
-  }
-  return faces[family.value]
-})
-
-const computedInitiative = computed(() => {
-  const c = character.value
-  if (!c) return 0
-  const armor = c.armorId ? ARMORS_BY_ID[c.armorId] : null
-  const shield = c.shieldId ? SHIELDS_BY_ID[c.shieldId] : null
-  return c.abilities.dexterity - (armor?.defBonus ?? 0) - (shield?.defBonus ?? 0) + (c.initiativeBonus ?? 0)
-})
-
-const computedPcMax = computed(() => {
-  const c = character.value
-  if (!c) return 0
-  const chaMod = Math.floor((c.abilities.charisma - 10) / 2)
-  return 2 + chaMod + (family.value === 'aventuriers' ? 2 : 0)
-})
-
-function familyAttackBonus(f: VoieFamily) {
-  if (f === 'combattants') return { contact: 2, distance: 2, magique: 0 }
-  if (f === 'aventuriers') return { contact: 1, distance: 1, magique: 0 }
-  if (f === 'mystiques') return { contact: 0, distance: 0, magique: 2 }
-  return { contact: 1, distance: 1, magique: 0 }
-}
-
-const computedAttackContact = computed(() => {
-  const c = character.value
-  if (!c) return 0
-  const forMod = Math.floor((c.abilities.strength - 10) / 2)
-  const bonus = familyAttackBonus(family.value)
-  return c.level + forMod + bonus.contact + (c.attackContactBonus ?? 0)
-})
-
-const computedAttackDistance = computed(() => {
-  const c = character.value
-  if (!c) return 0
-  const dexMod = Math.floor((c.abilities.dexterity - 10) / 2)
-  const armor = c.armorId ? ARMORS_BY_ID[c.armorId] : null
-  const shield = c.shieldId ? SHIELDS_BY_ID[c.shieldId] : null
-  const equipPenalty = Math.floor(((armor?.defBonus ?? 0) + (shield?.defBonus ?? 0)) / 2)
-  const bonus = familyAttackBonus(family.value)
-  return c.level + dexMod + bonus.distance - equipPenalty + (c.attackDistanceBonus ?? 0)
-})
-
-const computedAttackMagique = computed(() => {
-  const c = character.value
-  if (!c) return 0
-  const intMod = Math.floor((c.abilities.intelligence - 10) / 2)
-  const armor = c.armorId ? ARMORS_BY_ID[c.armorId] : null
-  const shield = c.shieldId ? SHIELDS_BY_ID[c.shieldId] : null
-  const equipPenalty = (armor?.defBonus ?? 0) + (shield?.defBonus ?? 0)
-  const bonus = familyAttackBonus(family.value)
-  return c.level + intMod + bonus.magique - equipPenalty + (c.attackMagiqueBonus ?? 0)
-})
+const computedDv = computed((): string => DV_LABELS[family.value])
+const computedInitiative = computed(() => (character.value ? computeInitiative(character.value) : 0))
+const computedPcMax = computed(() => (character.value ? computePcMax(character.value) : 0))
+const computedAttackContact = computed(() =>
+  character.value ? computeAttackContact(character.value) : 0,
+)
+const computedAttackDistance = computed(() =>
+  character.value ? computeAttackDistance(character.value) : 0,
+)
+const computedAttackMagique = computed(() =>
+  character.value ? computeAttackMagique(character.value) : 0,
+)
 
 // Tab navigation
 type TabId = 'identite' | 'voies' | 'combat'

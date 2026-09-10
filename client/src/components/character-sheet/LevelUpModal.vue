@@ -5,6 +5,7 @@ import AppModal from "../ui/AppModal.vue";
 import AppButton from "../ui/AppButton.vue";
 import type { Character } from "../../types/character";
 import { inferProfileFamily } from "../../utils/inferProfileFamily";
+import { abilityModifier } from "../../utils/attackBonus";
 import {
   FAMILY_DIE_MAX,
   computedAttackContact,
@@ -28,7 +29,7 @@ const step = ref<"confirm" | "recap">("confirm");
 const nextLevel = computed(() => props.character.level + 1);
 const family = computed(() => inferProfileFamily(props.character.paths));
 const dieMax = computed(() => FAMILY_DIE_MAX[family.value]);
-const conMod = computed(() => Math.floor((props.character.abilities.constitution - 10) / 2));
+const conMod = computed(() => abilityModifier(props.character.abilities.constitution));
 
 // HP gain: rolled die + conMod (null = not yet rolled)
 const hpRoll = ref<number | null>(null);
@@ -45,7 +46,7 @@ const atkMagiqueAfter = computed(() => atkMagiqueBefore.value + 1);
 
 // PC max
 const pcMaxBefore = computed(() => {
-  const chaMod = Math.floor((props.character.abilities.charisma - 10) / 2);
+  const chaMod = abilityModifier(props.character.abilities.charisma);
   return 2 + chaMod + (family.value === "aventuriers" ? 2 : 0);
 });
 
@@ -86,7 +87,7 @@ function accept() {
   }
   c.hpLevelGains[needed - 1] = hpRoll.value!;
   // 3. Restore PC to new max
-  const newPcMax = 2 + Math.floor((c.abilities.charisma - 10) / 2) + (family.value === "aventuriers" ? 2 : 0);
+  const newPcMax = 2 + abilityModifier(c.abilities.charisma) + (family.value === "aventuriers" ? 2 : 0);
   c.pcCurrent = newPcMax;
 
   emit("confirm");

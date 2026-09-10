@@ -29,6 +29,7 @@ import { MONSTERS_CATALOG, type Monster } from "../data/monstersCatalog";
 import { filterCatalog, formatMod } from "../utils/monsterSession";
 import { hpGradientColor } from "../utils/hpGradientColor";
 import { rollDie, rollDiceNotation } from "../utils/dice";
+import { signedNum } from "../utils/formatBonus";
 import { dice, revealAfterDice } from "../composables/useDice3D";
 import { celebrate } from "../composables/useCriticalMoment";
 import AppPageLayout from "../components/ui/AppPageLayout.vue";
@@ -293,10 +294,6 @@ function rollMonsterAttack(participant: CombatParticipant, atkIndex: number, bon
       asMonster: participant.name,
     }).catch(() => { /* silencieux */ });
   });
-}
-
-function signedNum(n: number): string {
-  return n >= 0 ? `+${n}` : String(n);
 }
 
 

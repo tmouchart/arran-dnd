@@ -1,5 +1,6 @@
 import type { VoieFamily } from '../data/voies'
 import type { Character, CharacterAbilities, WeaponRow } from '../types/character'
+import { signedNum } from './formatBonus'
 
 export function abilityModifier(score: number): number {
   return Math.floor((score - 10) / 2)
@@ -48,7 +49,5 @@ export function formatWeaponDamage(
 ): string {
   const dice = damageDice.trim()
   if (damageAbility === null) return dice
-  const m = abilityModifier(abilities[damageAbility])
-  const sign = m >= 0 ? '+' : ''
-  return `${dice} ${sign}${m}`
+  return `${dice} ${signedNum(abilityModifier(abilities[damageAbility]))}`
 }
