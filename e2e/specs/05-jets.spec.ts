@@ -245,3 +245,40 @@ test("le log de campagne du MJ montre les deux dés de l'avantage", async ({ bro
     await joueur.close()
   }
 })
+
+// Le MJ lance derrière son écran : ses dés ne sortent jamais chez les joueurs,
+// ni dans le log, ni en dé distant — même quand il ne joue pas un monstre.
+test('les dés du MJ restent invisibles pour les joueurs', async ({ browser }) => {
+  const mj = await browser.newContext({ storageState: stateFor('mj-dev') })
+  const joueur = await browser.newContext({ storageState: stateFor('bracco') })
+  const pageMj = await mj.newPage()
+  const pageJoueur = await joueur.newPage()
+
+  try {
+    await pageJoueur.goto('/personnage')
+    await pageJoueur.getByTitle('Historique des jets').click()
+    await expect(pageJoueur.getByTestId('roll-log')).toBeVisible()
+    const avant = await pageJoueur.getByTestId('roll-log-entry').count()
+
+    await pageMj.goto('/personnage')
+    await pageMj.getByTitle('Lancer des dés').click()
+    await pageMj.getByTestId('die-d20').click()
+
+    // Le joueur lance à son tour : quand SON jet arrive, celui du MJ serait
+    // déjà passé s'il devait passer. Pas de waitForTimeout.
+    await pageJoueur.getByTitle('Lancer des dés').click()
+    await pageJoueur.getByTestId('die-d20').click()
+    await expect(pageJoueur.getByTestId('roll-log-entry')).toHaveCount(avant + 1, {
+      timeout: 15_000,
+    })
+    await expect(pageJoueur.getByTestId('roll-log').getByText('MJ')).toHaveCount(0)
+    await expect(pageJoueur.getByTestId('remote-die-label')).toHaveCount(0)
+
+    // Côté MJ, son jet est bien là, marqué « MJ uniquement ».
+    await pageMj.getByTitle('Historique des jets').click()
+    await expect(pageMj.getByTestId('roll-log').getByText('MJ').first()).toBeVisible()
+  } finally {
+    await mj.close()
+    await joueur.close()
+  }
+})

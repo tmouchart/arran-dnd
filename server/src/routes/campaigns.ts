@@ -660,10 +660,12 @@ router.post('/:id/rolls', async (req, res) => {
   const isGm = userId === check.gmUserId
 
   // actorName imposé par le serveur (anti-usurpation) : nom du personnage du
-  // membre, ou nom du monstre pour le MJ (jet visible MJ seulement).
+  // membre, ou nom du monstre pour le MJ.
+  // Tout jet lancé par le MJ est caché — monstre ou pas. Un dé du MJ derrière
+  // son écran ne doit jamais s'afficher chez les joueurs.
   let actorName: string
   let actorKind: 'player' | 'monster' = 'player'
-  let visibility: 'public' | 'gm' = 'public'
+  let visibility: 'public' | 'gm' = isGm ? 'gm' : 'public'
   if (body.asMonster) {
     if (!isGm) { res.status(403).json({ error: 'Réservé au MJ' }); return }
     actorName = String(body.asMonster)
