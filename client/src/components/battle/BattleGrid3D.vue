@@ -42,8 +42,6 @@ const props = defineProps<{
   environment?: string
   /** Damier bien visible par-dessus le sol. Éteint par défaut. */
   showGrid?: boolean
-  /** Mode table : personne ne bouge rien, la carte se regarde. */
-  readonly?: boolean
   /** Les murs posés sur la carte (voir `walls.ts`). */
   walls?: BattleWall[]
   /** Mode mur : un doigt trace au lieu de déplacer la carte. MJ seulement. */
@@ -57,11 +55,14 @@ const emit = defineEmits<{
   (e: 'select', id: string | null): void
   /** Un pion qu'on n'a pas le droit de bouger a été touché. */
   (e: 'denied', id: string): void
+  /** Le doigt s'est levé : voici le tracé nettoyé. */
+  (e: 'draw-wall', points: WallPoint[]): void
+  /** Un mur a été touché en mode mur. */
+  (e: 'erase-wall', id: string): void
 }>()
 
 /** Seul le MJ déplace les monstres. Les héros, tout le monde. */
 function canMove(token: BattleToken): boolean {
-  if (props.readonly) return false
   return token.kind === 'hero' || !!props.isGm
 }
 
@@ -435,7 +436,7 @@ function buildToken(t: BattleToken): TokenView {
   shadow.position.y = 0.01
   group.add(shadow)
 
-  // Anneau d'état : doré et pulsant au tour du pion, blanc à la sélection.
+  // Anneau d'état : il pulse au tour du pion, il passe au blanc à la sélection.
   const ring = new THREE.Mesh(
     new THREE.RingGeometry(radius * 1.6, radius * 1.95, 40),
     new THREE.MeshBasicMaterial({
@@ -1011,13 +1012,15 @@ function frame() {
       // Petit saut : le pion se soulève puis se repose.
       v.group.position.y = Math.sin(e * Math.PI) * 0.25
     }
+    // La sélection donne la couleur, le tour donne la pulsation. Sur le pion
+    // actif les deux se cumulent : sans ça, sélectionner celui dont c'est le
+    // tour ne se voyait pas du tout, le doré passant devant le blanc.
+    const selected = selectedId.value === id
+    const active = props.activeId === id
     const mat = v.ring.material as THREE.MeshBasicMaterial
-    if (props.activeId === id) {
-      mat.color.set(0xf0c060)
-      mat.opacity = 0.55 + Math.sin(time * 3) * 0.3
-    } else if (selectedId.value === id) {
-      mat.color.set(0xffffff)
-      mat.opacity = 0.85
+    if (selected || active) {
+      mat.color.set(selected ? 0xffffff : 0xf0c060)
+      mat.opacity = active ? 0.55 + Math.sin(time * 3) * 0.3 : 0.85
     } else {
       mat.opacity = 0
     }

@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { X, Tv } from 'lucide-vue-next'
 import BattleGrid3D from '../components/battle/BattleGrid3D.vue'
-import { buildTokens } from '../components/battle/tokens'
+import { useTokenMoves } from '../components/battle/useTokenMoves'
 import ViewerInitiative from '../components/viewer/ViewerInitiative.vue'
 import ViewerFeed from '../components/viewer/ViewerFeed.vue'
 import AppIconBtn from '../components/ui/AppIconBtn.vue'
@@ -15,6 +15,7 @@ import { useCombat } from '../composables/useCombat'
 import { useCampaignRolls } from '../composables/useCampaignRolls'
 import { viewerArea } from '../composables/useDice3D'
 import { useWakeLock } from '../composables/useWakeLock'
+import { showToast } from '../composables/useToast'
 
 /**
  * Mode table : la tablette posée au milieu, que personne ne touche.
@@ -22,6 +23,9 @@ import { useWakeLock } from '../composables/useWakeLock'
  * Carte à gauche, ordre du tour et fil d'actions à droite. Les dés de tout le
  * monde tombent sur la carte (voir `viewerArea`). Le serveur nous traite en
  * joueur (`as=viewer`), même avec le compte du MJ : rien de secret ne sort.
+ *
+ * On y bouge les pions des PJ au doigt, comme sur une vraie table. Les monstres
+ * restent au MJ, sur son téléphone : la tablette n'est jamais MJ.
  *
  * Pas d'`AppPageLayout` : comme la page de login, cette page n'a ni barre ni
  * largeur maximale, elle occupe tout l'écran.
@@ -51,7 +55,7 @@ watch(
 )
 
 const inCombat = computed(() => !!combat.value && combat.value.status === 'active')
-const tokens = computed(() => (combat.value ? buildTokens(combat.value.participants) : []))
+const { tokens, onMove } = useTokenMoves(() => combat.value)
 const activeId = computed(() => (currentParticipant.value ? String(currentParticipant.value.id) : null))
 
 // ── Zone de chute des dés = la carte (ou l'écran de veille) ─────────────
@@ -132,7 +136,9 @@ onBeforeUnmount(() => {
             :tokens="tokens"
             :active-id="activeId"
             :environment="combat.environment"
-            readonly
+            :walls="combat.obstacles"
+            @move="onMove"
+            @denied="showToast('Seul le MJ déplace les monstres.')"
           />
           <div class="turn-banner" aria-live="polite">
             <span class="turn-label">Tour de</span>
