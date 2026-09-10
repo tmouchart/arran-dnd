@@ -7,7 +7,7 @@ function roll(over: Partial<RollEvent>): RollEvent {
     id: 1, campaignId: 1, combatId: null, userId: 1,
     actorName: 'Thorin', actorKind: 'player', visibility: 'public',
     kind: 'weapon', label: 'Épée', context: 'actions',
-    die: 12, sides: 20, bonus: 3, total: 15, rolls: null, damage: null,
+    die: 12, sides: 20, bonus: 3, total: 15, rolls: null, dropped: null, damage: null,
     createdAt: '2026-08-13T10:00:00Z',
     ...over,
   }
@@ -54,6 +54,27 @@ describe('remoteDiceFor', () => {
       { sides: 6, value: 2, kind: 'libre' },
       { sides: 6, value: 5, kind: 'libre' },
       { sides: 6, value: 6, kind: 'libre' },
+    ])
+  })
+
+  it('un avantage fait rouler le dé écarté, marqué', () => {
+    expect(remoteDiceFor(roll({ die: 17, sides: 20, kind: 'weapon', dropped: [4] }))).toEqual([
+      { sides: 20, value: 17, kind: 'weapon' },
+      { sides: 20, value: 4, kind: 'weapon', dropped: true },
+    ])
+  })
+
+  it('sans dé écarté, rien ne change', () => {
+    expect(remoteDiceFor(roll({ die: 12, dropped: null }))).toEqual([
+      { sides: 20, value: 12, kind: 'weapon' },
+    ])
+  })
+
+  it("les dés qui s'additionnent ne sont pas des dés écartés", () => {
+    expect(remoteDiceFor(roll({ die: 0, sides: 6, kind: 'libre', rolls: [2, 5], dropped: [1] }))).toEqual([
+      { sides: 6, value: 2, kind: 'libre' },
+      { sides: 6, value: 5, kind: 'libre' },
+      { sides: 6, value: 1, kind: 'libre', dropped: true },
     ])
   })
 })

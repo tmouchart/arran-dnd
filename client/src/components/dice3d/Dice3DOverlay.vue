@@ -49,6 +49,12 @@ interface Effect {
   dispose: () => void
 }
 
+/** Une face tirée, telle qu'elle s'écrit dans l'étiquette. Un dé écarté est barré. */
+interface ResultPart {
+  value: number
+  dropped: boolean
+}
+
 interface Show {
   id: number
   remote: boolean
@@ -57,8 +63,17 @@ interface Show {
   /** Couleur dominante du corps, pour que le flash d'un critique reste dans le ton. */
   color?: string
   /** Les faces tirées, affichées dans l'étiquette une fois le dé posé. */
-  result: string
-  dice: { mesh: Mesh; motion: Motion; scale: number; outcome: RollOutcome }[]
+  result: ResultPart[]
+  dice: {
+    mesh: Mesh
+    motion: Motion
+    scale: number
+    outcome: RollOutcome
+    /** Ce dé a été lancé puis jeté : il se rétracte et se ternit en se posant. */
+    dropped: boolean
+    /** Copie du matériau, pour ne ternir que ce dé-là. Null s'il est gardé. */
+    material: import('three').MeshStandardMaterial | null
+  }[]
   startedAt: number
   landed: boolean
   landedAt: number
@@ -79,7 +94,7 @@ interface Label {
   x: number
   y: number
   /** Vide tant que le dé vole : un petit dé de 45 px ne se lit pas, le chiffre si. */
-  result: string
+  result: ResultPart[]
   outcome: RollOutcome
   fading: boolean
 }
@@ -99,6 +114,14 @@ const VIEWER = { holdMs: 4500, fadeMs: 500, speed: 0.85 }
 const EFFECT_MS = 900
 /** Jets distants en attente d'un emplacement libre. Au-delà, on oublie. */
 const MAX_QUEUE = 8
+/**
+ * Le dé écarté : une fois posé, il se rétracte à 65 % et se ternit vers le gris.
+ * Il roule comme les autres — c'est à l'arrivée qu'on doit voir, sans lire,
+ * lequel des deux compte.
+ */
+const DROPPED_SCALE = 0.65
+const DROPPED_GREY = 0.55
+const DROPPED_MS = 280
 
 let three: Three | null = null
 let motionApi: typeof import('../../utils/dice3d/motion') | null = null
@@ -358,7 +381,7 @@ async function launch(
     remote,
     slot,
     color: request.style ? dominantColor(request.style) : undefined,
-    result: request.rolls.map((r) => r.value).join(' · '),
+    result: request.rolls.map((r) => ({ value: r.value, dropped: !!r.dropped })),
     dice: [],
     startedAt: 0,
     landed: false,
@@ -386,7 +409,13 @@ async function launch(
     })
     motion.duration *= timing.speed
     mesh.scale.setScalar(scale)
-    show.dice.push({ mesh, motion, scale, outcome: die.outcome })
+    // Le matériau est partagé par tous les dés d'une même forme : sans copie,
+    // ternir le dé écarté ternirait aussi celui qu'on garde.
+    const material = die.dropped
+      ? (mesh.material as import('three').MeshStandardMaterial).clone()
+      : null
+    if (material) mesh.material = material
+    show.dice.push({ mesh, motion, scale, outcome: die.outcome, dropped: !!die.dropped, material })
   }
 
   // Pendant le chargement des textures, un lancer à moi plus récent a pu
@@ -442,7 +471,7 @@ async function startRemote(request: RemoteDiceRequest) {
     color: dominantColor(request.style),
     x: at.x,
     y: at.y,
-    result: '',
+    result: [],
     outcome: null,
     fading: false,
   })
@@ -485,7 +514,17 @@ function tick(now: number) {
       const sample = motionApi!.sampleMotion(die.motion, t)
       die.mesh.position.copy(sample.position)
       die.mesh.quaternion.copy(sample.quaternion)
-      die.mesh.scale.setScalar(die.scale * sample.scale * fade)
+      // Un dé écarté se rétracte et se ternit en se posant : on voit lequel
+      // compte sans avoir à lire les chiffres.
+      const drop = die.dropped && show.landed
+        ? 1 - (1 - Math.min(1, (now - show.landedAt) / DROPPED_MS)) ** 2
+        : 0
+      die.mesh.scale.setScalar(die.scale * sample.scale * fade * (1 - drop * (1 - DROPPED_SCALE)))
+      if (die.material) {
+        die.material.color.setScalar(1 - drop * (1 - DROPPED_GREY))
+        die.material.metalness = 0.28 * (1 - drop)
+        die.material.roughness = 0.34 + drop * 0.5
+      }
     }
 
     // Le dernier dé vient de se poser : on libère le résultat et on allume les
@@ -583,8 +622,12 @@ function onPointerDown() {
 function release(show: Show) {
   if (show.fadeTimer) window.clearTimeout(show.fadeTimer)
   for (const effect of show.effects) effect.dispose()
-  // Géométries, textures et liseré sont partagés : on ne détache que les objets
-  for (const die of show.dice) scene?.remove(die.mesh)
+  // Géométries, textures et liseré sont partagés : on ne détache que les objets.
+  // La copie de matériau d'un dé écarté, elle, n'appartient qu'à ce show.
+  for (const die of show.dice) {
+    scene?.remove(die.mesh)
+    die.material?.dispose()
+  }
   shows = shows.filter((s) => s !== show)
   labels.value = labels.value.filter((l) => l.id !== show.id)
 
@@ -656,10 +699,13 @@ onBeforeUnmount(() => {
       <span class="dice-label-dot" :style="{ background: label.color }" />
       <span class="dice-label-name">{{ label.name }}</span>
       <span
-        v-if="label.result"
+        v-if="label.result.length"
         class="dice-label-result"
         :class="label.outcome && `dice-label-result--${label.outcome}`"
-      >{{ label.result }}</span>
+      ><template v-for="(part, i) in label.result" :key="i"><span
+        v-if="i"
+        class="dice-label-sep"
+      >·</span><span :class="{ 'is-dropped': part.dropped }">{{ part.value }}</span></template></span>
     </span>
   </div>
 </template>
@@ -727,6 +773,19 @@ onBeforeUnmount(() => {
 
 .dice-label-result--critical { color: var(--accent-strong); }
 .dice-label-result--fumble { color: var(--danger); }
+
+/* Le dé écarté : barré, en retrait, plus petit. Le gardé reste seul en avant. */
+.dice-label-result .is-dropped {
+  color: var(--muted);
+  text-decoration: line-through;
+  font-size: 0.72em;
+}
+
+.dice-label-sep {
+  margin: 0 0.18em;
+  color: var(--muted);
+  font-size: 0.6em;
+}
 
 /* Mode table : lu à un mètre, tout est plus grand */
 .dice-label.is-viewer {

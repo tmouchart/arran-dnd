@@ -24,6 +24,8 @@ export interface RollEntry {
   total: number
   /** Individual die results when several dice were rolled (sandbox 'libre'). */
   rolls?: number[]
+  /** Les dés lancés puis écartés par un avantage. Jamais dans le total. */
+  dropped?: number[]
   /** Extra damage info (weapons only) */
   damage?: { total: number; critical: boolean; fumble: boolean }
 }
@@ -84,6 +86,7 @@ export function useRollHistory() {
         bonus: entry.bonus,
         total: entry.total,
         rolls: entry.rolls,
+        dropped: entry.dropped,
         damage: entry.damage,
       }).catch(() => { /* silencieux */ })
     }

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { parseDiceNotation, rollDie, rollDiceNotation } from './dice'
+import { parseDiceNotation, rollDie, rollDiceNotation, rollKeep } from './dice'
 
 // ── parseDiceNotation ────────────────────────────────────────────────────────
 
@@ -130,6 +130,56 @@ describe('rollDiceNotation', () => {
     const result = rollDiceNotation('1d8-2', 5)
     expect(result.modifier).toBe(3)
     expect(result.total).toBe(1 + 3)
+    spy.mockRestore()
+  })
+})
+
+// ── rollKeep ─────────────────────────────────────────────────────────────────
+
+/** Enchaîne des tirages précis : 0.05 -> 2 sur un d20 (Math.floor(0.05*20)+1). */
+function mockRolls(values: number[], sides: number) {
+  const seq = values.map(v => (v - 1) / sides)
+  let i = 0
+  return vi.spyOn(Math, 'random').mockImplementation(() => seq[i++])
+}
+
+describe('rollKeep', () => {
+  it("garde le meilleur des deux dés et écarte l'autre", () => {
+    const spy = mockRolls([7, 17], 20)
+    expect(rollKeep(20, 2, 'high')).toEqual({ kept: 17, dropped: [7] })
+    spy.mockRestore()
+  })
+
+  it('garde le meilleur même quand il sort en premier', () => {
+    const spy = mockRolls([17, 7], 20)
+    expect(rollKeep(20, 2, 'high')).toEqual({ kept: 17, dropped: [7] })
+    spy.mockRestore()
+  })
+
+  it('garde le pire en désavantage', () => {
+    const spy = mockRolls([7, 17], 20)
+    expect(rollKeep(20, 2, 'low')).toEqual({ kept: 7, dropped: [17] })
+    spy.mockRestore()
+  })
+
+  it("un seul dé : rien d'écarté", () => {
+    const spy = mockRolls([13], 20)
+    expect(rollKeep(20)).toEqual({ kept: 13, dropped: [] })
+    spy.mockRestore()
+  })
+
+  it("en cas d'égalité, garde le premier et écarte le second", () => {
+    const spy = mockRolls([17, 17], 20)
+    expect(rollKeep(20, 2, 'high')).toEqual({ kept: 17, dropped: [17] })
+    spy.mockRestore()
+    const low = mockRolls([17, 17], 20)
+    expect(rollKeep(20, 2, 'low')).toEqual({ kept: 17, dropped: [17] })
+    low.mockRestore()
+  })
+
+  it('garde un dé parmi trois', () => {
+    const spy = mockRolls([4, 19, 11], 20)
+    expect(rollKeep(20, 3, 'high')).toEqual({ kept: 19, dropped: [4, 11] })
     spy.mockRestore()
   })
 })

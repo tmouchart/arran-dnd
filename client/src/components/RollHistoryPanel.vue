@@ -6,6 +6,7 @@ import AppButton from './ui/AppButton.vue'
 import AppIconBtn from './ui/AppIconBtn.vue'
 import { useRollHistory, type RollKind, type RollEntry } from '../composables/useRollHistory'
 import { rollOutcome } from '../utils/rollOutcome'
+import { rollDetailParts } from '../utils/rollDetail'
 
 const props = withDefaults(defineProps<{ alwaysOpen?: boolean }>(), { alwaysOpen: false })
 
@@ -42,6 +43,11 @@ const d20Avg = computed(() => {
 function formatTime(ts: number): string {
   const d = new Date(ts)
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
+/** Le détail chiffré, partagé avec le log de campagne. */
+function detail(entry: RollEntry) {
+  return rollDetailParts(entry)
 }
 
 function entryClass(entry: Pick<RollEntry, 'kind' | 'die' | 'sides' | 'damage'>): string {
@@ -100,8 +106,14 @@ function entryClass(entry: Pick<RollEntry, 'kind' | 'die' | 'sides' | 'damage'>)
           <span class="entry-time">{{ formatTime(entry.timestamp) }}</span>
           <span class="entry-kind">{{ KIND_LABELS[entry.kind] }}</span>
           <span class="entry-label">{{ entry.label }}</span>
-          <span v-if="entry.rolls && entry.rolls.length > 1" class="entry-die">{{ entry.rolls.length }}d{{ entry.sides }}={{ entry.rolls.join('+') }}</span>
-          <span v-else class="entry-die">d{{ entry.sides }}={{ entry.die }}</span>
+          <span class="entry-die"
+            >{{ detail(entry).label }}={{ detail(entry).kept.join('+') }}<span
+              v-for="(d, i) in detail(entry).dropped"
+              :key="i"
+              class="entry-dropped"
+              >{{ d }}</span
+            ></span
+          >
           <span class="entry-total">
             →
             <Star v-if="rollOutcome(entry) === 'critical'" :size="13" class="entry-mark" />
@@ -190,6 +202,8 @@ function entryClass(entry: Pick<RollEntry, 'kind' | 'die' | 'sides' | 'damage'>)
 .entry-kind   { background: var(--surface-2); padding: 0.05rem 0.35rem; border-radius: var(--radius-sm); font-size: 0.72rem; flex-shrink: 0; }
 .entry-label  { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .entry-die    { color: var(--muted); font-size: 0.75rem; flex-shrink: 0; }
+/* Le dé écarté par un avantage reste visible, mais barré */
+.entry-dropped { margin-left: 0.28rem; color: var(--muted); text-decoration: line-through; }
 .entry-total  { flex-shrink: 0; display: inline-flex; align-items: center; gap: 0.2rem; }
 .entry-dmg    { font-size: 0.75rem; opacity: 0.8; flex-shrink: 0; }
 

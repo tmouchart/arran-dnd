@@ -199,6 +199,8 @@ export interface RollEvent {
   bonus: number
   total: number
   rolls: number[] | null
+  /** Les dés lancés puis écartés par un avantage ou une relance. */
+  dropped: number[] | null
   damage: { total: number; critical: boolean; fumble: boolean } | null
   createdAt: string
   /** Style de dé du lanceur. Présent sur le flux SSE seulement, pas en base. */
@@ -214,6 +216,8 @@ export interface RollInput {
   bonus: number
   total: number
   rolls?: number[]
+  /** Les dés lancés puis écartés par un avantage ou une relance. */
+  dropped?: number[]
   damage?: { total: number; critical: boolean; fumble: boolean }
   /** MJ uniquement : poste le jet au nom d'un monstre (visible MJ seulement) */
   asMonster?: string

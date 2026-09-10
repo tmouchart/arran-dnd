@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Sparkles, Skull, EyeOff } from 'lucide-vue-next'
+import { Sparkles, Skull, EyeOff, Dices } from 'lucide-vue-next'
 import { feed } from '../../composables/useViewerFeed'
 
 /**
@@ -33,7 +33,10 @@ import { feed } from '../../composables/useViewerFeed'
           <span class="label">{{ line.label }}</span>
           <span v-if="line.damage != null" class="damage"> → {{ line.damage }} dégâts</span>
         </span>
-        <span v-if="line.total != null" class="total">{{ line.total }}</span>
+        <span v-if="line.total != null" class="total">
+          <!-- Avantage : une marque, pas le détail des dés — ce fil se lit à un mètre -->
+          <Dices v-if="line.advantage" class="advantage" :size="18" />{{ line.total }}
+        </span>
         <span v-else class="total total-secret">?</span>
       </li>
     </TransitionGroup>
@@ -133,6 +136,12 @@ import { feed } from '../../composables/useViewerFeed'
 
 .line.critical .total { color: var(--accent-strong); }
 .line.fumble .total { color: var(--danger); }
+
+.advantage {
+  color: var(--muted);
+  margin-right: var(--space-xs);
+  vertical-align: middle;
+}
 
 .total-secret {
   color: var(--muted);

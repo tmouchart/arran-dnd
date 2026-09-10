@@ -650,7 +650,7 @@ router.post('/:id/rolls', async (req, res) => {
   const body = req.body as {
     kind?: string; label?: string; context?: string
     die?: number; sides?: number; bonus?: number; total?: number
-    rolls?: number[]; damage?: { total: number; critical: boolean; fumble: boolean }
+    rolls?: number[]; dropped?: number[]; damage?: { total: number; critical: boolean; fumble: boolean }
     asMonster?: string
   }
   if (typeof body.die !== 'number' || typeof body.sides !== 'number' || typeof body.total !== 'number') {
@@ -703,6 +703,7 @@ router.post('/:id/rolls', async (req, res) => {
     bonus: Math.round(body.bonus ?? 0),
     total: Math.round(body.total),
     rolls: Array.isArray(body.rolls) ? body.rolls : null,
+    dropped: Array.isArray(body.dropped) ? body.dropped : null,
     damage: body.damage ?? null,
   }).returning()
 

@@ -4,6 +4,8 @@ import { EyeOff, Swords, ScrollText, Dices, HeartCrack, Zap, Star, Skull } from 
 import AppEmptyState from '../ui/AppEmptyState.vue'
 import type { RollEvent } from '../../api/campaigns'
 import { rollOutcome } from '../../utils/rollOutcome'
+import { signedNum } from '../../utils/formatBonus'
+import { rollDetailParts } from '../../utils/rollDetail'
 
 // Composant unique MJ/joueurs : il affiche la liste reçue telle quelle.
 // Le MJ voit plus d'entrées uniquement parce que le serveur lui en envoie plus.
@@ -66,18 +68,8 @@ const groups = computed<Group[]>(() => {
   return out
 })
 
-function signed(n: number): string {
-  return n >= 0 ? `+${n}` : String(n)
-}
-
-function detail(r: RollEvent): string {
-  if (r.rolls && r.rolls.length > 1) {
-    const base = `${r.rolls.length}d${r.sides} = ${r.rolls.join('+')}`
-    return r.bonus !== 0 ? `${base} ${signed(r.bonus)}` : base
-  }
-  return r.bonus !== 0
-    ? `d${r.sides} = ${r.die} ${signed(r.bonus)}`
-    : `d${r.sides} = ${r.die}`
+function detail(r: RollEvent) {
+  return rollDetailParts(r)
 }
 
 function relativeTime(r: RollEvent): string {
@@ -140,7 +132,14 @@ function absoluteTime(r: RollEvent): string {
               </span>
             </div>
             <div class="log-detail">
-              {{ detail(r) }}<template v-if="r.damage"> · dégâts {{ r.damage.total }}</template>
+              {{ detail(r).label }} = {{ detail(r).kept.join('+') }}<span
+                v-for="(d, i) in detail(r).dropped"
+                :key="i"
+                class="log-dropped"
+                data-testid="roll-log-dropped"
+                >{{ ' ' + d }}</span
+              ><template v-if="r.bonus !== 0">{{ ' ' + signedNum(r.bonus) }}</template
+              ><template v-if="r.damage">{{ ' · dégâts ' + r.damage.total }}</template>
             </div>
           </div>
           <div class="log-total">
@@ -297,6 +296,14 @@ function absoluteTime(r: RollEvent): string {
   font-family: var(--mono-font, monospace);
   font-size: 0.74rem;
   color: var(--muted);
+}
+
+/* Le dé écarté par un avantage reste visible, mais barré. L'espace qui le
+   sépare du dé gardé est dans le texte, pas en marge : sinon le log se lit
+   « d20 = 174 » à voix haute. */
+.log-dropped {
+  color: var(--muted);
+  text-decoration: line-through;
 }
 
 .log-total {

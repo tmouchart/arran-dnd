@@ -12,7 +12,8 @@ import AppToggleGroup, { type AppToggleItem } from "../components/ui/AppToggleGr
 import PassifsCard from "../components/character-sheet/PassifsCard.vue";
 import AffaibliPill from "../components/AffaibliPill.vue";
 import { useCharacter, loadCharacter, PR_MAX } from "../composables/useCharacter";
-import { VOIES_BY_ID, type VoieFamily } from "../data/voies";
+import { VOIES_BY_ID, type AbilityKey, type VoieFamily } from "../data/voies";
+import { pathEffects, unlockedCapacites } from "../composables/usePathEffects";
 import { PEUPLE_VOIES_BY_ID } from "../data/peuples";
 import { MYSTIC_TALENTS_BY_ID, isMysticTalentId } from "../data/mysticTalents";
 import { inferProfileFamily } from "../utils/inferProfileFamily";
@@ -20,8 +21,11 @@ import {
   formatWeaponDamage,
   isMartialWeaponProficient,
 } from "../utils/attackBonus";
-import { rollDie, rollDiceNotation } from "../utils/dice";
-import { dice, revealAfterDice } from "../composables/useDice3D";
+import { rollDie, rollDiceNotation, rollKeep, type KeptRoll } from "../utils/dice";
+import { signedNum, bonusDisplay } from "../utils/formatBonus";
+import { effectiveAbilities } from "../utils/characterStats";
+import { dice, revealAfterDice, type DieRoll } from "../composables/useDice3D";
+import RollDetail, { rollResultClass } from "../components/RollDetail.vue";
 import { MARTIAL_WEAPON_CATEGORY_BY_ID } from "../data/martialWeaponCategories";
 import { useRollHistory } from "../composables/useRollHistory";
 import { useDualWield, type SingleHandRoll } from "../composables/useDualWield";
@@ -55,6 +59,11 @@ function retryLoad() {
 }
 
 const profileFamily = computed(() => inferProfileFamily(character.value.paths));
+
+/** Les passifs des voies débloquées : le +2 de carac et l'avantage aux tests. */
+const passives = computed(() => pathEffects(character.value.paths));
+/** Les caracs telles qu'on les teste : score de base + passifs. */
+const abilities = computed(() => effectiveAbilities(character.value));
 const { payPm } = useSpellCast(character, profileFamily);
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -71,6 +80,8 @@ interface Action {
   voieFamily?: VoieFamily;
   /** CO: PM = rang du sort. Only set for voies mystiques (talents magiques = pas de PM). */
   pmCost: number | null;
+  /** 2d20 sur le jet de cette action, on garde le meilleur. */
+  attackAdvantage?: boolean;
 }
 
 // ── Inférence depuis la description ──────────────────────────────────────────
@@ -217,22 +228,18 @@ const baseRuleActionsList = computed<Action[]>(() => {
 
 const voieActions = computed<Action[]>(() => {
   const result: Action[] = [];
-  for (const path of character.value.paths) {
-    const voie = VOIES_BY_ID[path.id ?? ""];
-    if (!voie) continue;
-    voie.capacites.forEach((cap, ci) => {
-      if (path.rank > ci && cap.active) {
-        const spellRank = ci + 1;
-        result.push({
-          name: cap.name,
-          description: cap.description,
-          actionType: inferActionType(cap.description),
-          attackType: inferAttackType(cap.description),
-          source: voie.name,
-          voieFamily: voie.family,
-          pmCost: voie.family === "mystiques" ? spellRank : null,
-        });
-      }
+  for (const { capacite, rank, voie } of unlockedCapacites(character.value.paths)) {
+    // Seules les voies de profil alimentent la liste d'actions.
+    if (!capacite.active || !("family" in voie)) continue;
+    result.push({
+      name: capacite.name,
+      description: capacite.description,
+      actionType: inferActionType(capacite.description),
+      attackType: inferAttackType(capacite.description),
+      source: voie.name,
+      voieFamily: voie.family,
+      pmCost: voie.family === "mystiques" ? rank : null,
+      attackAdvantage: capacite.effects?.some((e) => e.kind === "attackAdvantage"),
     });
   }
   return result;
@@ -304,8 +311,7 @@ const ABILITY_LABELS: { key: keyof typeof character.value.abilities; label: stri
 ];
 
 function modDisplay(score: number): string {
-  const m = abilityModifier(score);
-  return m >= 0 ? `+${m}` : String(m);
+  return signedNum(abilityModifier(score));
 }
 
 // ── Manoeuvres ────────────────────────────────────────────────────────────────
@@ -398,11 +404,6 @@ function attackTypeLabel(t: AttackType): string {
   return "";
 }
 
-function bonusDisplay(bonus: number | null): string {
-  if (bonus === null) return "—";
-  return bonus >= 0 ? `+${bonus}` : String(bonus);
-}
-
 function familyClass(family?: VoieFamily): string {
   if (family === "combattants") return "family-combattants";
   if (family === "aventuriers") return "family-aventuriers";
@@ -418,6 +419,8 @@ interface WeaponRollResult {
   attackSides: number;
   attackBonus: number;
   attackTotal: number;
+  /** Les dés lancés puis écartés : avantage, ou dé relancé par la chance. */
+  attackDropped?: number[];
   damageDice: string;
   damageRolls: number[];
   damageModifier: number;
@@ -430,7 +433,32 @@ interface ActionRollResult {
   attackSides: number;
   attackBonus: number;
   attackTotal: number;
+  /** Les dés lancés puis écartés : avantage, ou dé relancé par la chance. */
+  attackDropped?: number[];
   luckUsed: boolean;
+}
+
+/**
+ * Le seul point de lancer de la vue : on tire, les dés roulent, puis on révèle.
+ *
+ * Avec l'avantage on lance 2d20 et on garde le meilleur ; le dé écarté roule
+ * quand même — il ne compte pas (ni critique ni total) mais reste visible.
+ *
+ * Sans avantage, `dropped` reste absent : le jet part et s'affiche comme avant.
+ */
+function rollAndReveal(
+  sides: number,
+  advantage: boolean,
+  reveal: (r: { kept: number; dropped?: number[] }) => void,
+) {
+  const roll: KeptRoll = rollKeep(sides, advantage ? 2 : 1);
+  const rolls: DieRoll[] = [
+    { sides, value: roll.kept, kind: 'weapon' },
+    ...roll.dropped.map((value) => ({ sides, value, kind: 'weapon', dropped: true })),
+  ];
+  revealAfterDice(rolls, () =>
+    reveal({ kept: roll.kept, dropped: roll.dropped.length ? roll.dropped : undefined }),
+  );
 }
 
 const weaponRolls = reactive<Record<string, WeaponRollResult>>({});
@@ -444,20 +472,22 @@ function rollWeapon(item: (typeof weaponBubbles.value)[number], forcedSides?: nu
   const effectiveBonus = weaponAttackBonus(item.w);
   const incompetentPenalty = item.incompetent ? -3 : 0;
   const attackBonus = effectiveBonus + incompetentPenalty;
-  const attackDie = rollDie(attackSides);
-  const attackTotal = attackDie + attackBonus;
 
   const damageAbilityMod = item.w.damageAbility
-    ? abilityModifier(character.value.abilities[item.w.damageAbility])
+    ? abilityModifier(abilities.value[item.w.damageAbility])
     : 0;
   const dmg = rollDiceNotation(item.w.damageDice, damageAbilityMod);
 
-  revealAfterDice(dice(attackSides, [attackDie]), () => {
+  // Pas d'avantage sur une attaque d'arme : la règle ne le donne qu'aux tests
+  // de caractéristique.
+  rollAndReveal(attackSides, false, ({ kept: attackDie, dropped }) => {
+    const attackTotal = attackDie + attackBonus;
     weaponRolls[item.w.id] = {
       attackDie,
       attackSides,
       attackBonus,
       attackTotal,
+      attackDropped: dropped,
       damageDice: item.w.damageDice,
       damageRolls: dmg.rolls,
       damageModifier: damageAbilityMod,
@@ -472,6 +502,7 @@ function rollWeapon(item: (typeof weaponBubbles.value)[number], forcedSides?: nu
       sides: attackSides,
       bonus: attackBonus,
       total: attackTotal,
+      dropped,
       damage: { total: dmg.total, critical: attackDie === attackSides, fumble: attackDie === 1 },
     });
   });
@@ -529,14 +560,17 @@ function rollAction(action: Action) {
   paySpell(action);
 
   const attackSides = attackDieSides.value;
-  const attackDie = rollDie(attackSides);
   const key = actionKey(action);
-  revealAfterDice(dice(attackSides, [attackDie]), () => {
+  // L'avantage vient de la capacité elle-même (Attaque parfaite, Flèche de mort,
+  // Charge). L'attaque magique ajoute le Mod. INT mais n'est pas un test d'INT :
+  // elle ne prend jamais l'avantage permanent.
+  rollAndReveal(attackSides, action.attackAdvantage === true, ({ kept: attackDie, dropped }) => {
     actionRolls[key] = {
       attackDie,
       attackSides,
       attackBonus: bonus,
       attackTotal: attackDie + bonus,
+      attackDropped: dropped,
       luckUsed: false,
     };
     addRoll({
@@ -547,6 +581,7 @@ function rollAction(action: Action) {
       sides: attackSides,
       bonus,
       total: attackDie + bonus,
+      dropped,
     });
   });
 }
@@ -558,10 +593,12 @@ function spendLuck(roll: WeaponRollResult | ActionRollResult | SingleHandRoll, m
   character.value.pcCurrent = Math.max(0, character.value.pcCurrent - 1);
 
   if (mode === 'reroll') {
-    const die = rollDie(roll.attackSides);
-    revealAfterDice(dice(roll.attackSides, [die]), () => {
-      roll.attackDie = die;
-      roll.attackTotal = die + roll.attackBonus;
+    // La relance reste un choix du joueur : ce bouton, et rien d'autre.
+    rollAndReveal(roll.attackSides, false, ({ kept }) => {
+      // L'ancien dé n'est plus effacé : il rejoint les écartés et reste barré.
+      roll.attackDropped = [...(roll.attackDropped ?? []), roll.attackDie];
+      roll.attackDie = kept;
+      roll.attackTotal = kept + roll.attackBonus;
     });
   } else {
     roll.attackTotal += 10;
@@ -569,12 +606,11 @@ function spendLuck(roll: WeaponRollResult | ActionRollResult | SingleHandRoll, m
 }
 
 function rollAbility(key: string) {
-  const score = character.value.abilities[key as keyof typeof character.value.abilities];
-  const mod = abilityModifier(score);
+  const mod = abilityModifier(abilities.value[key as AbilityKey]);
   const sides = attackDieSides.value;
-  const die = rollDie(sides);
-  revealAfterDice(dice(sides, [die]), () => {
-    abilityRolls[key] = { attackDie: die, attackSides: sides, attackBonus: mod, attackTotal: die + mod, luckUsed: false };
+  // Le seul cas d'avantage permanent : un test de caractéristique.
+  rollAndReveal(sides, passives.value.advantage.has(key as AbilityKey), ({ kept: die, dropped }) => {
+    abilityRolls[key] = { attackDie: die, attackSides: sides, attackBonus: mod, attackTotal: die + mod, attackDropped: dropped, luckUsed: false };
     lastRolledAbilityKey.value = key;
     addRoll({
       characterName: character.value.name,
@@ -584,16 +620,17 @@ function rollAbility(key: string) {
       sides,
       bonus: mod,
       total: die + mod,
+      dropped,
     });
   });
 }
 
 function rollManoeuvre(name: string) {
   const sides = attackDieSides.value;
-  const die = rollDie(sides);
   const bonus = computedAttackContact.value;
-  revealAfterDice(dice(sides, [die]), () => {
-    manoeuverRolls[name] = { attackDie: die, attackSides: sides, attackBonus: bonus, attackTotal: die + bonus, luckUsed: false };
+  // Une manœuvre est un jet d'attaque, pas un test de carac : aucun avantage.
+  rollAndReveal(sides, false, ({ kept: die, dropped }) => {
+    manoeuverRolls[name] = { attackDie: die, attackSides: sides, attackBonus: bonus, attackTotal: die + bonus, attackDropped: dropped, luckUsed: false };
     addRoll({
       characterName: character.value.name,
       kind: 'manoeuvre',
@@ -602,6 +639,7 @@ function rollManoeuvre(name: string) {
       sides,
       bonus,
       total: die + bonus,
+      dropped,
     });
   });
 }
@@ -611,12 +649,13 @@ const competenceRolls = reactive<Record<string, ActionRollResult>>({});
 function rollCompetence(id: string) {
   const comp = character.value.competences.find((c) => c.id === id);
   if (!comp) return;
-  const abilityBonus = comp.ability ? abilityModifier(character.value.abilities[comp.ability]) : 0;
+  const abilityBonus = comp.ability ? abilityModifier(abilities.value[comp.ability]) : 0;
   const bonus = abilityBonus + comp.bonus;
   const sides = attackDieSides.value;
-  const die = rollDie(sides);
-  revealAfterDice(dice(sides, [die]), () => {
-    competenceRolls[id] = { attackDie: die, attackSides: sides, attackBonus: bonus, attackTotal: die + bonus, luckUsed: false };
+  // Une compétence sans carac associée n'a jamais l'avantage.
+  const advantage = !!comp.ability && passives.value.advantage.has(comp.ability);
+  rollAndReveal(sides, advantage, ({ kept: die, dropped }) => {
+    competenceRolls[id] = { attackDie: die, attackSides: sides, attackBonus: bonus, attackTotal: die + bonus, attackDropped: dropped, luckUsed: false };
     addRoll({
       characterName: character.value.name,
       kind: 'competence',
@@ -625,12 +664,9 @@ function rollCompetence(id: string) {
       sides,
       bonus,
       total: die + bonus,
+      dropped,
     });
   });
-}
-
-function signedNum(n: number): string {
-  return n >= 0 ? `+${n}` : String(n);
 }
 
 const showAgonie = ref(false)
@@ -773,25 +809,29 @@ function losePr() {
           :key="ab.key"
           class="ch-ability"
           role="button"
+          :data-testid="`ability-test-${ab.key}`"
           @click="rollAbility(ab.key)"
         >
           <span class="ch-ab-label">{{ ab.label }}</span>
-          <span class="ch-ab-mod" :class="abilityModifier(character.abilities[ab.key]) > 0 ? 'mod-pos' : abilityModifier(character.abilities[ab.key]) < 0 ? 'mod-neg' : 'mod-zero'">{{ modDisplay(character.abilities[ab.key]) }}</span>
-          <span class="ch-ab-score">{{ character.abilities[ab.key] }}</span>
+          <span class="ch-ab-mod" :class="abilityModifier(abilities[ab.key]) > 0 ? 'mod-pos' : abilityModifier(abilities[ab.key]) < 0 ? 'mod-neg' : 'mod-zero'">{{ modDisplay(abilities[ab.key]) }}</span>
+          <span class="ch-ab-score">{{ abilities[ab.key] }}</span>
         </div>
       </div>
       <div v-if="lastRolledAbilityKey && abilityRolls[lastRolledAbilityKey]" class="ability-roll-zone">
         <div
           class="roll-result"
-          :class="{
-            'roll-result--fumble': abilityRolls[lastRolledAbilityKey].attackDie === 1,
-            'roll-result--critical': abilityRolls[lastRolledAbilityKey].attackDie === abilityRolls[lastRolledAbilityKey].attackSides,
-          }"
+          :class="rollResultClass(abilityRolls[lastRolledAbilityKey])"
+          data-testid="ability-roll-result"
         >
           <span class="roll-result__attack">
             Test {{ ABILITY_LABELS.find(a => a.key === lastRolledAbilityKey)?.label }} :
             <strong>{{ abilityRolls[lastRolledAbilityKey].attackTotal }}</strong>
-            <span class="roll-result__detail">(d{{ abilityRolls[lastRolledAbilityKey].attackSides }} = {{ abilityRolls[lastRolledAbilityKey].attackDie }} {{ signedNum(abilityRolls[lastRolledAbilityKey].attackBonus) }})</span>
+            <RollDetail
+              :sides="abilityRolls[lastRolledAbilityKey].attackSides"
+              :die="abilityRolls[lastRolledAbilityKey].attackDie"
+              :dropped="abilityRolls[lastRolledAbilityKey].attackDropped"
+              :bonus="abilityRolls[lastRolledAbilityKey].attackBonus"
+            />
           </span>
           <span v-if="abilityRolls[lastRolledAbilityKey].attackDie === 1" class="roll-result__crit-label">Échec critique</span>
           <span v-else-if="abilityRolls[lastRolledAbilityKey].attackDie === abilityRolls[lastRolledAbilityKey].attackSides" class="roll-result__crit-label">Réussite critique</span>
@@ -868,14 +908,16 @@ function losePr() {
         <template v-if="weaponRolls[item.w.id]">
           <div
             class="roll-result"
-            :class="{
-              'roll-result--fumble': weaponRolls[item.w.id].attackDie === 1,
-              'roll-result--critical': weaponRolls[item.w.id].attackDie === weaponRolls[item.w.id].attackSides,
-            }"
+            :class="rollResultClass(weaponRolls[item.w.id])"
           >
             <span class="roll-result__attack">
               Attaque : <strong>{{ weaponRolls[item.w.id].attackTotal }}</strong>
-              <span class="roll-result__detail">(d{{ weaponRolls[item.w.id].attackSides }} = {{ weaponRolls[item.w.id].attackDie }} {{ signedNum(weaponRolls[item.w.id].attackBonus) }})</span>
+              <RollDetail
+                :sides="weaponRolls[item.w.id].attackSides"
+                :die="weaponRolls[item.w.id].attackDie"
+                :dropped="weaponRolls[item.w.id].attackDropped"
+                :bonus="weaponRolls[item.w.id].attackBonus"
+              />
             </span>
             <span v-if="weaponRolls[item.w.id].attackDie === 1" class="roll-result__crit-label">
               Échec critique
@@ -967,15 +1009,17 @@ function losePr() {
             <!-- Main directrice (d20) -->
             <div
               class="roll-result"
-              :class="{
-                'roll-result--fumble': dualWieldRoll.mainHand.attackDie === 1,
-                'roll-result--critical': dualWieldRoll.mainHand.attackDie === dualWieldRoll.mainHand.attackSides,
-              }"
+              :class="rollResultClass(dualWieldRoll.mainHand)"
             >
               <span class="roll-result__hand-label">Main directrice · {{ dualWieldRoll.mainHand.weaponName }}</span>
               <span class="roll-result__attack">
                 Attaque : <strong>{{ dualWieldRoll.mainHand.attackTotal }}</strong>
-                <span class="roll-result__detail">(d{{ dualWieldRoll.mainHand.attackSides }} = {{ dualWieldRoll.mainHand.attackDie }} {{ signedNum(dualWieldRoll.mainHand.attackBonus) }})</span>
+                <RollDetail
+                  :sides="dualWieldRoll.mainHand.attackSides"
+                  :die="dualWieldRoll.mainHand.attackDie"
+                  :dropped="dualWieldRoll.mainHand.attackDropped"
+                  :bonus="dualWieldRoll.mainHand.attackBonus"
+                />
               </span>
               <span v-if="dualWieldRoll.mainHand.attackDie === 1" class="roll-result__crit-label">Échec critique</span>
               <template v-else-if="dualWieldRoll.mainHand.attackDie === dualWieldRoll.mainHand.attackSides">
@@ -1004,12 +1048,12 @@ function losePr() {
             <!-- Main faible (d12) -->
             <div
               class="roll-result roll-result--offhand"
-              :class="{ 'roll-result--fumble': dualWieldRoll.offHand.attackDie === 1 }"
+              :class="rollResultClass({ attackDie: dualWieldRoll.offHand.attackDie, attackSides: 12 }, false)"
             >
               <span class="roll-result__hand-label">Main faible · {{ dualWieldRoll.offHand.weaponName }}</span>
               <span class="roll-result__attack">
                 Attaque : <strong>{{ dualWieldRoll.offHand.attackTotal }}</strong>
-                <span class="roll-result__detail">(d12 = {{ dualWieldRoll.offHand.attackDie }} {{ signedNum(dualWieldRoll.offHand.attackBonus) }})</span>
+                <RollDetail :sides="12" :die="dualWieldRoll.offHand.attackDie" :bonus="dualWieldRoll.offHand.attackBonus" />
               </span>
               <span v-if="dualWieldRoll.offHand.attackDie === 1" class="roll-result__crit-label">Échec critique</span>
               <span v-else class="roll-result__damage">
@@ -1025,7 +1069,12 @@ function losePr() {
           <div class="roll-result">
             <span class="roll-result__attack">
               Attaque : <strong>{{ actionRolls[action.source + '-' + action.name].attackTotal }}</strong>
-              <span class="roll-result__detail">(d{{ actionRolls[action.source + '-' + action.name].attackSides }} = {{ actionRolls[action.source + '-' + action.name].attackDie }} {{ signedNum(actionRolls[action.source + '-' + action.name].attackBonus) }})</span>
+              <RollDetail
+                :sides="actionRolls[action.source + '-' + action.name].attackSides"
+                :die="actionRolls[action.source + '-' + action.name].attackDie"
+                :dropped="actionRolls[action.source + '-' + action.name].attackDropped"
+                :bonus="actionRolls[action.source + '-' + action.name].attackBonus"
+              />
             </span>
           </div>
           <div v-if="!actionRolls[action.source + '-' + action.name].luckUsed && character.pcCurrent > 0" class="luck-box">
@@ -1102,7 +1151,7 @@ function losePr() {
                 <span class="attack-roll">
                   d{{ attackDieSides }}
                   <template v-if="comp.ability">
-                    {{ signedNum(abilityModifier(character.abilities[comp.ability])) }} ({{ { strength: 'FOR', dexterity: 'DEX', constitution: 'CON', intelligence: 'INT', wisdom: 'SAG', charisma: 'CHA' }[comp.ability] }})
+                    {{ signedNum(abilityModifier(abilities[comp.ability])) }} ({{ { strength: 'FOR', dexterity: 'DEX', constitution: 'CON', intelligence: 'INT', wisdom: 'SAG', charisma: 'CHA' }[comp.ability] }})
                   </template>
                   <template v-if="comp.bonus !== 0">{{ signedNum(comp.bonus) }} bonus</template>
                 </span>
@@ -1111,14 +1160,17 @@ function losePr() {
               <template v-if="competenceRolls[comp.id]">
                 <div
                   class="roll-result"
-                  :class="{
-                    'roll-result--fumble': competenceRolls[comp.id].attackDie === 1,
-                    'roll-result--critical': competenceRolls[comp.id].attackDie === competenceRolls[comp.id].attackSides,
-                  }"
+                  :class="rollResultClass(competenceRolls[comp.id])"
+                  data-testid="competence-roll-result"
                 >
                   <span class="roll-result__attack">
                     Test : <strong>{{ competenceRolls[comp.id].attackTotal }}</strong>
-                    <span class="roll-result__detail">(d{{ competenceRolls[comp.id].attackSides }} = {{ competenceRolls[comp.id].attackDie }} {{ signedNum(competenceRolls[comp.id].attackBonus) }})</span>
+                    <RollDetail
+                      :sides="competenceRolls[comp.id].attackSides"
+                      :die="competenceRolls[comp.id].attackDie"
+                      :dropped="competenceRolls[comp.id].attackDropped"
+                      :bonus="competenceRolls[comp.id].attackBonus"
+                    />
                   </span>
                   <span v-if="competenceRolls[comp.id].attackDie === 1" class="roll-result__crit-label">Échec critique</span>
                   <span v-else-if="competenceRolls[comp.id].attackDie === competenceRolls[comp.id].attackSides" class="roll-result__crit-label">Réussite critique</span>
@@ -1189,7 +1241,12 @@ function losePr() {
                 <div class="roll-result">
                   <span class="roll-result__attack">
                     Attaque : <strong>{{ manoeuverRolls[m.name].attackTotal }}</strong>
-                    <span class="roll-result__detail">(d{{ manoeuverRolls[m.name].attackSides }} = {{ manoeuverRolls[m.name].attackDie }} {{ signedNum(manoeuverRolls[m.name].attackBonus) }})</span>
+                    <RollDetail
+                      :sides="manoeuverRolls[m.name].attackSides"
+                      :die="manoeuverRolls[m.name].attackDie"
+                      :dropped="manoeuverRolls[m.name].attackDropped"
+                      :bonus="manoeuverRolls[m.name].attackBonus"
+                    />
                   </span>
                 </div>
                 <div v-if="!manoeuverRolls[m.name].luckUsed && character.pcCurrent > 0" class="luck-box">

@@ -35,3 +35,27 @@ export function rollDiceNotation(notation: string, modifier = 0): DiceRoll {
   const total = rolls.reduce((a, b) => a + b, 0) + totalModifier
   return { die: parsed.sides, rolls, modifier: totalModifier, total }
 }
+
+/** Un jet où l'on garde un seul dé : avantage, désavantage ou relance. */
+export interface KeptRoll {
+  /** Le dé qui compte : c'est lui qui porte le critique et le total. */
+  kept: number
+  /** Les dés lancés puis écartés. Vide sur un jet à un seul dé. */
+  dropped: number[]
+}
+
+/**
+ * Lance `count` dés et n'en garde qu'un : le meilleur (avantage) ou le pire
+ * (désavantage). Les autres restent visibles mais ne comptent plus.
+ *
+ * En cas d'égalité, c'est le premier dé lancé qui est gardé.
+ */
+export function rollKeep(sides: number, count = 1, keep: 'high' | 'low' = 'high'): KeptRoll {
+  const rolls = Array.from({ length: Math.max(1, count) }, () => rollDie(sides))
+  let keptIndex = 0
+  for (let i = 1; i < rolls.length; i++) {
+    const better = keep === 'high' ? rolls[i] > rolls[keptIndex] : rolls[i] < rolls[keptIndex]
+    if (better) keptIndex = i
+  }
+  return { kept: rolls[keptIndex], dropped: rolls.filter((_, i) => i !== keptIndex) }
+}

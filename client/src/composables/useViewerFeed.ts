@@ -22,6 +22,11 @@ export interface FeedLine {
   damage: number | null
   outcome: RollOutcome
   secret: boolean
+  /**
+   * Le jet a écarté un dé (avantage, relance). Le fil se lit à un mètre : il
+   * n'en montre qu'une marque, jamais le détail des dés.
+   */
+  advantage: boolean
 }
 
 export const MAX_FEED = 12
@@ -41,6 +46,7 @@ export function feedLineFor(roll: RollEvent): FeedLine {
     damage: roll.damage?.total ?? null,
     outcome: rollOutcome(roll),
     secret: false,
+    advantage: !!roll.dropped?.length,
   }
 }
 
@@ -57,6 +63,7 @@ export function secretLineFor(moment: { outcome: RollOutcome; actorName: string 
     damage: null,
     outcome: moment.outcome,
     secret: true,
+    advantage: false,
   }
 }
 

@@ -108,7 +108,7 @@ describe('buildDieGeometry', () => {
 describe('planDice', () => {
   it('un dé par valeur', () => {
     expect(planDice([{ sides: 20, value: 14 }])).toEqual([
-      { sides: 20, kind: 'normal', faceIndex: 13, outcome: null },
+      { sides: 20, kind: 'normal', faceIndex: 13, outcome: null, dropped: false },
     ])
   })
 
@@ -128,8 +128,8 @@ describe('planDice', () => {
     [10, 0, 9],
   ])('le d100 sur %i donne les dizaines %i et les unités %i', (value, tens, units) => {
     expect(planDice([{ sides: 100, value }])).toEqual([
-      { sides: 10, kind: 'tens', faceIndex: tens, outcome: null },
-      { sides: 10, kind: 'normal', faceIndex: units, outcome: null },
+      { sides: 10, kind: 'tens', faceIndex: tens, outcome: null, dropped: false },
+      { sides: 10, kind: 'normal', faceIndex: units, outcome: null, dropped: false },
     ])
   })
 
@@ -168,6 +168,32 @@ describe('planDice — critiques et échecs', () => {
 
   it('le d100 ne critique pas', () => {
     expect(planDice([{ sides: 100, value: 100 }]).every((d) => d.outcome === null)).toBe(true)
+  })
+
+  it('un dé écarté ne marque rien, ni son 20 ni son 1', () => {
+    expect(planDice([{ sides: 20, value: 20, dropped: true }])[0].outcome).toBeNull()
+    expect(planDice([{ sides: 20, value: 1, dropped: true }])[0].outcome).toBeNull()
+  })
+
+  it('le drapeau « écarté » suit le dé jusqu’à l’écran', () => {
+    const dice = planDice([
+      { sides: 20, value: 17 },
+      { sides: 20, value: 4, dropped: true },
+    ])
+    expect(dice.map((d) => d.dropped)).toEqual([false, true])
+  })
+
+  it('les deux dés d’un d100 écarté le sont tous les deux', () => {
+    expect(planDice([{ sides: 100, value: 42, dropped: true }]).map((d) => d.dropped)).toEqual([true, true])
+  })
+
+  it('le dé gardé du même jet marque toujours', () => {
+    const dice = planDice([
+      { sides: 20, value: 20 },
+      { sides: 20, value: 1, dropped: true },
+    ])
+    expect(dice[0].outcome).toBe('critical')
+    expect(dice[1].outcome).toBeNull()
   })
 })
 

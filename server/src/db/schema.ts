@@ -277,7 +277,10 @@ export const rollEvents = pgTable('roll_event', {
   sides: integer('sides').notNull(),
   bonus: integer('bonus').notNull().default(0),
   total: integer('total').notNull(),
+  /** Les dés qui comptent, et qui s'additionnent (un 3d6 par exemple). */
   rolls: jsonb('rolls'),
+  /** Les dés lancés puis écartés par un avantage ou une relance. */
+  dropped: jsonb('dropped'),
   damage: jsonb('damage'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 })

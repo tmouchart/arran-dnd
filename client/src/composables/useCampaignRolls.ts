@@ -3,7 +3,7 @@ import { fetchCampaignRolls, type RestEvent, type RollEvent } from '../api/campa
 import { user } from './useAuth'
 import { receiveRest } from './useRest'
 import { celebrate } from './useCriticalMoment'
-import { playRemoteDiceRoll } from './useDice3D'
+import { playRemoteDiceRoll, type DieRoll } from './useDice3D'
 import { rollOutcome, type RollOutcome } from '../utils/rollOutcome'
 import { parseDiceStyle } from '../data/diceStyle'
 import { refreshActiveCombat } from './useActiveCombat'
@@ -77,10 +77,17 @@ function appendRoll(roll: RollEvent): void {
  * Le dé d'un autre joueur roule chez moi, en petit, dans sa couleur. Un jet
  * à plusieurs dés (bac à sable) les fait tous rouler ; sinon c'est le dé
  * principal du jet.
+ *
+ * `rolls` et `dropped` ne disent pas la même chose : les premiers s'additionnent
+ * (un 3d6), les seconds ont été lancés puis jetés (avantage, relance). Les deux
+ * roulent à l'écran, mais seuls les écartés se ternissent en se posant.
  */
-export function remoteDiceFor(roll: RollEvent): { sides: number; value: number; kind: string }[] {
+export function remoteDiceFor(roll: RollEvent): DieRoll[] {
   const values = roll.rolls?.length ? roll.rolls : [roll.die]
-  return values.map((value) => ({ sides: roll.sides, value, kind: roll.kind }))
+  return [
+    ...values.map((value) => ({ sides: roll.sides, value, kind: roll.kind })),
+    ...(roll.dropped ?? []).map((value) => ({ sides: roll.sides, value, kind: roll.kind, dropped: true })),
+  ]
 }
 
 function showRemoteDice(roll: RollEvent): void {

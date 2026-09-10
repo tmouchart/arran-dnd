@@ -10,6 +10,11 @@ export interface DieInstance {
   faceIndex: number
   /** Critique / échec, ou null si ce dé ne compte pas. */
   outcome: RollOutcome
+  /**
+   * Ce dé a été lancé puis écarté : il roule, mais il ne compte pas.
+   * `planDice` le remplit toujours ; facultatif pour qui monte un dé à la main.
+   */
+  dropped?: boolean
 }
 
 /** Un dé lancé : sa taille et la valeur déjà tirée par le code. */
@@ -22,6 +27,11 @@ export interface DieRoll {
    * Par défaut un jet d'attaque, le cas de loin le plus courant.
    */
   kind?: string
+  /**
+   * Ce dé a été lancé puis écarté (avantage, désavantage, relance). Il roule
+   * comme les autres mais ne compte pas : ni critique, ni échec.
+   */
+  dropped?: boolean
 }
 
 /** Au-delà, l'écran est illisible et le rendu commence à coûter. */
@@ -50,18 +60,22 @@ export function isAnimatable(sides: number): boolean {
 export function planDice(rolls: DieRoll[]): DieInstance[] {
   const dice: DieInstance[] = []
 
-  for (const { sides, value, kind = 'weapon' } of rolls) {
+  for (const { sides, value, kind = 'weapon', dropped = false } of rolls) {
     if (!isAnimatable(sides)) continue
     if (sides === 100) {
-      // Le d100 ne critique pas : ses deux dés ne portent aucune marque
-      dice.push({ sides: 10, kind: 'tens', faceIndex: Math.floor((value - 1) / 10), outcome: null })
-      dice.push({ sides: 10, kind: 'normal', faceIndex: (value - 1) % 10, outcome: null })
+      // Le d100 ne critique pas : ses deux dés ne portent aucune marque. Écarté,
+      // il l'est des deux côtés : c'est un seul jet, pas deux.
+      dice.push({ sides: 10, kind: 'tens', faceIndex: Math.floor((value - 1) / 10), outcome: null, dropped })
+      dice.push({ sides: 10, kind: 'normal', faceIndex: (value - 1) % 10, outcome: null, dropped })
     } else {
       dice.push({
         sides,
         kind: 'normal',
         faceIndex: value - 1,
-        outcome: rollOutcome({ kind, die: value, sides }),
+        // Un dé écarté ne porte aucune marque : pas de fanfare sur un 1 jeté,
+        // pas d'étincelles sur un 20 qu'on ne garde pas.
+        outcome: dropped ? null : rollOutcome({ kind, die: value, sides }),
+        dropped,
       })
     }
   }

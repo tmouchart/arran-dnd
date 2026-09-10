@@ -1,6 +1,7 @@
 import { ref, computed, type Ref, type ComputedRef } from 'vue'
 import type { Character, WeaponRow } from '../types/character'
 import { isMartialWeaponProficient } from '../utils/attackBonus'
+import { effectiveAbilities } from '../utils/characterStats'
 import { rollDie, rollDiceNotation } from '../utils/dice'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -12,6 +13,8 @@ export interface SingleHandRoll {
   attackSides: number
   attackBonus: number
   attackTotal: number
+  /** Les dés lancés puis écartés : avantage, ou dé relancé par la chance. */
+  attackDropped?: number[]
   damageDice: string
   damageRolls: number[]
   damageModifier: number
@@ -105,6 +108,9 @@ export function useDualWield(
 
     const c = character.value
 
+    // Les caracs avec les +2 des passifs de voie, comme partout ailleurs
+    const abilities = effectiveAbilities(c)
+
     // Main directrice — d20 (d12 si affaibli)
     const mainSides = c.affaibli ? 12 : 20
     const mainBonus =
@@ -112,7 +118,7 @@ export function useDualWield(
       (!isMartialWeaponProficient(mainWeapon, c.martialFormations) ? -3 : 0)
     const mainDie = rollDie(mainSides)
     const mainDamAbility = mainWeapon.damageAbility
-      ? abilityModifier(c.abilities[mainWeapon.damageAbility])
+      ? abilityModifier(abilities[mainWeapon.damageAbility])
       : 0
     const mainDmg = rollDiceNotation(mainWeapon.damageDice, mainDamAbility)
 
@@ -122,7 +128,7 @@ export function useDualWield(
       (!isMartialWeaponProficient(offWeapon, c.martialFormations) ? -3 : 0)
     const offDie = rollDie(12)
     const offDamAbility = offWeapon.damageAbility
-      ? abilityModifier(c.abilities[offWeapon.damageAbility])
+      ? abilityModifier(abilities[offWeapon.damageAbility])
       : 0
     const offDmg = rollDiceNotation(offWeapon.damageDice, offDamAbility)
 
