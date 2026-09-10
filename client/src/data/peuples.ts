@@ -24,7 +24,7 @@ const voiePeupleElfe: PeupleVoie = {
     { name: 'Essence magique', description: '+2 en DEF contre les attaques magiques et aux tests pour résister à la magie ; +4 à partir du rang 4 de cette voie.', active: false },
     { name: 'Maîtrise des armes elfiques', description: 'Peut porter et utiliser les armes et armures de la tradition elfique pour lesquelles il possède la formation martiale.', active: false },
     { name: 'Empathie elfique', description: 'Retrouve intuitivement les êtres chers ; ressent leur santé physique et psychologique ; perçoit un danger les menaçant.', active: false },
-    { name: 'Immortalité', description: '+2 CON ; les blessures guérissent plus vite ; en dépensant 1 PR, regagne [2 × DV + niveau + Mod. CON] PV.', active: true },
+    { name: 'Immortalité', description: '+2 CON ; les blessures guérissent plus vite ; en dépensant 1 PR, regagne [2 × DV + niveau + Mod. CON] PV.', active: true, effects: [{ kind: 'ability', ability: 'constitution', bonus: 2 }] },
   ],
 }
 
@@ -50,7 +50,7 @@ const voiePeupleNain: PeupleVoie = {
     { name: 'Solide comme un roc', description: 'Réduit tous les DM subis de 1 (minimum 1 DM par attaque reçue). Cumulable avec d\'autres réductions.', active: false },
     { name: 'Maîtrise des armes runiques', description: 'Peut porter et utiliser les armes et armures de la tradition naine pour lesquelles il a la formation martiale.', active: false },
     { name: 'Résistance à la magie', description: 'Cible d\'un sort (sauf zone) : lance 1d4 — si le résultat est supérieur au rang du sort, ignorer les effets du sort.', active: true },
-    { name: 'Ténacité naine', description: 'Une fois par jour, quand le PJ tombe à 0 PV : peut dépenser 1 PR et en appliquer les effets immédiatement ; +2 SAG.', active: true },
+    { name: 'Ténacité naine', description: 'Une fois par jour, quand le PJ tombe à 0 PV : peut dépenser 1 PR et en appliquer les effets immédiatement ; +2 SAG.', active: true, effects: [{ kind: 'ability', ability: 'wisdom', bonus: 2 }] },
   ],
 }
 
@@ -80,7 +80,7 @@ const cultureElfeBleu: PeupleVoie = {
     { name: 'Natif d\'Elsémur', description: 'Choisir une caste : religieuse (capacité de rang 1 ou 2 de la divination ou du mysticisme) ou guerrière (capacité de rang 1 ou 2 de la guerre ou du combat à deux armes). Au rang 4 de cette voie culturelle, capacité supplémentaire de rang 1 ou 2 dans la même caste.', active: false },
     { name: 'Imperturbable', description: '+5 aux tests pour résister aux effets mentaux (peur, intimidation, envoûtements) ; +3 à l\'Initiative.', active: false },
     { name: 'Les enseignements de l\'eau', description: 'Peut retenir sa respiration sous l\'eau 15 minutes ; au plus profond des océans, pas besoin de lumière pour se guider ; supporte les températures glaciales et la pression sans problème.', active: false },
-    { name: 'Parangon elfe bleu', description: '+2 CON et +2 SAG.', active: false },
+    { name: 'Parangon elfe bleu', description: '+2 CON et +2 SAG.', active: false, effects: [{ kind: 'ability', ability: 'constitution', bonus: 2 }, { kind: 'ability', ability: 'wisdom', bonus: 2 }] },
   ],
 }
 
@@ -92,7 +92,7 @@ const cultureElfeSylvain: PeupleVoie = {
     { name: 'Enfant de la forêt', description: 'Choisir une caste : religieuse (capacité de rang 1 ou 2 des arts druidiques ou des forêts) ou guerrière (capacité de rang 1 ou 2 de l\'archerie ou du compagnon animal). Au rang 4 de cette voie culturelle, capacité supplémentaire de rang 1 ou 2 dans la même caste.', active: false },
     { name: 'Archer émérite', description: 'Avec un arc, réussite critique sur 19–20 au d20 ; gagne la maîtrise des armes de trait.', active: false },
     { name: 'Compagnon animal supérieur', description: 'Gagne le rang 3 de la voie du Compagnon animal (p. 170). Si déjà possédée, le compagnon gagne +2 en initiative, DEF, attaque et DM.', active: false },
-    { name: 'Parangon elfe vert', description: '+2 DEX et +2 SAG.', active: false },
+    { name: 'Parangon elfe vert', description: '+2 DEX et +2 SAG.', active: false, effects: [{ kind: 'ability', ability: 'dexterity', bonus: 2 }, { kind: 'ability', ability: 'wisdom', bonus: 2 }] },
   ],
 }
 
@@ -104,7 +104,7 @@ const cultureElfeBlanc: PeupleVoie = {
     { name: 'Prédispositions magiques', description: 'Capacité de rang 1 ou 2 de la voie de l\'envoûtement ou de la voie de la magie élémentaliste. Au rang 4 de cette voie, capacité supplémentaire de rang 1 ou 2 dans l\'une de ces deux voies.', active: false },
     { name: 'Lancier d\'élite', description: 'Ignore les malus liés aux armes d\'hast ; gagne la maîtrise des armes d\'hast ; +1 aux tests d\'attaque et aux DM avec une arme d\'hast.', active: false },
     { name: 'Blancheur immaculée', description: 'N\'a besoin que de la moitié du repos, de la nourriture et de la boisson d\'un Elfe normal ; immunisé aux effets des poisons et des maladies.', active: false },
-    { name: 'Parangon elfe blanc', description: '+2 INT et +2 SAG.', active: false },
+    { name: 'Parangon elfe blanc', description: '+2 INT et +2 SAG.', active: false, effects: [{ kind: 'ability', ability: 'intelligence', bonus: 2 }, { kind: 'ability', ability: 'wisdom', bonus: 2 }] },
   ],
 }
 
@@ -116,7 +116,7 @@ const cultureElfeNoir: PeupleVoie = {
     { name: 'Apprenti de Slurce', description: 'Capacité de rang 1 ou 2 de la voie de l\'assassinat ou de la voie des sombres savoirs. Au rang 4 de cette voie culturelle, capacité supplémentaire de rang 1 ou 2 dans l\'une de ces deux voies.', active: false },
     { name: 'Armes secrètes', description: 'Peut dissimuler jusqu\'à deux armes légères (d6 max) ; test de DEX opposé à SAG de l\'adversaire : en cas de réussite, la première attaque de chaque arme surprend l\'adversaire et inflige les DM maximaux (y compris les dés bonus).', active: true },
     { name: 'Noir comme le sang', description: 'Une fois par combat, lorsqu\'il tombe à 0 PV, peut continuer à agir normalement ; une nouvelle attaque réussie infligeant au moins 1 DM l\'achève. Tant qu\'il est à 0 PV : +2 à tous ses tests.', active: true },
-    { name: 'Parangon elfe noir', description: '+2 DEX et +2 CHA.', active: false },
+    { name: 'Parangon elfe noir', description: '+2 DEX et +2 CHA.', active: false, effects: [{ kind: 'ability', ability: 'dexterity', bonus: 2 }, { kind: 'ability', ability: 'charisma', bonus: 2 }] },
   ],
 }
 
@@ -130,7 +130,7 @@ const cultureNainForge: PeupleVoie = {
     { name: 'Forgeron runique', description: 'Choisir une capacité de rang 1 ou 2 de la voie d\'alchimie ou de la magie runique ; au rang 4, une capacité supplémentaire de rang 1 ou 2.', active: false },
     { name: 'Marteler le métal', description: '+1 en attaque et aux DM avec un bâton ferré, une masse d\'armes ou un marteau à deux mains.', active: false },
     { name: 'Runes de défense', description: 'Runes sur l\'équipement (et parfois la peau) ; +2 DEF.', active: false },
-    { name: 'Maître artisan', description: '+2 DEX et +2 INT.', active: false },
+    { name: 'Maître artisan', description: '+2 DEX et +2 INT.', active: false, effects: [{ kind: 'ability', ability: 'dexterity', bonus: 2 }, { kind: 'ability', ability: 'intelligence', bonus: 2 }] },
   ],
 }
 
@@ -142,7 +142,7 @@ const cultureNainTalion: PeupleVoie = {
     { name: 'Le sens des affaires', description: 'Capacité de rang 1 ou 2 de la voie du bohème ou de la fourberie ; au rang 4, capacité supplémentaire de rang 1 ou 2.', active: false },
     { name: 'Pot-de-vin', description: 'Après un échec à un test de CHA, payer 10 pa par +1 (jusqu\'à 100 pa) pour transformer l\'échec en réussite.', active: true },
     { name: 'La Loge noire', description: 'Un garde loyal : +3 DEF au PJ au contact ; 1 fois/tour, le garde peut faire échouer une attaque contre le PJ (test d\'attaque ≥ DEF attaquant). Remplacement : 500 pa ou passage de niveau.', active: true },
-    { name: 'Seigneur du Talion', description: '+2 INT et +2 CHA.', active: false },
+    { name: 'Seigneur du Talion', description: '+2 INT et +2 CHA.', active: false, effects: [{ kind: 'ability', ability: 'intelligence', bonus: 2 }, { kind: 'ability', ability: 'charisma', bonus: 2 }] },
   ],
 }
 
@@ -154,7 +154,7 @@ const cultureNainTemple: PeupleVoie = {
     { name: 'Enseigne du Temple', description: 'Capacité de rang 1 ou 2 de la maîtrise des armes ou du mysticisme ; au rang 4, capacité supplémentaire de rang 1 ou 2.', active: false },
     { name: 'Invention étrange', description: 'Arbalète à répétition (offerte ou inventée) ; maîtrise des armes de tir.', active: false },
     { name: 'Rites funéraires (L)', description: 'Rituel (5 min) : communiquer avec les morts (réponses confuses) ; 1 fois/zone, action limitée + INT DD 15 → 2d6 DM aux esprits hostiles.', active: true },
-    { name: 'Maître du temple', description: '+2 CON et +2 INT.', active: false },
+    { name: 'Maître du temple', description: '+2 CON et +2 INT.', active: false, effects: [{ kind: 'ability', ability: 'constitution', bonus: 2 }, { kind: 'ability', ability: 'intelligence', bonus: 2 }] },
   ],
 }
 
@@ -166,7 +166,7 @@ const cultureNainBouclier: PeupleVoie = {
     { name: 'Formation militaire', description: 'Capacité de rang 1 ou 2 du bastion ou du commandement ; au rang 4, capacité supplémentaire de rang 1 ou 2.', active: false },
     { name: 'Capitaine du Bouclier', description: 'Avec un bouclier : +1 DEF supplémentaire ; 1 fois/tour, peut ignorer une attaque à distance non critique en la déviant.', active: true },
     { name: 'Fuite interdite', description: 'Si un adversaire au contact s\'éloigne avec une action de mouvement : attaque de contact gratuite ; si elle touche, déplacement annulé (0 DM).', active: true },
-    { name: 'Veilleur du roi', description: '+2 FOR et +2 CHA.', active: false },
+    { name: 'Veilleur du roi', description: '+2 FOR et +2 CHA.', active: false, effects: [{ kind: 'ability', ability: 'strength', bonus: 2 }, { kind: 'ability', ability: 'charisma', bonus: 2 }] },
   ],
 }
 
@@ -178,7 +178,7 @@ const cultureNainErrants: PeupleVoie = {
     { name: 'Passé révolu', description: 'Capacité de rang 1 (puis rang 2 au rang 4) parmi : alchimie, magie runique, bohème, fourberie, maîtrise des armes, mysticisme, bastion, commandement.', active: false },
     { name: 'Paysan aguerri', description: '+1 attaque et DM avec une arme de paysan ; formation à la grande hache de bûcheron.', active: false },
     { name: 'Solidarité des Errants', description: 'Quand un miséreux peut aider : lance 1d6 — sur 1–4, aide totale ; sur 6 (MJ lance en secret), trahison pour profit.', active: true },
-    { name: 'Volonté héroïque', description: '+2 CON et +2 SAG.', active: false },
+    { name: 'Volonté héroïque', description: '+2 CON et +2 SAG.', active: false, effects: [{ kind: 'ability', ability: 'constitution', bonus: 2 }, { kind: 'ability', ability: 'wisdom', bonus: 2 }] },
   ],
 }
 
@@ -190,7 +190,7 @@ const cultureNainMalt: PeupleVoie = {
     { name: 'Sens de l\'effort', description: 'Choisir une capacité de rang 1 ou 2 de la voie de la puissance ou de la voie du charme ; au rang 4, capacité supplémentaire de rang 1 ou 2 dans l\'une de ces voies.', active: false },
     { name: 'Tiser entre amis', description: '+5 à tous les tests de CHA avec toute personne qui accepte de partager une boisson alcoolisée avec lui.', active: false },
     { name: 'Courage liquide', description: 'Après absorption d\'une quantité importante d\'alcool : gagne (Rang)d6 PV temporaires (perdus en premier) pendant une heure, insensibilité à toute forme de peur, et jusqu\'à 3 fois +5 à un test de FOR, CON ou CHA. 1 fois par jour.', active: true },
-    { name: 'Seigneur du Malt', description: '+2 CHA et +2 CON.', active: false },
+    { name: 'Seigneur du Malt', description: '+2 CHA et +2 CON.', active: false, effects: [{ kind: 'ability', ability: 'charisma', bonus: 2 }, { kind: 'ability', ability: 'constitution', bonus: 2 }] },
   ],
 }
 
@@ -204,7 +204,7 @@ const cultureHumainNordique: PeupleVoie = {
     { name: 'Barbare', description: 'Capacité de rang 1 ou 2 de la bravoure ou de la chasse ; au rang 4, capacité supplémentaire de rang 1 ou 2.', active: false },
     { name: 'Expertise des haches', description: '+1 attaque et DM avec une hache ; formation à la grande hache de bûcheron.', active: false },
     { name: 'Homme des clans', description: 'Bras droit (allié de combat) : armes du PJ entretenues → critiques sur 19–20 ; remplacer au niveau suivant si mort. (DEF 16, PV = niv×6, etc.)', active: false },
-    { name: 'Conquérant', description: '+2 DEX et +2 CON.', active: false },
+    { name: 'Conquérant', description: '+2 DEX et +2 CON.', active: false, effects: [{ kind: 'ability', ability: 'dexterity', bonus: 2 }, { kind: 'ability', ability: 'constitution', bonus: 2 }] },
   ],
 }
 
@@ -216,7 +216,7 @@ const cultureHumainMitan: PeupleVoie = {
     { name: 'Entre tradition et progrès', description: 'Capacité de rang 1 ou 2 du combat monté ou de l\'arbalétrie ; au rang 4, capacité supplémentaire de rang 1 ou 2.', active: false },
     { name: 'Modernisme', description: '+1 attaque et DM avec une arbalète ; maîtrise des armes de tir.', active: false },
     { name: 'Conspirateur', description: '1 fois par aventure, contact pour service / info / alliance : test de CHA DD 10/15/20 selon difficulté ; échec possible avec contrepartie pécuniaire.', active: true },
-    { name: 'Maître marchand', description: '+2 INT et +2 CHA.', active: false },
+    { name: 'Maître marchand', description: '+2 INT et +2 CHA.', active: false, effects: [{ kind: 'ability', ability: 'intelligence', bonus: 2 }, { kind: 'ability', ability: 'charisma', bonus: 2 }] },
   ],
 }
 
@@ -228,7 +228,7 @@ const cultureHumainAustral: PeupleVoie = {
     { name: 'Études arcaniques', description: 'Capacité de rang 1 ou 2 de la magie élémentaliste ou des illusions ; au rang 4, capacité supplémentaire de rang 1 ou 2.', active: false },
     { name: 'Autorité culturelle', description: '+2 Initiative et +2 DEF ; ou (au choix) un second domaine d\'érudition comme au rang 1.', active: false },
     { name: 'Prédispositions arcaniques', description: 'Ajouter le Mod. de CHA au total de PM (non doublé pour les mystiques).', active: false },
-    { name: 'Mage', description: '+2 INT et +2 SAG.', active: false },
+    { name: 'Mage', description: '+2 INT et +2 SAG.', active: false, effects: [{ kind: 'ability', ability: 'intelligence', bonus: 2 }, { kind: 'ability', ability: 'wisdom', bonus: 2 }] },
   ],
 }
 
@@ -240,7 +240,7 @@ const cultureHumainOriental: PeupleVoie = {
     { name: 'Rejeton de la cité des Sang-mêlés', description: 'Capacité de rang 1 ou 2 du charme ou de la fourberie ; au rang 4, capacité supplémentaire de rang 1 ou 2.', active: false },
     { name: 'Sentir la magie', description: 'Test de SAG DD 15 : savoir si un interlocuteur maîtrise au moins une voie mystique ; +5 pour résister aux effets magiques.', active: true },
     { name: 'Chevaucheur de dragons', description: 'Monture dragon d\'Akrähyng (Init 15, DEF 16, PV = 5×niveau, Att +8, DM 1d6+4 feu portée 20m). Synergies avec Monture fantastique et Ordre de chevalerie : +2 DEF, attaque et DM par capacité possédée.', active: false },
-    { name: 'Expert en filouterie', description: '+2 DEX et +2 CHA.', active: false },
+    { name: 'Expert en filouterie', description: '+2 DEX et +2 CHA.', active: false, effects: [{ kind: 'ability', ability: 'dexterity', bonus: 2 }, { kind: 'ability', ability: 'charisma', bonus: 2 }] },
   ],
 }
 
@@ -254,7 +254,7 @@ const cultureOrc: PeupleVoie = {
     { name: 'Talent pour la violence', description: 'Capacité de rang 1 ou 2 de la férocité ou de la puissance ; au rang 4, capacité supplémentaire de rang 1 ou 2.', active: false },
     { name: 'Critique brutal', description: 'Sur critique en contact, DM ×3 au lieu de ×2.', active: false },
     { name: 'Attaque sanglante (L)', description: 'Hémorragie : +1d6 DM par tour jusqu\'à réussite d\'un test de CON DD [12 + Mod. FOR] ou soins ; pas de cumul de saignements.', active: true },
-    { name: 'Colosse', description: '+2 FOR et +2 CON.', active: false },
+    { name: 'Colosse', description: '+2 FOR et +2 CON.', active: false, effects: [{ kind: 'ability', ability: 'strength', bonus: 2 }, { kind: 'ability', ability: 'constitution', bonus: 2 }] },
   ],
 }
 
@@ -266,7 +266,7 @@ const cultureGobelin: PeupleVoie = {
     { name: 'Agile et sournois', description: 'Capacité de rang 1 ou 2 de l\'acrobatie ou de l\'assassinat ; au rang 4, capacité supplémentaire de rang 1 ou 2.', active: false },
     { name: 'Ombre mouvante (L)', description: 'Test DEX DD 10 : déplacement jusqu\'à 20m vers zone d\'ombre / couvert, disparaît jusqu\'au tour suivant. Si initiative gagnée sur une cible au contact : +2d6 DM.', active: true },
     { name: 'Rochassier', description: 'Escalade comme sur le plat à quatre membres ; avec trois membres : immobile ou demi-vitesse.', active: false },
-    { name: 'Teigneux', description: '+2 DEX et +2 INT.', active: false },
+    { name: 'Teigneux', description: '+2 DEX et +2 INT.', active: false, effects: [{ kind: 'ability', ability: 'dexterity', bonus: 2 }, { kind: 'ability', ability: 'intelligence', bonus: 2 }] },
   ],
 }
 
@@ -278,7 +278,7 @@ const cultureOgre: PeupleVoie = {
     { name: 'Brute', description: 'Capacité de rang 1 ou 2 de la férocité ou du pugilat ; au rang 4, capacité supplémentaire de rang 1 ou 2.', active: false },
     { name: 'Attaque massive (L)', description: 'Attaque de tout le poids : bonus aux DM = Mod. CON, malus à la DEF = Mod. CON pendant un tour.', active: true },
     { name: 'Intuable', description: 'Au moment de tomber à 0 PV, peut refuser l\'inconscience et continuer à combattre ; PV peuvent devenir négatifs jusqu\'à la valeur de CON (au-delà : mort).', active: true },
-    { name: 'Monstre', description: '+2 FOR et +2 CON.', active: false },
+    { name: 'Monstre', description: '+2 FOR et +2 CON.', active: false, effects: [{ kind: 'ability', ability: 'strength', bonus: 2 }, { kind: 'ability', ability: 'constitution', bonus: 2 }] },
   ],
 }
 

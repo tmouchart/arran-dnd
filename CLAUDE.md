@@ -165,6 +165,7 @@ Add a shadcn component with `npx shadcn-vue@latest add <name> -y -o` (writes int
 | `AppToggleGroup` | Groupe de boutons icône à choix unique (mode de concentration, etc.). `v-model` string (`''` = rien), `items: { value, icon, title, testid? }[]`. Re-cliquer le bouton actif le désélectionne. Built on reka-ui `ToggleGroup`. |
 | `AppSelect` | All `<select>` fields. `v-model` + `<option>` in default slot. Stays a **native** `<select>` on purpose — the OS picker is better UX on phones. |
 | `AppTextarea` | All `<textarea>` fields. `v-model`, `rows`, `placeholder`. Same look as AppInput. |
+| `AppTooltip` | **Toute infobulle tapable** (detail d'un calcul, source d'un bonus). Props : `label` (nom accessible du declencheur), `side`. Slot `#trigger` = la marque cliquable, slot par defaut = le contenu. Built on reka-ui `Popover` (et pas `Tooltip`) : sur telephone il n'y a pas de survol, il faut un tap. Clic dehors, Echap et repositionnement inclus. |
 | `AppToast` | Global toasts — never instantiate; call `showToast(message, options?)` from `composables/useToast.ts`. |
 
 ### Rules

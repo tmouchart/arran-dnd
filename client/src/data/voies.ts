@@ -1,9 +1,23 @@
+import type { CharacterAbilities } from '../types/character'
+
 export type VoieFamily = 'combattants' | 'aventuriers' | 'mystiques' | 'prestige'
+
+export type AbilityKey = keyof CharacterAbilities
+
+/** Effets qu'un moteur sait appliquer tout seul. Le reste des passifs reste du texte. */
+export type CapaciteEffect =
+  /** +2 en INT — passif permanent */
+  | { kind: 'ability'; ability: AbilityKey; bonus: number }
+  /** 2d20 sur tous les tests de cette carac — passif permanent */
+  | { kind: 'advantage'; on: AbilityKey }
+  /** 2d20 sur le jet de cette action précise, quand on clique sa carte */
+  | { kind: 'attackAdvantage' }
 
 export interface Capacite {
   name: string
   description: string
   active?: boolean
+  effects?: CapaciteEffect[]
 }
 
 export interface Voie {
@@ -36,7 +50,7 @@ export const VOIES: Voie[] = [
       { name: 'Armure naturelle', description: "Le corps est endurci : +2 en DEF.", active: false },
       { name: 'Prouesse', description: "1 fois/tour, sacrifier 1d4 PV pour +5 à un test de FOR ou DEX.", active: true },
       { name: 'Dernier rempart', description: "Ne réalise qu'une attaque ce tour mais obtient une attaque gratuite contre tout ennemi qui s'approche. Un ennemi blessé voit son déplacement arrêté.", active: true },
-      { name: 'Constitution héroïque', description: "+2 en CON. Lance 2d20 à tous les tests de CON et garde le meilleur.", active: false },
+      { name: 'Constitution héroïque', description: "+2 en CON. Lance 2d20 à tous les tests de CON et garde le meilleur.", active: false, effects: [{ kind: 'ability', ability: 'constitution', bonus: 2 }, { kind: 'advantage', on: 'constitution' }] },
     ],
   },
   {
@@ -59,7 +73,7 @@ export const VOIES: Voie[] = [
       { name: 'Fidèle monture', description: "Possède un destrier puissant. En selle, peut ajouter un déplacement de 10m avant ou après une action.", active: false },
       { name: 'Cavalier émérite', description: "+2 en attaque au contact à cheval. Partage sa DEF avec la monture (garde le meilleur). Monter/descendre = action gratuite.", active: false },
       { name: 'Massacrer la piétaille', description: "+1d6 DM contre la piétaille (au moins 4 créatures similaires) lorsqu'il est en selle.", active: false },
-      { name: 'Charge', description: "Déplacement de 40m en ligne droite et une attaque de contact. Doit parcourir au moins 10m avant d'attaquer.", active: true },
+      { name: 'Charge', description: "Déplacement de 40m en ligne droite et une attaque de contact. Doit parcourir au moins 10m avant d'attaquer.", active: true, effects: [{ kind: 'attackAdvantage' }] },
       { name: 'Monture fantastique', description: "Obtient une monture volante (aspic, dragon, griffon…). Peut faire attaquer sa monture en même temps que lui.", active: true },
     ],
   },
@@ -107,7 +121,7 @@ export const VOIES: Voie[] = [
       { name: 'Arme de prédilection', description: "Choisit une arme de prédilection et gagne +1 en attaque quand il l'utilise.", active: false },
       { name: 'Science du critique', description: "Inflige des critiques sur un résultat de 19-20 (18-20 avec une rapière).", active: false },
       { name: 'Spécialisation', description: "+2 aux DM quand il utilise son arme de prédilection.", active: false },
-      { name: 'Attaque parfaite', description: "Lance 2d20 en attaque au contact et garde le meilleur. Ajoute +1d6 aux DM.", active: false },
+      { name: 'Attaque parfaite', description: "Lance 2d20 en attaque au contact et garde le meilleur. Ajoute +1d6 aux DM.", active: true, effects: [{ kind: 'attackAdvantage' }] },
       { name: 'Riposte', description: "1 fois/tour, obtient une attaque gratuite quand un adversaire rate une attaque de contact contre lui.", active: true },
     ],
   },
@@ -120,7 +134,7 @@ export const VOIES: Voie[] = [
       { name: 'Peau de pierre', description: "Bonus de DEF égal au Mod. de CON.", active: false },
       { name: 'Peau d\'acier', description: "Réduit tous les DM subis de 2 points (minimum 1 DM par attaque).", active: false },
       { name: 'Déluge de coups', description: "Deux attaques à mains nues, ou trois attaques avec d12 en attaque pour chacune.", active: true },
-      { name: 'Force héroïque', description: "+2 en FOR. Lance 2d20 à tous les tests de FOR et garde le meilleur.", active: false },
+      { name: 'Force héroïque', description: "+2 en FOR. Lance 2d20 à tous les tests de FOR et garde le meilleur.", active: false, effects: [{ kind: 'ability', ability: 'strength', bonus: 2 }, { kind: 'advantage', on: 'strength' }] },
     ],
   },
   {
@@ -146,7 +160,7 @@ export const VOIES: Voie[] = [
       { name: 'Grâce féline', description: "Ajoute le Mod. de CHA en DEF et en initiative en plus du Mod. de DEX habituel.", active: false },
       { name: 'Lanceur de couteau', description: "1 fois/tour, attaque gratuite à distance (portée 10m) avec un couteau ou une dague (1d4 DM).", active: true },
       { name: 'Esquive acrobatique', description: "1 fois/tour, test d'attaque à distance contre le score de l'attaquant pour éviter totalement les DM.", active: true },
-      { name: 'Dextérité héroïque', description: "+2 en DEX. Lance 2d20 à tous les tests de DEX et garde le meilleur.", active: false },
+      { name: 'Dextérité héroïque', description: "+2 en DEX. Lance 2d20 à tous les tests de DEX et garde le meilleur.", active: false, effects: [{ kind: 'ability', ability: 'dexterity', bonus: 2 }, { kind: 'advantage', on: 'dexterity' }] },
     ],
   },
   {
@@ -169,7 +183,7 @@ export const VOIES: Voie[] = [
       { name: 'Sens affûtés', description: "+5 aux tests de SAG (perception). Ajoute le Mod. de SAG aux DM infligés avec un arc.", active: false },
       { name: 'Tir aveugle', description: "Peut attaquer un ennemi invisible ou dans le noir dont il connaît la position approximative, sans malus.", active: false },
       { name: 'Tir rapide', description: "Peut effectuer deux attaques à distance ce tour.", active: true },
-      { name: 'Flèche de mort', description: "Lance 2d20 pour l'attaque et conserve le meilleur. Les DM de la flèche sont doublés.", active: true },
+      { name: 'Flèche de mort', description: "Lance 2d20 pour l'attaque et conserve le meilleur. Les DM de la flèche sont doublés.", active: true, effects: [{ kind: 'attackAdvantage' }] },
       { name: 'Dans le mille', description: "Utilise 1d12 en attaque à distance. Si réussie, ajoute +2d6 DM.", active: true },
     ],
   },
@@ -206,7 +220,7 @@ export const VOIES: Voie[] = [
       { name: 'Provocation', description: "Test opposé CHA vs INT pour forcer une cible à l'attaquer ce tour. Peut riposter avec une attaque gratuite.", active: true },
       { name: 'Attaque flamboyante', description: "Attaque de contact avec un bonus en attaque et DM égal au Mod. de CHA, en plus du Mod. de FOR ou DEX.", active: true },
       { name: 'Suggestion', description: "1 fois/jour, test opposé CHA vs SAG pour contraindre une créature à exécuter une action pendant 24h.", active: true },
-      { name: 'Charisme héroïque', description: "+2 en CHA. Lance 2d20 à tous les tests de CHA et garde le meilleur.", active: false },
+      { name: 'Charisme héroïque', description: "+2 en CHA. Lance 2d20 à tous les tests de CHA et garde le meilleur.", active: false, effects: [{ kind: 'ability', ability: 'charisma', bonus: 2 }, { kind: 'advantage', on: 'charisma' }] },
     ],
   },
   {
@@ -218,7 +232,7 @@ export const VOIES: Voie[] = [
       { name: 'Pistage', description: "Peut pister et suivre des créatures dans la nature. Bonus aux tests de SAG pour lire les traces.", active: false },
       { name: 'Attaque éclair', description: "Attaque au contact très percutante : ajoute le Mod. de DEX en attaque et aux DM.", active: true },
       { name: 'Ennemis jurés', description: "Après avoir tué une créature, sa race devient ennemie jurée : +Mod. SAG en attaque, +1d6 DM contre elle.", active: false },
-      { name: 'Perception héroïque', description: "+2 en SAG. Lance 2d20 à tous les tests de SAG et garde le meilleur.", active: false },
+      { name: 'Perception héroïque', description: "+2 en SAG. Lance 2d20 à tous les tests de SAG et garde le meilleur.", active: false, effects: [{ kind: 'ability', ability: 'wisdom', bonus: 2 }, { kind: 'advantage', on: 'wisdom' }] },
     ],
   },
   {
@@ -280,7 +294,7 @@ export const VOIES: Voie[] = [
       { name: 'Nuée d\'insectes', description: "Test d'attaque magique (portée 20m) : 1 DM/tour et -2 aux tests de la cible pendant [5+Mod.SAG] tours.", active: true },
       { name: 'Le guetteur', description: "Reçoit un oiseau de proie compagnon. Lien télépathique, peut percevoir par ses sens avec +5 en perception.", active: false },
       { name: 'Masque du prédateur', description: "Prend les traits d'un fauve : Mod. INT en initiative, attaque et DM. Vision nocturne pendant [5+Mod.SAG] tours.", active: true },
-      { name: 'Sagesse héroïque', description: "+2 en SAG. Lance 2d20 à tous les tests de SAG et garde le meilleur.", active: false },
+      { name: 'Sagesse héroïque', description: "+2 en SAG. Lance 2d20 à tous les tests de SAG et garde le meilleur.", active: false, effects: [{ kind: 'ability', ability: 'wisdom', bonus: 2 }, { kind: 'advantage', on: 'wisdom' }] },
     ],
   },
   {
@@ -292,7 +306,7 @@ export const VOIES: Voie[] = [
       { name: 'Détection de l\'invisible', description: "Pendant [5+Mod.SAG] tours, détecte les créatures invisibles et les sorts de Clairvoyance dans 30m.", active: true },
       { name: 'Clairvoyance', description: "Voit et entend à distance dans un lieu connu tant qu'il se concentre (action limitée à chaque tour).", active: true },
       { name: 'Prescience', description: "1 fois/combat, en fin de tour, annule tout ce qui s'est passé et rejoue le tour depuis le début.", active: true },
-      { name: 'Hyperconscience', description: "+2 en SAG et +2 en INT. Lance 2d20 à tous les tests de SAG ou INT et garde le meilleur.", active: false },
+      { name: 'Hyperconscience', description: "+2 en SAG et +2 en INT. Lance 2d20 à tous les tests de SAG ou INT et garde le meilleur.", active: false, effects: [{ kind: 'ability', ability: 'wisdom', bonus: 2 }, { kind: 'ability', ability: 'intelligence', bonus: 2 }, { kind: 'advantage', on: 'wisdom' }, { kind: 'advantage', on: 'intelligence' }] },
     ],
   },
   {
@@ -340,7 +354,7 @@ export const VOIES: Voie[] = [
       { name: 'Sous tension', description: "Charge électrique pendant [5+Mod.SAG] tours : 1d6 DM à quiconque le touche au contact.", active: true },
       { name: 'Armure de terre', description: "Pendant [5+Mod.SAG] tours, réduit tous les DM élémentaires (feu, froid, électricité, acide) de 2×rang.", active: true },
       { name: 'Boule de feu', description: "Portée 30m, zone 6m de rayon : test d'attaque magique contre chaque cible dans la zone pour [4d6+Mod.INT] DM.", active: true },
-      { name: 'Intelligence héroïque', description: "+2 en INT. Lance 2d20 à tous les tests d'INT et garde le meilleur.", active: false },
+      { name: 'Intelligence héroïque', description: "+2 en INT. Lance 2d20 à tous les tests d'INT et garde le meilleur.", active: false, effects: [{ kind: 'ability', ability: 'intelligence', bonus: 2 }, { kind: 'advantage', on: 'intelligence' }] },
     ],
   },
   {

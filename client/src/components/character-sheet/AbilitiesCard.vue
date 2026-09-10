@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { Wand2, ChevronUp, ChevronDown } from "lucide-vue-next";
+import { ref, computed } from "vue";
+import { Wand2, ChevronUp, ChevronDown, Dices } from "lucide-vue-next";
 import AppCard from "../ui/AppCard.vue";
 import AppIconBtn from "../ui/AppIconBtn.vue";
+import AppTooltip from "../ui/AppTooltip.vue";
 import AbilityInitModal from "./AbilityInitModal.vue";
 import type { Character, CharacterAbilities } from "../../types/character";
+import { effectiveAbilities } from "../../utils/characterStats";
+import { pathEffects } from "../../composables/usePathEffects";
 
 const props = defineProps<{
   character: Character;
@@ -14,6 +17,8 @@ const props = defineProps<{
 const showInitModal = ref(false);
 
 function applyAbilities(abilities: CharacterAbilities) {
+  // La modale rend des scores de BASE : on les écrit tels quels.
+  // Le bonus de voie n'est jamais persisté, il est recalculé à l'affichage.
   Object.assign(props.character.abilities, abilities);
 }
 
@@ -26,10 +31,25 @@ const abilityList = [
   { key: "charisma" as const, label: "CHA" },
 ];
 
-function modDisplay(score: number): string {
-  const m = props.abilityModifier(score);
-  return (m >= 0 ? "+" : "") + m;
-}
+const effects = computed(() => pathEffects(props.character.paths));
+
+const rows = computed(() => {
+  const effective = effectiveAbilities(props.character);
+  return abilityList.map((a) => {
+    const base = props.character.abilities[a.key];
+    const score = effective[a.key];
+    const mod = props.abilityModifier(score);
+    return {
+      ...a,
+      base,
+      score,
+      mod,
+      modLabel: (mod >= 0 ? "+" : "") + mod,
+      sources: effects.value.sources.filter((s) => s.ability === a.key),
+      advantage: effects.value.advantage.has(a.key),
+    };
+  });
+});
 </script>
 
 <template>
@@ -46,13 +66,47 @@ function modDisplay(score: number): string {
       </AppIconBtn>
     </template>
     <div class="abilities">
-      <div v-for="a in abilityList" :key="a.key" class="ability">
+      <div v-for="a in rows" :key="a.key" class="ability">
         <span class="abil-label">{{ a.label }}</span>
         <div class="ability-row">
           <div class="score-mod">
-            <span class="score-val">{{ character.abilities[a.key] }}</span>
-            <span class="mod" :class="abilityModifier(character.abilities[a.key]) > 0 ? 'mod-pos' : abilityModifier(character.abilities[a.key]) < 0 ? 'mod-neg' : 'mod-zero'">
-              ({{ modDisplay(character.abilities[a.key]) }})
+            <span
+              class="score-val"
+              :class="{ boosted: a.sources.length > 0 }"
+              :data-testid="`ability-score-${a.key}`"
+            >{{ a.score }}</span>
+
+            <AppTooltip
+              v-if="a.sources.length > 0 || a.advantage"
+              :label="`Détail de ${a.label}`"
+            >
+              <template #trigger>
+                <span
+                  v-if="a.sources.length > 0"
+                  class="mark-dot"
+                  :data-testid="`ability-bonus-mark-${a.key}`"
+                >•</span>
+                <Dices
+                  v-if="a.advantage"
+                  class="mark-dice"
+                  :size="11"
+                  :data-testid="`ability-advantage-${a.key}`"
+                />
+              </template>
+
+              <div class="tip-head">{{ a.label }}</div>
+              <div class="tip-line">{{ a.base }} de base</div>
+              <div v-for="(s, i) in a.sources" :key="i" class="tip-line">
+                <span class="tip-bonus">+{{ s.bonus }}</span> {{ s.from }}
+              </div>
+              <div v-if="a.advantage" class="tip-line tip-adv">
+                <Dices :size="12" /> Avantage : 2d20, on garde le meilleur.
+              </div>
+              <div class="tip-foot">Les flèches modifient le score de base.</div>
+            </AppTooltip>
+
+            <span class="mod" :class="a.mod > 0 ? 'mod-pos' : a.mod < 0 ? 'mod-neg' : 'mod-zero'">
+              ({{ a.modLabel }})
             </span>
           </div>
           <div class="ab-btns">
@@ -104,7 +158,7 @@ function modDisplay(score: number): string {
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  padding: 0.3rem 0.3rem 0.3rem 0.4rem;
+  padding: 0.3rem 0.25rem 0.3rem 0.35rem;
   min-width: 0;
   width: 100%;
   box-sizing: border-box;
@@ -113,7 +167,7 @@ function modDisplay(score: number): string {
 .score-mod {
   display: flex;
   align-items: baseline;
-  gap: 0.15rem;
+  gap: 0.1rem;
   min-width: 0;
   overflow: hidden;
 }
@@ -126,8 +180,25 @@ function modDisplay(score: number): string {
   line-height: 1;
 }
 
+/* Un passif de voie contribue à ce score : il change de couleur, ça se repère
+   d'un coup d'oeil sur toute la grille. */
+.score-val.boosted {
+  color: var(--accent-strong);
+}
+
+.mark-dot {
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.mark-dice {
+  align-self: center;
+  flex-shrink: 0;
+}
+
 .mod {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -136,10 +207,45 @@ function modDisplay(score: number): string {
 .mod-neg { color: var(--danger); }
 .mod-zero { color: var(--muted); }
 
+/* ── Contenu de l'infobulle ─────────────────────────────────────────────── */
+
+.tip-head {
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  font-size: 0.7rem;
+  margin-bottom: var(--space-xs);
+}
+
+.tip-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.tip-bonus {
+  font-weight: 700;
+  color: var(--accent-strong);
+}
+
+.tip-adv {
+  color: var(--accent-strong);
+  margin-top: var(--space-xs);
+}
+
+.tip-foot {
+  margin-top: var(--space-xs);
+  padding-top: var(--space-xs);
+  border-top: 1px solid var(--border);
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
 .ab-btns {
   display: flex;
   flex-direction: column;
   gap: 1px;
+  margin-left: auto;
 }
 
 .ab-btn {

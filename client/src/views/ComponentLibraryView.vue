@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Sword, Scroll, Heart, Trash2, Plus, Pencil, Coins, Expand, Flame } from 'lucide-vue-next'
+import { Sword, Scroll, Heart, Trash2, Plus, Pencil, Coins, Expand, Flame, Dices } from 'lucide-vue-next'
 import AppPageLayout from '../components/ui/AppPageLayout.vue'
 import AppPageHead from '../components/ui/AppPageHead.vue'
 import AppCard from '../components/ui/AppCard.vue'
@@ -15,6 +15,7 @@ import AppToggleGroup from '../components/ui/AppToggleGroup.vue'
 import AppEmptyState from '../components/ui/AppEmptyState.vue'
 import AppModal from '../components/ui/AppModal.vue'
 import AppBottomSheet from '../components/ui/AppBottomSheet.vue'
+import AppTooltip from '../components/ui/AppTooltip.vue'
 import { showToast } from '../composables/useToast'
 import { dice, revealAfterDice } from '../composables/useDice3D'
 import { fakeRemoteRoll } from '../components/dev/fakeRemoteRoll'
@@ -181,6 +182,24 @@ function forceRoll(value: number) {
       </div>
     </AppCard>
 
+    <AppCard title="AppTooltip">
+      <div class="demo-row">
+        <span class="tip-demo">
+          17
+          <AppTooltip label="Détail de INT">
+            <template #trigger><span class="tip-demo-dot">•</span></template>
+            <div>15 de base</div>
+            <div>+2 Intelligence héroïque</div>
+          </AppTooltip>
+          (+3)
+        </span>
+        <AppTooltip label="Avantage aux dés">
+          <template #trigger><Dices :size="14" /></template>
+          Avantage : 2d20, on garde le meilleur.
+        </AppTooltip>
+      </div>
+    </AppCard>
+
     <AppCard title="AppEmptyState">
       <AppEmptyState variant="loading">Chargement du grimoire…</AppEmptyState>
       <AppEmptyState>Aucun personnage pour l'instant.</AppEmptyState>
@@ -344,5 +363,17 @@ function forceRoll(value: number) {
   height: 14px;
   background: var(--accent);
   border-radius: 2px;
+}
+
+.tip-demo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  font-weight: 700;
+}
+
+.tip-demo-dot {
+  font-size: 0.9rem;
+  line-height: 1;
 }
 </style>

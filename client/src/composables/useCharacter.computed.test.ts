@@ -8,6 +8,7 @@ import {
   computedAttackContact,
   computedAttackDistance,
   computedAttackMagique,
+  computedHp,
 } from './useCharacter'
 import type { PathRow } from '../types/character'
 
@@ -228,5 +229,29 @@ describe('computedAttackMagique', () => {
     character.value.abilities.intelligence = 10
     character.value.attackMagiqueBonus = 3
     expect(computedAttackMagique.value).toBe(1 + 0 + 2 + 3)
+  })
+})
+
+// ── Passifs de voie (bonus de caractéristique) ───────────────────────────────
+
+describe('passifs de voie', () => {
+  it('élémentaliste rang 5 : INT 15 compte comme 17 en attaque magique', () => {
+    const elementaliste5: PathRow = { id: 'voie-de-la-magie-elementaliste', name: 'Voie de la magie élémentaliste', rank: 5 }
+    character.value.paths = [MYSTIQUE_1, elementaliste5]
+    character.value.level = 3
+    character.value.abilities.intelligence = 15 // 15 + 2 = 17 → mod +3
+    expect(computedAttackMagique.value).toBe(3 + 3 + 2)
+    // le score de base n'est pas touché
+    expect(character.value.abilities.intelligence).toBe(15)
+  })
+
+  it('Constitution héroïque monte les PV max', () => {
+    const bravoure5: PathRow = { id: 'voie-de-la-bravoure', name: 'Voie de la bravoure', rank: 5 }
+    character.value.abilities.constitution = 12 // mod +1, +2 → 14 → mod +2
+    character.value.hpLevelGains = [4]
+    const before = computedHp.value
+    character.value.paths = [bravoure5]
+    // +1 de mod CON sur le niveau 1 et sur le niveau 2
+    expect(computedHp.value).toBe(before + 2)
   })
 })

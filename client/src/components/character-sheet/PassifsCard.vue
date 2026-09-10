@@ -1,36 +1,21 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import AppCard from "../ui/AppCard.vue";
-import { VOIES_BY_ID, type Voie } from "../../data/voies";
-import { PEUPLE_VOIES_BY_ID, type PeupleVoie } from "../../data/peuples";
-import type { Character, PathRow } from "../../types/character";
+import { unlockedCapacites } from "../../composables/usePathEffects";
+import type { Character } from "../../types/character";
 
 const props = defineProps<{ character: Character }>();
 
-const ALL_VOIES_BY_ID = { ...VOIES_BY_ID, ...PEUPLE_VOIES_BY_ID } as Record<string, Voie | PeupleVoie>;
-
-function voieData(p: PathRow): Voie | PeupleVoie | null {
-  return p.id ? (ALL_VOIES_BY_ID[p.id] ?? null) : null;
-}
-
-const passiveAbilities = computed(() => {
-  const out: { key: string; pathName: string; name: string; description: string }[] = [];
-  props.character.paths.forEach((p, pi) => {
-    const vd = voieData(p);
-    if (!vd || p.rank <= 0) return;
-    vd.capacites.forEach((cap, ci) => {
-      if (p.rank > ci && cap.active === false) {
-        out.push({
-          key: `${p.id ?? `p${pi}`}-${ci}`,
-          pathName: p.name,
-          name: cap.name,
-          description: cap.description,
-        });
-      }
-    });
-  });
-  return out;
-});
+const passiveAbilities = computed(() =>
+  unlockedCapacites(props.character.paths)
+    .filter((u) => u.capacite.active === false)
+    .map((u) => ({
+      key: `${u.voie.id}-${u.rank}`,
+      pathName: u.pathName,
+      name: u.capacite.name,
+      description: u.capacite.description,
+    })),
+);
 </script>
 
 <template>
