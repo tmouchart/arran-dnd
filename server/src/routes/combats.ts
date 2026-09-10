@@ -62,6 +62,36 @@ async function loadCombatInCampaign(combatId: number, campaignId: number) {
   return combat
 }
 
+// Helper: insère un PJ dans un combat. Partagé par la création du combat et
+// l'ajout en cours de route, pour que les deux ne divergent pas.
+// `slot` est le rang d'arrivée du héros : à l'appelant de compter ceux déjà là.
+async function insertPlayerParticipant(
+  combatId: number,
+  member: { userId: number; characterId: number },
+  slot: number,
+): Promise<boolean> {
+  const [char] = await db.select().from(characters).where(eq(characters.id, member.characterId))
+  if (!char) return false
+
+  await db.insert(combatParticipants).values({
+    combatId,
+    kind: 'player',
+    userId: member.userId,
+    name: char.name,
+    initiative: computeInitiative({
+      dex: char.dex,
+      armorId: char.armorId,
+      shieldId: char.shieldId,
+      initiativeBonus: char.initiativeBonus,
+    }),
+    hpMax: null,
+    hpCurrent: null,
+    def: char.defense,
+    ...startingPosition('player', slot),
+  })
+  return true
+}
+
 // POST /:id/combats — lancer un combat
 router.post('/:id/combats', async (req, res) => {
   const userId = (req as unknown as AuthRequest).userId
@@ -105,28 +135,12 @@ router.post('/:id/combats', async (req, res) => {
 
   for (const member of members) {
     if (excludedSet.has(member.userId) || !member.characterId) continue
-
-    const [char] = await db.select().from(characters).where(eq(characters.id, member.characterId))
-    if (!char) continue
-
-    const initiative = computeInitiative({
-      dex: char.dex,
-      armorId: char.armorId,
-      shieldId: char.shieldId,
-      initiativeBonus: char.initiativeBonus,
-    })
-
-    await db.insert(combatParticipants).values({
-      combatId: combat.id,
-      kind: 'player',
-      userId: member.userId,
-      name: char.name,
-      initiative,
-      hpMax: null,
-      hpCurrent: null,
-      def: char.defense,
-      ...startingPosition('player', playerSlot++),
-    })
+    const added = await insertPlayerParticipant(
+      combat.id,
+      { userId: member.userId, characterId: member.characterId },
+      playerSlot,
+    )
+    if (added) playerSlot++
   }
 
   // Add monsters from encounter template
@@ -516,6 +530,46 @@ router.post('/:id/combats/:cid/monsters', async (req, res) => {
     hidden: body.hidden === true,
     ...startingPosition('monster', existing.length),
   })
+
+  await broadcastCombatState(combatId, check.gmUserId)
+  res.status(201).json({ ok: true })
+})
+
+// POST /:id/combats/:cid/players — faire entrer un PJ en cours de combat
+router.post('/:id/combats/:cid/players', async (req, res) => {
+  const gmId = (req as unknown as AuthRequest).userId
+  const campaignId = Number(req.params.id)
+  const combatId = Number(req.params.cid)
+
+  const check = await verifyGm(campaignId, gmId)
+  if (check.status !== 'ok') { res.status(403).json({ error: 'Réservé au MJ' }); return }
+
+  const combat = await loadCombatInCampaign(combatId, campaignId)
+  if (!combat) { res.status(404).json({ error: 'Combat introuvable' }); return }
+  if (combat.status !== 'active') { res.status(400).json({ error: 'Combat inactif' }); return }
+
+  const { userId } = req.body as { userId?: number }
+  if (!userId) { res.status(400).json({ error: 'userId requis' }); return }
+
+  const [member] = await db
+    .select({ characterId: campaignMembers.characterId })
+    .from(campaignMembers)
+    .where(and(eq(campaignMembers.campaignId, campaignId), eq(campaignMembers.userId, userId)))
+  if (!member) { res.status(400).json({ error: "Ce joueur n'est pas dans la campagne" }); return }
+  if (!member.characterId) { res.status(400).json({ error: "Ce joueur n'a pas de personnage" }); return }
+
+  // Le MJ peut taper deux fois, ou sur une liste périmée : c'est la route qui tranche.
+  const players = await db
+    .select({ userId: combatParticipants.userId })
+    .from(combatParticipants)
+    .where(and(eq(combatParticipants.combatId, combatId), eq(combatParticipants.kind, 'player')))
+  if (players.some((p) => p.userId === userId)) {
+    res.status(409).json({ error: 'Déjà dans le combat' }); return
+  }
+
+  // Le héros se pose derrière ceux déjà en place, pas sur eux.
+  const added = await insertPlayerParticipant(combatId, { userId, characterId: member.characterId }, players.length)
+  if (!added) { res.status(400).json({ error: 'Personnage introuvable' }); return }
 
   await broadcastCombatState(combatId, check.gmUserId)
   res.status(201).json({ ok: true })

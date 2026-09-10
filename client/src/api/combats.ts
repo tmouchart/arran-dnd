@@ -190,6 +190,18 @@ export function addCombatMonster(
   })
 }
 
+/** Fait entrer un PJ dans un combat déjà commencé (MJ seul). */
+export function addCombatPlayer(
+  campaignId: number,
+  combatId: number,
+  userId: number,
+): Promise<void> {
+  return request(`/${campaignId}/combats/${combatId}/players`, {
+    method: 'POST',
+    body: JSON.stringify({ userId }),
+  })
+}
+
 export function finishCombat(campaignId: number, combatId: number): Promise<void> {
   return request(`/${campaignId}/combats/${combatId}/finish`, {
     method: 'POST',

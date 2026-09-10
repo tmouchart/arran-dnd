@@ -21,13 +21,15 @@ import {
   Sparkles,
   Trash2,
   FlaskConical,
+  UserPlus,
 } from "lucide-vue-next";
 import { useCombat } from "../composables/useCombat";
 import { user } from "../composables/useAuth";
 import { generateLoot, setParticipantStates } from "../api/combats";
-import { postCampaignRoll } from "../api/campaigns";
+import { postCampaignRoll, fetchCampaign, type CampaignMember } from "../api/campaigns";
 import { MONSTERS_CATALOG, type Monster } from "../data/monstersCatalog";
 import { filterCatalog, formatMod } from "../utils/monsterSession";
+import { membresAbsents } from "../utils/combatRoster";
 import { hpGradientColor } from "../utils/hpGradientColor";
 import { rollDie, rollDiceNotation } from "../utils/dice";
 import { signedNum } from "../utils/formatBonus";
@@ -71,6 +73,7 @@ const {
   updateHp,
   setVisibility,
   addMonster,
+  addPlayer,
   removeMonster,
   finish,
 } = useCombat();
@@ -132,6 +135,37 @@ function applyEtats(participantId: number, states: EtatId[]): Promise<void> {
 const showAddMonster = ref(false);
 // Entrée en jeu du renfort ajouté : tout de suite, ou gardé en réserve.
 const addHidden = ref(false);
+
+// ── Faire entrer un PJ en cours de combat ───────────────────────────────────
+// La liste des membres est chargée à l'ouverture, pas gardée en état : elle ne
+// sert qu'ici, et elle est fraîche à chaque fois.
+const showAddPlayer = ref(false);
+const loadingPlayers = ref(false);
+const absentPlayers = ref<CampaignMember[]>([]);
+
+async function openAddPlayer() {
+  showAddPlayer.value = true;
+  loadingPlayers.value = true;
+  absentPlayers.value = [];
+  try {
+    const campaign = await fetchCampaign(campaignId);
+    absentPlayers.value = membresAbsents(campaign.members, combat.value?.participants ?? []);
+  } catch (e) {
+    showToast(e instanceof Error ? e.message : "Erreur");
+  } finally {
+    loadingPlayers.value = false;
+  }
+}
+
+async function handleAddPlayer(m: CampaignMember) {
+  try {
+    await addPlayer(m.userId);
+    showAddPlayer.value = false;
+    showToast(`${m.characterName ?? m.username} rejoint le combat !`);
+  } catch (e) {
+    showToast(e instanceof Error ? e.message : "Erreur");
+  }
+}
 
 /** Fait entrer un PNJ en scène, ou le renvoie en réserve. */
 async function toggleVisibility(p: CombatParticipant, hidden: boolean) {
@@ -718,6 +752,14 @@ function goBack() {
         >
           <Plus :size="18" />
         </AppIconBtn>
+        <AppIconBtn
+          v-if="isGm"
+          title="Ajouter un PJ"
+          data-testid="add-player"
+          @click="openAddPlayer"
+        >
+          <UserPlus :size="18" />
+        </AppIconBtn>
         <AppButton
           v-if="isGm"
           size="small"
@@ -812,6 +854,28 @@ function goBack() {
               Monstre custom
             </AppButton>
           </template>
+      </div>
+    </AppBottomSheet>
+
+    <!-- Bottom sheet: Ajouter un PJ -->
+    <AppBottomSheet v-model="showAddPlayer" title="Ajouter un PJ">
+      <div class="add-player-body">
+        <AppEmptyState v-if="loadingPlayers" variant="loading">Chargement…</AppEmptyState>
+        <AppEmptyState v-else-if="absentPlayers.length === 0">
+          Tout le monde est déjà dans le combat.
+        </AppEmptyState>
+        <template v-else>
+          <div
+            v-for="m in absentPlayers"
+            :key="m.userId"
+            class="roster-item"
+            :data-testid="`add-player-${m.userId}`"
+            @click="handleAddPlayer(m)"
+          >
+            <span class="roster-name">{{ m.characterName ?? m.username }}</span>
+            <span class="roster-meta">{{ m.username }}</span>
+          </div>
+        </template>
       </div>
     </AppBottomSheet>
 
@@ -1299,6 +1363,39 @@ function goBack() {
   color: var(--text);
 }
 .bestiary-meta {
+  font-size: 0.75rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.add-player-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.roster-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 0.5rem 0.6rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.roster-item:hover {
+  background: var(--accent-soft);
+}
+
+.roster-name {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--text);
+}
+
+.roster-meta {
   font-size: 0.75rem;
   color: var(--muted);
   white-space: nowrap;

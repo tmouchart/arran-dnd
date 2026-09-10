@@ -221,6 +221,11 @@ export function useCombat() {
     await api.addCombatMonster(currentCampaignId, combat.value.id, data)
   }
 
+  async function addPlayer(userId: number): Promise<void> {
+    if (!combat.value || !currentCampaignId) return
+    await api.addCombatPlayer(currentCampaignId, combat.value.id, userId)
+  }
+
   async function removeMonster(participantId: number): Promise<void> {
     if (!combat.value || !currentCampaignId) return
     await api.removeCombatParticipant(currentCampaignId, combat.value.id, participantId)
@@ -251,6 +256,7 @@ export function useCombat() {
     setEnvironment,
     setObstacles,
     addMonster,
+    addPlayer,
     removeMonster,
     finish,
   }
