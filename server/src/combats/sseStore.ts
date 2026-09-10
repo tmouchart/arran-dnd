@@ -61,6 +61,60 @@ export async function enrichParticipantHp(
   return applyCharacterHp(participants, hpByUserId)
 }
 
+/**
+ * Pure transformation : les états d'un PJ vivent sur sa fiche, pas sur le
+ * snapshot de combat. On remplace ceux du participant par ceux du personnage.
+ * Monstres et joueurs sans fiche sont rendus intacts. Exportée pour le test.
+ */
+export function applyCharacterStates<T extends { kind: string; userId: number | null; states: string[] }>(
+  participants: T[],
+  statesByUserId: Map<number, string[]>,
+): T[] {
+  return participants.map((p) => {
+    if (p.kind !== 'player' || p.userId == null) return p
+    const states = statesByUserId.get(p.userId)
+    if (!states) return p
+    return { ...p, states }
+  })
+}
+
+/**
+ * Jumeau d'`enrichParticipantHp` pour les états : va lire `character.states`
+ * des joueurs de la campagne et l'applique aux participants.
+ */
+export async function enrichParticipantStates(
+  campaignId: number,
+  participants: ParticipantRow[],
+): Promise<ParticipantRow[]> {
+  const hasPlayers = participants.some((p) => p.kind === 'player' && p.userId != null)
+  if (!hasPlayers) return participants
+
+  const members = await db
+    .select({ userId: campaignMembers.userId, characterId: campaignMembers.characterId })
+    .from(campaignMembers)
+    .where(eq(campaignMembers.campaignId, campaignId))
+
+  const charIdByUser = new Map<number, number>()
+  for (const m of members) if (m.characterId != null) charIdByUser.set(m.userId, m.characterId)
+
+  const charIds = [...new Set(charIdByUser.values())]
+  if (charIds.length === 0) return participants
+
+  const chars = await db
+    .select({ id: characters.id, states: characters.states })
+    .from(characters)
+    .where(inArray(characters.id, charIds))
+  const charById = new Map(chars.map((c) => [c.id, c]))
+
+  const statesByUserId = new Map<number, string[]>()
+  for (const [userId, cid] of charIdByUser) {
+    const c = charById.get(cid)
+    if (c) statesByUserId.set(userId, c.states)
+  }
+
+  return applyCharacterStates(participants, statesByUserId)
+}
+
 /** Re-broadcast every active combat this user takes part in (after their character HP changed). */
 export async function broadcastUserCombats(userId: number): Promise<void> {
   const rows = await db
@@ -150,7 +204,8 @@ export async function sendCombatStateTo(
     .where(eq(combatParticipants.combatId, combatId))
     .orderBy(asc(combatParticipants.id))
 
-  const enriched = await enrichParticipantHp(combat.campaignId, participants)
+  const withHp = await enrichParticipantHp(combat.campaignId, participants)
+  const enriched = await enrichParticipantStates(combat.campaignId, withHp)
   writeSse(client.res, 'combat-updated', serializeCombat(combat, enriched, seesAsGm(client, gmUserId)))
 }
 
@@ -180,7 +235,8 @@ export async function broadcastCombatState(
     .where(eq(combatParticipants.combatId, combatId))
     .orderBy(asc(combatParticipants.id))
 
-  const enriched = await enrichParticipantHp(combat.campaignId, participants)
+  const withHp = await enrichParticipantHp(combat.campaignId, participants)
+  const enriched = await enrichParticipantStates(combat.campaignId, withHp)
 
   for (const client of clients) {
     writeSse(client.res, 'combat-updated', serializeCombat(combat, enriched, seesAsGm(client, gmUserId)))

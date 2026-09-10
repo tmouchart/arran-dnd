@@ -40,6 +40,8 @@ function maskMonster(p: ParticipantRow) {
     attacks: null,
     abilities: null,
     monsterDescription: null,
+    // Voir qu'un monstre est renversé fait partie du jeu : pas un secret.
+    states: p.states,
     // La position n'est pas un secret : sans elle, les joueurs ne verraient
     // pas les monstres sur le champ de bataille.
     posX: p.posX,

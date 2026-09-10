@@ -1,5 +1,6 @@
 import { ref, watch, computed } from 'vue'
 import type { Character } from '../types/character'
+import { isEtatId, type EtatId } from '../data/etats'
 import {
   fetchCharacters,
   fetchCharacter,
@@ -98,7 +99,7 @@ export function toCharacter(s: ServerCharacter): Character {
     copperCoins: s.copperCoins ?? 0,
     pcCurrent: typeof s.pcCurrent === 'number' ? s.pcCurrent : 0,
     prCurrent: typeof s.prCurrent === 'number' ? s.prCurrent : 5,
-    affaibli: s.affaibli === true,
+    states: Array.isArray(s.states) ? s.states.filter(isEtatId) : [],
     competences: Array.isArray(s.competences) ? s.competences : [],
     portraitImageId: s.portraitImageId ?? null,
   }
@@ -141,7 +142,7 @@ function toServerPayload(c: Character): Omit<ServerCharacter, 'id' | 'userId' | 
     copperCoins: c.copperCoins,
     pcCurrent: c.pcCurrent,
     prCurrent: c.prCurrent,
-    affaibli: c.affaibli,
+    states: c.states,
     competences: c.competences,
     portraitImageId: c.portraitImageId,
   }
@@ -180,7 +181,7 @@ export function createDefaultCharacter(): Character {
     copperCoins: 0,
     pcCurrent: 0,
     prCurrent: 5,
-    affaibli: false,
+    states: [],
     competences: [],
     portraitImageId: null,
   }
@@ -238,7 +239,7 @@ export const computedPcMax = computed(() => computePcMax(character.value))
 export const PR_MAX = 5
 
 /** Faces du dé d'attaque/test : 12 si le personnage est affaibli, 20 sinon. */
-export const attackDieSides = computed(() => (character.value.affaibli ? 12 : 20))
+export const attackDieSides = computed(() => (character.value.states.includes('affaibli') ? 12 : 20))
 
 /**
  * Bonus d'attaque de contact = niveau + Mod. FOR + bonus famille
@@ -309,6 +310,17 @@ export function applyServerHp(hpCurrent: number): void {
 }
 
 /**
+ * Applique des états qui viennent DÉJÀ du serveur (le MJ les a posés depuis le
+ * combat) sans déclencher la sauvegarde auto — même raison qu'`applyServerHp`.
+ */
+export function applyServerStates(states: EtatId[]): void {
+  const current = character.value.states
+  if (current.length === states.length && current.every((id, i) => id === states[i])) return
+  character.value.states = [...states]
+  lastSavedPayload = JSON.stringify(toServerPayload(character.value))
+}
+
+/**
  * Applique un repos que le serveur a DÉJÀ écrit en base, sans déclencher la
  * sauvegarde auto — même raison que `applyServerHp` : une fiche locale périmée
  * renverrait tout le reste par-dessus.
@@ -317,13 +329,13 @@ export function applyServerRest(state: {
   hpCurrent: number
   mpCurrent: number
   prCurrent: number
-  affaibli: boolean
+  states: EtatId[]
 }): void {
   const c = character.value
   c.hpCurrent = state.hpCurrent
   c.mpCurrent = state.mpCurrent
   c.prCurrent = state.prCurrent
-  c.affaibli = state.affaibli
+  c.states = state.states
   lastSavedPayload = JSON.stringify(toServerPayload(c))
 }
 

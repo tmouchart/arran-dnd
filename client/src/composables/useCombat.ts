@@ -1,9 +1,10 @@
 import { ref, computed } from 'vue'
 import { user } from './useAuth'
-import { applyServerHp } from './useCharacter'
+import { applyServerHp, applyServerStates } from './useCharacter'
 import * as api from '../api/combats'
 import type { CombatState, CombatParticipant } from '../api/combats'
 import { setActiveCombat, clearActiveCombat } from './useActiveCombat'
+import { isEtatId } from '../data/etats'
 
 const combat = ref<CombatState | null>(null)
 const connecting = ref(false)
@@ -71,6 +72,10 @@ function connect(campaignId: number, combatId: number, options: { viewer?: boole
         )
         if (mine && mine.hpCurrent != null) {
           applyServerHp(mine.hpCurrent)
+        }
+        // Idem pour mes états : le MJ peut les poser depuis le combat.
+        if (mine) {
+          applyServerStates((mine.states ?? []).filter(isEtatId))
         }
       }
       if (state.status === 'active') {

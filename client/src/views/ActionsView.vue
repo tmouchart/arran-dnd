@@ -1,16 +1,18 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, reactive, watch } from "vue";
-import { Swords, ChevronDown, ChevronUp, CirclePlus, CircleMinus, Scroll, Dices, Sparkles, RefreshCw, Bandage, Shield, Coins, Expand, Flame } from "lucide-vue-next";
+import { Swords, ChevronDown, ChevronUp, CirclePlus, CircleMinus, Scroll, Dices, Sparkles, RefreshCw, Bandage, Shield, Coins, Expand, Flame, FlaskConical } from "lucide-vue-next";
 import AppPageLayout from "../components/ui/AppPageLayout.vue";
 import AppPageHead from "../components/ui/AppPageHead.vue";
 import AppBadge from "../components/ui/AppBadge.vue";
 import AppEmptyState from "../components/ui/AppEmptyState.vue";
 import { RouterLink } from "vue-router";
 import AppButton from "../components/ui/AppButton.vue";
+import AppIconBtn from "../components/ui/AppIconBtn.vue";
 import AppModal from "../components/ui/AppModal.vue";
 import AppToggleGroup, { type AppToggleItem } from "../components/ui/AppToggleGroup.vue";
 import PassifsCard from "../components/character-sheet/PassifsCard.vue";
-import AffaibliPill from "../components/AffaibliPill.vue";
+import EtatsRow from "../components/etats/EtatsRow.vue";
+import EtatsSheet from "../components/etats/EtatsSheet.vue";
 import { useCharacter, loadCharacter, PR_MAX } from "../composables/useCharacter";
 import { VOIES_BY_ID, type AbilityKey, type VoieFamily } from "../data/voies";
 import { pathEffects, unlockedCapacites } from "../composables/usePathEffects";
@@ -669,6 +671,9 @@ function rollCompetence(id: string) {
   });
 }
 
+// Le joueur garde la main sur ses propres etats, comme il l'avait avec
+// Affaibli. On ecrit dans `character.states` : l'autosave de la fiche suit.
+const showEtats = ref(false)
 const showAgonie = ref(false)
 const isStabilised = ref(false)
 
@@ -757,10 +762,19 @@ function losePr() {
     />
 
     <div v-if="character.id" class="combat-header">
-      <!-- Statut affaibli -->
-      <div class="ch-affaibli-row">
-        <AffaibliPill v-model="character.affaibli" />
+      <!-- États préjudiciables -->
+      <div class="ch-etats-row">
+        <EtatsRow :states="character.states" size="sm" />
+        <AppIconBtn title="États" data-testid="open-etats" @click="showEtats = true">
+          <FlaskConical :size="16" />
+        </AppIconBtn>
       </div>
+      <EtatsSheet
+        v-model="showEtats"
+        :name="character.name"
+        :states="character.states"
+        @update:states="(states) => (character.states = states)"
+      />
       <!-- PV / PM -->
       <div class="ch-resources">
         <div class="ch-resource ch-resource--hp">
@@ -2294,9 +2308,11 @@ function losePr() {
   color: var(--accent-strong);
 }
 
-.ch-affaibli-row {
+.ch-etats-row {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: var(--space-xs);
   margin-bottom: -0.25rem;
 }
 

@@ -156,7 +156,7 @@ router.put('/:id', async (req, res) => {
     copperCoins: number
     pcCurrent: number
     prCurrent: number
-    affaibli: boolean
+    states: string[]
     competences: CompetenceRow[]
     portraitImageId: number | null
     hpLevelGains: number[]

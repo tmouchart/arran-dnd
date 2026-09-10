@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import AppCard from "../ui/AppCard.vue";
-import AffaibliPill from "../AffaibliPill.vue";
+import AppIconBtn from "../ui/AppIconBtn.vue";
+import EtatsRow from "../etats/EtatsRow.vue";
+import EtatsSheet from "../etats/EtatsSheet.vue";
+import { FlaskConical } from "lucide-vue-next";
 import HpGrowthModal from "./HpGrowthModal.vue";
 import type { Character } from "../../types/character";
 import type { VoieFamily } from "../../data/voies";
@@ -23,6 +26,10 @@ const props = defineProps<{
 }>();
 
 const showHpModal = ref(false);
+// Le joueur garde la main sur ses propres etats — c'est ce qu'il pouvait deja
+// faire avec Affaibli. Sur sa propre fiche on ecrit directement dans
+// `character.states` : la sauvegarde auto de la fiche s'en charge.
+const showEtats = ref(false);
 
 const pcChaMod = computed(() => props.abilityModifier(props.character.abilities.charisma));
 const pcChaSign = computed(() => (pcChaMod.value >= 0 ? "+" : ""));
@@ -41,7 +48,18 @@ const mpIsMystique = computed(() => props.family === "mystiques");
 <template>
   <AppCard title="PV &amp; ressources" class="resources">
     <template #titleActions>
-      <AffaibliPill v-model="character.affaibli" />
+      <div class="etats-actions">
+        <EtatsRow :states="character.states" size="sm" />
+        <AppIconBtn title="États" data-testid="open-etats" @click="showEtats = true">
+          <FlaskConical :size="16" />
+        </AppIconBtn>
+      </div>
+      <EtatsSheet
+        v-model="showEtats"
+        :name="character.name"
+        :states="character.states"
+        @update:states="(states) => (character.states = states)"
+      />
     </template>
     <div class="bars">
       <!-- Points de vie -->
@@ -186,6 +204,12 @@ const mpIsMystique = computed(() => props.family === "mystiques");
 </template>
 
 <style scoped>
+.etats-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
 .field {
   display: flex;
   flex-direction: column;

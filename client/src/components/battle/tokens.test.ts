@@ -6,7 +6,7 @@ function p(over: Partial<CombatParticipant>): CombatParticipant {
   return {
     id: 1, combatId: 1, kind: 'monster', userId: null, name: 'X',
     initiative: 0, def: 10, hpMax: 10, hpCurrent: 10, hpStatus: null,
-    posX: null, posY: null, hidden: false,
+    posX: null, posY: null, hidden: false, states: [],
     ...over,
   } as CombatParticipant
 }
@@ -71,6 +71,19 @@ describe('buildTokens', () => {
       expect(Math.abs(t.x)).toBeLessThanOrEqual(6)
       expect(Math.abs(t.z)).toBeLessThanOrEqual(6)
     }
+  })
+
+  it("recopie les états du participant sur son pion, sans les toucher", () => {
+    const states = ['renverse', 'desarme']
+    const [t] = buildTokens([p({ id: 4, kind: 'player', states })])
+    expect(t.etats).toEqual(['renverse', 'desarme'])
+    // Le tri et la coupe à 3 sont le travail du sprite, pas du builder.
+    expect(states).toEqual(['renverse', 'desarme'])
+  })
+
+  it("donne une liste vide au participant sans état", () => {
+    const [t] = buildTokens([p({ id: 4, kind: 'player' })])
+    expect(t.etats).toEqual([])
   })
 
   it('n’affiche pas de barre de PV quand le serveur les masque', () => {

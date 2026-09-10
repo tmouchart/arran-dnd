@@ -1,4 +1,5 @@
 import type { ServerCharacter } from './characters'
+import type { EtatId } from '../data/etats'
 
 const BASE = '/api/campaigns'
 
@@ -253,7 +254,7 @@ export interface RestState {
   mpCurrent: number
   mpMax: number
   prCurrent: number
-  affaibli: boolean
+  states: EtatId[]
 }
 
 export interface RestEvent {

@@ -762,7 +762,7 @@ router.post('/:id/rest', async (req, res) => {
       mpCurrent: characters.mpCurrent,
       mpMax: characters.mpMax,
       prCurrent: characters.prCurrent,
-      affaibli: characters.affaibli,
+      states: characters.states,
     })
     .from(campaignMembers)
     .innerJoin(characters, eq(characters.id, campaignMembers.characterId))
@@ -773,19 +773,19 @@ router.post('/:id/rest', async (req, res) => {
     const before = {
       hpCurrent: row.hpCurrent, hpMax: row.hpMax,
       mpCurrent: row.mpCurrent, mpMax: row.mpMax,
-      prCurrent: row.prCurrent, affaibli: row.affaibli,
+      prCurrent: row.prCurrent, states: row.states,
     }
     const after = applyRest(before, kind)
     const delta = restDelta(before, after)
     deltas.push({ userId: row.userId, characterName: row.name, delta, after })
-    if (Object.keys(delta).length === 0 && after.affaibli === row.affaibli) continue
+    if (Object.keys(delta).length === 0 && row.states.length === 0) continue
     await db
       .update(characters)
       .set({
         hpCurrent: after.hpCurrent,
         mpCurrent: after.mpCurrent,
         prCurrent: after.prCurrent,
-        affaibli: after.affaibli,
+        states: after.states,
       })
       .where(eq(characters.id, row.id))
   }

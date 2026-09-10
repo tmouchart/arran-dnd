@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { applyCharacterHp, getClientsForCombat, releaseClient, type SseClient } from './sseStore.js'
+import {
+  applyCharacterHp, applyCharacterStates, getClientsForCombat, releaseClient, type SseClient,
+} from './sseStore.js'
 
 type P = { kind: string; userId: number | null; hpCurrent: number; hpMax: number; name: string }
 
@@ -98,5 +100,45 @@ describe('le registre des clients SSE', () => {
     getClientsForCombat(id).add(a)
     releaseClient(id, a)
     expect(() => releaseClient(id, a)).not.toThrow()
+  })
+})
+
+type S = { kind: string; userId: number | null; states: string[]; name: string }
+
+const joueur = (userId: number, states: string[], name = 'Hero'): S =>
+  ({ kind: 'player', userId, states, name })
+
+describe('applyCharacterStates', () => {
+  it("remplace les états d'un joueur par ceux de sa fiche", () => {
+    const out = applyCharacterStates([joueur(1, ['affaibli'])], new Map([[1, ['renverse', 'desarme']]]))
+    expect(out[0].states).toEqual(['renverse', 'desarme'])
+    expect(out[0].name).toBe('Hero')
+  })
+
+  it('rend un monstre intact', () => {
+    const m: S = { kind: 'monster', userId: null, states: ['renverse'], name: 'Gobelin' }
+    const out = applyCharacterStates([m], new Map([[1, ['affaibli']]]))
+    expect(out[0]).toEqual(m)
+  })
+
+  it('rend un joueur sans userId intact', () => {
+    const p: S = { kind: 'player', userId: null, states: ['renverse'], name: 'PNJ' }
+    const out = applyCharacterStates([p], new Map([[1, ['affaibli']]]))
+    expect(out[0]).toEqual(p)
+  })
+
+  it("rend intact un joueur absent de la Map (il n'a pas de fiche)", () => {
+    const p = joueur(2, ['renverse'])
+    const out = applyCharacterStates([p], new Map([[1, ['affaibli']]]))
+    expect(out[0].states).toEqual(['renverse'])
+  })
+
+  it("ne mute pas le tableau d'entrée", () => {
+    const p = joueur(1, ['affaibli'])
+    const entree = [p]
+    const out = applyCharacterStates(entree, new Map([[1, ['renverse']]]))
+    expect(p.states).toEqual(['affaibli'])
+    expect(entree[0]).toBe(p)
+    expect(out).not.toBe(entree)
   })
 })

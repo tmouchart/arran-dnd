@@ -16,6 +16,10 @@ import AppEmptyState from '../components/ui/AppEmptyState.vue'
 import AppModal from '../components/ui/AppModal.vue'
 import AppBottomSheet from '../components/ui/AppBottomSheet.vue'
 import AppTooltip from '../components/ui/AppTooltip.vue'
+import EtatBadge from '../components/etats/EtatBadge.vue'
+import EtatsRow from '../components/etats/EtatsRow.vue'
+import EtatsSheet from '../components/etats/EtatsSheet.vue'
+import { ETATS, type EtatId } from '../data/etats'
 import { showToast } from '../composables/useToast'
 import { dice, revealAfterDice } from '../composables/useDice3D'
 import { fakeRemoteRoll } from '../components/dev/fakeRemoteRoll'
@@ -37,6 +41,8 @@ const textareaValue = ref('Une note griffonnée dans la marge du grimoire…')
 const tabValue = ref('emoji')
 const lucideTab = ref('sword')
 const toggleValue = ref('')
+const demoEtats = ref<EtatId[]>(['renverse', 'affaibli'])
+const showEtatsSheet = ref(false)
 const modalOpen = ref(false)
 const wideModalOpen = ref(false)
 const sheetOpen = ref(false)
@@ -155,6 +161,25 @@ function forceRoll(value: number) {
             { value: 'sword', label: 'Armes', icon: Sword },
             { value: 'scroll', label: 'Sorts', icon: Scroll },
           ]"
+        />
+      </div>
+    </AppCard>
+
+    <AppCard title="EtatBadge / EtatsRow">
+      <div class="demo-col">
+        <div class="demo-row">
+          <EtatBadge v-for="e in ETATS" :key="e.id" :etat="e" />
+        </div>
+        <div class="demo-row">
+          <EtatBadge v-for="e in ETATS" :key="e.id" :etat="e" size="sm" />
+        </div>
+        <EtatsRow :states="demoEtats" size="sm" />
+        <AppButton size="small" @click="showEtatsSheet = true">Ouvrir EtatsSheet</AppButton>
+        <EtatsSheet
+          v-model="showEtatsSheet"
+          name="Bracco"
+          :states="demoEtats"
+          @update:states="(s) => (demoEtats = s)"
         />
       </div>
     </AppCard>

@@ -9,6 +9,7 @@ import {
   createDefaultCharacter,
   toCharacter,
   normalizeHpLevelGains,
+  attackDieSides,
 } from './useCharacter'
 import type { PathRow } from '../types/character'
 import type { ServerCharacter } from '../api/characters'
@@ -206,7 +207,7 @@ describe('chargement d’une fiche avec des jets de croissance manquants', () =>
     defenseBonus: 0, attackContactBonus: 0, attackDistanceBonus: 0, attackMagiqueBonus: 0,
     hpLevelGains: [5, 5, 4], // 3 jets pour un niveau 5 : il en manque un
     items: [], goldCoins: 0, silverCoins: 0, copperCoins: 0,
-    pcCurrent: 2, prCurrent: 5, affaibli: false, competences: [], portraitImageId: null,
+    pcCurrent: 2, prCurrent: 5, states: [], competences: [], portraitImageId: null,
   }
 
   it('toCharacter complète les jets avant tout calcul', () => {
@@ -220,5 +221,17 @@ describe('chargement d’une fiche avec des jets de croissance manquants', () =>
     expect(computedHp.value).toBe(31)
     expect(character.value.hpCurrent).toBe(30)
     expect(character.value.hpMax).toBe(31)
+  })
+})
+
+describe('attackDieSides', () => {
+  it('passe en d12 quand affaibli est dans les états', () => {
+    character.value.states = ['affaibli']
+    expect(attackDieSides.value).toBe(12)
+  })
+
+  it('reste en d20 sans affaibli', () => {
+    character.value.states = ['renverse']
+    expect(attackDieSides.value).toBe(20)
   })
 })

@@ -9,7 +9,7 @@ export const UPDATABLE_FIELDS = [
   'str', 'dex', 'con', 'int', 'wis', 'cha',
   'skills', 'weapons', 'martialFormations', 'paths', 'mysticTalent',
   'armorId', 'shieldId', 'items', 'goldCoins', 'silverCoins', 'copperCoins',
-  'pcCurrent', 'prCurrent', 'affaibli', 'competences', 'portraitImageId',
+  'pcCurrent', 'prCurrent', 'states', 'competences', 'portraitImageId',
   'hpLevelGains',
 ] as const
 

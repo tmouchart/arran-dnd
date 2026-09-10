@@ -8,7 +8,7 @@ function state(over: Partial<RestState> = {}): RestState {
     mpCurrent: 2,
     mpMax: 12,
     prCurrent: 3,
-    affaibli: false,
+    states: [],
     ...over,
   }
 }
@@ -29,19 +29,19 @@ describe('applyRest — repos long', () => {
     expect(applyRest(state({ hpCurrent: 0 }), 'long').hpCurrent).toBe(0)
   })
 
-  it('lève affaibli', () => {
-    expect(applyRest(state({ affaibli: true }), 'long').affaibli).toBe(false)
+  it('lève les états', () => {
+    expect(applyRest(state({ states: ['affaibli'] }), 'long').states).toEqual([])
   })
 })
 
 describe('applyRest — repos complet', () => {
   it('remet PV, PM et PR au maximum', () => {
-    const after = applyRest(state({ affaibli: true }), 'complet')
+    const after = applyRest(state({ states: ['affaibli'] }), 'complet')
     expect(after).toMatchObject({
       hpCurrent: 24,
       mpCurrent: 12,
       prCurrent: PR_MAX,
-      affaibli: false,
+      states: [],
     })
   })
 

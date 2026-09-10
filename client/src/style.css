@@ -72,6 +72,10 @@
      Les thèmes à brand sombre le redéfinissent en clair. */
   --on-brand: #241c10;
   --danger: #8f2f2f;
+  /* Etats prejudiciables. Ambre pour les 12 etats "rappel visuel" ;
+     Affaibli garde son violet, c'est le seul qui change une regle de jet. */
+  --etat: #c98a1a;
+  --etat-affaibli: #8e44ad;
   /* Ombres quasi invisibles. Les grosses ombres portees font "template 2015". */
   --shadow-soft: 0 1px 2px rgba(35, 33, 30, 0.07);
   --shadow-card: 0 1px 3px rgba(35, 33, 30, 0.07), 0 1px 2px rgba(35, 33, 30, 0.04);
@@ -115,6 +119,8 @@
   --brand: #d4a94e;
   --brand-strong: #e8c472;
   --danger: #e98e8e;
+  --etat: #e0a94a;
+  --etat-affaibli: #c58fe0;
   --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.25);
 }

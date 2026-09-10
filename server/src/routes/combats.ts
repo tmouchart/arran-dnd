@@ -5,12 +5,13 @@ import {
   combats, combatParticipants, campaigns, campaignMembers, characters, encounterTemplates, encounterMonsters,
 } from '../db/schema.js'
 import { requireAuth, type AuthRequest } from '../auth/middleware.js'
-import { broadcastCombatState, broadcastParticipantMoved, enrichParticipantHp, getClientsForCombat, releaseClient, sendCombatStateTo, type SseClient } from '../combats/sseStore.js'
+import { broadcastCombatState, broadcastParticipantMoved, enrichParticipantHp, enrichParticipantStates, getClientsForCombat, releaseClient, sendCombatStateTo, type SseClient } from '../combats/sseStore.js'
 import { serializeCombat } from '../combats/serialize.js'
 import { broadcastCampaignEvent, isViewerRequest } from '../campaigns/sseStore.js'
 import { generateText } from '../ai/client.js'
 import { turnOrder, firstActiveId, step } from '../combats/turnOrder.js'
 import { startingPosition, clampToBoard } from '../combats/placement.js'
+import { isEtatId } from '../combats/etats.js'
 
 // Armor/shield lookup for initiative calculation (mirrors client armorsCatalog.ts)
 const ARMOR_DEF: Record<string, number> = {
@@ -204,7 +205,8 @@ router.get('/:id/combats/:cid', async (req, res) => {
   }
 
   const participants = await db.select().from(combatParticipants).where(eq(combatParticipants.combatId, combatId)).orderBy(asc(combatParticipants.id))
-  const enriched = await enrichParticipantHp(campaignId, participants)
+  const withHp = await enrichParticipantHp(campaignId, participants)
+  const enriched = await enrichParticipantStates(campaignId, withHp)
 
   res.json(serializeCombat(combat, enriched, userId === check.gmUserId && !isViewerRequest(req)))
 })
@@ -319,6 +321,57 @@ router.patch('/:id/combats/:cid/participants/:pid', async (req, res) => {
   } else {
     const clamped = Math.max(0, Math.min(Math.round(hpCurrent), participant.hpMax ?? 0))
     await db.update(combatParticipants).set({ hpCurrent: clamped }).where(eq(combatParticipants.id, pid))
+  }
+
+  await broadcastCombatState(combatId, check.gmUserId)
+  res.json({ ok: true })
+})
+
+// PATCH /:id/combats/:cid/participants/:pid/states — poser/retirer des états
+router.patch('/:id/combats/:cid/participants/:pid/states', async (req, res) => {
+  const userId = (req as unknown as AuthRequest).userId
+  const campaignId = Number(req.params.id)
+  const combatId = Number(req.params.cid)
+  const pid = Number(req.params.pid)
+
+  const check = await verifyMember(campaignId, userId)
+  if (check.status !== 'ok') { res.status(403).json({ error: 'Non autorisé' }); return }
+
+  const combat = await loadCombatInCampaign(combatId, campaignId)
+  if (!combat) { res.status(404).json({ error: 'Combat introuvable' }); return }
+
+  const [participant] = await db.select().from(combatParticipants).where(eq(combatParticipants.id, pid))
+  if (!participant || participant.combatId !== combatId) {
+    res.status(404).json({ error: 'Participant introuvable' }); return
+  }
+
+  const isGm = userId === check.gmUserId
+
+  // Les monstres sont au MJ. Un PJ : le MJ ou le joueur lui-même.
+  if (participant.kind === 'monster' && !isGm) {
+    res.status(403).json({ error: 'Seul le MJ peut modifier les états des monstres' }); return
+  }
+  if (participant.kind === 'player' && !isGm && participant.userId !== userId) {
+    res.status(403).json({ error: 'Tu ne peux modifier que tes propres états' }); return
+  }
+
+  const { states } = req.body as { states?: unknown }
+  if (!Array.isArray(states) || !states.every(isEtatId)) {
+    res.status(400).json({ error: 'États inconnus' }); return
+  }
+  const cleaned = [...new Set(states)]
+
+  if (participant.kind === 'player' && participant.userId != null) {
+    // Les états d'un PJ vivent sur sa fiche — on écrit là, pas sur le snapshot.
+    const [member] = await db
+      .select({ characterId: campaignMembers.characterId })
+      .from(campaignMembers)
+      .where(and(eq(campaignMembers.campaignId, campaignId), eq(campaignMembers.userId, participant.userId)))
+    if (member?.characterId != null) {
+      await db.update(characters).set({ states: cleaned, updatedAt: new Date() }).where(eq(characters.id, member.characterId))
+    }
+  } else {
+    await db.update(combatParticipants).set({ states: cleaned }).where(eq(combatParticipants.id, pid))
   }
 
   await broadcastCombatState(combatId, check.gmUserId)

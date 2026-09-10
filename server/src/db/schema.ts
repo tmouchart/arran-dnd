@@ -105,8 +105,8 @@ export const characters = pgTable(
     /** Points de Récupération courants (max = 5). */
     prCurrent: integer('pr_current').notNull().default(5),
 
-    /** Statut Affaibli : tous les jets se font en d12 au lieu du d20. */
-    affaibli: boolean('affaibli').notNull().default(false),
+    /** États préjudiciables courants : liste d'ids (voir combats/etats.ts). */
+    states: jsonb('states').$type<string[]>().notNull().default([]),
 
     /** Custom rollable competences: [{ id, name, ability, bonus }] */
     competences: jsonb('competences').notNull().default([]),
@@ -248,6 +248,8 @@ export const combatParticipants = pgTable('combat_participant', {
   posY: real('pos_y'),
   /** PNJ en réserve : hors de l'ordre d'initiative, invisible pour les joueurs. */
   hidden: boolean('hidden').notNull().default(false),
+  /** États préjudiciables d'un monstre. Pour un PJ, ils vivent sur sa fiche. */
+  states: jsonb('states').$type<string[]>().notNull().default([]),
 })
 
 /**

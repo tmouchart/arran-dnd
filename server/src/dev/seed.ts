@@ -35,6 +35,8 @@ export const SEED_PLAYERS = [
         { id: 'voie-de-la-guerre', name: 'Voie de la guerre', rank: 2 },
       ],
       hpLevelGains: [7, 5, 6, 5],
+      // Deux états posés d'entrée : de quoi voir les pastilles sans cliquer.
+      states: ['renverse', 'desarme'] as string[],
     },
   },
   {
@@ -68,6 +70,7 @@ export const SEED_PLAYERS = [
         { id: 'voie-du-mysticisme', name: 'Voie du mysticisme', rank: 1 },
       ],
       hpLevelGains: [5, 6, 4, 5],
+      states: ['affaibli'] as string[],
     },
   },
   {

@@ -33,6 +33,8 @@ export interface CombatParticipant {
   monsterDescription: string | null
   /** PNJ en réserve : préparé par le MJ, pas encore entré en scène. */
   hidden?: boolean
+  /** États préjudiciables en cours (voir `data/etats.ts`). */
+  states: string[]
   /** Position sur le champ de bataille, en cases (centre = 0,0). null = jamais placé. */
   posX: number | null
   posY: number | null
@@ -110,6 +112,18 @@ export function updateParticipantHp(
   return request(`/${campaignId}/combats/${combatId}/participants/${participantId}`, {
     method: 'PATCH',
     body: JSON.stringify({ hpCurrent }),
+  })
+}
+
+export function setParticipantStates(
+  campaignId: number,
+  combatId: number,
+  participantId: number,
+  states: string[],
+): Promise<void> {
+  return request(`/${campaignId}/combats/${combatId}/participants/${participantId}/states`, {
+    method: 'PATCH',
+    body: JSON.stringify({ states }),
   })
 }
 

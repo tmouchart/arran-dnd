@@ -2,6 +2,7 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as THREE from 'three'
 import { findEnvironment, rngFor, type BattleEnvironment } from './environments'
+import { visibleEtats } from '../../data/etats'
 
 export interface BattleToken {
   id: string
@@ -15,6 +16,8 @@ export interface BattleToken {
   /** PV courants et max. Sans eux, aucune barre n'est affichée. */
   hp?: number
   hpMax?: number
+  /** Ids d'états préjudiciables (voir `data/etats.ts`). Vide = aucune pastille. */
+  etats?: string[]
 }
 
 const props = defineProps<{
@@ -218,6 +221,73 @@ function makeHpBar(): { sprite: THREE.Sprite; draw: (ratio: number) => void } {
   return { sprite, draw }
 }
 
+/**
+ * Les pastilles d'état : une rangée d'emoji au-dessus de la barre de PV.
+ *
+ * Emoji et pas SVG : le pion est un canvas, y poser une icône Lucide voudrait
+ * dire la rastériser. `fillText` d'un emoji dépend de la police système — c'est
+ * exactement ce qu'on est en train de vérifier sur un vrai téléphone.
+ */
+const CELL = 52
+const GAP = 6
+/** Largeur d'une cellule une fois posée dans la scène, en cases. */
+const CELL_WORLD = 0.3
+const EMOJI_FONT = '38px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif'
+
+function makeEtatsSprite(maxCells: number): {
+  sprite: THREE.Sprite
+  draw: (ids: string[], max: number) => void
+} {
+  const canvas = document.createElement('canvas')
+  canvas.width = maxCells * CELL + (maxCells - 1) * GAP
+  canvas.height = CELL
+  const ctx = canvas.getContext('2d')!
+  const tex = new THREE.CanvasTexture(canvas)
+  tex.colorSpace = THREE.SRGBColorSpace
+
+  const sprite = new THREE.Sprite(
+    new THREE.SpriteMaterial({ map: tex, depthTest: false, transparent: true }),
+  )
+  sprite.renderOrder = 12
+
+  const draw = (ids: string[], max: number) => {
+    const { etats, overflow } = visibleEtats(ids, max)
+    const cells: string[] = etats.map((e) => e.emoji)
+    if (overflow > 0) cells.push(`+${overflow}`)
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+
+    // Dessiné centré : le sprite couvre toujours toute la texture, donc une
+    // rangée d'un seul état doit se centrer elle-même sous peine de flotter.
+    const usedPx = cells.length * CELL + Math.max(0, cells.length - 1) * GAP
+    const left = (canvas.width - usedPx) / 2
+
+    cells.forEach((cell, i) => {
+      const x = left + i * (CELL + GAP)
+      ctx.fillStyle = 'rgba(0,0,0,0.62)'
+      ctx.beginPath()
+      ctx.roundRect(x, 0, CELL, CELL, 14)
+      ctx.fill()
+      ctx.strokeStyle = '#d68910'
+      ctx.lineWidth = 3
+      ctx.stroke()
+
+      const isCount = cell.startsWith('+')
+      ctx.font = isCount ? 'bold 30px system-ui, sans-serif' : EMOJI_FONT
+      ctx.fillStyle = '#fff'
+      ctx.fillText(cell, x + CELL / 2, CELL / 2 + (isCount ? 1 : 3))
+    })
+
+    sprite.scale.set((canvas.width / CELL) * CELL_WORLD, CELL_WORLD, 1)
+    sprite.visible = cells.length > 0
+    tex.needsUpdate = true
+  }
+
+  return { sprite, draw }
+}
+
 /* ------------------------------------------------------------------ */
 /* Scène                                                              */
 /* ------------------------------------------------------------------ */
@@ -252,6 +322,10 @@ interface TokenView {
   ring: THREE.Mesh
   bar: THREE.Sprite
   drawBar: (ratio: number) => void
+  etats: THREE.Sprite
+  drawEtats: (ids: string[], max: number) => void
+  /** Dernière liste dessinée : on ne repeint les pastilles que si elle change. */
+  etatsKey: string
   /** Dernier ratio dessiné : on ne repeint la jauge que si elle a bougé. */
   ratio: number
   /** Déplacement en cours : on glisse, on ne téléporte jamais. */
@@ -325,11 +399,32 @@ function buildToken(t: BattleToken): TokenView {
   label.position.y = height + 0.62
   group.add(label)
 
+  // Tout en haut, au-dessus du nom : ce qui arrive au personnage se lit avant
+  // qui il est. En dessous : le nom, puis la barre de PV.
+  const { sprite: etats, draw: drawEtats } = makeEtatsSprite(ETATS_MAX + 1)
+  etats.position.y = height + 1.05
+  etats.visible = false
+  group.add(etats)
+
   group.position.set(t.x, 0, t.z)
   scene.add(group)
 
   const p = group.position.clone()
-  return { group, body, ring, bar, drawBar, ratio: -1, from: p, to: p.clone(), t: 1 }
+  return {
+    group, body, ring, bar, drawBar, etats, drawEtats, etatsKey: ' ',
+    ratio: -1, from: p, to: p.clone(), t: 1,
+  }
+}
+
+/** Combien de pastilles tient un pion avant que ça devienne illisible. */
+const ETATS_MAX = 3
+
+function syncEtats(view: TokenView, t: BattleToken) {
+  const ids = t.etats ?? []
+  const key = ids.join(',')
+  if (key === view.etatsKey) return
+  view.drawEtats(ids, ETATS_MAX)
+  view.etatsKey = key
 }
 
 function hpRatio(t: BattleToken): number {
@@ -355,6 +450,7 @@ function syncTokens() {
       views.set(t.id, view)
     }
     syncHpBar(view, t)
+    syncEtats(view, t)
     if (Math.abs(view.to.x - t.x) > 1e-4 || Math.abs(view.to.z - t.z) > 1e-4) {
       view.from.copy(view.group.position)
       view.from.y = 0
@@ -374,9 +470,12 @@ function syncTokens() {
 /**
  * Libère un matériau ET ses textures.
  *
- * `material.dispose()` ne touche pas à `.map` : chaque pion porte trois canvas
- * (étiquette, jauge de PV, ombre) et le sol fait 1152×1152. Les oublier faisait
- * grossir la VRAM à chaque aller-retour sur l'onglet Carte.
+ * `material.dispose()` ne touche pas à `.map` : chaque pion porte quatre canvas
+ * (étiquette, rangée d'états, jauge de PV, ombre) et le sol fait 1152×1152. Les
+ * oublier faisait grossir la VRAM à chaque aller-retour sur l'onglet Carte.
+ *
+ * Les sprites sont des enfants du groupe du pion, donc le `traverse` ci-dessous
+ * les attrape tous — y compris celui des états, ajouté après coup.
  *
  * `shadowTex` est partagée par tous les pions et survit au composant : on ne la
  * libère qu'au démontage, une seule fois.

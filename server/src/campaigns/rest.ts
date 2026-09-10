@@ -22,7 +22,7 @@ export interface RestState {
   mpCurrent: number
   mpMax: number
   prCurrent: number
-  affaibli: boolean
+  states: string[]
 }
 
 /**
@@ -44,7 +44,7 @@ export function applyRest(state: RestState, kind: RestKind): RestState {
       hpCurrent: state.hpMax,
       mpCurrent: state.mpMax,
       prCurrent: PR_MAX,
-      affaibli: false,
+      states: [],
     }
   }
 
@@ -52,7 +52,7 @@ export function applyRest(state: RestState, kind: RestKind): RestState {
     ...state,
     mpCurrent: state.mpMax,
     prCurrent: Math.min(PR_MAX, state.prCurrent + 1),
-    affaibli: false,
+    states: [],
   }
 }
 

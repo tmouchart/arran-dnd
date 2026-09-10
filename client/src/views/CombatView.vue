@@ -20,10 +20,11 @@ import {
   Shield,
   Sparkles,
   Trash2,
+  FlaskConical,
 } from "lucide-vue-next";
 import { useCombat } from "../composables/useCombat";
 import { user } from "../composables/useAuth";
-import { generateLoot } from "../api/combats";
+import { generateLoot, setParticipantStates } from "../api/combats";
 import { postCampaignRoll } from "../api/campaigns";
 import { MONSTERS_CATALOG, type Monster } from "../data/monstersCatalog";
 import { filterCatalog, formatMod } from "../utils/monsterSession";
@@ -41,6 +42,9 @@ import AppEmptyState from "../components/ui/AppEmptyState.vue";
 import AppModal from "../components/ui/AppModal.vue";
 import AppBottomSheet from "../components/ui/AppBottomSheet.vue";
 import AppTabs, { type AppTab } from "../components/ui/AppTabs.vue";
+import EtatsRow from "../components/etats/EtatsRow.vue";
+import EtatsSheet from "../components/etats/EtatsSheet.vue";
+import { sortEtats, type Etat, type EtatId } from "../data/etats";
 import BattleMapTab from "../components/battle/BattleMapTab.vue";
 import ActionsView from "./ActionsView.vue";
 import type { CombatParticipant } from "../api/combats";
@@ -92,6 +96,37 @@ watch(activeTab, (tab) => {
 
 // Expanded card (click to toggle)
 const expandedId = ref<number | null>(null);
+
+// ── Les états préjudiciables ────────────────────────────────────────────────
+// La cible est retenue par son id, pas par l'objet : chaque état SSE remplace
+// les participants, un objet mémorisé serait figé sur la version d'avant.
+const etatsTargetId = ref<number | null>(null);
+const etatsTarget = computed(
+  () => combat.value?.participants.find((p) => p.id === etatsTargetId.value) ?? null,
+);
+const showEtats = computed({
+  get: () => etatsTarget.value !== null,
+  set: (v: boolean) => { if (!v) etatsTargetId.value = null; },
+});
+
+/**
+ * Ce que la ligne compacte montre, par participant : l'état s'il est seul, le
+ * nombre sinon, rien du tout si la liste est vide.
+ */
+// `Map` est deja pris par l'icone Lucide de l'onglet : un objet fait l'affaire.
+const etatsBrief = computed(() => {
+  const out: Record<number, { etat: Etat | null; count: number }> = {};
+  for (const p of combat.value?.participants ?? []) {
+    const list = sortEtats(p.states);
+    if (list.length === 0) continue;
+    out[p.id] = { etat: list.length === 1 ? list[0] : null, count: list.length };
+  }
+  return out;
+});
+
+function applyEtats(participantId: number, states: EtatId[]): Promise<void> {
+  return setParticipantStates(campaignId, combatId, participantId, states);
+}
 
 // Add monster bottom sheet
 const showAddMonster = ref(false);
@@ -431,6 +466,7 @@ function goBack() {
             class="participant-card"
             :data-testid="idx === combat.currentTurnIndex && combat.status === 'active' ? 'active-participant' : 'participant'"
             :data-participant-id="p.id"
+            :data-participant-name="p.name"
             :class="{
               active:
                 idx === combat.currentTurnIndex && combat.status === 'active',
@@ -454,6 +490,21 @@ function goBack() {
                   class="played-icon"
                 />
                 <span class="card-kind-dot" :class="p.kind" />
+                <span
+                  v-if="etatsBrief[p.id]"
+                  class="card-etats"
+                  :title="`${etatsBrief[p.id]!.count} état(s)`"
+                >
+                  <component
+                    :is="etatsBrief[p.id]!.etat!.icon"
+                    v-if="etatsBrief[p.id]!.etat?.icon"
+                    :size="12"
+                  />
+                  <template v-else-if="etatsBrief[p.id]!.etat">{{
+                    etatsBrief[p.id]!.etat!.emoji
+                  }}</template>
+                  <template v-else>{{ etatsBrief[p.id]!.count }}</template>
+                </span>
                 <span class="card-name">{{ p.name }}</span>
               </div>
               <div class="card-right">
@@ -483,6 +534,24 @@ function goBack() {
                   />
                 </template>
               </div>
+            </div>
+
+            <!-- Expanded: les états. Les pastilles ne togglent pas : la cible
+                 tactile serait trop petite, tout passe par la sheet. -->
+            <div
+              v-if="expandedId === p.id && (isGm || p.states.length > 0)"
+              class="card-etats-row"
+              @click.stop
+            >
+              <EtatsRow :states="p.states" size="sm" />
+              <AppIconBtn
+                v-if="isGm"
+                title="États"
+                :data-testid="`open-etats-${p.id}`"
+                @click="etatsTargetId = p.id"
+              >
+                <FlaskConical :size="16" />
+              </AppIconBtn>
             </div>
 
             <!-- Expanded: HP buttons -->
@@ -610,6 +679,15 @@ function goBack() {
 
       </template>
     </div>
+
+    <EtatsSheet
+      v-if="etatsTarget"
+      v-model="showEtats"
+      :name="etatsTarget.name"
+      :states="etatsTarget.states"
+      :apply="(states: EtatId[]) => applyEtats(etatsTarget!.id, states)"
+      @update:states="(states) => { if (etatsTarget) etatsTarget.states = states; }"
+    />
 
     <Teleport to="body">
     <div v-if="combat && combat.status === 'active'" ref="footerRef" class="combat-footer">
@@ -886,6 +964,33 @@ function goBack() {
 }
 .card-kind-dot.monster {
   background: #c0392b;
+}
+
+/* L'indicateur ambre de la ligne compacte. */
+.card-etats {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 0.25rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--etat) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--etat) 45%, transparent);
+  border-style: solid;
+  color: var(--etat);
+}
+
+.card-etats-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: 0 0.8rem 0.6rem;
 }
 
 .card-name {

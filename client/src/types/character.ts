@@ -1,6 +1,7 @@
 /** Player character sheet — CO / Terres d’Arran shaped; refine fields as you extend the app. */
 
 import type { MartialWeaponCategoryId } from '../data/martialWeaponCategories'
+import type { EtatId } from '../data/etats'
 
 export interface WeaponRow {
   id: string
@@ -101,8 +102,8 @@ export interface Character {
   pcCurrent: number
   /** Points de Récupération courants (max = 5). */
   prCurrent: number
-  /** Statut Affaibli : tous les jets se font en d12 au lieu du d20. */
-  affaibli: boolean
+  /** États préjudiciables en cours (voir `data/etats.ts`). */
+  states: EtatId[]
   /** Custom rollable competences (nom + carac + bonus). */
   competences: CompetenceRow[]
   /** ID of portrait image in generated_images table. */

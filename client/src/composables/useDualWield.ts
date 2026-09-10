@@ -112,7 +112,7 @@ export function useDualWield(
     const abilities = effectiveAbilities(c)
 
     // Main directrice — d20 (d12 si affaibli)
-    const mainSides = c.affaibli ? 12 : 20
+    const mainSides = c.states.includes('affaibli') ? 12 : 20
     const mainBonus =
       attackContact.value +
       (!isMartialWeaponProficient(mainWeapon, c.martialFormations) ? -3 : 0)
