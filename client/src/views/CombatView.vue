@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import {
   ArrowLeft,
@@ -215,7 +215,11 @@ onMounted(() => {
   document.addEventListener("visibilitychange", handleVisibility);
   window.addEventListener("pointerdown", markActivity);
 });
-onUnmounted(() => {
+// `onBeforeUnmount` et pas `onUnmounted` : Vue diffère les hooks `unmounted`
+// après le montage du composant suivant. Avec `onUnmounted`, ce `disconnect()`
+// coupait le flux que le mode table venait juste d'ouvrir — la tablette
+// affichait « en attente d'un combat » alors que le combat tournait.
+onBeforeUnmount(() => {
   document.documentElement.style.removeProperty("--bottom-dock");
   disconnect();
   document.removeEventListener("visibilitychange", handleVisibility);
