@@ -35,6 +35,7 @@ export interface ServerCharacter {
   attackDistanceBonus: number | undefined
   attackMagiqueBonus: number | undefined
   hpLevelGains: number[] | undefined
+  hpBonus: number | undefined
   items: Character['items'] | undefined
   goldCoins: number | undefined
   silverCoins: number | undefined

@@ -13,6 +13,7 @@ import {
   computeHpBase,
   computeHpConMod,
   computeHpGrowth,
+  computeHp,
   computeInitiative,
   computePcMax,
   computeAttackContact,
@@ -82,7 +83,7 @@ const computedHpBase = computed(() => (character.value ? computeHpBase(character
 const computedHpDv = computed(() => FAMILY_DIE_MAX[family.value])
 const computedHpConMod = computed(() => (character.value ? computeHpConMod(character.value) : 0))
 const computedHpGrowth = computed(() => (character.value ? computeHpGrowth(character.value) : 0))
-const computedHp = computed(() => Math.max(1, computedHpBase.value + computedHpGrowth.value))
+const computedHp = computed(() => (character.value ? computeHp(character.value) : 0))
 const computedDv = computed((): string => DV_LABELS[family.value])
 const computedInitiative = computed(() => (character.value ? computeInitiative(character.value) : 0))
 const computedPcMax = computed(() => (character.value ? computePcMax(character.value) : 0))

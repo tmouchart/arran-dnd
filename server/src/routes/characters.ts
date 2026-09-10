@@ -160,6 +160,7 @@ router.put('/:id', async (req, res) => {
     competences: CompetenceRow[]
     portraitImageId: number | null
     hpLevelGains: number[]
+    hpBonus: number
   }>
 
   const body = pickUpdatable(rawBody) as UpdatableBody

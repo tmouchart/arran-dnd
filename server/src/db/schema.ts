@@ -92,6 +92,8 @@ export const characters = pgTable(
 
     /** Raw die rolls for HP gained at each level >= 2 (CON mod is computed live). Length = level - 1. */
     hpLevelGains: jsonb('hp_level_gains').notNull().default([]),
+    /** Miscellaneous max HP bonus (passives like Robustesse, Force de la nature…) */
+    hpBonus: integer('hp_bonus').notNull().default(0),
 
     /** Inventory items: [{ id, name, description?, quantity }] */
     items: jsonb('items').notNull().default([]),

@@ -92,6 +92,8 @@ export interface Character {
   attackMagiqueBonus: number
   /** Raw die rolls for HP gained at each level >= 2. Length = level - 1. CON mod is computed live. */
   hpLevelGains: number[]
+  /** Bonus de PV max divers (passifs type Robustesse, Force de la nature…) saisi manuellement */
+  hpBonus: number
   /** Inventory items. */
   items: ItemRow[]
   /** Currency. Conversion: 1 po = 10 pa = 100 pc. */

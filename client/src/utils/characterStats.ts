@@ -78,9 +78,9 @@ export function computeHpGrowth(c: Character): number {
   return c.hpLevelGains.reduce((sum, roll) => sum + roll + conMod, 0)
 }
 
-/** PV max = base niv.1 + croissance niv.2..N */
+/** PV max = base niv.1 + croissance niv.2..N + bonus divers */
 export function computeHp(c: Character): number {
-  return Math.max(1, computeHpBase(c) + computeHpGrowth(c))
+  return Math.max(1, computeHpBase(c) + computeHpGrowth(c) + (Number(c.hpBonus) || 0))
 }
 
 /** Dé de vie de la famille (label affiché). */

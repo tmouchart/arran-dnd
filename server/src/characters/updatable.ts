@@ -10,7 +10,7 @@ export const UPDATABLE_FIELDS = [
   'skills', 'weapons', 'martialFormations', 'paths', 'mysticTalent',
   'armorId', 'shieldId', 'items', 'goldCoins', 'silverCoins', 'copperCoins',
   'pcCurrent', 'prCurrent', 'states', 'competences', 'portraitImageId',
-  'hpLevelGains',
+  'hpLevelGains', 'hpBonus',
 ] as const
 
 export type UpdatableField = (typeof UPDATABLE_FIELDS)[number]

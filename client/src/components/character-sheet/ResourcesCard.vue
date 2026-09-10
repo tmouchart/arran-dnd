@@ -101,6 +101,11 @@ const mpIsMystique = computed(() => props.family === "mystiques");
               <span class="def-chip-value">{{ computedHpGrowth >= 0 ? '+' : '' }}{{ computedHpGrowth }}</span>
             </button>
           </template>
+          <span class="def-op">+</span>
+          <label class="def-chip def-chip--editable" title="Bonus de PV divers (Robustesse, Force de la nature…)">
+            <span class="def-chip-label">Bonus</span>
+            <input v-model.number="character.hpBonus" data-testid="hp-bonus" type="number" class="def-bonus-input" placeholder="0" />
+          </label>
         </div>
       </div>
 
@@ -271,6 +276,24 @@ const mpIsMystique = computed(() => props.family === "mystiques");
   background: color-mix(in srgb, #c95f56 15%, var(--surface-2));
 }
 .def-chip--hp .def-chip-value { color: #c95f56; }
+
+.def-chip--editable {
+  cursor: text;
+  border-style: dashed;
+}
+
+.def-bonus-input {
+  width: 2.6rem;
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  padding: 0;
+}
 
 .def-chip--growth {
   cursor: pointer;

@@ -245,6 +245,24 @@ describe('passifs de voie', () => {
     expect(character.value.abilities.intelligence).toBe(15)
   })
 
+  it('ajoute le bonus de PV saisi à la main', () => {
+    const before = computedHp.value
+    character.value.hpBonus = 9 // Robustesse rangs 1, 3 et 5
+    expect(computedHp.value).toBe(before + 9)
+  })
+
+  it('un bonus négatif ne fait jamais descendre les PV sous 1', () => {
+    character.value.hpBonus = -100
+    expect(computedHp.value).toBe(1)
+  })
+
+  it('un champ vidé compte pour zéro', () => {
+    const before = computedHp.value
+    // v-model.number renvoie '' quand le joueur efface la case
+    ;(character.value as unknown as { hpBonus: unknown }).hpBonus = ''
+    expect(computedHp.value).toBe(before)
+  })
+
   it('Constitution héroïque monte les PV max', () => {
     const bravoure5: PathRow = { id: 'voie-de-la-bravoure', name: 'Voie de la bravoure', rank: 5 }
     character.value.abilities.constitution = 12 // mod +1, +2 → 14 → mod +2
