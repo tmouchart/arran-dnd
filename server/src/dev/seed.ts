@@ -44,9 +44,12 @@ export const SEED_PLAYERS = [
       hpMax: 30, hpCurrent: 30, defense: 16, armorId: 'cuir', shieldId: null,
       str: 9, dex: 18, con: 11, int: 13, wis: 12, cha: 14, initiativeBonus: 2,
       // Aventurière (d8), CON +0 : 8 + 6 + 4 + 7 + 5 = 30
+      // Acrobatie au rang 5 : elle a « Dextérité héroïque », le passif qui
+      // monte la DEX de 2 (18 -> 20) et donne l'avantage aux tests de DEX.
+      // C'est le seul perso du bac à sable avec un passif de rang 5.
       paths: [
         { id: 'voie-de-lescrime', name: "Voie de l'escrime", rank: 3 },
-        { id: 'voie-de-lacrobatie', name: "Voie de l'acrobatie", rank: 2 },
+        { id: 'voie-de-lacrobatie', name: "Voie de l'acrobatie", rank: 5 },
       ],
       hpLevelGains: [6, 4, 7, 5],
     },
