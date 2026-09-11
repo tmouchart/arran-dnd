@@ -52,21 +52,11 @@ const COMMON_DECLARATIONS: FunctionDeclaration[] = [
     },
   },
   {
-    name: "get_journal",
-    description:
-      "Lit le journal de la compagnie (récit des aventures) ainsi que la liste des pages wiki disponibles (id + titre). " +
-      "Utilise cet outil quand un joueur pose des questions sur leurs aventures passées, sessions précédentes, événements vécus, ou le récit de la campagne. " +
-      "Si une page semble pertinente, enchaîne avec get_page pour en lire le détail.",
-    parameters: {
-      type: Type.OBJECT,
-      properties: {},
-    },
-  },
-  {
     name: "get_page",
     description:
-      "Lit le contenu complet d'une page wiki par son identifiant. " +
-      "Utilise cet outil après get_journal pour lire le détail d'une page dont le titre semble pertinent.",
+      "Lit le contenu complet d'une page partagée par son identifiant. " +
+      "La liste des pages (id + titre) est dans le contexte, section Pages partagées : " +
+      "utilise cet outil dès qu'un titre semble pertinent pour la question.",
     parameters: {
       type: Type.OBJECT,
       properties: {

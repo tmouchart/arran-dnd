@@ -10,6 +10,8 @@ import AppIconBtn from "../components/ui/AppIconBtn.vue";
 import AppEmptyState from "../components/ui/AppEmptyState.vue";
 import AppTabs from "../components/ui/AppTabs.vue";
 import { useCharacter, loadCharacter } from "../composables/useCharacter";
+import { user } from "../composables/useAuth";
+import { fetchCampaign } from "../api/campaigns";
 import {
   loadChatMessages,
   useChatPersistence,
@@ -73,9 +75,16 @@ function toolUseLabel(entry: ToolUseEntry): string {
 
 const { character, loadError } = useCharacter();
 const undoSnapshot = ref<Record<string, unknown> | null>(null);
+const campaignName = ref<string | null>(null);
 
 onMounted(() => {
   if (!character.value.id) loadCharacter();
+  const campaignId = user.value?.activeCampaignId;
+  if (campaignId) {
+    fetchCampaign(campaignId)
+      .then((c) => { campaignName.value = c.name; })
+      .catch(() => { campaignName.value = null; });
+  }
   // Restore scroll to latest messages after reload (localStorage hydrates before paint).
   scrollToBottom();
   requestAnimationFrame(() => {
@@ -489,7 +498,11 @@ async function downloadImage() {
         />
         <div class="composer-footer">
           <div class="composer-left">
-            <div v-if="character.id" class="character-chip">
+            <div v-if="campaignName" class="composer-chip" data-testid="chat-campaign-chip">
+              <span class="chip-icon">🏕️</span>
+              <span class="chip-name">{{ campaignName }}</span>
+            </div>
+            <div v-if="character.id" class="composer-chip">
               <span class="chip-icon">⚔️</span>
               <span class="chip-name">{{ character.name }}</span>
             </div>
@@ -768,7 +781,7 @@ async function downloadImage() {
   justify-content: space-between;
 }
 
-.character-chip {
+.composer-chip {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -779,11 +792,12 @@ async function downloadImage() {
   font-size: 0.78rem;
   font-weight: 600;
   color: var(--brand-strong);
-  max-width: 16rem;
+  min-width: 0;
   overflow: hidden;
 }
 
 .chip-name {
+  max-width: 7rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

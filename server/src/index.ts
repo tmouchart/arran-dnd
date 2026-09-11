@@ -35,7 +35,8 @@ import { CLIENT_DIST, REPO_ROOT } from "./paths.js";
 import { buildAnthropicTools, buildGeminiTool, TOPIC_NAMES } from "./knowledge/tools.js";
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "./db/index.js";
-import { campaigns, campaignMembers, characters, generatedImages, journalCompagnie, journalPages, users } from "./db/schema.js";
+import { campaigns, campaignMembers, characters, codexEntries, generatedImages, journalCompagnie, journalPages, notes, users } from "./db/schema.js";
+import { buildCampaignSection, type JournalContext, type PartyContext } from "./chat/campaignContext.js";
 
 const app = express();
 // En prod le client est servi par ce même serveur (same-origin) ; en dev le proxy
@@ -241,12 +242,13 @@ Tu t'adresses aux joueurs et au meneur en français, toujours en restant en pers
 - Si l'utilisateur demande d'annuler ("annule", "undo", "remets comme avant"...), demande confirmation puis appelle edit_character avec les valeurs du previousCharacter.
 - Ne propose l'annulation que si previousCharacter est présent dans le contexte.
 
-📜 Journal de compagnie (get_journal, get_page) :
-- get_journal retourne le journal de bord ET la liste des pages wiki (id, titre, date). C'est ton point d'entrée. get_page retourne le contenu complet d'une page par son id.
-- PROACTIVITÉ : dès qu'un joueur pose une question liée à leurs aventures, sessions passées, PNJ rencontrés, lieux visités ou événements vécus → appelle immédiatement get_journal, puis get_page sur les pages pertinentes. Ne demande pas "veux-tu que je consulte le journal ?".
+📜 Campagne, journal, codex et notes (get_page) :
+- Le journal de bord, le Codex de la campagne (PNJ, lieux) et les notes privées du joueur sont reproduits ci-dessous, après la fiche du personnage. Tu n'as rien à demander : réponds directement depuis ces textes.
+- Dès qu'un joueur pose une question sur leurs aventures, sessions passées, PNJ rencontrés, lieux visités ou événements vécus → réponds depuis le journal ou le Codex, en citant la session ou l'entrée concernée.
+- Seuls les titres des pages partagées sont listés (avec leur id). Si un titre semble pertinent pour la question, appelle immédiatement get_page avec cet id pour en lire le contenu. Ne demande pas "veux-tu que je consulte la page ?".
 
 👥 Compagnons de campagne (get_character) :
-- La liste de tes compagnons de campagne est dans le contexte du personnage, plus bas.
+- La liste de tes compagnons de campagne est dans la section Campagne, plus bas.
 - get_character te donne la fiche complète d'un compagnon (profil, stats, voies, compétences, portrait). Utilise-le de façon proactive, et pour connaître l'apparence physique d'un compagnon — ne demande jamais au joueur de décrire quelqu'un dont tu peux lire la fiche.
 
 🎨 Illustration (generate_image) :
@@ -514,21 +516,6 @@ function buildPreviousCharacterSection(prev: CharacterPayload): string {
 
 // ── Party context for campaign-aware chat ────────────────────────────────────
 
-type PartyMember = {
-  characterId: number;
-  name: string;
-  people: string;
-  profile: string;
-  culturalPath: string | null;
-  portraitImageId: number | null;
-};
-
-type PartyContext = {
-  campaignName: string;
-  gmUserId: number;
-  members: PartyMember[];
-};
-
 async function fetchPartyContext(userId: number): Promise<PartyContext | null> {
   const [user] = await db
     .select({ activeCampaignId: users.activeCampaignId })
@@ -555,6 +542,12 @@ async function fetchPartyContext(userId: number): Promise<PartyContext | null> {
     .innerJoin(characters, eq(characters.id, campaignMembers.characterId))
     .where(eq(campaignMembers.campaignId, user.activeCampaignId));
 
+  const codex = await db
+    .select({ type: codexEntries.type, name: codexEntries.name, description: codexEntries.description })
+    .from(codexEntries)
+    .where(eq(codexEntries.campaignId, user.activeCampaignId))
+    .orderBy(codexEntries.type, codexEntries.name);
+
   return {
     campaignName: campaign.name,
     gmUserId: campaign.gmUserId,
@@ -570,26 +563,26 @@ async function fetchPartyContext(userId: number): Promise<PartyContext | null> {
         portraitImageId: r.portraitImageId,
       };
     }),
+    codex,
   };
 }
 
-function buildPartySection(party: PartyContext, activeCharId: number | null): string {
-  // Exclude the active character (already in characterSection)
-  const others = party.members.filter((m) => m.characterId !== activeCharId);
-  if (others.length === 0) return "";
+// Journal de bord entier, titres des pages partagees et notes texte du joueur.
+// Le journal et les pages ne sont pas scopes par campagne en base (voir plan 26, § 6).
+async function fetchJournalContext(userId: number): Promise<JournalContext> {
+  const [row] = await db.select().from(journalCompagnie).where(eq(journalCompagnie.id, 1));
+  const editedBy = await charNameByUserId(row?.updatedByUserId ?? null);
+  const pages = await db
+    .select({ id: journalPages.id, title: journalPages.title })
+    .from(journalPages)
+    .orderBy(journalPages.updatedAt);
+  const userNotes = await db
+    .select({ title: notes.title, content: notes.content })
+    .from(notes)
+    .where(and(eq(notes.ownerUserId, userId), eq(notes.type, "text")))
+    .orderBy(notes.updatedAt);
 
-  const lines = others.map((m) => {
-    const parts = [m.name];
-    if (m.people) parts.push(m.people);
-    if (m.profile) parts.push(`profil ${m.profile}`);
-    if (m.culturalPath) parts.push(`voie culturelle : ${m.culturalPath}`);
-    return `- ${parts.join(", ")}`;
-  });
-  return (
-    `\n\n## Compagnons de campagne (${party.campaignName})\n\n` +
-    lines.join("\n") +
-    "\n\nPour consulter la fiche complète d'un compagnon (stats, voies, compétences, portrait), utilise l'outil get_character avec son prénom."
-  );
+  return { content: row?.content ?? "", editedBy, pages, notes: userNotes };
 }
 
 async function charNameByUserId(userId: number | null): Promise<string | null> {
@@ -662,40 +655,6 @@ async function runTool(
     console.log(`[edit_character] Updated character ${charId}:`, safeChanges);
     writeSse(res, "character_updated", { character: updatedRow, previousCharacter: oldRow });
     return { text: `Modification appliquée : ${JSON.stringify(safeChanges)}` };
-  }
-
-  if (name === "get_journal") {
-    const [row] = await db.select().from(journalCompagnie).where(eq(journalCompagnie.id, 1));
-    const journalContent = row?.content ?? "";
-    const journalEditedBy = await charNameByUserId(row?.updatedByUserId ?? null);
-    const pages = await db
-      .select({ id: journalPages.id, title: journalPages.title, updatedAt: journalPages.updatedAt, updatedByUserId: journalPages.updatedByUserId })
-      .from(journalPages)
-      .orderBy(journalPages.updatedAt);
-
-    let result = "## Journal de bord\n";
-    if (journalEditedBy) result += `Dernière modification par : ${journalEditedBy}\n`;
-    result += "\n";
-    if (journalContent) {
-      result += journalContent.length > 8000 ? journalContent.slice(0, 8000) + "\n\n[…contenu tronqué]" : journalContent;
-    } else {
-      result += "Le journal de compagnie est vide.";
-    }
-    result += "\n\n## Pages wiki disponibles\n\n";
-    if (pages.length === 0) {
-      result += "Aucune page wiki n'a été créée.";
-    } else {
-      const pageLines = await Promise.all(pages.map(async (p) => {
-        const editedBy = await charNameByUserId(p.updatedByUserId);
-        const byStr = editedBy ? ` — par ${editedBy}` : "";
-        return `- [${p.id}] ${p.title} (${p.updatedAt.toLocaleDateString("fr-FR")}${byStr})`;
-      }));
-      result += pageLines.join("\n");
-    }
-
-    console.log(`[journal] Loaded company journal (${journalContent.length} chars) + ${pages.length} pages`);
-    writeSse(res, "tool_use", { tool: "get_journal", label: "Lecture du journal" });
-    return { text: result };
   }
 
   if (name === "get_page") {
@@ -854,11 +813,13 @@ app.post("/api/chat", requireAuth, async (req, res) => {
     const previousSection = character && previousCharacter ? buildPreviousCharacterSection(previousCharacter) : "";
     const party = await fetchPartyContext(chatUserId);
     const activeCharId = character ? Number(character.id) : null;
-    const partySection = party ? buildPartySection(party, activeCharId) : "";
+    const journal = await fetchJournalContext(chatUserId);
+    const campaignSection = buildCampaignSection(party, activeCharId, journal);
+    console.log(`[chat] section campagne : ${campaignSection.length} caracteres`);
     // MJ de la campagne active : verifie cote serveur, jamais deduit du prompt.
     const isGm = party?.gmUserId === chatUserId;
-    // Ordre impose : tout ce qui bouge (fiche, compagnons, undo) passe APRES le bloc statique.
-    const system = `${STATIC_SYSTEM}${characterSection}${partySection}${previousSection}`;
+    // Ordre impose : tout ce qui bouge (fiche, campagne, undo) passe APRES le bloc statique.
+    const system = `${STATIC_SYSTEM}${characterSection}${campaignSection}${previousSection}`;
 
     const apiMessages = messages.map((m) => ({
       role: m.role,
