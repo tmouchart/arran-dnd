@@ -1,6 +1,6 @@
 # 25 — Isilwen : toute la knowledge en contexte
 
-**Statut** : à implémenter
+**Statut** : livré (commit `98855e3`)
 **Problème** : Isilwen répond imprécisément aux questions de règles, ne consulte pas ses documents de façon proactive.
 **Décision** : supprimer la recherche de documents. Tout mettre en contexte sauf le bestiaire, exploiter le cache de préfixe, passer sur `gemini-3.8-flash`.
 

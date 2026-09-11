@@ -176,7 +176,7 @@ const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-5";
 const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-3.8-flash";
 /** Available image generation models (best first). Override with GEMINI_IMAGE_MODEL env var. */
 const GEMINI_IMAGE_MODELS = [
-  "gemini-3.1-flash-image-preview", // Nano Banana 2 — best quality/price, up to 4K
+  "gemini-3.1-flash-image",         // Nano Banana 2 (GA) — best quality/price, up to 4K
   "nano-banana-pro-preview",        // Gemini 3 Pro Image — highest quality, ~$0.13/img
   "gemini-3-pro-image-preview",     // Gemini 3 Pro Image (alias)
   "gemini-2.5-flash-image",         // Nano Banana 1 — deprecated oct 2026
