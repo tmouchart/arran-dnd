@@ -2,7 +2,6 @@ export type ChatRole = 'user' | 'assistant'
 
 export interface ToolUseEntry {
   tool: string
-  topic?: string
   label?: string
 }
 

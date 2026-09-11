@@ -62,27 +62,9 @@ onUnmounted(() => {
   stopTypewriter();
 });
 
-const TOPIC_LABELS: Record<string, string> = {
-  "creation-personnage": "Création de personnage",
-  combat: "Combat",
-  equipement: "Équipement",
-  magie: "Magie",
-  "monde-arran": "Monde d'Arran",
-  "monde-lore-chroniques": "Chroniques",
-  "monde-lore-peuples-elfes": "Peuples elfes",
-  "monde-lore-peuples-nains-humains": "Peuples nains & humains",
-  "monde-lore-peuples-autres": "Autres peuples",
-  races: "Races",
-  "voies-de-profil": "Voies de profil",
-  "voies-de-prestige": "Voies de prestige",
-  bestiaire: "Bestiaire",
-};
 
 function toolUseLabel(entry: ToolUseEntry): string {
   if (entry.label) return entry.label;
-  if (entry.tool === "load_knowledge" && entry.topic) {
-    return `Consulté les astres : ${TOPIC_LABELS[entry.topic] ?? entry.topic}`;
-  }
   if (entry.tool === "edit_character") {
     return "Modifié la fiche du personnage";
   }
