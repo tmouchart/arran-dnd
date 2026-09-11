@@ -5,7 +5,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
@@ -24,14 +24,15 @@ import ttsRouter from "./routes/tts.js";
 import devRouter from "./dev/routes.js";
 import { devToolsEnabled } from "./dev/enabled.js";
 import { requireAuth, type AuthRequest } from "./auth/middleware.js";
-import { loadCoreIndex, loadTopic } from "./knowledge/loadKnowledge.js";
-import { CLIENT_DIST, REPO_ROOT } from "./paths.js";
 import {
-  anthropicTool,
-  geminiTool,
-  TOPIC_NAMES,
-  type TopicName,
-} from "./knowledge/tools.js";
+  buildStaticBlock,
+  loadAllKnowledge,
+  loadBestiaire,
+  loadMonster,
+  loadMonsterNames,
+} from "./knowledge/loadKnowledge.js";
+import { CLIENT_DIST, REPO_ROOT } from "./paths.js";
+import { buildAnthropicTools, buildGeminiTool, TOPIC_NAMES } from "./knowledge/tools.js";
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "./db/index.js";
 import { campaigns, campaignMembers, characters, generatedImages, journalCompagnie, journalPages, users } from "./db/schema.js";
@@ -172,7 +173,7 @@ app.get("/api/images", requireAuth, async (req, res) => {
 
 const AI_PROVIDER = process.env.AI_PROVIDER ?? "gemini";
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-5";
-const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-3.8-flash";
 /** Available image generation models (best first). Override with GEMINI_IMAGE_MODEL env var. */
 const GEMINI_IMAGE_MODELS = [
   "gemini-3.1-flash-image-preview", // Nano Banana 2 — best quality/price, up to 4K
@@ -202,11 +203,12 @@ const geminiClient = process.env.GEMINI_API_KEY
 const SYSTEM_PREAMBLE = `Tu incarnes Isilwen du Miroir Astral, une Elfe Bleue divinatrice et mystique du monde des Terres d'Arran, utilisant le moteur Chroniques Oubliées.
 Tu t'adresses aux joueurs et au meneur en français, toujours en restant en personnage.
 
-🎭 Style de roleplay (intégré et constant) :
-- Reste en personnage du début à la fin, sans rupture de ton ni "mode d'emploi".
-- Fonds naturellement le roleplay avec les règles : ton immersif, explications précises, transitions fluides.
-- Taquinerie bienvenue, toujours bienveillante — jamais agressive ni humiliante.
-- Si un personnage actif est fourni dans le contexte, adresse-toi à lui par son prénom et adapte tes conseils à sa race, son profil, son histoire (si fournie), ses armes et capacités, et son niveau.
+📖 Rigueur des règles — c'est ta mission principale :
+- L'intégralité des règles et du lore dont tu disposes est reproduite ci-dessous. Lis-la, cite-la, applique-la.
+- RÈGLE ABSOLUE : ne donne JAMAIS un chiffre (bonus, coût en PM, dégâts, difficulté, durée, portée, prix) qui ne figure pas dans les règles ci-dessous. Aucune exception, même si le chiffre te semble évident ou standard ailleurs.
+- Si une règle manque ou est ambiguë, dis-le en une phrase, propose de vérifier le livre officiel, puis donne une alternative prudente clairement annoncée comme telle.
+- Croise les sources : une réponse complète combine souvent une règle générale, une capacité de voie et la fiche du personnage. Vérifie les exceptions avant de conclure.
+- Applique les règles au personnage actif : calcule avec SES caractéristiques, SON niveau, SES voies, et montre le calcul.
 
 ⚡ Concision avant tout :
 - Réponds de façon directe et concise. Va à l'essentiel sans tourner autour du pot.
@@ -214,58 +216,76 @@ Tu t'adresses aux joueurs et au meneur en français, toujours en restant en pers
 - Évite les longues introductions, les répétitions et les formules creuses. Une bonne réponse est courte et utile.
 - Structure : info utile d'abord, couleur narrative ensuite — jamais l'inverse.
 
-📖 Rigueur règles :
-- Les extraits proviennent d'une base interne (knowledge/) : ce n'est PAS une copie complète du livre.
-- Si une règle manque ou est incertaine, dis-le en une phrase, propose de vérifier le livre officiel, puis donne une alternative prudente.
-- N'invente pas de chiffres (bonus, coûts, DD) : si l'info n'est pas dans les extraits, ne la fabrique pas.
-- Tu as accès à un outil load_knowledge pour charger des règles détaillées. Utilise-le dès qu'une question porte sur un sujet spécifique (races, combat, magie, voies, équipement, création de personnage, monde, histoire et lore des Terres d'Arran...).
+🎭 Style de roleplay (intégré et constant) :
+- Reste en personnage du début à la fin, sans rupture de ton ni "mode d'emploi".
+- Fonds naturellement le roleplay avec les règles : ton immersif, explications précises, transitions fluides.
+- Taquinerie bienvenue, toujours bienveillante — jamais agressive ni humiliante.
+- Si un personnage actif est fourni dans le contexte, adresse-toi à lui par son prénom et adapte tes conseils à sa race, son profil, son histoire (si fournie), ses armes et capacités, et son niveau.
+
+🐉 Bestiaire (règle stricte) :
+- L'index des créatures est ci-dessous ; leur fiche détaillée se lit avec l'outil get_monstre quand il t'est proposé.
+- Tu ne dois JAMAIS révéler de données chiffrées sur les monstres aux joueurs : pas de PV, DEF, NC, bonus d'attaque, DM, caractéristiques (FOR, DEX, etc.), initiative, ou réduction de dégâts.
+- Tu peux uniquement partager avec un joueur : le nom du monstre, sa taille, sa description narrative, et le nom de ses capacités (sans les détails mécaniques).
+- Si un joueur demande les stats d'un monstre, refuse poliment en restant en personnage : "Les mystères de cette créature ne se révèlent qu'au combat..."
 
 ✏️ Modification de fiche (edit_character) — SEUL outil nécessitant confirmation :
 - Tu peux modifier les statistiques du personnage (FOR, DEX, CON, INT, SAG, CHA, niveau, PV max, PM max, défense) avec l'outil edit_character.
-- RÈGLE ABSOLUE : avant d'appeler edit_character, annonce EXACTEMENT ce que tu vas changer et attends la confirmation explicite du joueur ("oui", "ok", "vas-y", "d'accord"...).
+- Avant d'appeler edit_character, annonce EXACTEMENT ce que tu vas changer et attends la confirmation explicite du joueur ("oui", "ok", "vas-y", "d'accord"...).
   Exemple : "Je peux passer ta FOR de 10 à 12 — veux-tu que je le fasse ?"
 - N'appelle JAMAIS edit_character si l'utilisateur n'a pas confirmé dans son dernier message.
 - Après modification, confirme brièvement en restant en personnage.
-- NOTE : cette règle de confirmation s'applique UNIQUEMENT à edit_character. Tous les autres outils (load_knowledge, get_journal, get_page, get_character, generate_image) doivent être utilisés IMMÉDIATEMENT sans demander confirmation.
-
-🐉 Bestiaire (règle stricte) :
-- Tu ne dois JAMAIS révéler de données chiffrées sur les monstres aux joueurs : pas de PV, DEF, NC, bonus d'attaque, DM, caractéristiques (FOR, DEX, etc.), initiative, ou réduction de dégâts.
-- Tu peux uniquement partager : le nom du monstre, sa taille, sa description narrative, et le nom de ses capacités (sans les détails mécaniques).
-- Si un joueur demande les stats d'un monstre, refuse poliment en restant en personnage : "Les mystères de cette créature ne se révèlent qu'au combat..."
+- Cette règle de confirmation s'applique UNIQUEMENT à edit_character. Tous les autres outils s'utilisent IMMÉDIATEMENT, sans demander confirmation.
 
 ↩️ Annulation (undo) :
 - Si un previousCharacter est présent dans le contexte du personnage, cela signifie qu'une modification a été faite lors de cette conversation.
 - Si l'utilisateur demande d'annuler ("annule", "undo", "remets comme avant"...), demande confirmation puis appelle edit_character avec les valeurs du previousCharacter.
 - Ne propose l'annulation que si previousCharacter est présent dans le contexte.
 
-📜 Journal de compagnie (outils get_journal, get_page) :
-- Tu as accès au journal de la compagnie et aux pages wiki créées par les joueurs.
-- get_journal retourne le journal de bord ET la liste des pages wiki (id, titre, date). C'est ton point d'entrée. Les pages sont triées par date.
-- get_page retourne le contenu complet d'une page wiki par son id. Utilise-le après get_journal si une page semble pertinente.
-- PROACTIVITÉ : dès qu'un joueur pose une question liée à leurs aventures, sessions passées, PNJ rencontrés, lieux visités, événements vécus, ou tout sujet narratif de la campagne → appelle immédiatement get_journal SANS demander confirmation. Va chercher l'information d'abord, réponds ensuite.
-- RÉSUMÉ D'AVENTURES : si on te demande de raconter ou résumer les aventures, appelle get_journal puis enchaîne avec get_page sur les pages les plus récentes pour construire un récit complet. Ne te limite pas au journal — lis aussi les pages.
-- Ne demande pas "veux-tu que je consulte le journal ?" — fais-le directement.
-
-🎨 Illustration (generate_image) :
-- Tu peux générer des illustrations (scènes, portraits, cartes, objets) avec l'outil generate_image.
-- Utilise-le quand le joueur demande une image, ou quand une description de scène ou de personnage bénéficierait d'une illustration.
-- Le prompt DOIT être en anglais, détaillé, style "medieval high fantasy, painterly, warm tones".
-- IMPORTANT : l'image générée doit TOUJOURS être une illustration plein cadre. Jamais une page de livre, jamais un cadre blanc autour, jamais un format "photo d'un livre". Ajoute "full frame illustration, no borders, no book page, no white margins" à chaque prompt.
-- Inclus toujours le contexte du monde d'Arran dans le prompt (elfes, nains, cristaux, forêts anciennes, etc.).
-- Après génération, continue ta réponse normalement — l'image s'affiche automatiquement dans le chat.
-- N'utilise PAS cet outil pour les questions de règles, de mécanique ou de statistiques.
-- Limite : maximum 1 image par réponse sauf demande explicite du joueur.
+📜 Journal de compagnie (get_journal, get_page) :
+- get_journal retourne le journal de bord ET la liste des pages wiki (id, titre, date). C'est ton point d'entrée. get_page retourne le contenu complet d'une page par son id.
+- PROACTIVITÉ : dès qu'un joueur pose une question liée à leurs aventures, sessions passées, PNJ rencontrés, lieux visités ou événements vécus → appelle immédiatement get_journal, puis get_page sur les pages pertinentes. Ne demande pas "veux-tu que je consulte le journal ?".
 
 👥 Compagnons de campagne (get_character) :
-- La liste de tes compagnons de campagne est dans le contexte ci-dessous.
-- get_character te donne la fiche complète d'un compagnon (profil, stats, voies, compétences, portrait).
-- RÈGLE ABSOLUE : avant de générer une image représentant un ou plusieurs personnages joueurs, appelle TOUJOURS get_character sur chaque personnage concerné, même si tu l'as déjà appelé dans un message précédent. Le portrait image n'est transmis au générateur que s'il est récupéré dans le même tour. Ne génère JAMAIS une image d'un personnage sans avoir d'abord consulté sa fiche dans ce même tour.
-- RÈGLE ABSOLUE : quand tu as besoin de connaître l'apparence physique d'un compagnon (pour le décrire, générer une image, ou toute autre raison), appelle get_character pour consulter son portrait. Ne demande JAMAIS au joueur de décrire un compagnon dont tu peux consulter la fiche.
-- Utilise get_character de façon proactive quand un joueur pose une question sur un compagnon.
-- PROACTIVITÉ IMAGE : quand le joueur demande une image impliquant des compagnons (ex: "dessine-nous", "une image du groupe", "illustre la scène"), appelle immédiatement get_character sur chaque compagnon concerné puis generate_image. N'attends PAS de confirmation, ne demande PAS les noms — tu les connais déjà. Agis directement.`;
+- La liste de tes compagnons de campagne est dans le contexte du personnage, plus bas.
+- get_character te donne la fiche complète d'un compagnon (profil, stats, voies, compétences, portrait). Utilise-le de façon proactive, et pour connaître l'apparence physique d'un compagnon — ne demande jamais au joueur de décrire quelqu'un dont tu peux lire la fiche.
+
+🎨 Illustration (generate_image) :
+- Le prompt DOIT être en anglais, détaillé, style "medieval high fantasy, painterly, warm tones", et inclure le contexte du monde d'Arran (elfes, nains, cristaux, forêts anciennes...).
+- L'image doit TOUJOURS être une illustration plein cadre : ajoute "full frame illustration, no borders, no book page, no white margins" à chaque prompt.
+- Avant de générer une image représentant un ou plusieurs personnages joueurs, appelle TOUJOURS get_character sur chacun d'eux dans CE tour — le portrait n'est transmis au générateur que s'il est récupéré dans le même tour.
+- Quand le joueur demande une image impliquant des compagnons ("dessine-nous", "illustre la scène"), enchaîne get_character puis generate_image directement, sans demander les noms.
+- N'utilise PAS cet outil pour les questions de règles ou de statistiques. Maximum 1 image par réponse sauf demande explicite.`;
+
+// ── BLOC STATIQUE ────────────────────────────────────────────────────────────
+// Calcule UNE FOIS au demarrage : preambule + toutes les regles (sauf bestiaire)
+// + l'index des monstres. C'est la tete du prompt, donc la partie mise en cache
+// par le fournisseur. Rien de variable ne doit jamais passer au-dessus : un seul
+// octet qui change invalide tout le cache de prefixe qui suit.
+const BESTIAIRE_TEXT = loadBestiaire();
+const MONSTER_NAMES = loadMonsterNames(BESTIAIRE_TEXT);
+const STATIC_SYSTEM = buildStaticBlock(SYSTEM_PREAMBLE, loadAllKnowledge(), MONSTER_NAMES);
+console.log(
+  `[knowledge] Bloc statique monte : ${STATIC_SYSTEM.length} caracteres, ${MONSTER_NAMES.length} monstres indexes`
+);
+// loadEnv utilise override:false : un `npm run dev` deja lance garde l'ancien modele
+// malgre un changement de server/.env. Logguer le modele reel evite la fausse piste.
+console.log(`[chat] provider=${AI_PROVIDER} modele=${AI_PROVIDER === "gemini" ? GEMINI_MODEL : ANTHROPIC_MODEL}`);
+
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 type SseEvent = "delta" | "done" | "error" | "tool_use" | "character_updated" | "image";
+
+/**
+ * Message d'erreur destine au joueur. Le detail technique reste dans les logs :
+ * le SDK Gemini leve des Error dont le `.message` est le corps JSON brut de l'API,
+ * qu'il ne faut jamais afficher dans le chat.
+ */
+function playerFacingError(status: number): string {
+  if (status === 429) return "Isilwen est trop sollicitee en ce moment. Reessaie dans quelques secondes.";
+  if (status === 401 || status === 403) return "Isilwen ne repond pas : sa connexion est mal configuree. Previens le meneur de jeu.";
+  if (status === 400) return "Isilwen n'a pas pu traiter cette demande. Reformule ta question, ou previens le meneur de jeu si ca se repete.";
+  return "Isilwen s'est perdue dans les astres. Reessaie dans un instant.";
+}
 
 function writeSse(res: express.Response, event: SseEvent, data: unknown): void {
   res.write(`event: ${event}\n`);
@@ -295,10 +315,11 @@ function sanitizeChanges(raw: Record<string, unknown>): Partial<Record<EditableF
 
 function logTokens(
   label: string,
-  usage: { input?: number; output?: number; total?: number }
+  usage: { input?: number; output?: number; total?: number; cached?: number }
 ): void {
   const parts: string[] = [];
   if (usage.input != null) parts.push(`in=${usage.input}`);
+  if (usage.cached != null) parts.push(`cached=${usage.cached}`);
   if (usage.output != null) parts.push(`out=${usage.output}`);
   if (usage.total != null) parts.push(`total=${usage.total}`);
   console.log(`[tokens] ${label}: ${parts.join(" ")}`);
@@ -452,6 +473,29 @@ function messagestoGeminiContents(messages: ChatMessage[]): GeminiContent[] {
   }));
 }
 
+/**
+ * Le stream decoupe le texte en dizaines de parts. On les recolle pour reinjecter
+ * un tour de modele propre — en preservant chaque part porteuse d'autre chose
+ * (functionCall, thought, thoughtSignature), sans quoi Gemini 3 renvoie
+ * `400 Function call is missing a thought_signature`.
+ */
+function mergeGeminiParts(parts: GeminiPart[]): GeminiPart[] {
+  const isPlainText = (p: GeminiPart) => {
+    const keys = Object.keys(p);
+    return keys.length === 1 && keys[0] === "text";
+  };
+  const out: GeminiPart[] = [];
+  for (const part of parts) {
+    const last = out[out.length - 1];
+    if (last && isPlainText(part) && isPlainText(last)) {
+      last.text = String(last.text) + String(part.text);
+    } else {
+      out.push({ ...part });
+    }
+  }
+  return out;
+}
+
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true, topics: TOPIC_NAMES });
 });
@@ -481,6 +525,7 @@ type PartyMember = {
 
 type PartyContext = {
   campaignName: string;
+  gmUserId: number;
   members: PartyMember[];
 };
 
@@ -492,7 +537,7 @@ async function fetchPartyContext(userId: number): Promise<PartyContext | null> {
   if (!user?.activeCampaignId) return null;
 
   const [campaign] = await db
-    .select({ name: campaigns.name })
+    .select({ name: campaigns.name, gmUserId: campaigns.gmUserId })
     .from(campaigns)
     .where(eq(campaigns.id, user.activeCampaignId));
   if (!campaign) return null;
@@ -512,6 +557,7 @@ async function fetchPartyContext(userId: number): Promise<PartyContext | null> {
 
   return {
     campaignName: campaign.name,
+    gmUserId: campaign.gmUserId,
     members: rows.map((r) => {
       const paths = (r.paths as Array<{ name: string; rank: number; kind?: string }>) ?? [];
       const cultural = paths.find((p) => p.kind === "culturelle");
@@ -556,6 +602,241 @@ async function charNameByUserId(userId: number | null): Promise<string | null> {
   return char?.name ?? null;
 }
 
+// ── EXÉCUTION DES OUTILS ─────────────────────────────────────────────────────
+// Une seule implémentation, partagée par Gemini et Anthropic. Les échecs sont
+// rendus au modèle sous forme de texte : il explique lui-même au joueur plutôt
+// que de couper le flux en plein milieu d'une réponse.
+type ToolContext = {
+  res: express.Response;
+  chatUserId: number;
+  character: CharacterPayload | null;
+  party: PartyContext | null;
+  /** name → portraitImageId, alimenté par get_character et consommé par generate_image. */
+  portraitIds: Map<string, number>;
+  isGm: boolean;
+};
+
+type ToolOutcome = { text: string; portrait?: { data: string; mimeType: string } };
+
+async function runTool(
+  name: string,
+  args: Record<string, unknown>,
+  ctx: ToolContext
+): Promise<ToolOutcome> {
+  const { res, chatUserId, character, party, portraitIds } = ctx;
+
+  if (name === "get_monstre") {
+    // Double verrou : l'outil n'est pas exposé aux joueurs, et refuse quand même s'il est appelé.
+    if (!ctx.isGm) return { text: "Outil réservé au meneur de jeu." };
+    const nom = String(args.nom ?? "");
+    writeSse(res, "tool_use", { tool: "get_monstre", label: `Consultation du bestiaire : ${nom}` });
+    const sheet = loadMonster(BESTIAIRE_TEXT, nom);
+    if (!sheet) {
+      console.log(`[bestiaire] Monstre inconnu : "${nom}"`);
+      return { text: `Aucune créature nommée "${nom}" dans le bestiaire. Vérifie l'orthographe dans l'index fourni.` };
+    }
+    console.log(`[bestiaire] Fiche chargée : "${nom}" (${sheet.length} chars)`);
+    return { text: sheet };
+  }
+
+  if (name === "edit_character") {
+    const safeChanges = sanitizeChanges((args.changes as Record<string, unknown>) ?? {});
+    if (Object.keys(safeChanges).length === 0) {
+      return { text: "Aucun champ valide à modifier — la fiche n'a pas été touchée." };
+    }
+    const charId = Number(character?.id);
+    if (!Number.isFinite(charId) || charId <= 0) {
+      return { text: "Identifiant de personnage invalide — la fiche n'a pas été modifiée." };
+    }
+    // Scopé sur l'utilisateur du chat : on ne modifie jamais la fiche d'un autre joueur
+    const [oldRow] = await db.select().from(characters)
+      .where(and(eq(characters.id, charId), eq(characters.userId, chatUserId)));
+    if (!oldRow) return { text: "Personnage introuvable — la fiche n'a pas été modifiée." };
+
+    const [updatedRow] = await db
+      .update(characters)
+      .set({ ...safeChanges, updatedAt: new Date() })
+      .where(and(eq(characters.id, charId), eq(characters.userId, chatUserId)))
+      .returning();
+
+    console.log(`[edit_character] Updated character ${charId}:`, safeChanges);
+    writeSse(res, "character_updated", { character: updatedRow, previousCharacter: oldRow });
+    return { text: `Modification appliquée : ${JSON.stringify(safeChanges)}` };
+  }
+
+  if (name === "get_journal") {
+    const [row] = await db.select().from(journalCompagnie).where(eq(journalCompagnie.id, 1));
+    const journalContent = row?.content ?? "";
+    const journalEditedBy = await charNameByUserId(row?.updatedByUserId ?? null);
+    const pages = await db
+      .select({ id: journalPages.id, title: journalPages.title, updatedAt: journalPages.updatedAt, updatedByUserId: journalPages.updatedByUserId })
+      .from(journalPages)
+      .orderBy(journalPages.updatedAt);
+
+    let result = "## Journal de bord\n";
+    if (journalEditedBy) result += `Dernière modification par : ${journalEditedBy}\n`;
+    result += "\n";
+    if (journalContent) {
+      result += journalContent.length > 8000 ? journalContent.slice(0, 8000) + "\n\n[…contenu tronqué]" : journalContent;
+    } else {
+      result += "Le journal de compagnie est vide.";
+    }
+    result += "\n\n## Pages wiki disponibles\n\n";
+    if (pages.length === 0) {
+      result += "Aucune page wiki n'a été créée.";
+    } else {
+      const pageLines = await Promise.all(pages.map(async (p) => {
+        const editedBy = await charNameByUserId(p.updatedByUserId);
+        const byStr = editedBy ? ` — par ${editedBy}` : "";
+        return `- [${p.id}] ${p.title} (${p.updatedAt.toLocaleDateString("fr-FR")}${byStr})`;
+      }));
+      result += pageLines.join("\n");
+    }
+
+    console.log(`[journal] Loaded company journal (${journalContent.length} chars) + ${pages.length} pages`);
+    writeSse(res, "tool_use", { tool: "get_journal", label: "Lecture du journal" });
+    return { text: result };
+  }
+
+  if (name === "get_page") {
+    const pageId = Number(args.id);
+    if (!Number.isFinite(pageId) || pageId <= 0) return { text: "Identifiant de page invalide." };
+    const [page] = await db.select().from(journalPages).where(eq(journalPages.id, pageId));
+    writeSse(res, "tool_use", { tool: "get_page", label: `Lecture de la page : ${page?.title ?? pageId}` });
+    if (!page) return { text: `Aucune page trouvée avec l'id ${pageId}.` };
+    const editedBy = await charNameByUserId(page.updatedByUserId);
+    const content = page.content ?? "";
+    const truncated = content.length > 8000 ? content.slice(0, 8000) + "\n\n[…contenu tronqué]" : content;
+    const byLine = editedBy ? `\nDernière modification par : ${editedBy}\n` : "";
+    console.log(`[journal] Loaded page ${pageId}`);
+    return { text: `# ${page.title}${byLine}\n${truncated}` };
+  }
+
+  if (name === "generate_image") {
+    const imagePrompt = String(args.prompt ?? "");
+    console.log(`[generate_image] Prompt requested:\n${imagePrompt}`);
+    writeSse(res, "tool_use", { tool: "generate_image", label: "Génération d'une illustration…" });
+    if (!geminiClient) return { text: "La génération d'image est indisponible (GEMINI_API_KEY manquante)." };
+
+    try {
+      // Load all cached portraits in one query
+      const portraits: Array<{ name: string; data: string; mimeType: string }> = [];
+      if (portraitIds.size > 0) {
+        const ids = [...portraitIds.values()];
+        const rows = await db
+          .select({ id: generatedImages.id, data: generatedImages.data, mimeType: generatedImages.mimeType })
+          .from(generatedImages)
+          .where(inArray(generatedImages.id, ids));
+        const rowById = new Map(rows.map((r) => [r.id, r]));
+        for (const [pname, imgId] of portraitIds) {
+          const row = rowById.get(imgId);
+          if (row) {
+            portraits.push({ name: pname, data: row.data, mimeType: row.mimeType });
+            const sizeKb = Math.round((row.data.length * 3) / 4 / 1024);
+            console.log(`[generate_image] Personnage chargé ${pname} (${sizeKb} KB)`);
+          }
+        }
+      }
+
+      // Build image parts: style ref first, then portraits, then prompt
+      const imageParts: Array<Record<string, unknown>> = [];
+      if (styleRefBase64) {
+        imageParts.push({ inlineData: { mimeType: "image/jpeg", data: styleRefBase64 } });
+      }
+      for (const p of portraits) {
+        imageParts.push({ inlineData: { mimeType: p.mimeType, data: p.data } });
+      }
+
+      const hasStyle = !!styleRefBase64;
+      const portraitNames = portraits.map((p) => p.name).join(", ");
+      let textPrefix: string;
+      if (hasStyle && portraits.length > 0) {
+        textPrefix = `Generate a full-frame illustration in the exact same artistic style as the first reference image (European fantasy comic art). Match the color palette, ink linework, and painterly rendering. The following ${portraits.length > 1 ? "images are character portraits" : "image is a character portrait"} for: ${portraitNames} — use ${portraits.length > 1 ? "them" : "it"} as visual reference for the characters' appearance (face, hair, build, clothing). IMPORTANT: full bleed illustration filling the entire frame, no borders, no book pages, no white margins, no photo of a page. Subject: `;
+      } else if (portraits.length > 0) {
+        textPrefix = `The attached ${portraits.length > 1 ? "images are character portraits" : "image is a character portrait"} for: ${portraitNames} — use ${portraits.length > 1 ? "them" : "it"} as visual reference for the characters' appearance (face, hair, build, clothing). IMPORTANT: full bleed illustration filling the entire frame, no borders, no book pages, no white margins. Subject: `;
+      } else if (hasStyle) {
+        textPrefix = "Generate a full-frame illustration in the exact same artistic style as this reference (European fantasy comic art). Match the color palette, ink linework, and painterly rendering. IMPORTANT: full bleed illustration filling the entire frame, no borders, no book pages, no white margins, no photo of a page. Subject: ";
+      } else {
+        textPrefix = "";
+      }
+      imageParts.push({ text: textPrefix + imagePrompt });
+
+      const imageResponse = await geminiClient.models.generateContent({
+        model: GEMINI_IMAGE_MODEL,
+        contents: [{ role: "user", parts: imageParts }],
+        config: { responseModalities: ["Text", "Image"] },
+      });
+
+      const parts = imageResponse.candidates?.[0]?.content?.parts ?? [];
+      const imagePart = parts.find(
+        (p) => (p.inlineData as { mimeType?: string } | undefined)?.mimeType?.startsWith("image/")
+      );
+      const inlineData = imagePart?.inlineData as { mimeType: string; data: string } | undefined;
+
+      if (!inlineData) {
+        console.error("[generate_image] No image part in response");
+        return { text: "La génération d'image a échoué — aucune image retournée par le modèle." };
+      }
+
+      const [inserted] = await db
+        .insert(generatedImages)
+        .values({ userId: chatUserId, data: inlineData.data, mimeType: inlineData.mimeType, prompt: imagePrompt })
+        .returning({ id: generatedImages.id });
+
+      writeSse(res, "image", { url: `/api/images/${inserted.id}`, alt: imagePrompt });
+      console.log(`[generate_image] Done — saved image ${inserted.id} (${inlineData.mimeType})`);
+      return { text: "Image générée avec succès. L'image est affichée dans le chat. Continue ta réponse normalement sans re-décrire l'image en détail." };
+    } catch (err) {
+      console.error("[generate_image] Error:", err);
+      return { text: "Erreur lors de la génération de l'image. Réessaie plus tard." };
+    }
+  }
+
+  if (name === "get_character") {
+    const targetName = String(args.name ?? "");
+    writeSse(res, "tool_use", { tool: "get_character", label: `Consultation de ${targetName}…` });
+
+    if (!party) return { text: "Aucune campagne active — impossible de consulter les compagnons." };
+    const match = party.members.find((m) => m.name.toLowerCase().includes(targetName.toLowerCase()));
+    if (!match) return { text: `Aucun compagnon nommé "${targetName}" dans la campagne.` };
+
+    const [char] = await db.select().from(characters).where(eq(characters.id, match.characterId));
+    if (!char) return { text: "Personnage introuvable en base de données." };
+
+    // Build character section without inventory
+    const charPayload: CharacterPayload = {
+      ...char,
+      items: [],
+      goldCoins: 0,
+      silverCoins: 0,
+      copperCoins: 0,
+      abilities: {
+        strength: char.str,
+        dexterity: char.dex,
+        constitution: char.con,
+        intelligence: char.int,
+        wisdom: char.wis,
+        charisma: char.cha,
+      },
+    };
+    const text = buildCharacterSection(charPayload);
+    console.log(`[get_character] Loaded character "${char.name}" (id=${char.id})`);
+
+    if (!char.portraitImageId) return { text };
+    // Cache portrait ID for generate_image
+    portraitIds.set(char.name, char.portraitImageId);
+    const [img] = await db
+      .select({ data: generatedImages.data, mimeType: generatedImages.mimeType })
+      .from(generatedImages)
+      .where(eq(generatedImages.id, char.portraitImageId));
+    return img ? { text, portrait: { data: img.data, mimeType: img.mimeType } } : { text };
+  }
+
+  console.error(`[chat] Unknown tool call: "${name}"`);
+  return { text: `Outil inconnu : ${name}` };
+}
+
+
 app.post("/api/chat", requireAuth, async (req, res) => {
   try {
     const chatUser = (req as AuthRequest).username;
@@ -569,13 +850,15 @@ app.post("/api/chat", requireAuth, async (req, res) => {
 
     const character = body.character ?? null;
     const previousCharacter = body.previousCharacter ?? null;
-    const index = await loadCoreIndex();
     const characterSection = character ? `\n\n${buildCharacterSection(character, true)}` : "";
     const previousSection = character && previousCharacter ? buildPreviousCharacterSection(previousCharacter) : "";
     const party = await fetchPartyContext(chatUserId);
     const activeCharId = character ? Number(character.id) : null;
     const partySection = party ? buildPartySection(party, activeCharId) : "";
-    const system = `${SYSTEM_PREAMBLE}${characterSection}${partySection}${previousSection}\n\n## Index des sujets disponibles\n\n${index}`;
+    // MJ de la campagne active : verifie cote serveur, jamais deduit du prompt.
+    const isGm = party?.gmUserId === chatUserId;
+    // Ordre impose : tout ce qui bouge (fiche, compagnons, undo) passe APRES le bloc statique.
+    const system = `${STATIC_SYSTEM}${characterSection}${partySection}${previousSection}`;
 
     const apiMessages = messages.map((m) => ({
       role: m.role,
@@ -592,42 +875,47 @@ app.post("/api/chat", requireAuth, async (req, res) => {
       closed = true;
     });
 
+    const MAX_TOOL_TURNS = 5;
+
+    // Portraits collectés pendant la requête (name → portraitImageId), lus par generate_image.
+    const portraitIds = new Map<string, number>();
+    const currentPortraitId = character ? (character as Record<string, unknown>).portraitImageId : null;
+    if (typeof currentPortraitId === "number" && currentPortraitId > 0) {
+      const currentName = character ? String((character as Record<string, unknown>).name ?? "Joueur") : "Joueur";
+      portraitIds.set(currentName, currentPortraitId);
+    }
+    const toolCtx: ToolContext = { res, chatUserId, character, party, portraitIds, isGm };
+
     // ── GEMINI ───────────────────────────────────────────────────────────────
     if (AI_PROVIDER === "gemini") {
       if (!geminiClient) {
-        writeSse(res, "error", {
-          error: "GEMINI_API_KEY manquante. Ajoute-la dans server/.env.",
-        });
+        console.error("[chat] GEMINI_API_KEY manquante dans server/.env");
+        writeSse(res, "error", { error: playerFacingError(401) });
         res.end();
         return;
       }
 
       let contents: GeminiContent[] = messagestoGeminiContents(messages);
-      let calledTopic: TopicName | null = null;
       let geminiTotalTokens = 0;
-
-      const MAX_TOOL_TURNS = 5;
-
-      // Cache portrait image IDs collected during this request (name → portraitImageId)
-      const portraitIds = new Map<string, number>();
-      const currentPortraitId = character ? (character as Record<string, unknown>).portraitImageId : null;
-      if (typeof currentPortraitId === "number" && currentPortraitId > 0) {
-        const currentName = character ? String((character as Record<string, unknown>).name ?? "Joueur") : "Joueur";
-        portraitIds.set(currentName, currentPortraitId);
-      }
 
       for (let turn = 0; turn < MAX_TOOL_TURNS; turn++) {
         const allParts: GeminiPart[] = [];
-        let lastUsage: { promptTokenCount?: number; candidatesTokenCount?: number; totalTokenCount?: number } | undefined;
+        // Le texte du tour est bufferisé : on ne l'émet que si le tour ne finit
+        // pas sur un appel d'outil, sinon le joueur voit une réponse improvisée
+        // puis une seconde après lecture.
+        let pendingText = "";
+        let lastUsage:
+          | { promptTokenCount?: number; candidatesTokenCount?: number; totalTokenCount?: number; cachedContentTokenCount?: number }
+          | undefined;
 
         const stream = await geminiClient.models.generateContentStream({
           model: GEMINI_MODEL,
           contents,
           config: {
             systemInstruction: system,
-            tools: [geminiTool],
+            tools: [buildGeminiTool(isGm)],
             maxOutputTokens: MAX_OUTPUT_TOKENS,
-            thinkingConfig: { thinkingBudget: 0 },
+            thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
           },
         });
 
@@ -637,324 +925,53 @@ app.post("/api/chat", requireAuth, async (req, res) => {
           const parts = (chunk.candidates?.[0]?.content?.parts ?? []) as GeminiPart[];
           allParts.push(...parts);
           const text = typeof chunk.text === "string" ? chunk.text : "";
-          if (text) writeSse(res, "delta", { text });
+          if (text) pendingText += text;
         }
 
         logTokens(`gemini turn${turn + 1}`, {
           input: lastUsage?.promptTokenCount,
           output: lastUsage?.candidatesTokenCount,
           total: lastUsage?.totalTokenCount,
+          cached: lastUsage?.cachedContentTokenCount,
         });
         geminiTotalTokens += lastUsage?.totalTokenCount ?? 0;
 
-        // Check for tool call
-        const funcCall = allParts.find((p) => p.functionCall != null);
-        if (!funcCall || closed) {
-          if (!funcCall) console.log(`[chat] No tool call on turn ${turn + 1} — done (gemini)`);
+        if (closed) break;
+
+        const calls = allParts.filter((p) => p.functionCall != null);
+        if (calls.length === 0) {
+          console.log(`[chat] No tool call on turn ${turn + 1} — done (gemini)`);
+          if (pendingText) writeSse(res, "delta", { text: pendingText });
           break;
         }
 
-        const funcName = (funcCall.functionCall as { name?: string }).name ?? "";
-        const funcArgs = (funcCall.functionCall as { args?: Record<string, unknown> }).args ?? {};
-        console.log(`[chat] Tool call on turn ${turn + 1}: ${funcName} (gemini)`);
+        // Le tour du modèle est réinjecté INTACT : texte, thought et
+        // thoughtSignature compris. Reconstruire { name, args } casse Gemini 3.
+        contents = [...contents, { role: "model", parts: mergeGeminiParts(allParts) }];
 
-        // Execute tool and get result
-        let toolResult: string | null = null;
-
-        if (funcName === "load_knowledge") {
-          const rawTopic = (funcArgs.topic as string) ?? "";
-          if (!(TOPIC_NAMES as readonly string[]).includes(rawTopic)) {
-            console.error(`[knowledge] load_knowledge ignored unknown topic: "${rawTopic}"`);
-            writeSse(res, "error", {
-              error: "Le serveur ne reconnaît pas ce sujet de règles. Recharge la page et réessaie.",
-            });
-            res.end();
-            return;
-          }
-          calledTopic = rawTopic as TopicName;
-          writeSse(res, "tool_use", { tool: "load_knowledge", topic: calledTopic });
-          try {
-            toolResult = await loadTopic(calledTopic);
-            console.log(`[knowledge] Loaded topic: "${calledTopic}"`);
-          } catch {
-            console.error(`[knowledge] Failed to load topic: "${calledTopic}"`);
-            writeSse(res, "error", { error: "Impossible de charger le sujet demandé." });
-            res.end();
-            return;
-          }
-        } else if (funcName === "edit_character") {
-          const rawChanges = (funcArgs.changes as Record<string, unknown>) ?? {};
-          const safeChanges = sanitizeChanges(rawChanges);
-
-          if (Object.keys(safeChanges).length === 0) {
-            writeSse(res, "error", { error: "La fiche n'a pas pu être modifiée : aucun champ valide." });
-            res.end();
-            return;
-          }
-
-          const charId = Number(character?.id);
-          if (!Number.isFinite(charId) || charId <= 0) {
-            writeSse(res, "error", { error: "Identifiant de personnage invalide." });
-            res.end();
-            return;
-          }
-
-          // Scopé sur l'utilisateur du chat : on ne modifie jamais la fiche d'un autre joueur
-          const [oldRow] = await db.select().from(characters)
-            .where(and(eq(characters.id, charId), eq(characters.userId, chatUserId)));
-          if (!oldRow) {
-            writeSse(res, "error", { error: "Personnage introuvable." });
-            res.end();
-            return;
-          }
-
-          const [updatedRow] = await db
-            .update(characters)
-            .set({ ...safeChanges, updatedAt: new Date() })
-            .where(and(eq(characters.id, charId), eq(characters.userId, chatUserId)))
-            .returning();
-
-          console.log(`[edit_character] Updated character ${charId}:`, safeChanges);
-          writeSse(res, "character_updated", { character: updatedRow, previousCharacter: oldRow });
-          toolResult = `Modification appliquée : ${JSON.stringify(safeChanges)}`;
-        } else if (funcName === "get_journal") {
-          const [row] = await db.select().from(journalCompagnie).where(eq(journalCompagnie.id, 1));
-          const journalContent = row?.content ?? "";
-          const journalEditedBy = await charNameByUserId(row?.updatedByUserId ?? null);
-          const pages = await db
-            .select({ id: journalPages.id, title: journalPages.title, updatedAt: journalPages.updatedAt, updatedByUserId: journalPages.updatedByUserId })
-            .from(journalPages)
-            .orderBy(journalPages.updatedAt);
-
-          let result = "## Journal de bord\n";
-          if (journalEditedBy) result += `Dernière modification par : ${journalEditedBy}\n`;
-          result += "\n";
-          if (journalContent) {
-            result += journalContent.length > 8000 ? journalContent.slice(0, 8000) + "\n\n[…contenu tronqué]" : journalContent;
-          } else {
-            result += "Le journal de compagnie est vide.";
-          }
-          result += "\n\n## Pages wiki disponibles\n\n";
-          if (pages.length === 0) {
-            result += "Aucune page wiki n'a été créée.";
-          } else {
-            const pageLines = await Promise.all(pages.map(async (p) => {
-              const editedBy = await charNameByUserId(p.updatedByUserId);
-              const byStr = editedBy ? ` — par ${editedBy}` : "";
-              return `- [${p.id}] ${p.title} (${p.updatedAt.toLocaleDateString("fr-FR")}${byStr})`;
-            }));
-            result += pageLines.join("\n");
-          }
-
-          toolResult = result;
-          console.log(`[journal] Loaded company journal (${journalContent.length} chars) + ${pages.length} pages`);
-          console.log(`[journal] Journal content:\n${toolResult}`);
-          writeSse(res, "tool_use", { tool: "get_journal", label: "Lecture du journal" });
-        } else if (funcName === "get_page") {
-          const pageId = Number(funcArgs.id);
-          if (!Number.isFinite(pageId) || pageId <= 0) {
-            toolResult = "Identifiant de page invalide.";
-          } else {
-            const [page] = await db.select().from(journalPages).where(eq(journalPages.id, pageId));
-            if (!page) {
-              toolResult = `Aucune page trouvée avec l'id ${pageId}.`;
-            } else {
-              const editedBy = await charNameByUserId(page.updatedByUserId);
-              const content = page.content ?? "";
-              const truncated = content.length > 8000 ? content.slice(0, 8000) + "\n\n[…contenu tronqué]" : content;
-              const byLine = editedBy ? `\nDernière modification par : ${editedBy}\n` : "";
-              toolResult = `# ${page.title}${byLine}\n${truncated}`;
-            }
-            console.log(`[journal] Loaded page ${funcArgs.id}`);
-            console.log(`[journal] Page content:\n${toolResult}`);
-            writeSse(res, "tool_use", { tool: "get_page", label: `Lecture de la page : ${page?.title ?? pageId}` });
-          }
-        } else if (funcName === "generate_image") {
-          const imagePrompt = (funcArgs.prompt as string) ?? "";
-          console.log(`[generate_image] Prompt requested:\n${imagePrompt}`);
-          writeSse(res, "tool_use", { tool: "generate_image", label: "Génération d'une illustration…" });
-
-          try {
-            // Load all cached portraits in one query
-            const portraits: Array<{ name: string; data: string; mimeType: string }> = [];
-            if (portraitIds.size > 0) {
-              const ids = [...portraitIds.values()];
-              const rows = await db
-                .select({ id: generatedImages.id, data: generatedImages.data, mimeType: generatedImages.mimeType })
-                .from(generatedImages)
-                .where(inArray(generatedImages.id, ids));
-              const rowById = new Map(rows.map((r) => [r.id, r]));
-              for (const [name, imgId] of portraitIds) {
-                const row = rowById.get(imgId);
-                if (row) {
-                  portraits.push({ name, data: row.data, mimeType: row.mimeType });
-                  const sizeKb = Math.round((row.data.length * 3) / 4 / 1024);
-                  console.log(`[generate_image] Personnage chargé ${name} (${sizeKb} KB)`);
-                }
-              }
-            }
-
-            // Build image parts: style ref first, then portraits, then prompt
-            const imageParts: Array<Record<string, unknown>> = [];
-            if (styleRefBase64) {
-              imageParts.push({
-                inlineData: { mimeType: "image/jpeg", data: styleRefBase64 },
-              });
-            }
-            for (const p of portraits) {
-              imageParts.push({ inlineData: { mimeType: p.mimeType, data: p.data } });
-            }
-
-            // Build text instruction based on what images are attached
-            const hasStyle = !!styleRefBase64;
-            const portraitNames = portraits.map((p) => p.name).join(", ");
-            let textPrefix: string;
-            if (hasStyle && portraits.length > 0) {
-              textPrefix = `Generate a full-frame illustration in the exact same artistic style as the first reference image (European fantasy comic art). Match the color palette, ink linework, and painterly rendering. The following ${portraits.length > 1 ? "images are character portraits" : "image is a character portrait"} for: ${portraitNames} — use ${portraits.length > 1 ? "them" : "it"} as visual reference for the characters' appearance (face, hair, build, clothing). IMPORTANT: full bleed illustration filling the entire frame, no borders, no book pages, no white margins, no photo of a page. Subject: `;
-            } else if (portraits.length > 0) {
-              textPrefix = `The attached ${portraits.length > 1 ? "images are character portraits" : "image is a character portrait"} for: ${portraitNames} — use ${portraits.length > 1 ? "them" : "it"} as visual reference for the characters' appearance (face, hair, build, clothing). IMPORTANT: full bleed illustration filling the entire frame, no borders, no book pages, no white margins. Subject: `;
-            } else if (hasStyle) {
-              textPrefix = "Generate a full-frame illustration in the exact same artistic style as this reference (European fantasy comic art). Match the color palette, ink linework, and painterly rendering. IMPORTANT: full bleed illustration filling the entire frame, no borders, no book pages, no white margins, no photo of a page. Subject: ";
-            } else {
-              textPrefix = "";
-            }
-            imageParts.push({ text: textPrefix + imagePrompt });
-
-            const imageResponse = await geminiClient!.models.generateContent({
-              model: GEMINI_IMAGE_MODEL,
-              contents: [{ role: "user", parts: imageParts }],
-              config: {
-                responseModalities: ["Text", "Image"],
-              },
-            });
-
-            const parts = imageResponse.candidates?.[0]?.content?.parts ?? [];
-            const imagePart = parts.find(
-              (p) => (p.inlineData as { mimeType?: string } | undefined)?.mimeType?.startsWith("image/")
-            );
-
-            const inlineData = imagePart?.inlineData as
-              | { mimeType: string; data: string }
-              | undefined;
-
-            if (inlineData) {
-              const [inserted] = await db
-                .insert(generatedImages)
-                .values({
-                  userId: chatUserId,
-                  data: inlineData.data,
-                  mimeType: inlineData.mimeType,
-                  prompt: imagePrompt,
-                })
-                .returning({ id: generatedImages.id });
-
-              const imageUrl = `/api/images/${inserted.id}`;
-              writeSse(res, "image", { url: imageUrl, alt: imagePrompt });
-              toolResult = "Image générée avec succès. L'image est affichée dans le chat. Continue ta réponse normalement sans re-décrire l'image en détail.";
-              console.log(`[generate_image] Done — saved image ${inserted.id} (${inlineData.mimeType})\n  Prompt: ${imagePrompt}`);
-            } else {
-              toolResult = "La génération d'image a échoué — aucune image retournée par le modèle.";
-              console.error("[generate_image] No image part in response");
-            }
-          } catch (err) {
-            console.error("[generate_image] Error:", err);
-            toolResult = "Erreur lors de la génération de l'image. Réessaie plus tard.";
-          }
-        } else if (funcName === "get_character") {
-          const targetName = (funcArgs.name as string) ?? "";
-          writeSse(res, "tool_use", { tool: "get_character", label: `Consultation de ${targetName}…` });
-
-          let portraitData: { data: string; mimeType: string } | null = null;
-
-          if (!party) {
-            toolResult = "Aucune campagne active — impossible de consulter les compagnons.";
-          } else {
-            const match = party.members.find((m) =>
-              m.name.toLowerCase().includes(targetName.toLowerCase())
-            );
-            if (!match) {
-              toolResult = `Aucun compagnon nommé "${targetName}" dans la campagne.`;
-            } else {
-              const [char] = await db.select().from(characters).where(eq(characters.id, match.characterId));
-              if (!char) {
-                toolResult = "Personnage introuvable en base de données.";
-              } else {
-                // Build character section without inventory
-                const charPayload: CharacterPayload = {
-                  ...char,
-                  items: [],
-                  goldCoins: 0,
-                  silverCoins: 0,
-                  copperCoins: 0,
-                  abilities: {
-                    strength: char.str,
-                    dexterity: char.dex,
-                    constitution: char.con,
-                    intelligence: char.int,
-                    wisdom: char.wis,
-                    charisma: char.cha,
-                  },
-                };
-                toolResult = buildCharacterSection(charPayload);
-                console.log(`[get_character] Loaded character "${char.name}" (id=${char.id})\n${toolResult}`);
-
-                // Cache portrait ID for generate_image
-                if (char.portraitImageId) {
-                  portraitIds.set(char.name, char.portraitImageId);
-                }
-
-                // Load portrait if available
-                if (char.portraitImageId) {
-                  const [img] = await db
-                    .select({ data: generatedImages.data, mimeType: generatedImages.mimeType })
-                    .from(generatedImages)
-                    .where(eq(generatedImages.id, char.portraitImageId));
-                  if (img) {
-                    portraitData = { data: img.data, mimeType: img.mimeType };
-                  }
-                }
-              }
-            }
-          }
-
-          // Append with portrait inline if available
-          const responseParts: Array<Record<string, unknown>> = [
-            { functionResponse: { name: funcName, response: { content: toolResult } } },
-          ];
-          if (portraitData) {
+        const responseParts: GeminiPart[] = [];
+        for (const call of calls) {
+          const fc = call.functionCall as { name?: string; args?: Record<string, unknown> };
+          const funcName = fc.name ?? "";
+          const funcArgs = fc.args ?? {};
+          console.log(`[chat] Tool call on turn ${turn + 1}: ${funcName} (gemini)`);
+          const outcome = await runTool(funcName, funcArgs, toolCtx);
+          responseParts.push({
+            functionResponse: { name: funcName, response: { content: outcome.text } },
+          });
+          if (outcome.portrait) {
             responseParts.push(
-              { inlineData: { mimeType: portraitData.mimeType, data: portraitData.data } },
+              { inlineData: { mimeType: outcome.portrait.mimeType, data: outcome.portrait.data } },
               { text: "Ci-dessus le portrait/avatar du personnage. Utilise-le comme référence visuelle si tu dois générer une image le représentant." },
             );
           }
-          contents = [
-            ...contents,
-            { role: "model", parts: [{ functionCall: { name: funcName, args: funcArgs } }] },
-            { role: "user", parts: responseParts },
-          ];
-          continue;
-        } else {
-          console.error(`[chat] Unknown tool call: "${funcName}"`);
-          toolResult = `Outil inconnu : ${funcName}`;
         }
-
-        // Append tool call + result to contents and loop
-        contents = [
-          ...contents,
-          {
-            role: "model",
-            parts: [{ functionCall: { name: funcName, args: funcArgs } }],
-          },
-          {
-            role: "user",
-            parts: [{ functionResponse: { name: funcName, response: { content: toolResult } } }],
-          },
-        ];
+        contents = [...contents, { role: "user", parts: responseParts }];
       }
 
-      console.log(`[chat] user=${chatUser} tokens=${geminiTotalTokens} topic=${calledTopic ?? 'none'}`);
+      console.log(`[chat] user=${chatUser} tokens=${geminiTotalTokens}`);
       if (!closed) {
-        writeSse(res, "done", { model: GEMINI_MODEL, usage: null, topic: calledTopic });
+        writeSse(res, "done", { model: GEMINI_MODEL, usage: null });
         res.end();
       }
       return;
@@ -962,141 +979,95 @@ app.post("/api/chat", requireAuth, async (req, res) => {
 
     // ── ANTHROPIC ────────────────────────────────────────────────────────────
     if (!process.env.ANTHROPIC_API_KEY) {
-      writeSse(res, "error", {
-        error: "ANTHROPIC_API_KEY manquante. Ajoute-la dans server/.env.",
-      });
+      console.error("[chat] ANTHROPIC_API_KEY manquante dans server/.env");
+      writeSse(res, "error", { error: playerFacingError(401) });
       res.end();
       return;
     }
 
-    let calledTopic: TopicName | null = null;
+    const anthropicTools = buildAnthropicTools(isGm);
+    let convo: Anthropic.MessageParam[] = [...apiMessages];
+    let anthropicTotalTokens = 0;
+    let lastFinal: Anthropic.Message | null = null;
 
-    // Turn 1 — streaming: text is emitted live, tool call detected at the end
-    const turn1Stream = anthropicClient!.messages.stream({
-      model: ANTHROPIC_MODEL,
-      max_tokens: MAX_OUTPUT_TOKENS,
-      // Sonnet 5 réfléchit par défaut, et ce thinking mange le budget de max_tokens.
-      // "low" garde la latence d'un chat sans couper le tool use (pendant de thinkingBudget: 0 côté Gemini).
-      output_config: { effort: "low" },
-      system,
-      tools: [anthropicTool],
-      tool_choice: { type: "auto" },
-      messages: apiMessages,
-    });
-
-    for await (const event of turn1Stream) {
-      if (closed) break;
-      if (
-        event.type === "content_block_delta" &&
-        event.delta.type === "text_delta" &&
-        typeof event.delta.text === "string"
-      ) {
-        writeSse(res, "delta", { text: event.delta.text });
-      }
-    }
-
-    const turn1Final = await turn1Stream.finalMessage();
-    logTokens("anthropic turn1", {
-      input: turn1Final.usage.input_tokens,
-      output: turn1Final.usage.output_tokens,
-    });
-
-    const toolUseBlock = turn1Final.content.find(
-      (b): b is Anthropic.ToolUseBlock =>
-        b.type === "tool_use" && b.name === "load_knowledge"
-    );
-
-    if (toolUseBlock) {
-      const rawTopic = (toolUseBlock.input as { topic?: string }).topic ?? "";
-      if ((TOPIC_NAMES as readonly string[]).includes(rawTopic)) {
-        calledTopic = rawTopic as TopicName;
-      }
-    }
-
-    if (toolUseBlock && !calledTopic && !closed) {
-      const rawTopic = (toolUseBlock.input as { topic?: string }).topic ?? "";
-      console.error(`[knowledge] load_knowledge ignored unknown topic: "${rawTopic}"`);
-      writeSse(res, "error", {
-        error:
-          "Le serveur ne reconnaît pas ce sujet de règles. Recharge la page et réessaie.",
-      });
-      res.end();
-      return;
-    }
-
-    if (toolUseBlock && calledTopic && !closed) {
-      console.log(`[knowledge] AI requested topic: "${calledTopic}" (anthropic)`);
-      writeSse(res, "tool_use", { topic: calledTopic });
-
-      let knowledgeText: string;
-      try {
-        knowledgeText = await loadTopic(calledTopic);
-        console.log(`[knowledge] Loaded topic: "${calledTopic}"`);
-      } catch {
-        console.error(`[knowledge] Failed to load topic: "${calledTopic}"`);
-        writeSse(res, "error", { error: "Impossible de charger le sujet demandé." });
-        res.end();
-        return;
-      }
-
-      const messagesWithTool: Anthropic.MessageParam[] = [
-        ...apiMessages,
-        { role: "assistant", content: turn1Final.content },
-        {
-          role: "user",
-          content: [{ type: "tool_result", tool_use_id: toolUseBlock.id, content: knowledgeText }],
-        },
-      ];
-
-      // Turn 2 — streaming final answer
-      const stream2 = anthropicClient!.messages.stream({
+    for (let turn = 0; turn < MAX_TOOL_TURNS; turn++) {
+      const stream = anthropicClient!.messages.stream({
         model: ANTHROPIC_MODEL,
         max_tokens: MAX_OUTPUT_TOKENS,
-        output_config: { effort: "low" },
+        // Sonnet 5 réfléchit par défaut. "medium" laisse assez de marge pour
+        // croiser deux règles avant de répondre (pendant de thinkingLevel low côté Gemini).
+        output_config: { effort: "medium" },
         system,
-        tools: [anthropicTool],
-        messages: messagesWithTool,
+        tools: anthropicTools,
+        tool_choice: { type: "auto" },
+        messages: convo,
       });
 
-      for await (const event of stream2) {
+      // Même bufferisation que côté Gemini : rien à l'écran avant de savoir
+      // si ce tour se termine par un appel d'outil.
+      let pendingText = "";
+      for await (const event of stream) {
         if (closed) break;
         if (
           event.type === "content_block_delta" &&
           event.delta.type === "text_delta" &&
           typeof event.delta.text === "string"
         ) {
-          writeSse(res, "delta", { text: event.delta.text });
+          pendingText += event.delta.text;
         }
       }
 
-      const finalMessage = await stream2.finalMessage();
-      logTokens("anthropic turn2", {
-        input: finalMessage.usage.input_tokens,
-        output: finalMessage.usage.output_tokens,
+      const final = await stream.finalMessage();
+      lastFinal = final;
+      logTokens(`anthropic turn${turn + 1}`, {
+        input: final.usage.input_tokens,
+        output: final.usage.output_tokens,
+        cached: final.usage.cache_read_input_tokens ?? undefined,
       });
-      const anthropicTotalTokens = (turn1Final.usage.input_tokens + turn1Final.usage.output_tokens)
-        + (finalMessage.usage.input_tokens + finalMessage.usage.output_tokens);
-      console.log(`[chat] user=${chatUser} tokens=${anthropicTotalTokens} topic=${calledTopic ?? 'none'}`);
-      if (!closed) {
-        writeSse(res, "done", {
-          model: finalMessage.model,
-          usage: finalMessage.usage,
-          topic: calledTopic,
-        });
-        res.end();
+      anthropicTotalTokens += final.usage.input_tokens + final.usage.output_tokens;
+
+      if (closed) break;
+
+      const toolUses = final.content.filter(
+        (b): b is Anthropic.ToolUseBlock => b.type === "tool_use"
+      );
+      if (toolUses.length === 0) {
+        console.log(`[chat] No tool call on turn ${turn + 1} — done (anthropic)`);
+        if (pendingText) writeSse(res, "delta", { text: pendingText });
+        break;
       }
-    } else {
-      console.log("[knowledge] No tool call — answering from core index (anthropic)");
-      const anthropicTotalTokens = turn1Final.usage.input_tokens + turn1Final.usage.output_tokens;
-      console.log(`[chat] user=${chatUser} tokens=${anthropicTotalTokens} topic=none`);
-      if (!closed) {
-        writeSse(res, "done", {
-          model: turn1Final.model,
-          usage: turn1Final.usage,
-          topic: null,
-        });
-        res.end();
+
+      convo = [...convo, { role: "assistant", content: final.content }];
+
+      const results: Anthropic.ToolResultBlockParam[] = [];
+      for (const block of toolUses) {
+        console.log(`[chat] Tool call on turn ${turn + 1}: ${block.name} (anthropic)`);
+        const outcome = await runTool(block.name, (block.input as Record<string, unknown>) ?? {}, toolCtx);
+        const content: Anthropic.ToolResultBlockParam["content"] = outcome.portrait
+          ? [
+              { type: "text", text: outcome.text },
+              {
+                type: "image",
+                source: {
+                  type: "base64",
+                  media_type: outcome.portrait.mimeType as "image/jpeg" | "image/png" | "image/gif" | "image/webp",
+                  data: outcome.portrait.data,
+                },
+              },
+            ]
+          : outcome.text;
+        results.push({ type: "tool_result", tool_use_id: block.id, content });
       }
+      convo = [...convo, { role: "user", content: results }];
+    }
+
+    console.log(`[chat] user=${chatUser} tokens=${anthropicTotalTokens}`);
+    if (!closed) {
+      writeSse(res, "done", {
+        model: lastFinal?.model ?? ANTHROPIC_MODEL,
+        usage: lastFinal?.usage ?? null,
+      });
+      res.end();
     }
   } catch (err) {
     console.error(err);
@@ -1107,12 +1078,7 @@ app.post("/api/chat", requireAuth, async (req, res) => {
       typeof (err as { status?: unknown }).status === "number"
         ? (err as { status: number }).status
         : 500;
-    const message =
-      status === 429
-        ? "Limite API atteinte (trop de tokens). Reessaie dans quelques secondes ou choisis un sujet plus cible."
-        : err instanceof Error
-          ? err.message
-          : "Chat request failed";
+    const message = playerFacingError(status);
     if (res.headersSent) {
       writeSse(res, "error", { error: message });
       res.end();
