@@ -1,6 +1,6 @@
 # 26 — Isilwen : le contexte de campagne en tête
 
-**Statut** : à valider
+**Statut** : livré
 **Décisions prises** : modèle image passé sur `gemini-3.1-flash-image` (GA) ; notes privées du joueur en contexte.
 **Problème** : Isilwen connaît les compagnons, mais le journal de bord n'est lu qu'à la demande et tronqué à 8 000 caractères, le Codex (PNJ, lieux) lui est invisible, et le joueur ne voit pas dans quelle campagne il parle.
 **Décision** : journal + Codex directement en contexte, après la fiche du personnage. Nom de campagne toujours présent. Bulle campagne dans le composer.

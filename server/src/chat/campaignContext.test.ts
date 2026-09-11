@@ -12,6 +12,7 @@ const EMPTY_JOURNAL: JournalContext = { content: "", editedBy: null, pages: [], 
 
 function party(overrides: Partial<PartyContext> = {}): PartyContext {
   return {
+    campaignId: 1,
     campaignName: "Bac à sable",
     gmUserId: 1,
     members: [

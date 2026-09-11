@@ -14,6 +14,7 @@ export type PartyMember = {
 export type CodexEntry = { type: string; name: string; description: string };
 
 export type PartyContext = {
+  campaignId: number;
   campaignName: string;
   gmUserId: number;
   members: PartyMember[];

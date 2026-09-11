@@ -33,10 +33,13 @@ import {
 } from "./knowledge/loadKnowledge.js";
 import { CLIENT_DIST, REPO_ROOT } from "./paths.js";
 import { buildAnthropicTools, buildGeminiTool, TOPIC_NAMES } from "./knowledge/tools.js";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { db } from "./db/index.js";
-import { campaigns, campaignMembers, characters, codexEntries, generatedImages, journalCompagnie, journalPages, notes, users } from "./db/schema.js";
+import { campaigns, campaignMembers, characters, codexEntries, combatParticipants, combats, generatedImages, journalCompagnie, journalPages, notes, rollEvents, users } from "./db/schema.js";
 import { buildCampaignSection, type JournalContext, type PartyContext } from "./chat/campaignContext.js";
+import { buildCombatSection, type CombatRoll } from "./chat/combatContext.js";
+import { serializeCombat } from "./combats/serialize.js";
+import { enrichParticipantHp, enrichParticipantStates } from "./combats/sseStore.js";
 
 const app = express();
 // En prod le client est servi par ce même serveur (same-origin) ; en dev le proxy
@@ -228,6 +231,7 @@ Tu t'adresses aux joueurs et au meneur en français, toujours en restant en pers
 - Tu ne dois JAMAIS révéler de données chiffrées sur les monstres aux joueurs : pas de PV, DEF, NC, bonus d'attaque, DM, caractéristiques (FOR, DEX, etc.), initiative, ou réduction de dégâts.
 - Tu peux uniquement partager avec un joueur : le nom du monstre, sa taille, sa description narrative, et le nom de ses capacités (sans les détails mécaniques).
 - Si un joueur demande les stats d'un monstre, refuse poliment en restant en personnage : "Les mystères de cette créature ne se révèlent qu'au combat..."
+- Exception : quand le contexte indique que tu parles au meneur de jeu (section Combat en cours, ou outil get_monstre disponible), ces chiffres sont pour lui. Donne-les.
 
 ✏️ Modification de fiche (edit_character) — SEUL outil nécessitant confirmation :
 - Tu peux modifier les statistiques du personnage (FOR, DEX, CON, INT, SAG, CHA, niveau, PV max, PM max, défense) avec l'outil edit_character.
@@ -246,6 +250,12 @@ Tu t'adresses aux joueurs et au meneur en français, toujours en restant en pers
 - Le journal de bord, le Codex de la campagne (PNJ, lieux) et les notes privées du joueur sont reproduits ci-dessous, après la fiche du personnage. Tu n'as rien à demander : réponds directement depuis ces textes.
 - Dès qu'un joueur pose une question sur leurs aventures, sessions passées, PNJ rencontrés, lieux visités ou événements vécus → réponds depuis le journal ou le Codex, en citant la session ou l'entrée concernée.
 - Seuls les titres des pages partagées sont listés (avec leur id). Si un titre semble pertinent pour la question, appelle immédiatement get_page avec cet id pour en lire le contenu. Ne demande pas "veux-tu que je consulte la page ?".
+
+🗡️ Combat en cours :
+- S'il y a une section "Combat en cours" ci-dessous, utilise-la pour tout conseil tactique : à qui c'est le tour, qui est en danger, quelle action est possible d'après les règles de combat ci-dessus.
+- Pour un joueur : ce que contient cette section est exactement ce qu'il voit à l'écran, tu peux le lui dire. Rien de plus sur les monstres : la règle 🐉 s'applique toujours.
+- Pour le meneur : tu as tout (PV, DEF, attaques, capacités, réserve). Aide-le à faire jouer les monstres.
+- Pas de section "Combat en cours" = pas de combat en cours. Ne l'invente pas.
 
 👥 Compagnons de campagne (get_character) :
 - La liste de tes compagnons de campagne est dans la section Campagne, plus bas.
@@ -549,6 +559,7 @@ async function fetchPartyContext(userId: number): Promise<PartyContext | null> {
     .orderBy(codexEntries.type, codexEntries.name);
 
   return {
+    campaignId: user.activeCampaignId,
     campaignName: campaign.name,
     gmUserId: campaign.gmUserId,
     members: rows.map((r) => {
@@ -565,6 +576,43 @@ async function fetchPartyContext(userId: number): Promise<PartyContext | null> {
     }),
     codex,
   };
+}
+
+// Combat actif de la campagne, vu avec les memes droits que l'ecran de combat
+// (serializeCombat masque les monstres pour un joueur). Null si aucun combat.
+const COMBAT_ROLLS_LIMIT = 20;
+async function fetchCombatContext(campaignId: number, userId: number, isGm: boolean): Promise<string | null> {
+  const [combat] = await db
+    .select()
+    .from(combats)
+    .where(and(eq(combats.campaignId, campaignId), eq(combats.status, "active")))
+    .orderBy(desc(combats.createdAt))
+    .limit(1);
+  if (!combat) return null;
+
+  let participants = await db.select().from(combatParticipants).where(eq(combatParticipants.combatId, combat.id));
+  participants = await enrichParticipantHp(campaignId, participants);
+  participants = await enrichParticipantStates(campaignId, participants);
+  const serialized = serializeCombat(combat, participants, isGm);
+
+  const rollFilter = isGm
+    ? eq(rollEvents.combatId, combat.id)
+    : and(eq(rollEvents.combatId, combat.id), eq(rollEvents.visibility, "public"));
+  const rows = await db
+    .select({ actorName: rollEvents.actorName, label: rollEvents.label, total: rollEvents.total, damage: rollEvents.damage })
+    .from(rollEvents)
+    .where(rollFilter)
+    .orderBy(desc(rollEvents.createdAt), desc(rollEvents.id))
+    .limit(COMBAT_ROLLS_LIMIT);
+  // Les plus recents d'abord en base, ordre chronologique dans le prompt.
+  const rolls: CombatRoll[] = rows.reverse().map((r) => ({
+    actorName: r.actorName,
+    label: r.label,
+    total: r.total,
+    damage: (r.damage as CombatRoll["damage"]) ?? null,
+  }));
+
+  return buildCombatSection(serialized, rolls, userId);
 }
 
 // Journal de bord entier, titres des pages partagees et notes texte du joueur.
@@ -818,8 +866,11 @@ app.post("/api/chat", requireAuth, async (req, res) => {
     console.log(`[chat] section campagne : ${campaignSection.length} caracteres`);
     // MJ de la campagne active : verifie cote serveur, jamais deduit du prompt.
     const isGm = party?.gmUserId === chatUserId;
+    // Le combat change a chaque tour : il passe apres le journal pour garder le prefixe stable.
+    const combatSection = party ? (await fetchCombatContext(party.campaignId, chatUserId, isGm)) ?? "" : "";
+    console.log(`[chat] section combat : ${combatSection.length} caracteres`);
     // Ordre impose : tout ce qui bouge (fiche, campagne, undo) passe APRES le bloc statique.
-    const system = `${STATIC_SYSTEM}${characterSection}${campaignSection}${previousSection}`;
+    const system = `${STATIC_SYSTEM}${characterSection}${campaignSection}${combatSection}${previousSection}`;
 
     const apiMessages = messages.map((m) => ({
       role: m.role,
