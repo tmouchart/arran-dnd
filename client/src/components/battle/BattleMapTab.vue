@@ -4,6 +4,7 @@ import { Grid3x3, RotateCcw, RotateCw, Crosshair, BrickWall, Undo2 } from 'lucid
 import AppIconBtn from '../ui/AppIconBtn.vue'
 import AppSelect from '../ui/AppSelect.vue'
 import BattleGrid3D from './BattleGrid3D.vue'
+import BattleInitiativeStrip from './BattleInitiativeStrip.vue'
 import WallPalette from './WallPalette.vue'
 import { useTokenMoves } from './useTokenMoves'
 import { ENVIRONMENTS } from './environments'
@@ -162,6 +163,8 @@ async function onEnvironmentChange(id: string) {
       <WallPalette v-model="wallMaterial" />
       <p class="hint">Trace au doigt. Touche un mur pour l'effacer.</p>
     </template>
+
+    <BattleInitiativeStrip v-if="combat.status === 'active'" :combat="combat" :tokens="tokens" />
 
     <div class="board">
       <BattleGrid3D

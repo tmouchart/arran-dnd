@@ -55,6 +55,39 @@ test('le MJ lance un combat et le joueur suit le même tour', async ({ browser }
   }
 })
 
+test('sur la carte, le bandeau suit le tour sans changer d\'onglet', async ({ browser }) => {
+  const mj = await browser.newContext({ storageState: stateFor('mj-dev') })
+  const page = await mj.newPage()
+
+  try {
+    await page.goto('/campagnes')
+    await page.getByText('Bac à sable').first().click()
+    await page.getByRole('tab', { name: 'Rencontres' }).click()
+    await page.getByRole('button', { name: 'Jouer' }).click()
+    await page.locator('select').selectOption({ index: 1 })
+    await page.getByRole('button', { name: 'Lancer !' }).click()
+    await expect(page.getByTestId('active-participant')).toHaveCount(1)
+    const tourInitial = await idDuTour(page)
+
+    await page.getByRole('tab', { name: 'Champ de bataille' }).click()
+
+    // Le bandeau montre le même tour que la liste, et il est bien à l'écran.
+    const actif = page.getByTestId('strip-active')
+    await expect(actif).toHaveAttribute('data-participant-id', tourInitial!)
+    await expect(page.getByTestId('initiative-strip')).toBeInViewport()
+
+    await page.getByRole('button', { name: 'Suivant' }).click()
+    await expect(actif).not.toHaveAttribute('data-participant-id', tourInitial!)
+    await expect(actif).toBeInViewport({ ratio: 1 })
+
+    await page.getByRole('button', { name: 'Terminer' }).click()
+    await page.getByRole('dialog').getByRole('button', { name: 'Terminer' }).click()
+    await expect(page.getByTestId('initiative-strip')).toHaveCount(0)
+  } finally {
+    await mj.close()
+  }
+})
+
 test('le MJ fait entrer en cours de combat un PJ resté dehors', async ({ browser }) => {
   const mj = await browser.newContext({ storageState: stateFor('mj-dev') })
   const joueur = await browser.newContext({ storageState: stateFor('bracco') })
