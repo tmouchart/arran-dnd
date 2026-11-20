@@ -17,6 +17,8 @@ export interface ServerCharacter {
   mpCurrent: number | undefined
   defense: number
   initiativeBonus: number
+  /** Initiative finale, calculée ici et lue par le serveur pour l'ordre des combats. */
+  initiative?: number | null
   str: number
   dex: number
   con: number

@@ -60,6 +60,8 @@ export const characters = pgTable(
     mpCurrent: integer('mp_current').notNull().default(0),
     defense: integer('defense').notNull().default(12),
     initiativeBonus: integer('initiative_bonus').notNull().default(0),
+    /** Initiative finale calculée par la fiche (passifs compris). NULL = jamais envoyée. */
+    initiative: integer('initiative'),
 
     str: integer('str').notNull().default(10),
     dex: integer('dex').notNull().default(10),

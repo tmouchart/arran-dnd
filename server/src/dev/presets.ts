@@ -75,7 +75,7 @@ export async function createPresetCombat(campaignId: number, preset: PresetId): 
       kind: 'player',
       userId: member.userId,
       name: char.name,
-      initiative: preset === 'egalites' ? 12 : computeInitiative(char),
+      initiative: preset === 'egalites' ? 12 : (char.initiative ?? computeInitiative(char)),
       hpMax: null,
       hpCurrent: null,
       def: char.defense,

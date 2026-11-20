@@ -4,7 +4,7 @@
 // silence (c'est ce qui est arrivé aux jets de croissance des PV en août 2026).
 export const UPDATABLE_FIELDS = [
   'name', 'profile', 'histoire', 'people', 'level',
-  'hpMax', 'hpCurrent', 'mpMax', 'mpCurrent', 'defense', 'initiativeBonus',
+  'hpMax', 'hpCurrent', 'mpMax', 'mpCurrent', 'defense', 'initiativeBonus', 'initiative',
   'attackContactBonus', 'attackDistanceBonus', 'attackMagiqueBonus', 'defenseBonus',
   'str', 'dex', 'con', 'int', 'wis', 'cha',
   'skills', 'weapons', 'martialFormations', 'paths', 'mysticTalent',

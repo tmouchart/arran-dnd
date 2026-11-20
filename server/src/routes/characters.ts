@@ -24,6 +24,7 @@ type WeaponRow = {
   catalogId?: string
   notes?: string
   handRole?: 'main' | 'offhand'
+  favorite?: boolean
 }
 
 const router = Router()
@@ -102,8 +103,8 @@ router.post('/', async (req, res) => {
     hpCurrent: typeof body.hpCurrent === 'number' ? body.hpCurrent : hpMax,
     mpMax: body.mpMax ?? 0,
     defense: body.defense ?? 12,
-    // Base initiative score = DEX (Terres d’Arran); default follows dex when omitted
-    initiativeBonus: body.initiativeBonus ?? dex,
+    // Bonus divers seulement : la DEX entre déjà dans le calcul de l'initiative.
+    initiativeBonus: body.initiativeBonus ?? 0,
     str: body.str ?? 10,
     dex,
     con: body.con ?? 10,

@@ -78,7 +78,8 @@ async function insertPlayerParticipant(
     kind: 'player',
     userId: member.userId,
     name: char.name,
-    initiative: computeInitiative({
+    // L'initiative de la fiche (passifs des voies compris), sinon l'ancien calcul.
+    initiative: char.initiative ?? computeInitiative({
       dex: char.dex,
       armorId: char.armorId,
       shieldId: char.shieldId,

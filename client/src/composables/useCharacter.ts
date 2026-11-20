@@ -119,6 +119,7 @@ function toServerPayload(c: Character): Omit<ServerCharacter, 'id' | 'userId' | 
     mpCurrent: c.mpCurrent,
     defense: c.defense,
     initiativeBonus: c.initiativeBonus,
+    initiative: computeInitiative(c),
     str: c.abilities.strength,
     dex: c.abilities.dexterity,
     con: c.abilities.constitution,
