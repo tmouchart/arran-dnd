@@ -224,8 +224,11 @@ Formation martiale supplémentaire (pendant un passage de niveau) :
 remplacer une capacité par l’acquisition d’une ou deux formations martiales à raison d’1 formation par point de capacité.
 
 Voies de prestige :
-à partir du niveau 8, le joueur peut investir dans une voie de prestige.
-Chaque rang d’une voie de prestige coûte 2 points de capacité.
+à partir du niveau 8, le joueur peut investir s’il le souhaite dans une voie de prestige. Les voies de prestige représentent un aboutissement, un degré de connaissance et de compétence supérieurs du personnage. Elles sont en général plus puissantes que les voies de base.
+Chaque rang d’une voie de prestige coûte 2 points de capacité (quel que soit le rang, de 1 à 5). Les rangs s’acquièrent dans l’ordre croissant, comme pour toute voie.
+S’il préfère, le joueur peut choisir une voie de profil en tant que voie de prestige, mais le coût de progression reste le même que pour n’importe quelle autre voie de prestige (2 points par rang).
+La famille avant tout : les voies de profil et les voies de prestige sont toutes liées à l’une des trois familles (combattants, aventuriers, mystiques). Les voies de la famille de profil du personnage ne doivent jamais devenir minoritaires au fur et à mesure de sa progression.
+Liste complète des 21 voies de prestige, de leur famille et de leurs capacités : voir `voies-de-prestige.md`.
 
 ## 9) Équipement (règles présentes dans ce périmètre)
 
