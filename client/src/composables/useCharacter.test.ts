@@ -37,7 +37,6 @@ describe('FAMILY_DIE_MAX', () => {
   it('combattants → d10', () => expect(FAMILY_DIE_MAX.combattants).toBe(10))
   it('aventuriers → d8', () => expect(FAMILY_DIE_MAX.aventuriers).toBe(8))
   it('mystiques   → d6', () => expect(FAMILY_DIE_MAX.mystiques).toBe(6))
-  it('prestige    → d8', () => expect(FAMILY_DIE_MAX.prestige).toBe(8))
 })
 
 // ── computedHpBase ────────────────────────────────────────────────────────────

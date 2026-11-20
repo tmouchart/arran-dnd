@@ -2,40 +2,35 @@
 import { computed, ref } from "vue";
 import AppCard from "../ui/AppCard.vue";
 import AppButton from "../ui/AppButton.vue";
+import AppIconBtn from "../ui/AppIconBtn.vue";
+import { Sparkles } from "lucide-vue-next";
 import VoiePickerModal from "./VoiePickerModal.vue";
 import { VOIES, VOIES_BY_ID, FAMILY_LABELS, FAMILY_ORDER, type Voie, type VoieFamily } from "../../data/voies";
 import { PEUPLE_VOIES_BY_ID, type PeupleVoie } from "../../data/peuples";
 import { findProfileByName } from "../../data/profilesCatalog";
 import type { Character, PathRow } from "../../types/character";
+import { incrementCost, isPrestigePath, spentPoints as countSpentPoints } from "../../utils/voiePoints";
+import { breaksFamilyRule, PRESTIGE_MIN_LEVEL } from "../../utils/prestigeRules";
 
 const props = defineProps<{ character: Character }>();
 
 // ── Points ────────────────────────────────────────────────────────────────
 const totalPoints = computed(() => props.character.level * 2);
 
-function rankCost(rank: number): number {
-  return rank <= 2 ? rank : 2 + (rank - 2) * 2;
-}
-
-const spentPoints = computed(() =>
-  props.character.paths.reduce((sum, p) => sum + rankCost(p.rank), 0),
-);
+const spentPoints = computed(() => countSpentPoints(props.character.paths));
 
 const remainingPoints = computed(() => totalPoints.value - spentPoints.value);
-
-function incrementCost(currentRank: number): number {
-  return currentRank < 2 ? 1 : 2;
-}
 
 function canIncrease(p: PathRow): boolean {
   // Au niveau 1, impossible de dépasser le rang 1 (règle CO)
   if (props.character.level === 1 && p.rank >= 1) return false;
-  return p.rank < 5 && remainingPoints.value >= incrementCost(p.rank);
+  return p.rank < 5 && remainingPoints.value >= incrementCost(p.rank, isPrestigePath(p));
 }
 
 function increaseTooltip(p: PathRow): string {
   if (props.character.level === 1 && p.rank >= 1)
     return "Rang 2 impossible au niveau 1 (2 capacités de rang 1 requis)";
+  if (isPrestigePath(p)) return "Augmenter le rang (2 points en prestige)";
   return "Augmenter le rang";
 }
 
@@ -45,12 +40,7 @@ function checkProfileMatch() {
   const entry = findProfileByName(c.profile);
   if (!entry) return;
   const freeIds = c.paths
-    .filter((p) => {
-      if (p.kind) return false;
-      const vd = ALL_VOIES_BY_ID[p.id ?? ''];
-      if (vd && 'family' in vd && (vd as Voie).family === 'prestige') return false;
-      return true;
-    })
+    .filter((p) => !p.kind && !isPrestigePath(p))
     .map((p) => p.id)
     .filter(Boolean) as string[];
   const profileIds = [...entry.voieIds].sort();
@@ -84,44 +74,78 @@ const FAMILY_BADGE_LABELS: Record<VoieFamily, string> = {
   combattants: 'Combattant',
   aventuriers: 'Aventurier',
   mystiques: 'Mystique',
-  prestige: 'Prestige',
 }
 
-function voieFamily(p: PathRow): VoieFamily | null {
+/** Le badge à côté du nom : la famille, en doré pour une voie de prestige. */
+function voieBadge(p: PathRow): { cls: string; label: string } | null {
   if (p.kind) return null;
   const vd = voieData(p);
   if (!vd || !('family' in vd)) return null;
-  return (vd as Voie).family;
+  const label = FAMILY_BADGE_LABELS[vd.family];
+  return vd.prestige
+    ? { cls: 'family-prestige', label: `Prestige · ${label}` }
+    : { cls: `family-${vd.family}`, label };
 }
 
 // ── Limite voies libres ────────────────────────────────────────────────────
 const MAX_FREE_PATHS = 3;
 
 const freePaths = computed(() =>
-  props.character.paths.filter((p) => {
-    if (p.kind) return false; // peuple, culturelle
-    const vd = ALL_VOIES_BY_ID[p.id ?? ''];
-    if (vd && 'family' in vd && (vd as Voie).family === 'prestige') return false;
-    return true;
-  }),
+  // ni peuple, ni culture, ni prestige
+  props.character.paths.filter((p) => !p.kind && !isPrestigePath(p)),
 );
 
-const canAddPath = computed(() => freePaths.value.length < MAX_FREE_PATHS);
+const prestigeOpen = computed(() => props.character.level >= PRESTIGE_MIN_LEVEL);
+
+const canAddPath = computed(() => freePaths.value.length < MAX_FREE_PATHS || prestigeOpen.value);
+
+/** Niveau 7 sans voie à ajouter : on peut déjà lire les voies de prestige. */
+const prestigePreview = computed(
+  () => !canAddPath.value && props.character.level >= PRESTIGE_MIN_LEVEL - 1,
+);
 
 // ── Picker ─────────────────────────────────────────────────────────────────
 const showPicker = ref(false);
 
-const pickerByFamily = computed(() =>
-  FAMILY_ORDER.map((family) => ({
-    family,
+const pickerByFamily = computed(() => {
+  const paths = props.character.paths;
+  const available = (family: VoieFamily, prestige: boolean) =>
+    VOIES.filter(
+      (v) => v.family === family && !!v.prestige === prestige && !paths.find((p) => p.id === v.id),
+    );
+
+  const profileGroups = FAMILY_ORDER.map((family) => ({
+    key: family,
+    cls: family,
     label: FAMILY_LABELS[family],
-    locked: family === 'prestige' && props.character.level < 8,
-    lockReason: 'Niveau 8 requis pour les voies de prestige',
-    voies: VOIES.filter(
-      (v) => v.family === family && !props.character.paths.find((p) => p.id === v.id),
-    ),
-  })).filter((g) => g.voies.length > 0),
-);
+    locked: freePaths.value.length >= MAX_FREE_PATHS,
+    lockReason: `${MAX_FREE_PATHS} voies de profil maximum`,
+    voies: available(family, false),
+    voieLocks: {} as Record<string, string>,
+  }));
+
+  const prestigeGroups = FAMILY_ORDER.map((family) => {
+    const voies = available(family, true);
+    return {
+      key: `prestige-${family}`,
+      cls: 'prestige',
+      label: `Prestige · ${FAMILY_LABELS[family]}`,
+      locked: !prestigeOpen.value,
+      lockReason: `Niveau ${PRESTIGE_MIN_LEVEL} requis. Touche une voie pour la lire.`,
+      voies,
+      // « La famille avant tout » : la famille du profil ne doit pas devenir minoritaire
+      voieLocks: Object.fromEntries(
+        voies
+          .filter((v) => breaksFamilyRule(paths, v))
+          .map((v) => [v.id, 'Ta famille de profil deviendrait minoritaire']),
+      ),
+    };
+  });
+
+  // En aperçu, les voies de profil sont toutes prises : on ne montre que le prestige.
+  const groups = canAddPath.value ? [...profileGroups, ...prestigeGroups] : prestigeGroups;
+  return groups.filter((g) => g.voies.length > 0);
+});
 
 function addPath(voie: Voie) {
   props.character.paths.push({ id: voie.id, name: voie.name, rank: 0 });
@@ -147,6 +171,15 @@ function addPath(voie: Voie) {
         size="small"
         @click="showPicker = true"
       >+ Ajouter</AppButton>
+      <AppIconBtn
+        v-else-if="prestigePreview"
+        title="Découvrir les voies de prestige"
+        aria-label="Découvrir les voies de prestige"
+        data-testid="voies-prestige-preview"
+        @click="showPicker = true"
+      >
+        <Sparkles :size="18" />
+      </AppIconBtn>
     </div>
 
     <ul v-if="character.paths.length" class="voie-list">
@@ -157,7 +190,7 @@ function addPath(voie: Voie) {
             <span class="voie-name">{{ p.name }}</span>
             <span v-if="p.kind === 'peuple'" class="voie-kind-badge peuple">Peuple</span>
             <span v-else-if="p.kind === 'culturelle'" class="voie-kind-badge culturelle">Culture</span>
-            <span v-else-if="voieFamily(p)" class="voie-kind-badge" :class="`family-${voieFamily(p)}`">{{ FAMILY_BADGE_LABELS[voieFamily(p)!] }}</span>
+            <span v-else-if="voieBadge(p)" class="voie-kind-badge" :class="voieBadge(p)!.cls">{{ voieBadge(p)!.label }}</span>
           </div>
           <div class="voie-rank-controls">
             <template v-if="expandedSet.has(i)">
@@ -203,6 +236,7 @@ function addPath(voie: Voie) {
 
   <VoiePickerModal
     :show="showPicker"
+    :title="prestigePreview ? 'Voies de prestige' : undefined"
     :groups="pickerByFamily"
     @close="showPicker = false"
     @pick="addPath"

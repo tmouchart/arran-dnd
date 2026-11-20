@@ -47,6 +47,7 @@ const rows = computed(() => {
       modLabel: (mod >= 0 ? "+" : "") + mod,
       sources: effects.value.sources.filter((s) => s.ability === a.key),
       advantage: effects.value.advantage.has(a.key),
+      testBonus: effects.value.testBonus[a.key] ?? [],
     };
   });
 });
@@ -77,7 +78,7 @@ const rows = computed(() => {
             >{{ a.score }}</span>
 
             <AppTooltip
-              v-if="a.sources.length > 0 || a.advantage"
+              v-if="a.sources.length > 0 || a.advantage || a.testBonus.length > 0"
               :label="`Détail de ${a.label}`"
             >
               <template #trigger>
@@ -92,6 +93,11 @@ const rows = computed(() => {
                   :size="11"
                   :data-testid="`ability-advantage-${a.key}`"
                 />
+                <span
+                  v-if="a.testBonus.length > 0"
+                  class="mark-dot"
+                  :data-testid="`ability-test-bonus-${a.key}`"
+                >+</span>
               </template>
 
               <div class="tip-head">{{ a.label }}</div>
@@ -101,6 +107,9 @@ const rows = computed(() => {
               </div>
               <div v-if="a.advantage" class="tip-line tip-adv">
                 <Dices :size="12" /> Avantage : 2d20, on garde le meilleur.
+              </div>
+              <div v-for="(t, i) in a.testBonus" :key="'t' + i" class="tip-line">
+                <span class="tip-bonus">+{{ t.bonus }}</span> aux tests : {{ t.from }}
               </div>
               <div class="tip-foot">Les flèches modifient le score de base.</div>
             </AppTooltip>

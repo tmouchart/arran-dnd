@@ -1,20 +1,25 @@
 <script lang="ts">
+import { isCriticalAttack } from '../utils/weaponPassives'
+
 /**
  * Les classes de couleur d'une carte de résultat, écrites une seule fois.
  *
  * Le critique et l'échec critique se lisent sur le **dé gardé** : un 1 écarté
  * par un avantage ne doit pas peindre la carte en rouge.
  *
+ * `critMin` : seuil abaissé par Science du critique (19-20), sinon 20.
+ *
  * `graded` à false pour les jets qui ne critiquent jamais (le d12 de la main
  * faible), qui gardent tout de même leur échec critique.
  */
 export function rollResultClass(
-  roll: { attackDie: number; attackSides: number },
+  roll: { attackDie: number; attackSides: number; critMin?: number },
   graded = true,
 ): Record<string, boolean> {
   return {
     'roll-result--fumble': roll.attackDie === 1,
-    'roll-result--critical': graded && roll.attackDie === roll.attackSides,
+    'roll-result--critical':
+      graded && isCriticalAttack(roll.attackDie, roll.attackSides, roll.critMin ?? 20),
   }
 }
 </script>

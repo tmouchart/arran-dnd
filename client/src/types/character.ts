@@ -16,6 +16,8 @@ export interface WeaponRow {
   notes?: string
   /** Rôle dans le combat à deux armes (voie-du-combat-a-deux-armes). */
   handRole?: 'main' | 'offhand'
+  /** Arme de prédilection (voie de la maîtrise des armes). Une seule à la fois. */
+  favorite?: boolean
 }
 
 export interface SkillRow {

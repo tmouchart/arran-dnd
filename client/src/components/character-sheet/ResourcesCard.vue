@@ -6,6 +6,8 @@ import EtatsRow from "../etats/EtatsRow.vue";
 import EtatsSheet from "../etats/EtatsSheet.vue";
 import { FlaskConical } from "lucide-vue-next";
 import HpGrowthModal from "./HpGrowthModal.vue";
+import PathBonusChip from "./PathBonusChip.vue";
+import { pathStatBonus } from "../../utils/characterStats";
 import type { Character } from "../../types/character";
 import type { VoieFamily } from "../../data/voies";
 import { hpGradientColor } from "../../utils/hpGradientColor";
@@ -26,6 +28,8 @@ const props = defineProps<{
 }>();
 
 const showHpModal = ref(false);
+/** PV donnés par les passifs (Robustesse, Force de la nature…). */
+const hpPaths = computed(() => pathStatBonus(props.character, "hp"));
 // Le joueur garde la main sur ses propres etats — c'est ce qu'il pouvait deja
 // faire avec Affaibli. Sur sa propre fiche on ecrit directement dans
 // `character.states` : la sauvegarde auto de la fiche s'en charge.
@@ -101,8 +105,12 @@ const mpIsMystique = computed(() => props.family === "mystiques");
               <span class="def-chip-value">{{ computedHpGrowth >= 0 ? '+' : '' }}{{ computedHpGrowth }}</span>
             </button>
           </template>
+          <template v-if="hpPaths.sources.length">
+            <span class="def-op">+</span>
+            <PathBonusChip :sources="hpPaths.sources" :total="hpPaths.total" testid="hp-paths" />
+          </template>
           <span class="def-op">+</span>
-          <label class="def-chip def-chip--editable" title="Bonus de PV divers (Robustesse, Force de la nature…)">
+          <label class="def-chip def-chip--editable" title="Bonus de PV divers (objets, magie…)">
             <span class="def-chip-label">Bonus</span>
             <input v-model.number="character.hpBonus" data-testid="hp-bonus" type="number" class="def-bonus-input" placeholder="0" />
           </label>

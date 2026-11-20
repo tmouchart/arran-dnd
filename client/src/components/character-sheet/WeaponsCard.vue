@@ -1,14 +1,30 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import { Star } from "lucide-vue-next";
 import AppCard from "../ui/AppCard.vue";
+import AppIconBtn from "../ui/AppIconBtn.vue";
 import AppInput from "../ui/AppInput.vue";
 import AppButton from "../ui/AppButton.vue";
 import AppSelect from "../ui/AppSelect.vue";
 import { WEAPONS_CATALOG } from "../../data/weaponsCatalog";
 import { MARTIAL_WEAPON_CATEGORIES, type MartialWeaponCategoryId } from "../../data/martialWeaponCategories";
 import type { Character, WeaponRow } from "../../types/character";
+import { pathEffects } from "../../composables/usePathEffects";
 
 const props = defineProps<{ character: Character }>();
+
+/** Arme de prédilection (voie de la maîtrise des armes) : la case n'apparaît qu'avec la capacité. */
+const hasFavoriteWeapon = computed(() => {
+  const e = pathEffects(props.character.paths);
+  return e.favoriteAttack > 0 || e.favoriteDamage > 0;
+});
+
+function toggleFavorite(w: WeaponRow) {
+  const next = !w.favorite;
+  // Une seule arme de prédilection à la fois
+  props.character.weapons.forEach((x) => { x.favorite = undefined; });
+  w.favorite = next || undefined;
+}
 
 const catalogPick = ref("");
 
@@ -144,7 +160,19 @@ function setDamageAbilityFromSelect(w: WeaponRow, v: string) {
             <AppInput v-model="w.notes" placeholder="Optionnel" />
           </label>
         </div>
-        <AppButton size="small" @click="removeWeapon(wi)">Retirer</AppButton>
+        <div class="weapon-actions">
+          <AppIconBtn
+            v-if="hasFavoriteWeapon"
+            :variant="w.favorite ? 'primary' : 'ghost'"
+            :title="w.favorite ? 'Arme de prédilection' : 'Choisir comme arme de prédilection'"
+            :aria-pressed="!!w.favorite"
+            :data-testid="`weapon-favorite-${wi}`"
+            @click="toggleFavorite(w)"
+          >
+            <Star :size="16" :fill="w.favorite ? 'currentColor' : 'none'" />
+          </AppIconBtn>
+          <AppButton size="small" @click="removeWeapon(wi)">Retirer</AppButton>
+        </div>
       </li>
     </ul>
     <p v-else class="muted">Aucune arme listée.</p>
@@ -182,6 +210,12 @@ function setDamageAbilityFromSelect(w: WeaponRow, v: string) {
   flex-direction: column;
   gap: 0.45rem;
   background: var(--surface-2);
+}
+
+.weapon-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
 }
 
 .grid-2 { display: grid; grid-template-columns: 1fr; gap: 0.65rem; }

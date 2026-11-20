@@ -3,14 +3,13 @@ import type { VoieFamily } from '../data/voies'
 import { ARMORS_BY_ID, SHIELDS_BY_ID } from '../data/armorsCatalog'
 import { inferProfileFamily } from './inferProfileFamily'
 import { abilityModifier } from './attackBonus'
-import { pathEffects } from '../composables/usePathEffects'
+import { pathEffects, type BonusSource } from '../composables/usePathEffects'
 
 /** Maximum die face per family (level 1 = max; subsequent levels = roll). */
 export const FAMILY_DIE_MAX: Record<VoieFamily, number> = {
   combattants: 10,
   aventuriers: 8,
   mystiques: 6,
-  prestige: 8,
 }
 
 /**
@@ -32,9 +31,28 @@ export function effectiveAbilities(c: Character): CharacterAbilities {
 // Bonus d'attaque par famille
 function familyAttackBonus(family: VoieFamily): { contact: number; distance: number; magique: number } {
   if (family === 'combattants') return { contact: 2, distance: 2, magique: 0 }
-  if (family === 'aventuriers') return { contact: 1, distance: 1, magique: 0 }
   if (family === 'mystiques') return { contact: 0, distance: 0, magique: 2 }
-  return { contact: 1, distance: 1, magique: 0 } // prestige → aventuriers par défaut
+  return { contact: 1, distance: 1, magique: 0 }
+}
+
+/**
+ * Les bonus de DEF, d'initiative ou de PV donnés par les passifs des voies,
+ * chiffrés : un « Mod. de CHA » se lit sur les caracs finales (Charisme
+ * héroïque compris). Le total et le détail, pour l'infobulle.
+ */
+export function pathStatBonus(c: Character, kind: 'def' | 'init' | 'hp'): { total: number; sources: BonusSource[] } {
+  const abilities = effectiveAbilities(c)
+  const sources = pathEffects(c.paths)[kind].map(({ bonus, from }) => ({
+    bonus: typeof bonus === 'number' ? bonus : abilityModifier(abilities[bonus.mod]),
+    from,
+  }))
+  return { total: sources.reduce((s, x) => s + x.bonus, 0), sources }
+}
+
+/** Réduction des DM subis (RD) donnée par les passifs, et qui la donne. */
+export function computeRd(c: Character): { total: number; sources: BonusSource[] } {
+  const sources = pathEffects(c.paths).rd
+  return { total: sources.reduce((s, x) => s + x.bonus, 0), sources }
 }
 
 /** DEF = 10 + mod DEX (si armure non encombrante) + bonus armure + bonus bouclier + bonus divers */
@@ -43,12 +61,12 @@ export function computeDef(c: Character): number {
   const armor = c.armorId ? ARMORS_BY_ID[c.armorId] : null
   const shield = c.shieldId ? SHIELDS_BY_ID[c.shieldId] : null
   const dexContrib = armor?.encombrant ? 0 : dexMod
-  return 10 + dexContrib + (armor?.defBonus ?? 0) + (shield?.defBonus ?? 0) + c.defenseBonus
+  return 10 + dexContrib + (armor?.defBonus ?? 0) + (shield?.defBonus ?? 0) + pathStatBonus(c, 'def').total + c.defenseBonus
 }
 
 /**
  * PM = (Niveau + mod SAG) × multiplicateur de famille
- * - Combattants / Aventuriers / Prestige : ×1
+ * - Combattants / Aventuriers : ×1
  * - Mystiques : ×2
  */
 export function computeMp(c: Character): number {
@@ -78,9 +96,9 @@ export function computeHpGrowth(c: Character): number {
   return c.hpLevelGains.reduce((sum, roll) => sum + roll + conMod, 0)
 }
 
-/** PV max = base niv.1 + croissance niv.2..N + bonus divers */
+/** PV max = base niv.1 + croissance niv.2..N + passifs des voies + bonus divers */
 export function computeHp(c: Character): number {
-  return Math.max(1, computeHpBase(c) + computeHpGrowth(c) + (Number(c.hpBonus) || 0))
+  return Math.max(1, computeHpBase(c) + computeHpGrowth(c) + pathStatBonus(c, 'hp').total + (Number(c.hpBonus) || 0))
 }
 
 /** Dé de vie de la famille (label affiché). */
@@ -89,7 +107,6 @@ export function computeDv(c: Character): string {
     combattants: 'd10',
     aventuriers: 'd8',
     mystiques: 'd6',
-    prestige: 'd8',
   }
   return faces[inferProfileFamily(c.paths)]
 }
@@ -102,6 +119,7 @@ export function computeInitiative(c: Character): number {
     effectiveAbilities(c).dexterity -
     (armor?.defBonus ?? 0) -
     (shield?.defBonus ?? 0) +
+    pathStatBonus(c, 'init').total +
     (c.initiativeBonus ?? 0)
   )
 }

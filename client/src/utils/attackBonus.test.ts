@@ -117,11 +117,6 @@ describe('attackRollBonus', () => {
     const abilities = makeAbilities({ intelligence: 10 })
     expect(attackRollBonus('magique', 2, abilities, 'combattants')).toBe(2 + 0 + 0)
   })
-
-  it('prestige → pas de bonus de famille (meleeFam = 0)', () => {
-    const abilities = makeAbilities({ strength: 10 })
-    expect(attackRollBonus('contact', 1, abilities, 'prestige')).toBe(1 + 0 + 0)
-  })
 })
 
 // ── isMartialWeaponProficient ─────────────────────────────────────────────────

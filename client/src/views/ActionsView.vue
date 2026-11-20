@@ -15,7 +15,8 @@ import EtatsRow from "../components/etats/EtatsRow.vue";
 import EtatsSheet from "../components/etats/EtatsSheet.vue";
 import { useCharacter, loadCharacter, PR_MAX } from "../composables/useCharacter";
 import { VOIES_BY_ID, type AbilityKey, type VoieFamily } from "../data/voies";
-import { pathEffects, unlockedCapacites } from "../composables/usePathEffects";
+import { pathEffects, sumBonus, unlockedCapacites } from "../composables/usePathEffects";
+import { isCriticalAttack, weaponPassives } from "../utils/weaponPassives";
 import { PEUPLE_VOIES_BY_ID } from "../data/peuples";
 import { MYSTIC_TALENTS_BY_ID, isMysticTalentId } from "../data/mysticTalents";
 import { inferProfileFamily } from "../utils/inferProfileFamily";
@@ -80,7 +81,9 @@ interface Action {
   attackType: AttackType;
   source: string;
   voieFamily?: VoieFamily;
-  /** CO: PM = rang du sort. Only set for voies mystiques (talents magiques = pas de PM). */
+  /** Capacité d'une voie de prestige (couleur dorée, pas de magie économe). */
+  prestige?: boolean;
+  /** CO : PM = rang du sort. Seulement pour les sorts (*), pas les talents magiques. */
   pmCost: number | null;
   /** 2d20 sur le jet de cette action, on garde le meilleur. */
   attackAdvantage?: boolean;
@@ -230,17 +233,21 @@ const baseRuleActionsList = computed<Action[]>(() => {
 
 const voieActions = computed<Action[]>(() => {
   const result: Action[] = [];
+  const faster = passives.value.fasterActions;
   for (const { capacite, rank, voie } of unlockedCapacites(character.value.paths)) {
-    // Seules les voies de profil alimentent la liste d'actions.
+    // Seules les voies de profil et de prestige alimentent la liste d'actions.
     if (!capacite.active || !("family" in voie)) continue;
     result.push({
       name: capacite.name,
       description: capacite.description,
-      actionType: inferActionType(capacite.description),
+      // Combat à deux armes parfait : l'action limitée devient une action d'attaque.
+      actionType: faster.has(capacite.name) ? "attaque" : inferActionType(capacite.description),
       attackType: inferAttackType(capacite.description),
       source: voie.name,
       voieFamily: voie.family,
-      pmCost: voie.family === "mystiques" ? rank : null,
+      prestige: voie.prestige === true,
+      // Un sort (*) coûte son rang en PM, quelle que soit la famille de la voie.
+      pmCost: capacite.spell ? (capacite.spellRank ?? rank) : null,
       attackAdvantage: capacite.effects?.some((e) => e.kind === "attackAdvantage"),
     });
   }
@@ -285,15 +292,14 @@ const weaponBubbles = computed(() => {
     const finesse = isFinesseWeapon(w);
     const baseBonus = weaponAttackBonus(w);
     const incompetent = !isMartialWeaponProficient(w, c.martialFormations);
-    const total = incompetent ? baseBonus - 3 : baseBonus;
+    const bonus = weaponPassives(w, passives.value, abilities.value);
+    const total = (incompetent ? baseBonus - 3 : baseBonus) + bonus.attack;
+    const baseDamage = formatWeaponDamage(w.damageDice, w.damageAbility, abilities.value);
     return {
       w,
       hitDisplay: `d${attackDieSides.value} ${total >= 0 ? "+" : ""}${total} (vs DEF)`,
-      damageDisplay: formatWeaponDamage(
-        w.damageDice,
-        w.damageAbility,
-        c.abilities,
-      ),
+      damageDisplay: bonus.damage ? `${baseDamage} ${signedNum(bonus.damage)}` : baseDamage,
+      critDisplay: bonus.critMin < 20 ? `${bonus.critMin}-20` : null,
       rangeDisplay: w.rangeMeters != null ? `${w.rangeMeters} m` : null,
       incompetent,
       isFinesseWeapon: finesse,
@@ -406,11 +412,11 @@ function attackTypeLabel(t: AttackType): string {
   return "";
 }
 
-function familyClass(family?: VoieFamily): string {
-  if (family === "combattants") return "family-combattants";
-  if (family === "aventuriers") return "family-aventuriers";
-  if (family === "mystiques") return "family-mystiques";
-  if (family === "prestige") return "family-prestige";
+function familyClass(action: Action): string {
+  if (action.prestige) return "family-prestige";
+  if (action.voieFamily === "combattants") return "family-combattants";
+  if (action.voieFamily === "aventuriers") return "family-aventuriers";
+  if (action.voieFamily === "mystiques") return "family-mystiques";
   return "family-base";
 }
 
@@ -427,6 +433,8 @@ interface WeaponRollResult {
   damageRolls: number[];
   damageModifier: number;
   damageTotal: number;
+  /** Plus petit d20 qui fait un critique avec cette arme (Science du critique : 19). */
+  critMin: number;
   luckUsed: boolean;
 }
 
@@ -473,12 +481,14 @@ function rollWeapon(item: (typeof weaponBubbles.value)[number], forcedSides?: nu
   const attackSides = forcedSides ?? attackDieSides.value;
   const effectiveBonus = weaponAttackBonus(item.w);
   const incompetentPenalty = item.incompetent ? -3 : 0;
-  const attackBonus = effectiveBonus + incompetentPenalty;
+  const passive = weaponPassives(item.w, passives.value, abilities.value);
+  const attackBonus = effectiveBonus + incompetentPenalty + passive.attack;
 
   const damageAbilityMod = item.w.damageAbility
     ? abilityModifier(abilities.value[item.w.damageAbility])
     : 0;
-  const dmg = rollDiceNotation(item.w.damageDice, damageAbilityMod);
+  const damageModifier = damageAbilityMod + passive.damage;
+  const dmg = rollDiceNotation(item.w.damageDice, damageModifier);
 
   // Pas d'avantage sur une attaque d'arme : la règle ne le donne qu'aux tests
   // de caractéristique.
@@ -492,8 +502,9 @@ function rollWeapon(item: (typeof weaponBubbles.value)[number], forcedSides?: nu
       attackDropped: dropped,
       damageDice: item.w.damageDice,
       damageRolls: dmg.rolls,
-      damageModifier: damageAbilityMod,
+      damageModifier,
       damageTotal: dmg.total,
+      critMin: passive.critMin,
       luckUsed: false,
     };
     addRoll({
@@ -505,7 +516,7 @@ function rollWeapon(item: (typeof weaponBubbles.value)[number], forcedSides?: nu
       bonus: attackBonus,
       total: attackTotal,
       dropped,
-      damage: { total: dmg.total, critical: attackDie === attackSides, fumble: attackDie === 1 },
+      damage: { total: dmg.total, critical: isCriticalAttack(attackDie, attackSides, passive.critMin), fumble: attackDie === 1 },
     });
   });
 }
@@ -608,7 +619,8 @@ function spendLuck(roll: WeaponRollResult | ActionRollResult | SingleHandRoll, m
 }
 
 function rollAbility(key: string) {
-  const mod = abilityModifier(abilities.value[key as AbilityKey]);
+  // Le Mod. de la carac, plus les bonus fixes des passifs (Résistance naine : +5 CON).
+  const mod = abilityModifier(abilities.value[key as AbilityKey]) + sumBonus(passives.value.testBonus[key as AbilityKey]);
   const sides = attackDieSides.value;
   // Le seul cas d'avantage permanent : un test de caractéristique.
   rollAndReveal(sides, passives.value.advantage.has(key as AbilityKey), ({ kept: die, dropped }) => {
@@ -905,6 +917,9 @@ function losePr() {
         <p v-if="item.rangeDisplay" class="weapon-stat-line">
           <strong>Portée :</strong> {{ item.rangeDisplay }}
         </p>
+        <p v-if="item.critDisplay" class="weapon-stat-line">
+          <strong>Critique :</strong> {{ item.critDisplay }}
+        </p>
         <p v-if="item.w.notes" class="action-description">{{ item.w.notes }}</p>
 
         <div v-if="hasDualWieldVoie && item.w.attackType === 'contact'" class="hand-role-selector">
@@ -936,7 +951,7 @@ function losePr() {
             <span v-if="weaponRolls[item.w.id].attackDie === 1" class="roll-result__crit-label">
               Échec critique
             </span>
-            <template v-else-if="weaponRolls[item.w.id].attackDie === weaponRolls[item.w.id].attackSides">
+            <template v-else-if="isCriticalAttack(weaponRolls[item.w.id].attackDie, weaponRolls[item.w.id].attackSides, weaponRolls[item.w.id].critMin)">
               <span class="roll-result__crit-label">Réussite critique</span>
               <span class="roll-result__damage">
                 Dégâts : <strong>{{ weaponRolls[item.w.id].damageTotal * 2 }}</strong>
@@ -987,7 +1002,7 @@ function losePr() {
         :key="action.source + '-' + action.name"
         class="action-bubble"
         :class="[
-          familyClass(action.voieFamily),
+          familyClass(action),
           { 'action-bubble--info': action.actionType === 'info' },
         ]"
       >

@@ -1,17 +1,20 @@
-import { VOIES_BY_ID, type VoieFamily } from '../data/voies'
+import { VOIES_BY_ID, type Voie, type VoieFamily } from '../data/voies'
 import type { PathRow } from '../types/character'
 
 /**
  * Profile family (Terres d’Arran / creation-personnage.md):
  * if at least two of the profile paths share the same family → that family;
  * otherwise (one path per family, or no majority) → aventuriers.
- * Only counts paths that are not peuple/culturelle (the profile voies from VOIES).
+ * Only counts paths that are not peuple/culturelle (the profile voies from VOIES),
+ * and never the prestige voies.
  */
 export function inferProfileFamily(paths: PathRow[]): VoieFamily {
   const families = paths
     .filter((p) => p.kind !== 'peuple' && p.kind !== 'culturelle')
-    .map((p) => (p.id ? VOIES_BY_ID[p.id]?.family : undefined))
-    .filter((f): f is VoieFamily => f != null)
+    .map((p) => (p.id ? VOIES_BY_ID[p.id] : undefined))
+    // Une voie de prestige ne change pas la famille du profil.
+    .filter((v): v is Voie => v != null && !v.prestige)
+    .map((v) => v.family)
 
   if (families.length === 0) return 'aventuriers'
 

@@ -57,3 +57,11 @@ describe('inferProfileFamily', () => {
     expect(inferProfileFamily([unknown, unknown])).toBe('aventuriers')
   })
 })
+
+describe('inferProfileFamily — voies de prestige', () => {
+  it('une voie de prestige ne change jamais la famille du profil', () => {
+    const arcanes: PathRow = { id: 'voie-des-arcanes', name: 'Voie des arcanes', rank: 3 }
+    const glace: PathRow = { id: 'voie-de-la-glace', name: 'Voie de la glace', rank: 1 }
+    expect(inferProfileFamily([COMBATTANT_1, COMBATTANT_2, AVENTURIER_1, arcanes, glace])).toBe('combattants')
+  })
+})

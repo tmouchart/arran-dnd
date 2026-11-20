@@ -46,7 +46,6 @@ const DV_LABELS: Record<VoieFamily, string> = {
   combattants: 'd10',
   aventuriers: 'd8',
   mystiques: 'd6',
-  prestige: 'd8',
 }
 
 const route = useRoute()

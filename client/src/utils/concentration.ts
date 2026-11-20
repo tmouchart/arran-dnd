@@ -1,5 +1,3 @@
-import type { VoieFamily } from '../data/voies'
-
 /**
  * Concentration (CO, magie.md) : le sort passe en action limitée et gagne
  * un bonus au choix.
@@ -42,7 +40,8 @@ interface ConcentrableAction {
   name: string
   /** null = pas un sort (talent magique, capacité martiale…) */
   pmCost: number | null
-  voieFamily?: VoieFamily
+  /** Sort d'une voie de prestige. */
+  prestige?: boolean
 }
 
 /** Sous tension (magie élémentaliste) refuse toute concentration (voies-de-profil.md). */
@@ -53,6 +52,6 @@ export function allowedModes(action: ConcentrableAction): ConcentrationMode[] {
   if (action.pmCost == null) return []
   if (NEVER_CONCENTRATE.has(action.name)) return []
   // Les sorts des voies de prestige n'ont pas droit à la magie économe.
-  if (action.voieFamily === 'prestige') return CONCENTRATION_MODES.filter((m) => m !== 'econome')
+  if (action.prestige) return CONCENTRATION_MODES.filter((m) => m !== 'econome')
   return [...CONCENTRATION_MODES]
 }

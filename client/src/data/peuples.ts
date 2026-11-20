@@ -20,7 +20,7 @@ const voiePeupleElfe: PeupleVoie = {
   id: 'peuple-elfe',
   name: 'Voie du peuple elfe',
   capacites: [
-    { name: 'Grâce elfique', description: '+5 à tous les tests de CHA et aux tests de déplacement silencieux.', active: false },
+    { name: 'Grâce elfique', description: '+5 à tous les tests de CHA et aux tests de déplacement silencieux.', active: false, effects: [{ kind: 'test', on: 'charisma', bonus: 5 }] },
     { name: 'Essence magique', description: '+2 en DEF contre les attaques magiques et aux tests pour résister à la magie ; +4 à partir du rang 4 de cette voie.', active: false },
     { name: 'Maîtrise des armes elfiques', description: 'Peut porter et utiliser les armes et armures de la tradition elfique pour lesquelles il possède la formation martiale.', active: false },
     { name: 'Empathie elfique', description: 'Retrouve intuitivement les êtres chers ; ressent leur santé physique et psychologique ; perçoit un danger les menaçant.', active: false },
@@ -46,8 +46,8 @@ const voiePeupleNain: PeupleVoie = {
   id: 'peuple-nain',
   name: 'Voie du peuple nain',
   capacites: [
-    { name: 'Résistance', description: '+5 à tous les tests de CON.', active: false },
-    { name: 'Solide comme un roc', description: 'Réduit tous les DM subis de 1 (minimum 1 DM par attaque reçue). Cumulable avec d\'autres réductions.', active: false },
+    { name: 'Résistance', description: '+5 à tous les tests de CON.', active: false, effects: [{ kind: 'test', on: 'constitution', bonus: 5 }] },
+    { name: 'Solide comme un roc', description: 'Réduit tous les DM subis de 1 (minimum 1 DM par attaque reçue). Cumulable avec d\'autres réductions.', active: false, effects: [{ kind: 'rd', bonus: 1 }] },
     { name: 'Maîtrise des armes runiques', description: 'Peut porter et utiliser les armes et armures de la tradition naine pour lesquelles il a la formation martiale.', active: false },
     { name: 'Résistance à la magie', description: 'Cible d\'un sort (sauf zone) : lance 1d4 — si le résultat est supérieur au rang du sort, ignorer les effets du sort.', active: true },
     { name: 'Ténacité naine', description: 'Une fois par jour, quand le PJ tombe à 0 PV : peut dépenser 1 PR et en appliquer les effets immédiatement ; +2 SAG.', active: true, effects: [{ kind: 'ability', ability: 'wisdom', bonus: 2 }] },
@@ -78,7 +78,7 @@ const cultureElfeBleu: PeupleVoie = {
   capacites: [
     { name: 'Équilibre parfait', description: 'Se relever est une action gratuite ; +5 aux tests d\'équilibre.', active: false },
     { name: 'Natif d\'Elsémur', description: 'Choisir une caste : religieuse (capacité de rang 1 ou 2 de la divination ou du mysticisme) ou guerrière (capacité de rang 1 ou 2 de la guerre ou du combat à deux armes). Au rang 4 de cette voie culturelle, capacité supplémentaire de rang 1 ou 2 dans la même caste.', active: false },
-    { name: 'Imperturbable', description: '+5 aux tests pour résister aux effets mentaux (peur, intimidation, envoûtements) ; +3 à l\'Initiative.', active: false },
+    { name: 'Imperturbable', description: '+5 aux tests pour résister aux effets mentaux (peur, intimidation, envoûtements) ; +3 à l\'Initiative.', active: false, effects: [{ kind: 'init', bonus: 3 }] },
     { name: 'Les enseignements de l\'eau', description: 'Peut retenir sa respiration sous l\'eau 15 minutes ; au plus profond des océans, pas besoin de lumière pour se guider ; supporte les températures glaciales et la pression sans problème.', active: false },
     { name: 'Parangon elfe bleu', description: '+2 CON et +2 SAG.', active: false, effects: [{ kind: 'ability', ability: 'constitution', bonus: 2 }, { kind: 'ability', ability: 'wisdom', bonus: 2 }] },
   ],
@@ -129,7 +129,7 @@ const cultureNainForge: PeupleVoie = {
     { name: 'Artisan de la forge', description: 'Choisir un métier de l\'ordre (alchimiste, armurier, médecin, orfèvre, mineur…) ; +5 à tous les tests liés à ce métier.', active: false },
     { name: 'Forgeron runique', description: 'Choisir une capacité de rang 1 ou 2 de la voie d\'alchimie ou de la magie runique ; au rang 4, une capacité supplémentaire de rang 1 ou 2.', active: false },
     { name: 'Marteler le métal', description: '+1 en attaque et aux DM avec un bâton ferré, une masse d\'armes ou un marteau à deux mains.', active: false },
-    { name: 'Runes de défense', description: 'Runes sur l\'équipement (et parfois la peau) ; +2 DEF.', active: false },
+    { name: 'Runes de défense', description: 'Runes sur l\'équipement (et parfois la peau) ; +2 DEF.', active: false, effects: [{ kind: 'def', bonus: 2 }] },
     { name: 'Maître artisan', description: '+2 DEX et +2 INT.', active: false, effects: [{ kind: 'ability', ability: 'dexterity', bonus: 2 }, { kind: 'ability', ability: 'intelligence', bonus: 2 }] },
   ],
 }
@@ -250,7 +250,7 @@ const cultureOrc: PeupleVoie = {
   id: 'culture-orc',
   name: 'Culture orc',
   capacites: [
-    { name: 'Force de la nature', description: '+5 aux tests de FOR ; ajouter le Mod. FOR au total de PV.', active: false },
+    { name: 'Force de la nature', description: '+5 aux tests de FOR ; ajouter le Mod. FOR au total de PV.', active: false, effects: [{ kind: 'test', on: 'strength', bonus: 5 }, { kind: 'hp', bonus: { mod: 'strength' } }] },
     { name: 'Talent pour la violence', description: 'Capacité de rang 1 ou 2 de la férocité ou de la puissance ; au rang 4, capacité supplémentaire de rang 1 ou 2.', active: false },
     { name: 'Critique brutal', description: 'Sur critique en contact, DM ×3 au lieu de ×2.', active: false },
     { name: 'Attaque sanglante (L)', description: 'Hémorragie : +1d6 DM par tour jusqu\'à réussite d\'un test de CON DD [12 + Mod. FOR] ou soins ; pas de cumul de saignements.', active: true },

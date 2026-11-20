@@ -72,3 +72,36 @@ describe('unlockedCapacites', () => {
     expect(cap?.capacite.effects).toEqual([{ kind: 'attackAdvantage' }])
   })
 })
+
+describe('pathEffects — passifs de combat', () => {
+  it('Robustesse : un effet PV par palier de la voie atteint', () => {
+    expect(pathEffects([path('voie-de-la-bravoure', 2)]).hp).toHaveLength(1)
+    expect(pathEffects([path('voie-de-la-bravoure', 4)]).hp).toHaveLength(2)
+    expect(pathEffects([path('voie-de-la-bravoure', 5)]).hp).toHaveLength(3)
+  })
+
+  it('les bonus aux tests de peuple sont rangés par carac', () => {
+    const e = pathEffects([path('peuple-nain', 2), path('culture-orc', 1)])
+    expect(e.testBonus.constitution).toEqual([{ bonus: 5, from: 'Résistance' }])
+    expect(e.testBonus.strength).toEqual([{ bonus: 5, from: 'Force de la nature' }])
+  })
+
+  it('Science du critique abaisse le seuil, plus bas encore à la rapière', () => {
+    const e = pathEffects([path('voie-de-la-maitrise-des-armes', 2)])
+    expect(e.critMin).toBe(19)
+    expect(e.critMinRapiere).toBe(18)
+    expect(pathEffects([]).critMin).toBe(20)
+  })
+
+  it('arme de prédilection : +1 attaque au rang 1, +2 DM au rang 3', () => {
+    const r1 = pathEffects([path('voie-de-la-maitrise-des-armes', 1)])
+    expect([r1.favoriteAttack, r1.favoriteDamage]).toEqual([1, 0])
+    const r3 = pathEffects([path('voie-de-la-maitrise-des-armes', 3)])
+    expect([r3.favoriteAttack, r3.favoriteDamage]).toEqual([1, 2])
+  })
+
+  it('Combat à deux armes parfait rend « Combat à deux armes » plus rapide', () => {
+    expect(pathEffects([path('voie-du-combat-a-deux-armes', 4)]).fasterActions.size).toBe(0)
+    expect(pathEffects([path('voie-du-combat-a-deux-armes', 5)]).fasterActions.has('Combat à deux armes')).toBe(true)
+  })
+})

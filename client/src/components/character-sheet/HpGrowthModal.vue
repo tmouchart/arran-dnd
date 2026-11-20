@@ -25,7 +25,6 @@ const familyLabel = computed(() => {
     combattants: "Combattants (d10)",
     aventuriers: "Aventuriers (d8)",
     mystiques: "Mystiques (d6)",
-    prestige: "Prestige (d8)",
   };
   return labels[props.family];
 });

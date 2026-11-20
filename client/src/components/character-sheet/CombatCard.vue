@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import AppCard from "../ui/AppCard.vue";
+import PathBonusChip from "./PathBonusChip.vue";
 import { ARMORS_BY_ID, SHIELDS_BY_ID } from "../../data/armorsCatalog";
+import { computeRd, effectiveAbilities, pathStatBonus } from "../../utils/characterStats";
 import type { Character } from "../../types/character";
 import type { VoieFamily } from "../../data/voies";
 
@@ -41,8 +43,16 @@ const intMod = computed(() => props.abilityModifier(props.character.abilities.in
 
 function sign(n: number) { return n >= 0 ? `+${n}` : `${n}`; }
 
+// La DEX finale (Dextérité héroïque comprise) : c'est elle qui entre dans les totaux.
+const effectiveDex = computed(() => effectiveAbilities(props.character).dexterity);
+
+/** Les passifs des voies : DEF, initiative, réduction des DM. */
+const defPaths = computed(() => pathStatBonus(props.character, "def"));
+const initPaths = computed(() => pathStatBonus(props.character, "init"));
+const rd = computed(() => computeRd(props.character));
+
 const defDexContrib = computed(() =>
-  armor.value?.encombrant ? 0 : props.abilityModifier(props.character.abilities.dexterity),
+  armor.value?.encombrant ? 0 : props.abilityModifier(effectiveDex.value),
 );
 const defArmorBonus = computed(() => armor.value?.defBonus ?? 0);
 const defShieldBonus = computed(() => shield.value?.defBonus ?? 0);
@@ -50,8 +60,8 @@ const defDexSign = computed(() => (defDexContrib.value >= 0 ? "+" : ""));
 const defDexBlocked = computed(() => defDexContrib.value === 0 && !!armor.value?.encombrant);
 const defDexTooltip = computed(() => {
   if (armor.value?.encombrant) return "DEX annulée (armure encombrante)";
-  const mod = props.abilityModifier(props.character.abilities.dexterity);
-  return `Mod. DEX (${props.character.abilities.dexterity} → ${mod >= 0 ? "+" : ""}${mod})`;
+  const mod = props.abilityModifier(effectiveDex.value);
+  return `Mod. DEX (${effectiveDex.value} → ${mod >= 0 ? "+" : ""}${mod})`;
 });
 </script>
 
@@ -200,6 +210,10 @@ const defDexTooltip = computed(() => {
             <span class="def-chip-label">Bouclier</span>
             <span class="def-chip-value">{{ defShieldBonus }}</span>
           </div>
+          <template v-if="defPaths.sources.length">
+            <span class="def-op">+</span>
+            <PathBonusChip :sources="defPaths.sources" :total="defPaths.total" testid="def-paths" />
+          </template>
           <span class="def-op">+</span>
           <label class="def-chip def-chip--editable" title="Bonus divers (capacités, magie…)">
             <span class="def-chip-label">Bonus</span>
@@ -219,7 +233,7 @@ const defDexTooltip = computed(() => {
           <span class="def-op">=</span>
           <div class="def-chip" title="Valeur de DEX">
             <span class="def-chip-label">DEX</span>
-            <span class="def-chip-value">{{ character.abilities.dexterity }}</span>
+            <span class="def-chip-value">{{ effectiveDex }}</span>
           </div>
           <template v-if="armor">
             <span class="def-op">−</span>
@@ -235,11 +249,24 @@ const defDexTooltip = computed(() => {
               <span class="def-chip-value">{{ shield.defBonus }}</span>
             </div>
           </template>
+          <template v-if="initPaths.sources.length">
+            <span class="def-op">+</span>
+            <PathBonusChip :sources="initPaths.sources" :total="initPaths.total" testid="init-paths" />
+          </template>
           <span class="def-op">+</span>
           <label class="def-chip def-chip--editable" title="Bonus divers (capacités, magie…)">
             <span class="def-chip-label">Bonus</span>
             <input v-model.number="character.initiativeBonus" type="number" class="def-bonus-input" placeholder="0" />
           </label>
+        </div>
+      </div>
+
+      <!-- Réduction des dégâts -->
+      <div v-if="rd.total > 0" class="attack-row">
+        <span class="attack-label">Réduction des DM</span>
+        <div class="def-formula">
+          <PathBonusChip :sources="rd.sources" :total="rd.total" label="RD" testid="rd-paths" />
+          <span class="rd-hint">à retirer de chaque attaque reçue (minimum 1 DM)</span>
         </div>
       </div>
 
@@ -275,6 +302,11 @@ const defDexTooltip = computed(() => {
   align-items: center;
   gap: 0.3rem;
   flex-wrap: wrap;
+}
+
+.rd-hint {
+  font-size: 0.78rem;
+  color: var(--muted);
 }
 
 .def-op {

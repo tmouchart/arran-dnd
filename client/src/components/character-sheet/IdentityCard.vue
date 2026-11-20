@@ -620,15 +620,8 @@ textarea.input-textarea {
   background: color-mix(in srgb, var(--accent) 18%, transparent);
   color: var(--accent-strong);
 }
-.family-prestige {
-  background: color-mix(in srgb, #8a6a20 14%, transparent);
-  color: #5c4510;
-}
 
 :root[data-theme="dark"] .family-aventuriers {
   color: #7bcf8a;
-}
-:root[data-theme="dark"] .family-prestige {
-  color: #d4a843;
 }
 </style>

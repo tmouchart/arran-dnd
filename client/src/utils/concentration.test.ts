@@ -57,7 +57,7 @@ describe('allowedModes', () => {
 
   it('un talent magique ou une capacité sans PM n’a rien', () => {
     expect(allowedModes({ name: 'Flamme', pmCost: null, voieFamily: 'mystiques' })).toEqual([])
-    expect(allowedModes({ name: 'Frappe massive', pmCost: null, voieFamily: 'prestige' })).toEqual([])
+    expect(allowedModes({ name: 'Frappe massive', pmCost: null, prestige: true })).toEqual([])
   })
 
   it('Sous tension refuse toute concentration', () => {
@@ -65,6 +65,6 @@ describe('allowedModes', () => {
   })
 
   it('un sort de prestige n’a pas droit à économe', () => {
-    expect(allowedModes({ name: 'Sort', pmCost: 3, voieFamily: 'prestige' })).toEqual(['etendue', 'puissante'])
+    expect(allowedModes({ name: 'Sort', pmCost: 3, prestige: true })).toEqual(['etendue', 'puissante'])
   })
 })

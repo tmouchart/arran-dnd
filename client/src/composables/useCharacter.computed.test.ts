@@ -269,7 +269,15 @@ describe('passifs de voie', () => {
     character.value.hpLevelGains = [4]
     const before = computedHp.value
     character.value.paths = [bravoure5]
-    // +1 de mod CON sur le niveau 1 et sur le niveau 2
-    expect(computedHp.value).toBe(before + 2)
+    // +1 de mod CON sur le niveau 1 et sur le niveau 2, et Robustesse : +3 aux rangs 1, 3 et 5
+    expect(computedHp.value).toBe(before + 2 + 9)
+  })
+
+  it('Robustesse grandit avec la voie : +3 PV au rang 1, +6 au rang 3', () => {
+    const before = computedHp.value
+    character.value.paths = [{ id: 'voie-de-la-bravoure', name: 'Voie de la bravoure', rank: 1 }]
+    expect(computedHp.value).toBe(before + 3)
+    character.value.paths = [{ id: 'voie-de-la-bravoure', name: 'Voie de la bravoure', rank: 3 }]
+    expect(computedHp.value).toBe(before + 6)
   })
 })
